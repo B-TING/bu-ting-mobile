@@ -1,0 +1,8 @@
+node_modules/
+android/
+ios/
+coverage/
+.bundle/
+vendor/
+*.lock
+package-lock.json
