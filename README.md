@@ -7,6 +7,8 @@
 - React Native 0.85.3
 - React 19
 - TypeScript
+- [NativeWind](https://www.nativewind.dev/) v4 (Tailwind CSS)
+- [Zustand](https://zustand.docs.pmnd.rs/) (전역 상태 + AsyncStorage persist)
 - ESLint + Prettier
 - Jest
 
@@ -15,9 +17,14 @@
 ```
 .
 ├── src/
-│   ├── constants/   # 색상, 상수
-│   ├── screens/     # 화면 컴포넌트
-│   └── types/       # TypeScript 타입 정의
+│   ├── components/  # UI (NativeWind)
+│   ├── constants/   # 온보딩·언어 상수
+│   ├── navigation/
+│   ├── screens/
+│   ├── services/
+│   ├── stores/      # Zustand (useAppStore)
+│   ├── types/
+│   └── utils/
 ├── __tests__/       # Jest 테스트
 ├── .vscode/         # 에디터 설정 (저장 시 자동 포맷)
 ├── .eslintrc.js     # ESLint 설정
@@ -43,8 +50,50 @@ npm install
 ### 2. Metro 번들러 실행
 
 ```bash
-npm start
+npm start -- --reset-cache
 ```
+
+NativeWind 설정 변경 후에는 Metro 캐시 초기화가 필요할 수 있습니다.
+
+#### localhost로 연결이 안 될 때
+
+| 상황 | 명령 | 설명 |
+|------|------|------|
+| PC와 폰이 **같은 Wi‑Fi** | `npm run start:lan` | PC LAN IP로 Metro 노출 (`--host lan`) |
+| **다른 네트워크** / USB만 | `npm run start:tunnel` | ngrok 터널 (Expo `--tunnel`과 유사) |
+
+**터널 사용 순서**
+
+1. 터미널 1: `npm run start:tunnel` (또는 `npm run start:tunnel -- --reset-cache`)
+2. 출력된 `Packager` 호스트명 확인
+3. 터미널 2 (앱 설치·실행):
+
+```bash
+# PowerShell
+$env:REACT_NATIVE_PACKAGER_HOSTNAME="출력된-ngrok-호스트"; npm run android
+```
+
+실기기에서 이미 앱이 켜져 있다면: **흔들기 → Dev Settings → Debug server host**에 위 호스트만 입력 후 Reload.
+
+> 터널은 공식 `@ngrok/ngrok` SDK를 사용합니다. **ngrok Authtoken**(무료 가입)이 필수이며, API Key와 다릅니다.
+
+**ngrok 토큰 등록 (최초 1회)**
+
+1. [ngrok 대시보드](https://dashboard.ngrok.com/get-started/your-authtoken)에서 토큰 복사
+2. 프로젝트 루트에서:
+
+```bash
+npm run ngrok:auth -- 여기에_토큰_붙여넣기
+```
+
+또는 PowerShell:
+
+```powershell
+$env:NGROK_AUTHTOKEN="여기에_토큰"
+npm run start:tunnel
+```
+
+`env.local.example`을 `.env.local`로 복사해 `NGROK_AUTHTOKEN=`에 넣어도 됩니다.
 
 ### 3. 앱 실행
 
@@ -65,7 +114,9 @@ npm run ios
 
 | 명령어                  | 설명                       |
 | ----------------------- | -------------------------- |
-| `npm start`             | Metro 번들러 시작          |
+| `npm start`             | Metro 번들러 시작 (기본 localhost) |
+| `npm run start:lan`     | Metro — 같은 Wi‑Fi용 LAN IP |
+| `npm run start:tunnel`  | Metro — ngrok 터널        |
 | `npm run android`       | Android 앱 실행            |
 | `npm run ios`           | iOS 앱 실행                |
 | `npm run lint`          | ESLint 검사                |
