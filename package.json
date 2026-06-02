@@ -3,14 +3,15 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "android": "react-native run-android",
+    "android": "node scripts/run-android.cjs",
     "ios": "react-native run-ios",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "start": "react-native start",
-    "start:lan": "react-native start --host lan",
+    "start:lan": "node scripts/start-lan.cjs",
+    "connect:android": "node scripts/connect-android.cjs",
     "start:tunnel": "node scripts/start-tunnel.cjs",
     "ngrok:auth": "node scripts/ngrok-auth.cjs",
     "test": "jest"

@@ -55,6 +55,18 @@ npm start -- --reset-cache
 
 NativeWind 설정 변경 후에는 Metro 캐시 초기화가 필요할 수 있습니다.
 
+#### `Unable to load script` / Metro 연결 안 됨
+
+같은 Wi‑Fi여도 **`npm start`만으로는 폰이 PC Metro에 붙지 않는 경우가 많습니다.** `npm start`는 PC의 `localhost`만 엽니다.
+
+| 연결 방식 | 터미널 1 (Metro) | 터미널 2 (앱) | 비고 |
+|-----------|------------------|---------------|------|
+| **USB** (권장) | `npm start` | `npm run android` | `adb reverse`가 자동 설정됨. `npm run connect:android`로 상태 확인 |
+| **같은 Wi‑Fi** (무선) | `npm run start:lan` | `npm run android` | Dev Menu → **Debug server host**에 터미널에 출력된 `192.168.x.x:8081` 입력 후 Reload. Windows 방화벽에서 Node/8081 허용 |
+| **다른 네트워크** | `npm run start:tunnel` | `REACT_NATIVE_PACKAGER_HOSTNAME` 설정 후 `npm run android` | ngrok |
+
+포트 `8081`이 이미 사용 중이면(`EADDRINUSE`) Metro가 안 뜬 상태로 앱만 실행되어 이 오류가 납니다. 8081을 쓰는 `node` 프로세스를 종료한 뒤 Metro를 다시 켜세요.
+
 #### localhost로 연결이 안 될 때
 
 | 상황 | 명령 | 설명 |
@@ -116,6 +128,7 @@ npm run ios
 | ----------------------- | -------------------------- |
 | `npm start`             | Metro 번들러 시작 (기본 localhost) |
 | `npm run start:lan`     | Metro — 같은 Wi‑Fi용 LAN IP |
+| `npm run connect:android` | adb reverse + LAN IP / Metro 상태 확인 |
 | `npm run start:tunnel`  | Metro — ngrok 터널        |
 | `npm run android`       | Android 앱 실행            |
 | `npm run ios`           | iOS 앱 실행                |

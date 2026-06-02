@@ -21,26 +21,62 @@ export function buildUserPromptContext(profile: OnboardingProfile): string {
     lines.push(
       `Travel style: ${profile.travelStyle === 'planned' ? 'prefers detailed planning' : 'prefers spontaneous exploration'}`,
     );
+    lines.push(
+      profile.travelStyle === 'planned'
+        ? 'Highlight features: trip planner (primary), nearby suggestions (secondary)'
+        : 'Highlight features: nearby suggestions (primary), trip planner (secondary)',
+    );
   }
   if (profile.companions) {
     lines.push(
       `Companions: ${profile.companions === 'solo' ? 'solo traveler' : 'travels with others (sync/offline relevant)'}`,
+    );
+    lines.push(
+      profile.companions === 'group'
+        ? 'Highlight features: itinerary sync (primary), offline mode (primary)'
+        : 'Highlight features: offline mode (primary), itinerary sync (secondary)',
     );
   }
   if (profile.luggage) {
     lines.push(
       `Luggage: ${profile.luggage === 'heavy' ? 'heavy luggage — prioritize locker stations, flat routes, luggage-friendly buses' : 'travel light'}`,
     );
+    lines.push(
+      profile.luggage === 'heavy'
+        ? 'Highlight features: luggage storage guide (primary), amenities map (primary)'
+        : 'Highlight features: amenities map (primary), luggage storage guide (secondary)',
+    );
   }
   if (profile.purposes.length > 0) {
     const labels = profile.purposes.map(p => PURPOSE_LABELS[p]?.[lang] ?? p);
     lines.push(`Visit purposes in Busan: ${labels.join(', ')}`);
+    const highlights: string[] = [];
+    if (profile.purposes.includes('food')) {
+      highlights.push('restaurant list');
+    }
+    if (
+      profile.purposes.includes('culture') ||
+      profile.purposes.includes('nightlife')
+    ) {
+      highlights.push('festival & events list');
+    }
+    if (profile.purposes.includes('scenery')) {
+      highlights.push('scenic spots');
+    }
+    if (highlights.length > 0) {
+      lines.push(`Highlight features: ${highlights.join(', ')}`);
+    }
   }
   if (profile.busanFamiliarity) {
     lines.push(
       profile.busanFamiliarity === 'novice'
         ? 'Busan familiarity: low — enable GPS nearby explanations and guided tips'
         : 'Busan familiarity: high — enable travel journal / contributor features',
+    );
+    lines.push(
+      profile.busanFamiliarity === 'novice'
+        ? 'Highlight features: GPS nearby guide (primary), travel journal (secondary)'
+        : 'Highlight features: travel journal (primary), GPS nearby guide (secondary)',
     );
   }
   if (profile.skippedAll || profile.skippedSteps.length > 0) {

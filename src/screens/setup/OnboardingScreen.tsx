@@ -2,19 +2,23 @@ import { useCallback, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
+import { FeatureHighlightCard } from '../../components/setup/FeatureHighlightCard';
 import { OnboardingStepLayout } from '../../components/setup/OnboardingStepLayout';
 import { OptionCard } from '../../components/setup/OptionCard';
 import { PrimaryButton } from '../../components/setup/PrimaryButton';
 import {
   COMPANION_OPTIONS,
   FAMILIARITY_OPTIONS,
+  getFeatureStepContent,
   LUGGAGE_OPTIONS,
+  ONBOARDING_FLOW,
+  ONBOARDING_QUESTION_COUNT,
   ONBOARDING_STEP_COUNT,
-  ONBOARDING_STEPS,
   PURPOSE_OPTIONS,
   SETUP_COPY,
   TRAVEL_STYLE_OPTIONS,
 } from '../../constants/onboarding';
+import type { OnboardingStepId } from '../../constants/onboarding';
 import type { RootStackParamList } from '../../navigation/types';
 import { buildUserPromptContext } from '../../services/promptBuilder';
 import { useAppStore } from '../../stores';
@@ -27,6 +31,14 @@ import type {
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Onboarding'>;
 
+const QUESTION_ORDER: OnboardingStepId[] = [
+  'travelStyle',
+  'companions',
+  'luggage',
+  'purposes',
+  'busanFamiliarity',
+];
+
 const emptyAnswers = (): OnboardingAnswers => ({
   travelStyle: null,
   companions: null,
@@ -37,6 +49,14 @@ const emptyAnswers = (): OnboardingAnswers => ({
   skippedAll: false,
 });
 
+function questionIndexForStep(flowStep: number): number | null {
+  const config = ONBOARDING_FLOW[flowStep];
+  if (config.kind === 'question') {
+    return QUESTION_ORDER.indexOf(config.id);
+  }
+  return null;
+}
+
 export function OnboardingScreen({ navigation }: Props) {
   const language = useAppStore(state => state.language) ?? 'en';
   const completeOnboardingStore = useAppStore(state => state.completeOnboarding);
@@ -44,7 +64,8 @@ export function OnboardingScreen({ navigation }: Props) {
   const [answers, setAnswers] = useState<OnboardingAnswers>(emptyAnswers);
 
   const copy = SETUP_COPY[language];
-  const stepConfig = ONBOARDING_STEPS[step];
+  const stepConfig = ONBOARDING_FLOW[step];
+  const isFeatureStep = stepConfig.kind === 'feature';
 
   const completeOnboarding = useCallback(
     (finalAnswers: OnboardingAnswers) => {
@@ -62,12 +83,12 @@ export function OnboardingScreen({ navigation }: Props) {
     [language, navigation, completeOnboardingStore],
   );
 
-  const markStepSkipped = (stepIndex: number) => {
+  const markQuestionSkipped = (questionIndex: number) => {
     setAnswers(prev => ({
       ...prev,
-      skippedSteps: prev.skippedSteps.includes(stepIndex)
+      skippedSteps: prev.skippedSteps.includes(questionIndex)
         ? prev.skippedSteps
-        : [...prev.skippedSteps, stepIndex],
+        : [...prev.skippedSteps, questionIndex],
     }));
   };
 
@@ -80,7 +101,19 @@ export function OnboardingScreen({ navigation }: Props) {
   };
 
   const onSkipStep = () => {
-    markStepSkipped(step);
+    if (stepConfig.kind === 'question') {
+      const qIndex = questionIndexForStep(step);
+      if (qIndex !== null && qIndex >= 0) {
+        markQuestionSkipped(qIndex);
+      }
+      const nextStep = step + 2;
+      if (nextStep >= ONBOARDING_STEP_COUNT) {
+        completeOnboarding(answers);
+        return;
+      }
+      setStep(nextStep);
+      return;
+    }
     goNext();
   };
 
@@ -88,11 +121,17 @@ export function OnboardingScreen({ navigation }: Props) {
     completeOnboarding({
       ...answers,
       skippedAll: true,
-      skippedSteps: Array.from({ length: ONBOARDING_STEP_COUNT }, (_, i) => i),
+      skippedSteps: Array.from(
+        { length: ONBOARDING_QUESTION_COUNT },
+        (_, i) => i,
+      ),
     });
   };
 
   const canProceed = (): boolean => {
+    if (isFeatureStep) {
+      return true;
+    }
     switch (stepConfig.id) {
       case 'travelStyle':
         return answers.travelStyle !== null;
@@ -122,6 +161,9 @@ export function OnboardingScreen({ navigation }: Props) {
   };
 
   const renderOptions = () => {
+    if (stepConfig.kind === 'feature') {
+      return null;
+    }
     switch (stepConfig.id) {
       case 'travelStyle':
         return TRAVEL_STYLE_OPTIONS.map(opt => (
@@ -189,6 +231,40 @@ export function OnboardingScreen({ navigation }: Props) {
     }
   };
 
+  const renderFeatureHighlights = () => {
+    if (!featureContent) {
+      return null;
+    }
+    return (
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {featureContent.features.map(feature => (
+          <FeatureHighlightCard
+            key={feature.title.en}
+            emoji={feature.emoji}
+            title={feature.title[language]}
+            description={feature.description[language]}
+            emphasized={feature.emphasized}
+          />
+        ))}
+      </ScrollView>
+    );
+  };
+
+  const featureContent =
+    stepConfig.kind === 'feature'
+      ? getFeatureStepContent(stepConfig.forQuestion, answers)
+      : null;
+
+  const title =
+    stepConfig.kind === 'question'
+      ? stepConfig.title[language]
+      : (featureContent?.title[language] ?? '');
+
+  const subtitle =
+    stepConfig.kind === 'question'
+      ? stepConfig.subtitle[language]
+      : (featureContent?.subtitle[language] ?? '');
+
   const footerLabel =
     step === ONBOARDING_STEP_COUNT - 1 ? copy.finish : copy.next;
 
@@ -196,8 +272,8 @@ export function OnboardingScreen({ navigation }: Props) {
     <OnboardingStepLayout
       stepIndex={step}
       stepLabel={copy.stepOf(step + 1, ONBOARDING_STEP_COUNT)}
-      title={stepConfig.title[language]}
-      subtitle={stepConfig.subtitle[language]}
+      title={title}
+      subtitle={subtitle}
       skipLabel={copy.skip}
       skipAllLabel={copy.skipAll}
       onSkipStep={onSkipStep}
@@ -209,7 +285,9 @@ export function OnboardingScreen({ navigation }: Props) {
           disabled={!canProceed()}
         />
       }>
-      <View className="flex-1">{renderOptions()}</View>
+      <View className="flex-1">
+        {isFeatureStep ? renderFeatureHighlights() : renderOptions()}
+      </View>
     </OnboardingStepLayout>
   );
 }
