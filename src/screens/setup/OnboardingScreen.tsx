@@ -78,7 +78,7 @@ export function OnboardingScreen({ navigation }: Props) {
       };
       profile.aiPromptContext = buildUserPromptContext(profile);
       completeOnboardingStore(profile);
-      navigation.replace('Home');
+      navigation.replace('PlanDetail');
     },
     [language, navigation, completeOnboardingStore],
   );

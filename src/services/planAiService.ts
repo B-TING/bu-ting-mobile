@@ -1,3 +1,4 @@
+import { enrichPlaceInfo } from '../constants/placeCatalog';
 import {
   ACCOMMODATION_SEARCH,
   BUSAN_ATTRACTIONS,
@@ -29,14 +30,16 @@ function attractionToRoute(attractionId: string, sequence: number): RouteItem | 
   if (!spot?.meta) {
     return null;
   }
+  const placeId = spot.meta.placeId ?? `tour_${spot.id}`;
   return {
     itemId: createId('r'),
     sequence,
-    placeId: spot.meta.placeId ?? `tour_${spot.id}`,
+    placeId,
     placeName: spot.label.ko,
     type: 'ATTRACTION',
     location: { lat: spot.meta.lat, lng: spot.meta.lng },
     isVisited: false,
+    placeInfo: enrichPlaceInfo(placeId, spot.label.ko, 'ATTRACTION', 'ko'),
   };
 }
 
@@ -61,7 +64,16 @@ function buildItinerary(
     const routes: RouteItem[] = [];
 
     if (wizard.hasHeavyBaggage && d === 0) {
-      routes.push({ ...LOCKER_SPOT, itemId: createId('r') });
+      routes.push({
+        ...LOCKER_SPOT,
+        itemId: createId('r'),
+        placeInfo: enrichPlaceInfo(
+          LOCKER_SPOT.placeId,
+          LOCKER_SPOT.placeName,
+          'LOCKER',
+          'ko',
+        ),
+      });
     }
 
     const perDay = Math.max(2, Math.ceil(rotated.length / dayCount));
@@ -76,14 +88,16 @@ function buildItinerary(
     if (wizard.accommodationMode === 'booked' && wizard.accommodationPlaceId && d === dayCount - 1) {
       const stay = ACCOMMODATION_SEARCH.find(s => s.id === wizard.accommodationPlaceId);
       if (stay?.meta) {
+        const placeId = stay.meta.placeId ?? stay.id;
         routes.push({
           itemId: createId('r'),
           sequence: routes.length,
-          placeId: stay.meta.placeId ?? stay.id,
+          placeId,
           placeName: stay.label.ko,
           type: 'ACCOMMODATION',
           location: { lat: stay.meta.lat, lng: stay.meta.lng },
           isVisited: false,
+          placeInfo: enrichPlaceInfo(placeId, stay.label.ko, 'ACCOMMODATION', 'ko'),
         });
       }
     }
@@ -129,6 +143,17 @@ function buildPlan(
   const userId = onboarding ? 'local-user' : 'guest';
   const displayName =
     onboarding?.language === 'ko' ? '여행자' : 'Traveler';
+  const members: TravelPlan['members'] = [
+    { userId, nickname: displayName, role: 'OWNER' },
+  ];
+  const extra = Math.min(4, Math.max(0, wizard.companionCount - 1));
+  for (let i = 0; i < extra; i++) {
+    members.push({
+      userId: `member-${i + 1}`,
+      nickname: onboarding?.language === 'ko' ? `일행 ${i + 1}` : `Guest ${i + 1}`,
+      role: i === 0 ? 'EDITOR' : 'VIEWER',
+    });
+  }
 
   return {
     planId: createId('plan-'),
@@ -137,13 +162,7 @@ function buildPlan(
     endDate: wizard.endDate,
     status,
     constraints: buildConstraints(wizard),
-    members: [
-      {
-        userId,
-        nickname: displayName,
-        role: 'OWNER',
-      },
-    ],
+    members,
     itinerary: buildItinerary(wizard, dayCount, variant),
     createdAt: new Date().toISOString(),
     aiPromptContext: buildPlanRequestPrompt(wizard, onboarding),

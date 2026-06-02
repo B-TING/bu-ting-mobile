@@ -130,7 +130,10 @@ export function PlanWizardScreen({ navigation }: Props) {
         const plan = await requestAutoPlan(answers, onboarding);
         addPlan(plan);
         confirmPlan(plan.planId);
-        navigation.replace('Home');
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'PlanDetail', params: { planId: plan.planId } }],
+        });
       } else {
         const candidates = await requestPlanCandidates(answers, onboarding);
         setPlanCandidates(candidates);

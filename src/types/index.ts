@@ -22,5 +22,9 @@ export type {
   PlanStatus,
   RouteItem,
   DailyItinerary,
+  PlanMember,
+  BudgetEntry,
+  PlaceInfo,
+  TravelLeg,
 } from './travelPlan';
 export { toTravelPlanResponse } from './travelPlan';

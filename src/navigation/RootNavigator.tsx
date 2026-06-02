@@ -4,8 +4,9 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { layout } from '../constants/layout';
-import { HomeScreen } from '../screens/HomeScreen';
+import { MainHomeScreen } from '../screens/MainHomeScreen';
 import { PlanCandidatesScreen } from '../screens/plan/PlanCandidatesScreen';
+import { PlanDetailScreen } from '../screens/plan/PlanDetailScreen';
 import { PlanWizardScreen } from '../screens/plan/PlanWizardScreen';
 import { LanguageSelectionScreen } from '../screens/setup/LanguageSelectionScreen';
 import { LoginScreen } from '../screens/setup/LoginScreen';
@@ -24,7 +25,7 @@ const INITIAL_ROUTES: Record<SetupPhase, keyof RootStackParamList> = {
   language: 'LanguageSelection',
   login: 'Login',
   onboarding: 'Onboarding',
-  main: 'Home',
+  main: 'PlanDetail',
 };
 
 const HYDRATE_TIMEOUT_MS = 5000;
@@ -82,9 +83,10 @@ export function RootNavigator() {
         />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="MainHome" component={MainHomeScreen} />
         <Stack.Screen name="PlanWizard" component={PlanWizardScreen} />
         <Stack.Screen name="PlanCandidates" component={PlanCandidatesScreen} />
+        <Stack.Screen name="PlanDetail" component={PlanDetailScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

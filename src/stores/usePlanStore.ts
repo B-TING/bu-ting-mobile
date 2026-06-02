@@ -2,26 +2,33 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
+import { enrichPlaceInfo } from '../constants/placeCatalog';
 import type { PlanWizardAnswers } from '../types/planWizard';
-import type { TravelPlan } from '../types/travelPlan';
+import type { BudgetEntry, RouteItem, TravelPlan } from '../types/travelPlan';
+import { createId } from '../utils/id';
 
 type PlanState = {
   plans: TravelPlan[];
   activePlanId: string | null;
   planCandidates: TravelPlan[] | null;
+  budgetByPlan: Record<string, BudgetEntry[]>;
   addPlan: (plan: TravelPlan) => void;
   setActivePlan: (planId: string) => void;
   confirmPlan: (planId: string) => void;
   setPlanCandidates: (candidates: TravelPlan[] | null) => void;
   clearCandidates: () => void;
+  toggleRouteVisited: (planId: string, itemId: string) => void;
+  addBudgetEntry: (entry: Omit<BudgetEntry, 'entryId'>) => void;
+  getBudgetForPlan: (planId: string) => BudgetEntry[];
 };
 
 export const usePlanStore = create<PlanState>()(
   persist(
-    set => ({
+    (set, get) => ({
       plans: [],
       activePlanId: null,
       planCandidates: null,
+      budgetByPlan: {},
       addPlan: plan =>
         set(state => ({
           plans: [...state.plans.filter(p => p.planId !== plan.planId), plan],
@@ -37,6 +44,33 @@ export const usePlanStore = create<PlanState>()(
         })),
       setPlanCandidates: candidates => set({ planCandidates: candidates }),
       clearCandidates: () => set({ planCandidates: null }),
+      toggleRouteVisited: (planId, itemId) =>
+        set(state => ({
+          plans: state.plans.map(plan => {
+            if (plan.planId !== planId) {
+              return plan;
+            }
+            return {
+              ...plan,
+              itinerary: plan.itinerary.map(day => ({
+                ...day,
+                routes: day.routes.map(r =>
+                  r.itemId === itemId ? { ...r, isVisited: !r.isVisited } : r,
+                ),
+              })),
+            };
+          }),
+        })),
+      addBudgetEntry: entry => {
+        const full: BudgetEntry = { ...entry, entryId: createId('exp-') };
+        set(state => ({
+          budgetByPlan: {
+            ...state.budgetByPlan,
+            [entry.planId]: [...(state.budgetByPlan[entry.planId] ?? []), full],
+          },
+        }));
+      },
+      getBudgetForPlan: planId => get().budgetByPlan[planId] ?? [],
     }),
     {
       name: '@buting/plans',
@@ -44,6 +78,7 @@ export const usePlanStore = create<PlanState>()(
       partialize: state => ({
         plans: state.plans,
         activePlanId: state.activePlanId,
+        budgetByPlan: state.budgetByPlan,
       }),
     },
   ),
@@ -57,6 +92,25 @@ export function selectActivePlan(state: PlanState): TravelPlan | null {
     );
   }
   return state.plans.find(p => p.planId === state.activePlanId) ?? null;
+}
+
+export function selectPlanById(planId: string) {
+  return (state: PlanState) =>
+    state.plans.find(p => p.planId === planId) ?? null;
+}
+
+/** 기존 플랜에 placeInfo가 없을 때 런타임 보강 */
+export function hydrateRoutePlaceInfo(
+  route: RouteItem,
+  lang: 'ko' | 'en' | 'ja' | 'zh',
+): RouteItem {
+  if (route.placeInfo) {
+    return route;
+  }
+  return {
+    ...route,
+    placeInfo: enrichPlaceInfo(route.placeId, route.placeName, route.type, lang),
+  };
 }
 
 export const emptyWizardAnswers = (): PlanWizardAnswers => ({

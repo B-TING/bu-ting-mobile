@@ -38,7 +38,10 @@ export function PlanCandidatesScreen({ navigation }: Props) {
     addPlan(plan);
     confirmPlan(plan.planId);
     clearCandidates();
-    navigation.replace('Home');
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'PlanDetail', params: { planId: plan.planId } }],
+    });
   };
 
   return (

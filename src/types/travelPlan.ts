@@ -25,6 +25,16 @@ export type PlanMember = {
   role: MemberRole;
 };
 
+export type PlaceInfo = {
+  description: string;
+  hours: string;
+  category: string;
+  address: string;
+  rating?: number;
+  reviewCount?: number;
+  dwellMinutes?: number;
+};
+
 export type RouteItem = {
   itemId: string;
   sequence: number;
@@ -33,6 +43,24 @@ export type RouteItem = {
   type: RouteItemType;
   location: { lat: number; lng: number };
   isVisited: boolean;
+  placeInfo?: PlaceInfo;
+};
+
+export type BudgetEntry = {
+  entryId: string;
+  planId: string;
+  label: string;
+  amount: number;
+  currency: 'KRW';
+  date: string;
+  paidByUserId: string;
+  routeItemId?: string;
+};
+
+export type TravelLeg = {
+  mode: 'walk' | 'drive' | 'transit';
+  durationMinutes: number;
+  distanceKm: number;
 };
 
 export type DailyItinerary = {
