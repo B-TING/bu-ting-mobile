@@ -5,6 +5,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { layout } from '../constants/layout';
 import { HomeScreen } from '../screens/HomeScreen';
+import { PlanCandidatesScreen } from '../screens/plan/PlanCandidatesScreen';
+import { PlanWizardScreen } from '../screens/plan/PlanWizardScreen';
 import { LanguageSelectionScreen } from '../screens/setup/LanguageSelectionScreen';
 import { LoginScreen } from '../screens/setup/LoginScreen';
 import { OnboardingScreen } from '../screens/setup/OnboardingScreen';
@@ -81,6 +83,8 @@ export function RootNavigator() {
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Onboarding" component={OnboardingScreen} />
         <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="PlanWizard" component={PlanWizardScreen} />
+        <Stack.Screen name="PlanCandidates" component={PlanCandidatesScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

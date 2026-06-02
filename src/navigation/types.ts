@@ -3,6 +3,8 @@ export type RootStackParamList = {
   Login: undefined;
   Onboarding: undefined;
   Home: undefined;
+  PlanWizard: undefined;
+  PlanCandidates: undefined;
 };
 
 export type SetupPhase = 'language' | 'login' | 'onboarding' | 'main';
