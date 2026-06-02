@@ -4,7 +4,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DayChips } from '../../components/plan/DayChips';
-import { HamburgerButton } from '../../components/plan/HamburgerButton';
+import { BackButton } from '../../components/plan/BackButton';
 import { MemberList } from '../../components/plan/MemberList';
 import { PlaceDetailModal } from '../../components/plan/PlaceDetailModal';
 import { PlanTabPager } from '../../components/plan/PlanTabPager';
@@ -86,7 +86,10 @@ export function PlanDetailScreen({ navigation, route }: Props) {
         className="flex-1 bg-brand-background px-6"
         style={{ paddingTop: insets.top + 8, paddingBottom: insets.bottom + 24 }}>
         <View className="mb-6 flex-row items-center">
-          <HamburgerButton onPress={() => navigation.navigate('MainHome')} />
+          <BackButton
+            accessibilityLabel={language === 'ko' ? '메인으로' : 'Back to home'}
+            onPress={() => navigation.navigate('MainHome')}
+          />
           <Text className="flex-1 text-2xl font-bold text-brand-primary">부팅</Text>
         </View>
         <Text className="mb-10 text-base text-brand-muted">
@@ -278,7 +281,10 @@ export function PlanDetailScreen({ navigation, route }: Props) {
   return (
     <View className="flex-1 bg-brand-background" style={{ paddingTop: insets.top }}>
       <View className="flex-row items-center border-b border-brand-border bg-brand-surface px-4 py-3">
-        <HamburgerButton onPress={() => navigation.navigate('MainHome')} />
+        <BackButton
+          accessibilityLabel={language === 'ko' ? '메인으로' : 'Back to home'}
+          onPress={() => navigation.navigate('MainHome')}
+        />
         <Text className="flex-1 text-lg font-bold text-brand-text" numberOfLines={1}>
           {enrichedPlan.title}
         </Text>

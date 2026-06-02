@@ -1,9 +1,22 @@
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import {
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { NaverMapPlaceholder } from './NaverMapPlaceholder';
 import type { RouteItem } from '../../types/travelPlan';
+
+/** 하단 시트 최대 높이 (화면 대비) */
+const SHEET_HEIGHT_RATIO = 0.52;
+/** 지도 확대 시 상단 지도 영역 */
+const MAP_AREA_RATIO = 0.5;
 
 type PlaceDetailModalProps = {
   visible: boolean;
@@ -30,7 +43,11 @@ export function PlaceDetailModal({
   onToggleVisited,
 }: PlaceDetailModalProps) {
   const insets = useSafeAreaInsets();
+  const { height: screenHeight } = useWindowDimensions();
   const [mapExpanded, setMapExpanded] = useState(false);
+
+  const sheetMaxHeight = Math.round(screenHeight * SHEET_HEIGHT_RATIO);
+  const mapAreaHeight = Math.round(screenHeight * MAP_AREA_RATIO);
 
   if (!route) {
     return null;
@@ -44,9 +61,15 @@ export function PlaceDetailModal({
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
-      <View className="flex-1 bg-black/50">
+      <View style={styles.overlay}>
+        <Pressable style={styles.backdrop} onPress={handleClose} accessibilityLabel="Close" />
+
         {mapExpanded && (
-          <View className="absolute inset-0" style={{ paddingTop: insets.top }}>
+          <View
+            style={[
+              styles.mapLayer,
+              { height: mapAreaHeight, paddingTop: insets.top },
+            ]}>
             <NaverMapPlaceholder
               title={copy.mapPlaceholder}
               subtitle={copy.mapPlaceholderSub}
@@ -56,21 +79,27 @@ export function PlaceDetailModal({
             />
             <Pressable
               onPress={() => setMapExpanded(false)}
-              className="absolute right-4 top-4 z-10 rounded-full bg-white/95 px-3 py-2 active:opacity-90"
-              style={{ marginTop: insets.top }}>
-              <Text className="text-sm font-bold text-brand-primary">{copy.close}</Text>
+              style={[styles.mapCloseBtn, { top: insets.top + 8 }]}>
+              <Text style={styles.mapCloseText}>{copy.close}</Text>
             </Pressable>
           </View>
         )}
 
         <View
-          className="mt-auto max-h-[88%] rounded-t-3xl bg-brand-background px-5 pb-8 pt-4"
-          style={{ marginTop: mapExpanded ? '48%' : undefined }}>
-          <View className="mb-3 h-1 w-10 self-center rounded-full bg-brand-border" />
-          <ScrollView showsVerticalScrollIndicator={false}>
-            <Text className="mb-1 text-2xl font-bold text-brand-text">
-              {route.placeName}
-            </Text>
+          style={[
+            styles.sheet,
+            {
+              maxHeight: sheetMaxHeight,
+              paddingBottom: Math.max(insets.bottom, 16),
+            },
+          ]}>
+          <View style={styles.handle} />
+          <ScrollView
+            style={styles.sheetScroll}
+            contentContainerStyle={styles.sheetScrollContent}
+            showsVerticalScrollIndicator={false}
+            bounces={false}>
+            <Text className="mb-1 text-xl font-bold text-brand-text">{route.placeName}</Text>
             {info && (
               <Text className="mb-3 text-sm text-brand-muted">
                 ★ {info.rating ?? '—'} ({info.reviewCount?.toLocaleString() ?? 0}) ·{' '}
@@ -111,11 +140,11 @@ export function PlaceDetailModal({
                 <Text className="mb-2 text-sm leading-5 text-brand-text">
                   {info.description}
                 </Text>
-                {info.dwellMinutes && (
+                {info.dwellMinutes ? (
                   <Text className="mb-1 text-xs text-brand-muted">
                     {copy.dwell(info.dwellMinutes)}
                   </Text>
-                )}
+                ) : null}
                 <Text className="text-xs text-brand-muted">{info.hours}</Text>
                 <Text className="mt-1 text-xs text-brand-muted">{info.address}</Text>
               </View>
@@ -123,11 +152,66 @@ export function PlaceDetailModal({
           </ScrollView>
           <Pressable
             onPress={handleClose}
-            className="mt-4 items-center rounded-2xl bg-brand-primary py-3 active:opacity-90">
-            <Text className="font-bold text-white">{copy.close}</Text>
+            className="mx-5 mt-2 items-center rounded-2xl bg-brand-primary py-3 active:opacity-90">
+            <Text className="text-[15px] font-bold text-white">{copy.close}</Text>
           </Pressable>
         </View>
       </View>
     </Modal>
   );
 }
+
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  mapLayer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1,
+  },
+  mapCloseBtn: {
+    position: 'absolute',
+    right: 16,
+    zIndex: 2,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  mapCloseText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0077B6',
+  },
+  sheet: {
+    zIndex: 2,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    backgroundColor: '#F8FAFC',
+    overflow: 'hidden',
+  },
+  handle: {
+    alignSelf: 'center',
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#E2E8F0',
+    marginTop: 10,
+    marginBottom: 8,
+  },
+  sheetScroll: {
+    flexGrow: 0,
+  },
+  sheetScrollContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 8,
+  },
+});
