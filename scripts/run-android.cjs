@@ -36,9 +36,56 @@ if (!metroStatus(port)) {
   );
 }
 
+let extraArgs = process.argv.slice(2);
+const wantsAvd = extraArgs.includes('--avd');
+if (wantsAvd) {
+  extraArgs = extraArgs.filter(a => a !== '--avd');
+}
+
+const hasDeviceArg =
+  extraArgs.some(a => a === '--deviceId' || a.startsWith('--deviceId=')) ||
+  wantsAvd;
+
+let deviceLines = [];
+if (adb) {
+  const devices = spawnSync(adb, ['devices'], { encoding: 'utf8', env });
+  deviceLines =
+    devices.stdout
+      ?.split('\n')
+      .filter(line => /\tdevice\s*$/m.test(line))
+      .map(line => line.split('\t')[0].trim()) ?? [];
+}
+
+if (wantsAvd) {
+  const emulator = deviceLines.find(id => id.startsWith('emulator-'));
+  if (!emulator) {
+    console.error(
+      '[Bu-Ting] AVD가 adb에 보이지 않습니다. Android Studio → Device Manager에서 에뮬레이터를 먼저 실행하세요.',
+    );
+    process.exit(1);
+  }
+  extraArgs.push('--deviceId', emulator);
+  // gradle.properties는 ARM 실기기용만 빌드 → x86 AVD에서 libreactnative.so 누락으로 즉시 종료됨
+  env.ORG_GRADLE_PROJECT_reactNativeArchitectures = 'x86_64';
+  console.log(`[Bu-Ting] AVD 대상: ${emulator} (네이티브 ABI: x86_64)`);
+} else if (adb && !hasDeviceArg && deviceLines.length > 1) {
+  const emulators = deviceLines.filter(id => id.startsWith('emulator-'));
+  console.warn(
+    `[Bu-Ting] 연결된 기기가 ${deviceLines.length}대입니다: ${deviceLines.join(', ')}`,
+  );
+  if (emulators.length) {
+    console.warn(
+      `  AVD만 쓰려면: npm run android:avd  또는  npm run android -- --deviceId ${emulators[0]}`,
+    );
+  }
+  console.warn(
+    `  지금은 react-native가 첫 번째 기기(${deviceLines[0]})에 설치합니다.\n`,
+  );
+}
+
 const result = spawnSync(
   'npx',
-  ['react-native', 'run-android', ...process.argv.slice(2)],
+  ['react-native', 'run-android', ...extraArgs],
   { cwd: projectRoot, env, stdio: 'inherit', shell: true },
 );
 

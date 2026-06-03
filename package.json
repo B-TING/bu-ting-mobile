@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "android": "node scripts/run-android.cjs",
+    "android:avd": "node scripts/run-android.cjs -- --avd",
     "ios": "react-native run-ios",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

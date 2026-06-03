@@ -30,25 +30,37 @@ export function PlanTabPager({
 }: PlanTabPagerProps) {
   const width = Dimensions.get('window').width;
   const scrollRef = useRef<ScrollView>(null);
+  /** 탭 버튼·위젯 등 코드로 페이지를 맞출 때 — 스와이프 동기화 이벤트 무시 */
+  const syncingFromStateRef = useRef(false);
 
   useEffect(() => {
     const index = TAB_ORDER.indexOf(active);
-    if (index >= 0) {
-      scrollRef.current?.scrollTo({ x: index * width, animated: true });
+    if (index < 0) {
+      return;
     }
+    syncingFromStateRef.current = true;
+    scrollRef.current?.scrollTo({ x: index * width, animated: false });
   }, [active, width]);
 
   const scrollToTab = (tab: PlanDetailTab) => {
-    const index = TAB_ORDER.indexOf(tab);
-    if (index >= 0) {
-      scrollRef.current?.scrollTo({ x: index * width, animated: true });
+    if (tab === active) {
+      return;
     }
     onChange(tab);
   };
 
-  const onMomentumScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+  const syncTabFromScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const index = Math.round(e.nativeEvent.contentOffset.x / width);
-    const next = TAB_ORDER[index];
+    const clamped = Math.max(0, Math.min(TAB_ORDER.length - 1, index));
+    const next = TAB_ORDER[clamped];
+
+    if (syncingFromStateRef.current) {
+      if (next === active) {
+        syncingFromStateRef.current = false;
+      }
+      return;
+    }
+
     if (next && next !== active) {
       onChange(next);
     }
@@ -62,14 +74,16 @@ export function PlanTabPager({
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={onMomentumScrollEnd}
+        onMomentumScrollEnd={syncTabFromScroll}
+        onScrollEndDrag={syncTabFromScroll}
         scrollEventThrottle={16}>
         {TAB_ORDER.map(tab => (
           <ScrollView
             key={tab}
             style={{ width }}
             contentContainerStyle={{ paddingBottom: bottomInset + 24 }}
-            showsVerticalScrollIndicator={false}>
+            showsVerticalScrollIndicator={false}
+            nestedScrollEnabled>
             {pages[tab]}
           </ScrollView>
         ))}
