@@ -6,7 +6,7 @@ import {
   View,
 } from 'react-native';
 
-const heroImage = require('../../../assets/images/home-hero.png');
+const heroImage = require('../../../assets/images/home-hero.jpg');
 
 type HeroBannerProps = {
   title: string;
