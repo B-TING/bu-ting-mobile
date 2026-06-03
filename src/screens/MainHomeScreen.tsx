@@ -3,6 +3,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { DevOnboardingTrigger } from '../components/dev/DevOnboardingTrigger';
 import { PrimaryButton } from '../components/setup/PrimaryButton';
 import {
   calcTripDday,
@@ -90,7 +91,9 @@ export function MainHomeScreen({ navigation }: Props) {
         className="flex-1 px-5"
         contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
         showsVerticalScrollIndicator={false}>
-        <Text className="mb-1 text-3xl font-bold text-brand-primary">{copy.title}</Text>
+        <DevOnboardingTrigger navigation={navigation}>
+          <Text className="mb-1 text-3xl font-bold text-brand-primary">{copy.title}</Text>
+        </DevOnboardingTrigger>
         <Text className="mb-6 text-base text-brand-muted">{copy.subtitle}</Text>
 
         <PrimaryButton

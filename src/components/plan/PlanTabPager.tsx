@@ -1,4 +1,4 @@
-import { useRef, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import {
   Dimensions,
   NativeScrollEvent,
@@ -30,6 +30,13 @@ export function PlanTabPager({
 }: PlanTabPagerProps) {
   const width = Dimensions.get('window').width;
   const scrollRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    const index = TAB_ORDER.indexOf(active);
+    if (index >= 0) {
+      scrollRef.current?.scrollTo({ x: index * width, animated: true });
+    }
+  }, [active, width]);
 
   const scrollToTab = (tab: PlanDetailTab) => {
     const index = TAB_ORDER.indexOf(tab);

@@ -14,9 +14,6 @@ type PlanTabBarProps = {
 };
 
 function tabLabel(tab: (typeof PLAN_DETAIL_TABS)[number], language: AppLanguage) {
-  if (tab.id === 'budget') {
-    return '$';
-  }
   return tab.label[language];
 }
 

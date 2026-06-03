@@ -33,6 +33,19 @@ export const PLAN_DETAIL_COPY: Record<
     budgetEmpty: string;
     exploreSoon: string;
     recordsSoon: string;
+    inviteMembers: string;
+    tripPeriod: string;
+    nights: (n: number) => string;
+    dayLabel: (n: number) => string;
+    schedulePreview: string;
+    dailyHighlights: string;
+    explorePreview: string;
+    budgetPreview: string;
+    recordsPreview: string;
+    viewTab: string;
+    placesCount: (n: number) => string;
+    noRouteThatDay: string;
+    morePlaces: (n: number) => string;
     openDetail: string;
     close: string;
     dwell: (m: number) => string;
@@ -62,6 +75,19 @@ export const PLAN_DETAIL_COPY: Record<
     budgetEmpty: '아직 기록된 지출이 없어요',
     exploreSoon: '탐색 탭은 곧 TourAPI·맵 연동과 함께 제공됩니다.',
     recordsSoon: '사진·메모 기록 기능은 준비 중입니다.',
+    inviteMembers: '일행 초대하기',
+    tripPeriod: '여행 기간',
+    nights: n => `${n}박`,
+    dayLabel: n => `Day ${n}`,
+    schedulePreview: '일정',
+    dailyHighlights: '일정 하이라이트',
+    explorePreview: '탐색',
+    budgetPreview: '가계부',
+    recordsPreview: '기록',
+    viewTab: '보기 →',
+    placesCount: n => `총 ${n}곳`,
+    noRouteThatDay: '일정 없음',
+    morePlaces: n => `외 ${n}곳`,
     openDetail: '상세 보기',
     close: '닫기',
     dwell: m => `보통 ${m}분 머무름`,
@@ -90,6 +116,19 @@ export const PLAN_DETAIL_COPY: Record<
     budgetEmpty: 'No expenses yet',
     exploreSoon: 'Explore will arrive with TourAPI and maps.',
     recordsSoon: 'Photo and note records are coming soon.',
+    inviteMembers: 'Invite companions',
+    tripPeriod: 'Trip dates',
+    nights: n => `${n} night${n === 1 ? '' : 's'}`,
+    dayLabel: n => `Day ${n}`,
+    schedulePreview: 'Schedule',
+    dailyHighlights: 'Daily highlights',
+    explorePreview: 'Explore',
+    budgetPreview: 'Budget',
+    recordsPreview: 'Records',
+    viewTab: 'View →',
+    placesCount: n => `${n} places`,
+    noRouteThatDay: 'No plans',
+    morePlaces: n => `+${n} more`,
     openDetail: 'Details',
     close: 'Close',
     dwell: m => `Usually ${m} min here`,
@@ -118,6 +157,19 @@ export const PLAN_DETAIL_COPY: Record<
     budgetEmpty: '支出記録なし',
     exploreSoon: '探索はTourAPI連携後に提供します。',
     recordsSoon: '記録機能は準備中です。',
+    inviteMembers: '同行者を招待',
+    tripPeriod: '旅行期間',
+    nights: n => `${n}泊`,
+    dayLabel: n => `Day ${n}`,
+    schedulePreview: '日程',
+    dailyHighlights: '日程ハイライト',
+    explorePreview: '探索',
+    budgetPreview: '家計',
+    recordsPreview: '記録',
+    viewTab: '見る →',
+    placesCount: n => `全${n}箇所`,
+    noRouteThatDay: '予定なし',
+    morePlaces: n => `他${n}箇所`,
     openDetail: '詳細',
     close: '閉じる',
     dwell: m => `通常${m}分`,
@@ -146,6 +198,19 @@ export const PLAN_DETAIL_COPY: Record<
     budgetEmpty: '暂无支出记录',
     exploreSoon: '探索将与 TourAPI 和地图一同上线。',
     recordsSoon: '照片与笔记记录即将推出。',
+    inviteMembers: '邀请同行',
+    tripPeriod: '行程日期',
+    nights: n => `${n}晚`,
+    dayLabel: n => `第 ${n} 天`,
+    schedulePreview: '行程',
+    dailyHighlights: '每日亮点',
+    explorePreview: '探索',
+    budgetPreview: '账本',
+    recordsPreview: '记录',
+    viewTab: '查看 →',
+    placesCount: n => `共 ${n} 处`,
+    noRouteThatDay: '暂无安排',
+    morePlaces: n => `等 ${n} 处`,
     openDetail: '详情',
     close: '关闭',
     dwell: m => `通常停留 ${m} 分钟`,

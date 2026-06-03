@@ -3,6 +3,7 @@ import { ScrollView, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { FeatureHighlightCard } from '../../components/setup/FeatureHighlightCard';
+import { OnboardingThankYouView } from '../../components/setup/OnboardingThankYouView';
 import { OnboardingStepLayout } from '../../components/setup/OnboardingStepLayout';
 import { OptionCard } from '../../components/setup/OptionCard';
 import { PrimaryButton } from '../../components/setup/PrimaryButton';
@@ -62,12 +63,15 @@ export function OnboardingScreen({ navigation }: Props) {
   const completeOnboardingStore = useAppStore(state => state.completeOnboarding);
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<OnboardingAnswers>(emptyAnswers);
+  const [pendingComplete, setPendingComplete] = useState<OnboardingAnswers | null>(
+    null,
+  );
 
   const copy = SETUP_COPY[language];
   const stepConfig = ONBOARDING_FLOW[step];
   const isFeatureStep = stepConfig.kind === 'feature';
 
-  const completeOnboarding = useCallback(
+  const persistAndNavigate = useCallback(
     (finalAnswers: OnboardingAnswers) => {
       const completedAt = new Date().toISOString();
       const profile: OnboardingProfile = {
@@ -81,6 +85,13 @@ export function OnboardingScreen({ navigation }: Props) {
       navigation.replace('PlanDetail');
     },
     [language, navigation, completeOnboardingStore],
+  );
+
+  const showThankYouThenComplete = useCallback(
+    (finalAnswers: OnboardingAnswers) => {
+      setPendingComplete(finalAnswers);
+    },
+    [],
   );
 
   const markQuestionSkipped = (questionIndex: number) => {
@@ -97,7 +108,7 @@ export function OnboardingScreen({ navigation }: Props) {
       setStep(s => s + 1);
       return;
     }
-    completeOnboarding(answers);
+    showThankYouThenComplete(answers);
   };
 
   const onSkipStep = () => {
@@ -108,7 +119,7 @@ export function OnboardingScreen({ navigation }: Props) {
       }
       const nextStep = step + 2;
       if (nextStep >= ONBOARDING_STEP_COUNT) {
-        completeOnboarding(answers);
+        showThankYouThenComplete(answers);
         return;
       }
       setStep(nextStep);
@@ -118,7 +129,7 @@ export function OnboardingScreen({ navigation }: Props) {
   };
 
   const onSkipAll = () => {
-    completeOnboarding({
+    showThankYouThenComplete({
       ...answers,
       skippedAll: true,
       skippedSteps: Array.from(
@@ -267,6 +278,23 @@ export function OnboardingScreen({ navigation }: Props) {
 
   const footerLabel =
     step === ONBOARDING_STEP_COUNT - 1 ? copy.finish : copy.next;
+
+  const handleThankYouComplete = useCallback(() => {
+    if (pendingComplete) {
+      persistAndNavigate(pendingComplete);
+    }
+  }, [pendingComplete, persistAndNavigate]);
+
+  if (pendingComplete) {
+    return (
+      <OnboardingThankYouView
+        title={copy.thankYouTitle}
+        privacy={copy.thankYouPrivacy}
+        waitLabel={copy.thankYouWait}
+        onComplete={handleThankYouComplete}
+      />
+    );
+  }
 
   return (
     <OnboardingStepLayout

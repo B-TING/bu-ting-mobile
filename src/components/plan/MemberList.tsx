@@ -1,10 +1,12 @@
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import type { MemberRole, PlanMember } from '../../types/travelPlan';
 type MemberListProps = {
   members: PlanMember[];
   title: string;
   roleLabels: Record<MemberRole, string>;
+  inviteLabel?: string;
+  onInvite?: () => void;
 };
 
 function initials(name: string) {
@@ -13,10 +15,27 @@ function initials(name: string) {
 
 const AVATAR_COLORS = ['#0077B6', '#00B4D8', '#F97316', '#8B5CF6', '#10B981'];
 
-export function MemberList({ members, title, roleLabels }: MemberListProps) {
+export function MemberList({
+  members,
+  title,
+  roleLabels,
+  inviteLabel,
+  onInvite,
+}: MemberListProps) {
   return (
     <View className="mb-4">
-      <Text className="mb-3 text-base font-bold text-brand-text">{title}</Text>
+      <View className="mb-3 flex-row items-center justify-between">
+        <Text className="text-base font-bold text-brand-text">{title}</Text>
+        {inviteLabel && onInvite && (
+          <Pressable
+            onPress={onInvite}
+            className="rounded-full border border-brand-primary bg-brand-selected px-3 py-1.5 active:opacity-80"
+            accessibilityRole="button"
+            accessibilityLabel={inviteLabel}>
+            <Text className="text-xs font-semibold text-brand-primary">{inviteLabel}</Text>
+          </Pressable>
+        )}
+      </View>
       {members.map((m, i) => (
         <View
           key={m.userId}

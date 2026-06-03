@@ -115,6 +115,9 @@ export const ONBOARDING_FLOW: OnboardingFlowStep[] = ONBOARDING_STEPS.flatMap(
 
 export const ONBOARDING_STEP_COUNT = ONBOARDING_FLOW.length;
 
+/** 온보딩 완료 감사 화면 표시 후 다음 화면으로 이동하기까지 대기(ms) */
+export const ONBOARDING_COMPLETE_DELAY_MS = 2400;
+
 export type FeatureHighlight = {
   emoji: string;
   title: Record<AppLanguage, string>;
@@ -583,6 +586,9 @@ export const SETUP_COPY: Record<
     next: string;
     finish: string;
     stepOf: (current: number, total: number) => string;
+    thankYouTitle: string;
+    thankYouPrivacy: string;
+    thankYouWait: string;
   }
 > = {
   ko: {
@@ -599,6 +605,10 @@ export const SETUP_COPY: Record<
     next: '다음',
     finish: '시작하기',
     stepOf: (c, t) => `${c} / ${t}`,
+    thankYouTitle: '설문에 응하여 주셔서 감사합니다!',
+    thankYouPrivacy:
+      '응답 정보는 사용자에게 필요한 정보를 제공하는 데 이용됩니다.',
+    thankYouWait: '잠시만 기다려 주세요…',
   },
   en: {
     languageTitle: 'Choose your language',
@@ -614,6 +624,10 @@ export const SETUP_COPY: Record<
     next: 'Next',
     finish: 'Get started',
     stepOf: (c, t) => `${c} / ${t}`,
+    thankYouTitle: 'Thank you for completing the survey!',
+    thankYouPrivacy:
+      'Your responses are used to provide information tailored to your needs.',
+    thankYouWait: 'Just a moment…',
   },
   ja: {
     languageTitle: '言語を選択',
@@ -629,6 +643,10 @@ export const SETUP_COPY: Record<
     next: '次へ',
     finish: 'はじめる',
     stepOf: (c, t) => `${c} / ${t}`,
+    thankYouTitle: 'アンケートへのご協力ありがとうございます！',
+    thankYouPrivacy:
+      'ご回答は、お客様に必要な情報を提供するために利用されます。',
+    thankYouWait: '少々お待ちください…',
   },
   zh: {
     languageTitle: '选择语言',
@@ -644,5 +662,8 @@ export const SETUP_COPY: Record<
     next: '下一步',
     finish: '开始',
     stepOf: (c, t) => `${c} / ${t}`,
+    thankYouTitle: '感谢您完成问卷！',
+    thankYouPrivacy: '您的回答将用于向您提供所需的信息。',
+    thankYouWait: '请稍候…',
   },
 };
