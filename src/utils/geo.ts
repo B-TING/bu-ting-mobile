@@ -1,6 +1,6 @@
 import type { TravelLeg } from '../types/travelPlan';
 
-function haversineKm(
+export function haversineKm(
   lat1: number,
   lng1: number,
   lat2: number,

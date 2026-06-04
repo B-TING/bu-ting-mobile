@@ -18,6 +18,10 @@ type PlanState = {
   setPlanCandidates: (candidates: TravelPlan[] | null) => void;
   clearCandidates: () => void;
   toggleRouteVisited: (planId: string, itemId: string) => void;
+  removeRouteFromPlan: (planId: string, itemId: string) => void;
+  replaceRouteInPlan: (planId: string, itemId: string, replacement: RouteItem) => void;
+  addRouteToPlan: (planId: string, dayNumber: number, route: RouteItem) => void;
+  reorderRoutesInPlan: (planId: string, dayNumber: number, orderedItemIds: string[]) => void;
   addBudgetEntry: (entry: Omit<BudgetEntry, 'entryId'>) => void;
   getBudgetForPlan: (planId: string) => BudgetEntry[];
 };
@@ -58,6 +62,93 @@ export const usePlanStore = create<PlanState>()(
                   r.itemId === itemId ? { ...r, isVisited: !r.isVisited } : r,
                 ),
               })),
+            };
+          }),
+        })),
+      removeRouteFromPlan: (planId, itemId) =>
+        set(state => ({
+          plans: state.plans.map(plan => {
+            if (plan.planId !== planId) {
+              return plan;
+            }
+            return {
+              ...plan,
+              itinerary: plan.itinerary.map(day => {
+                const filtered = day.routes.filter(r => r.itemId !== itemId);
+                return {
+                  ...day,
+                  routes: filtered.map((r, i) => ({ ...r, sequence: i })),
+                };
+              }),
+            };
+          }),
+        })),
+      replaceRouteInPlan: (planId, itemId, replacement) =>
+        set(state => ({
+          plans: state.plans.map(plan => {
+            if (plan.planId !== planId) {
+              return plan;
+            }
+            return {
+              ...plan,
+              itinerary: plan.itinerary.map(day => ({
+                ...day,
+                routes: day.routes.map(r =>
+                  r.itemId === itemId
+                    ? {
+                        ...replacement,
+                        itemId: r.itemId,
+                        sequence: r.sequence,
+                        isVisited: false,
+                      }
+                    : r,
+                ),
+              })),
+            };
+          }),
+        })),
+      addRouteToPlan: (planId, dayNumber, route) =>
+        set(state => ({
+          plans: state.plans.map(plan => {
+            if (plan.planId !== planId) {
+              return plan;
+            }
+            return {
+              ...plan,
+              itinerary: plan.itinerary.map(day => {
+                if (day.dayNumber !== dayNumber) {
+                  return day;
+                }
+                const sequence = day.routes.length;
+                return {
+                  ...day,
+                  routes: [...day.routes, { ...route, sequence }],
+                };
+              }),
+            };
+          }),
+        })),
+      reorderRoutesInPlan: (planId, dayNumber, orderedItemIds) =>
+        set(state => ({
+          plans: state.plans.map(plan => {
+            if (plan.planId !== planId) {
+              return plan;
+            }
+            return {
+              ...plan,
+              itinerary: plan.itinerary.map(day => {
+                if (day.dayNumber !== dayNumber) {
+                  return day;
+                }
+                const byId = Object.fromEntries(day.routes.map(r => [r.itemId, r]));
+                const routes = orderedItemIds
+                  .map((id, i) => {
+                    const r = byId[id];
+                    return r ? { ...r, sequence: i } : null;
+                  })
+                  .filter((r): r is RouteItem => r != null);
+                return { ...day, routes };
+              }),
             };
           }),
         })),

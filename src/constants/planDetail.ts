@@ -52,6 +52,28 @@ export const PLAN_DETAIL_COPY: Record<
     legWalk: string;
     legDrive: string;
     legTransit: string;
+    reorderLongPressHint: string;
+    reorderHandleHint: string;
+    reorderHandleHintSelected: string;
+    reorderActiveHint: string;
+    editRoute: string;
+    rebootFabLabel: string;
+    rebootActionSub: (name: string) => string;
+    rebootDelete: string;
+    rebootReplace: string;
+    rebootCancel: string;
+    rebootModalTitle: string;
+    rebootModalSub: (name: string) => string;
+    rebootNearbyTitle: string;
+    rebootSearchPlaceholder: string;
+    rebootSearchEmpty: string;
+    rebootApply: string;
+    rebootDistance: (d: string) => string;
+    addPlaceTitle: string;
+    addPlaceSub: string;
+    addPlaceBrowseTitle: string;
+    addPlaceClose: string;
+    addPlaceConfirm: string;
   }
 > = {
   ko: {
@@ -94,6 +116,28 @@ export const PLAN_DETAIL_COPY: Record<
     legWalk: '도보',
     legDrive: '차량',
     legTransit: '대중교통',
+    reorderLongPressHint: '바꿀 두 일정의 왼쪽 번호를 차례로 탭하세요.',
+    reorderHandleHint: '탭하여 선택',
+    reorderHandleHintSelected: '다시 탭하면 취소',
+    reorderActiveHint: '다른 번호를 탭하면 두 일정의 순서가 바뀝니다.',
+    editRoute: '수정',
+    rebootFabLabel: '리부트',
+    rebootActionSub: name => `「${name}」 일정을 삭제하거나 인근 장소로 대체할 수 있어요.`,
+    rebootDelete: '일정에서 삭제',
+    rebootReplace: '인근 장소로 대체 (리부트)',
+    rebootCancel: '취소',
+    rebootModalTitle: '리부트',
+    rebootModalSub: name => `「${name}」 대신 방문할 인근 관광지를 골라 주세요.`,
+    rebootNearbyTitle: '인근 추천',
+    rebootSearchPlaceholder: '관광지 이름 검색',
+    rebootSearchEmpty: '검색 결과가 없어요',
+    rebootApply: '이 장소로 교체',
+    rebootDistance: d => `약 ${d}`,
+    addPlaceTitle: '장소 추가',
+    addPlaceSub: '검색하거나 추천 목록에서 오늘 일정에 넣을 곳을 선택하세요.',
+    addPlaceBrowseTitle: '추천 장소',
+    addPlaceClose: '닫기',
+    addPlaceConfirm: '일정에 추가',
   },
   en: {
     routeOptimize: 'Optimize route',
@@ -135,6 +179,29 @@ export const PLAN_DETAIL_COPY: Record<
     legWalk: 'Walk',
     legDrive: 'Drive',
     legTransit: 'Transit',
+    reorderLongPressHint: 'Tap two route numbers in order to swap them.',
+    reorderHandleHint: 'Tap to select',
+    reorderHandleHintSelected: 'Tap again to cancel',
+    reorderActiveHint: 'Tap another number to swap positions.',
+    editRoute: 'Edit',
+    rebootFabLabel: 'Reboot',
+    rebootActionSub: name =>
+      `You can remove 「${name}」 or replace it with a nearby place.`,
+    rebootDelete: 'Remove from schedule',
+    rebootReplace: 'Replace nearby (Reboot)',
+    rebootCancel: 'Cancel',
+    rebootModalTitle: 'Reboot',
+    rebootModalSub: name => `Pick a nearby spot to replace 「${name}」.`,
+    rebootNearbyTitle: 'Nearby picks',
+    rebootSearchPlaceholder: 'Search attractions',
+    rebootSearchEmpty: 'No results',
+    rebootApply: 'Use this place',
+    rebootDistance: d => `~${d}`,
+    addPlaceTitle: 'Add place',
+    addPlaceSub: 'Search or pick a spot to add to today’s schedule.',
+    addPlaceBrowseTitle: 'Suggested places',
+    addPlaceClose: 'Close',
+    addPlaceConfirm: 'Add to schedule',
   },
   ja: {
     routeOptimize: 'ルート最適化',
@@ -176,6 +243,29 @@ export const PLAN_DETAIL_COPY: Record<
     legWalk: '徒歩',
     legDrive: '車',
     legTransit: '公共交通',
+    reorderLongPressHint: '入れ替える2つの番号を順にタップしてください。',
+    reorderHandleHint: 'タップして選択',
+    reorderHandleHintSelected: 'もう一度タップで解除',
+    reorderActiveHint: '別の番号をタップすると入れ替わります。',
+    editRoute: '編集',
+    rebootFabLabel: 'リブート',
+    rebootActionSub: name =>
+      `「${name}」を削除するか、近くの場所に差し替えできます。`,
+    rebootDelete: '予定から削除',
+    rebootReplace: '近くで差し替え（リブート）',
+    rebootCancel: 'キャンセル',
+    rebootModalTitle: 'リブート',
+    rebootModalSub: name => `「${name}」の代わりに近くの観光地を選んでください。`,
+    rebootNearbyTitle: '近くのおすすめ',
+    rebootSearchPlaceholder: '観光地名で検索',
+    rebootSearchEmpty: '該当なし',
+    rebootApply: 'この場所に差し替え',
+    rebootDistance: d => `約${d}`,
+    addPlaceTitle: '場所を追加',
+    addPlaceSub: '検索するか、おすすめから今日の予定に追加する場所を選んでください。',
+    addPlaceBrowseTitle: 'おすすめ',
+    addPlaceClose: '閉じる',
+    addPlaceConfirm: '予定に追加',
   },
   zh: {
     routeOptimize: '优化路线',
@@ -217,5 +307,27 @@ export const PLAN_DETAIL_COPY: Record<
     legWalk: '步行',
     legDrive: '驾车',
     legTransit: '公共交通',
+    reorderLongPressHint: '依次点击两个左侧序号即可互换顺序。',
+    reorderHandleHint: '点击选择',
+    reorderHandleHintSelected: '再次点击取消',
+    reorderActiveHint: '点击另一个序号即可互换位置。',
+    editRoute: '编辑',
+    rebootFabLabel: 'Reboot',
+    rebootActionSub: name => `可删除「${name}」或替换为附近景点。`,
+    rebootDelete: '从行程中删除',
+    rebootReplace: '替换为附近景点（Reboot）',
+    rebootCancel: '取消',
+    rebootModalTitle: 'Reboot',
+    rebootModalSub: name => `请选择替代「${name}」的附近景点。`,
+    rebootNearbyTitle: '附近推荐',
+    rebootSearchPlaceholder: '搜索景点名称',
+    rebootSearchEmpty: '无搜索结果',
+    rebootApply: '使用此地点',
+    rebootDistance: d => `约 ${d}`,
+    addPlaceTitle: '添加地点',
+    addPlaceSub: '搜索或从推荐中选择要加入今日行程的地点。',
+    addPlaceBrowseTitle: '推荐地点',
+    addPlaceClose: '关闭',
+    addPlaceConfirm: '加入行程',
   },
 };

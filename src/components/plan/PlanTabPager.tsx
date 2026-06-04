@@ -18,6 +18,7 @@ type PlanTabPagerProps = {
   onChange: (tab: PlanDetailTab) => void;
   language: AppLanguage;
   bottomInset: number;
+  horizontalScrollEnabled?: boolean;
   pages: Record<PlanDetailTab, ReactNode>;
 };
 
@@ -26,6 +27,7 @@ export function PlanTabPager({
   onChange,
   language,
   bottomInset,
+  horizontalScrollEnabled = true,
   pages,
 }: PlanTabPagerProps) {
   const width = Dimensions.get('window').width;
@@ -73,6 +75,7 @@ export function PlanTabPager({
         ref={scrollRef}
         horizontal
         pagingEnabled
+        scrollEnabled={horizontalScrollEnabled}
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={syncTabFromScroll}
         onScrollEndDrag={syncTabFromScroll}
