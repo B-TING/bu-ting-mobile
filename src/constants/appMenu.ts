@@ -25,12 +25,6 @@ export const APP_MENU_ITEMS: AppMenuItem[] = [
     target: { kind: 'screen', route: 'PlanDetail' },
   },
   {
-    id: 'wizard',
-    labelKo: 'AI 플래너',
-    labelEn: 'AI Planner',
-    target: { kind: 'screen', route: 'PlanWizard' },
-  },
-  {
     id: 'luggage',
     labelKo: '짐 보관소',
     labelEn: 'Luggage storage',

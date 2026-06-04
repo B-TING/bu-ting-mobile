@@ -14,7 +14,7 @@ type TabConfig = {
 
 const TABS: TabConfig[] = [
   { id: 'home', labelKo: '홈', labelEn: 'Home', icon: '🏠' },
-  { id: 'route', labelKo: '경로', labelEn: 'Route', icon: '🗺️' },
+  { id: 'route', labelKo: '일정', labelEn: 'Itinerary', icon: '📅' },
   { id: 'feed', labelKo: '피드', labelEn: 'Feed', icon: '🧭' },
   { id: 'my', labelKo: '마이', labelEn: 'My', icon: '👤' },
 ];

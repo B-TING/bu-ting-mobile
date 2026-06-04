@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
+import { ActivePlanHeroBanner } from '../components/home/ActivePlanHeroBanner';
 import { EventsSectionMock } from '../components/home/EventsSectionMock';
 import { HeroBanner } from '../components/home/HeroBanner';
 import { QuickAccessRow } from '../components/home/QuickAccessRow';
@@ -18,7 +19,8 @@ import {
 } from '../constants/mainHome';
 import { layout } from '../constants/layout';
 import type { RootStackParamList } from '../navigation/types';
-import { useAppStore } from '../stores';
+import { selectActivePlan, useAppStore, usePlanStore } from '../stores';
+import { getNearestUpcomingStop } from '../utils/planSchedule';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MainHome'>;
 
@@ -27,8 +29,21 @@ const NAVBAR_HEIGHT = 72;
 export function MainHomeScreen({ navigation }: Props) {
   const language = useAppStore(s => s.language) ?? 'ko';
   const copy = MAIN_HOME_COPY[language];
+  const activePlan = usePlanStore(selectActivePlan);
   const [activeTab, setActiveTab] = useState<NavbarTab>('home');
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const upcomingStop = useMemo(
+    () => (activePlan ? getNearestUpcomingStop(activePlan) : null),
+    [activePlan],
+  );
+
+  const goToPlan = () => {
+    navigation.navigate(
+      'PlanDetail',
+      activePlan ? { planId: activePlan.planId } : undefined,
+    );
+  };
 
   const handleNavbarPress = (tab: NavbarTab) => {
     setActiveTab(tab);
@@ -61,12 +76,29 @@ export function MainHomeScreen({ navigation }: Props) {
         className="flex-1 px-5"
         contentContainerStyle={{ paddingBottom: NAVBAR_HEIGHT + 16 }}
         showsVerticalScrollIndicator={false}>
-        <HeroBanner
-          title={copy.heroTitle}
-          subtitle={copy.heroSubtitle}
-          ctaLabel={copy.heroCta}
-          onCtaPress={() => navigation.navigate('PlanWizard')}
-        />
+        {activePlan ? (
+          <ActivePlanHeroBanner
+            plan={activePlan}
+            upcoming={upcomingStop}
+            language={language}
+            copy={{
+              ongoingLabel: copy.ongoingLabel,
+              nextStop: copy.nextStop,
+              viewItinerary: copy.viewItinerary,
+              dday: copy.dday,
+              ddayToday: copy.ddayToday,
+              dayLabel: copy.dayLabel,
+            }}
+            onPress={goToPlan}
+          />
+        ) : (
+          <HeroBanner
+            title={copy.heroTitle}
+            subtitle={copy.heroSubtitle}
+            ctaLabel={copy.heroCta}
+            onCtaPress={() => navigation.navigate('PlanWizard')}
+          />
+        )}
 
         <QuickAccessRow
           items={QUICK_ACCESS_ITEMS}
