@@ -11,7 +11,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { NaverMapPlaceholder } from './NaverMapPlaceholder';
+import type { PlaceReview } from '../../types/travelReview';
 import type { RouteItem } from '../../types/travelPlan';
+import { StarRating } from '../review/StarRating';
 
 /** 하단 시트 최대 높이 (화면 대비) */
 const SHEET_HEIGHT_RATIO = 0.52;
@@ -30,17 +32,24 @@ type PlaceDetailModalProps = {
     mapTapHint: string;
     dwell: (m: number) => string;
     close: string;
+    writeReview?: string;
+    editReview?: string;
+    visitFirstReview?: string;
   };
+  placeReview?: PlaceReview;
   onClose: () => void;
   onToggleVisited: () => void;
+  onWriteReview?: () => void;
 };
 
 export function PlaceDetailModal({
   visible,
   route,
   copy,
+  placeReview,
   onClose,
   onToggleVisited,
+  onWriteReview,
 }: PlaceDetailModalProps) {
   const insets = useSafeAreaInsets();
   const { height: screenHeight } = useWindowDimensions();
@@ -133,7 +142,33 @@ export function PlaceDetailModal({
                   {copy.directions}
                 </Text>
               </Pressable>
+              {onWriteReview && copy.writeReview ? (
+                <Pressable
+                  onPress={route.isVisited ? onWriteReview : undefined}
+                  disabled={!route.isVisited}
+                  className={`rounded-full px-3 py-2 ${
+                    route.isVisited ? 'bg-brand-primary active:opacity-80' : 'bg-brand-border opacity-60'
+                  }`}>
+                  <Text
+                    className={`text-sm font-semibold ${
+                      route.isVisited ? 'text-white' : 'text-brand-muted'
+                    }`}>
+                    {placeReview ? copy.editReview ?? copy.writeReview : copy.writeReview}
+                  </Text>
+                </Pressable>
+              ) : null}
             </View>
+
+            {placeReview ? (
+              <View className="mt-4 rounded-2xl border border-brand-border bg-brand-surface p-4">
+                <StarRating value={placeReview.rating} readonly size="sm" />
+                {placeReview.comment ? (
+                  <Text className="mt-2 text-sm text-brand-text">{placeReview.comment}</Text>
+                ) : null}
+              </View>
+            ) : route.isVisited && copy.visitFirstReview && onWriteReview ? (
+              <Text className="mt-2 text-xs text-brand-muted">{copy.visitFirstReview}</Text>
+            ) : null}
 
             {info && (
               <View className="mt-4 rounded-2xl border border-brand-border bg-brand-surface p-4">

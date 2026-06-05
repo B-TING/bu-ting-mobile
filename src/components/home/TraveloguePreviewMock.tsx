@@ -1,14 +1,19 @@
 import { Pressable, Text, View } from 'react-native';
 
 import type { MockTravelogue, MockSpecialOffer } from '../../constants/mainHome';
+import type { Travelogue } from '../../types/travelReview';
+import { travelogueThumbnailEmoji } from '../../utils/travelReview';
+import { StarRating } from '../review/StarRating';
 
 type TraveloguePreviewMockProps = {
   travelogue: MockTravelogue;
   specialOffer: MockSpecialOffer;
   trendingTitle: string;
   language?: 'ko' | 'en' | 'ja' | 'zh';
+  latestTravelogue?: Travelogue;
   onTraveloguePress?: () => void;
   onOfferPress?: () => void;
+  onFeedPress?: () => void;
 };
 
 export function TraveloguePreviewMock({
@@ -16,17 +21,39 @@ export function TraveloguePreviewMock({
   specialOffer,
   trendingTitle,
   language = 'ko',
+  latestTravelogue,
   onTraveloguePress,
   onOfferPress,
+  onFeedPress,
 }: TraveloguePreviewMockProps) {
-  const tTitle = language === 'ko' ? travelogue.titleKo : travelogue.titleEn;
-  const tSub = language === 'ko' ? travelogue.subtitleKo : travelogue.subtitleEn;
+  const tTitle = latestTravelogue
+    ? latestTravelogue.title
+    : language === 'ko'
+      ? travelogue.titleKo
+      : travelogue.titleEn;
+  const tSub = latestTravelogue
+    ? `${latestTravelogue.authorName} · ${latestTravelogue.destinationLabel}`
+    : language === 'ko'
+      ? travelogue.subtitleKo
+      : travelogue.subtitleEn;
+  const tEmoji = latestTravelogue
+    ? travelogueThumbnailEmoji(latestTravelogue)
+    : travelogue.thumbnailEmoji;
   const oTitle = language === 'ko' ? specialOffer.titleKo : specialOffer.titleEn;
   const oSub = language === 'ko' ? specialOffer.subtitleKo : specialOffer.subtitleEn;
 
   return (
     <View className="mb-4">
-      <Text className="mb-3 text-base font-bold text-brand-text">{trendingTitle}</Text>
+      <View className="mb-3 flex-row items-center justify-between">
+        <Text className="text-base font-bold text-brand-text">{trendingTitle}</Text>
+        {onFeedPress ? (
+          <Pressable onPress={onFeedPress} className="active:opacity-80">
+            <Text className="text-xs font-bold text-brand-primary">
+              {language === 'ko' ? '전체 보기' : 'See all'}
+            </Text>
+          </Pressable>
+        ) : null}
+      </View>
 
       <Pressable
         onPress={onTraveloguePress}
@@ -34,12 +61,14 @@ export function TraveloguePreviewMock({
         accessibilityRole="button">
         <View
           className="mr-3 h-20 w-20 items-center justify-center rounded-xl"
-          style={{ backgroundColor: travelogue.thumbnailColor }}>
-          <Text className="text-3xl">{travelogue.thumbnailEmoji}</Text>
+          style={{
+            backgroundColor: latestTravelogue ? '#E0F2FE' : travelogue.thumbnailColor,
+          }}>
+          <Text className="text-3xl">{tEmoji}</Text>
         </View>
         <View className="flex-1 justify-center">
           <Text className="mb-1 text-[10px] font-bold tracking-wide text-brand-primary">
-            TRAVELOGUE
+            {latestTravelogue ? 'LATEST TRAVELOGUE' : 'TRAVELOGUE'}
           </Text>
           <Text className="text-sm font-bold text-brand-text" numberOfLines={2}>
             {tTitle}
@@ -47,6 +76,11 @@ export function TraveloguePreviewMock({
           <Text className="mt-1 text-xs text-brand-muted" numberOfLines={2}>
             {tSub}
           </Text>
+          {latestTravelogue ? (
+            <View className="mt-2">
+              <StarRating value={latestTravelogue.overallRating} readonly size="sm" />
+            </View>
+          ) : null}
         </View>
       </Pressable>
 
@@ -67,9 +101,13 @@ export function TraveloguePreviewMock({
       </Pressable>
 
       <Text className="mt-2 text-[10px] text-brand-muted">
-        {language === 'ko'
-          ? '여행기·상품 미리보기는 목업입니다.'
-          : 'Travelogue and offer previews are mockups.'}
+        {latestTravelogue
+          ? language === 'ko'
+            ? '최근 게시된 여행기입니다.'
+            : 'Recently published travelogue.'
+          : language === 'ko'
+            ? '여행기·상품 미리보기는 목업입니다.'
+            : 'Travelogue and offer previews are mockups.'}
       </Text>
     </View>
   );

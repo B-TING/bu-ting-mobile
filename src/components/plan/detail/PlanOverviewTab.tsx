@@ -24,6 +24,8 @@ type PlanOverviewTabProps = {
   budgetEntries: BudgetEntry[];
   budgetTotal: number;
   onNavigateToTab: (tab: PlanDetailTab) => void;
+  recordsProgress?: { completed: number; total: number; allDone: boolean };
+  isTraveloguePublished?: boolean;
 };
 
 export function PlanOverviewTab({
@@ -34,6 +36,8 @@ export function PlanOverviewTab({
   budgetEntries,
   budgetTotal,
   onNavigateToTab,
+  recordsProgress,
+  isTraveloguePublished,
 }: PlanOverviewTabProps) {
   const placeCount = totalPlaceCount(plan.itinerary);
 
@@ -142,9 +146,24 @@ export function PlanOverviewTab({
           title={copy.recordsPreview}
           hint={copy.viewTab}
           onPress={() => onNavigateToTab('records')}>
-          <Text className="text-sm text-brand-muted" numberOfLines={2}>
-            {copy.recordsSoon}
-          </Text>
+          {isTraveloguePublished ? (
+            <Text className="text-sm font-semibold text-brand-primary">
+              {copy.recordsPublished}
+            </Text>
+          ) : recordsProgress && recordsProgress.total > 0 ? (
+            <>
+              <Text className="text-sm text-brand-text">
+                {copy.recordsProgress(recordsProgress.completed, recordsProgress.total)}
+              </Text>
+              <Text className="mt-1 text-xs font-semibold text-brand-primary">
+                {copy.recordsReady}
+              </Text>
+            </>
+          ) : (
+            <Text className="text-sm text-brand-muted" numberOfLines={2}>
+              {copy.recordsHint}
+            </Text>
+          )}
         </TabPreviewCard>
       </View>
     </View>

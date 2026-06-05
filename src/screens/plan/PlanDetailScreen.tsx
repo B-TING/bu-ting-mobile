@@ -84,7 +84,16 @@ import type { RootStackParamList } from '../../navigation/types';
 
 
 
-import { hydrateRoutePlaceInfo, useAppStore, usePlanStore } from '../../stores';
+import { PlaceReviewFormModal } from '../../components/review/PlaceReviewFormModal';
+import { TRAVEL_REVIEW_COPY } from '../../constants/travelReview';
+import {
+  EMPTY_REVIEWS,
+  hydrateRoutePlaceInfo,
+  useAppStore,
+  usePlanStore,
+  useTravelogueStore,
+} from '../../stores';
+import { getReviewForRoute, reviewProgress } from '../../utils/travelReview';
 
 
 
@@ -159,6 +168,9 @@ export function PlanDetailScreen({ navigation, route }: Props) {
   const addRoute = usePlanStore(s => s.addRouteToPlan);
 
   const addBudgetEntry = usePlanStore(s => s.addBudgetEntry);
+  const completePlan = usePlanStore(s => s.completePlan);
+  const upsertPlaceReview = useTravelogueStore(s => s.upsertPlaceReview);
+  const displayName = useAppStore(s => s.auth.displayName) ?? 'Traveler';
 
 
 
@@ -216,7 +228,12 @@ export function PlanDetailScreen({ navigation, route }: Props) {
 
   const planId = plan?.planId ?? '';
 
-
+  const planReviews =
+    useTravelogueStore(s => (planId ? s.reviewsByPlan[planId] : undefined)) ??
+    EMPTY_REVIEWS;
+  const isPlanPublished = useTravelogueStore(s =>
+    planId ? s.publishedPlanIds.includes(planId) : false,
+  );
 
   const budgetEntries = useMemo(
 
@@ -259,6 +276,8 @@ export function PlanDetailScreen({ navigation, route }: Props) {
   const [rebootFabEnabled, setRebootFabEnabled] = useState(false);
   const [scheduleModal, setScheduleModal] = useState<ScheduleModalState>({ kind: 'none' });
   const [scheduleReorderActive, setScheduleReorderActive] = useState(false);
+  const [reviewFormRoute, setReviewFormRoute] = useState<RouteItem | null>(null);
+  const reviewCopy = TRAVEL_REVIEW_COPY[language];
 
 
 
@@ -328,6 +347,11 @@ export function PlanDetailScreen({ navigation, route }: Props) {
 
     [enrichedPlan],
 
+  );
+
+  const recordsProgress = useMemo(
+    () => reviewProgress(allRoutes, planReviews),
+    [allRoutes, planReviews],
   );
 
   const scheduleDay =
@@ -769,6 +793,10 @@ export function PlanDetailScreen({ navigation, route }: Props) {
 
               onNavigateToTab={setTab}
 
+              recordsProgress={recordsProgress}
+
+              isTraveloguePublished={isPlanPublished}
+
 
 
             />
@@ -853,7 +881,20 @@ export function PlanDetailScreen({ navigation, route }: Props) {
 
 
 
-          records: <PlanRecordsTab copy={copy} language={language} />,
+          records: (
+            <PlanRecordsTab
+              plan={enrichedPlan}
+              allRoutes={allRoutes}
+              language={language}
+              authorName={displayName}
+              destinationLabel={enrichedPlan.title}
+              onPublished={() => completePlan(planId)}
+              onViewFeed={() => navigation.navigate('TravelogueFeed')}
+              onViewTravelogue={travelogueId =>
+                navigation.navigate('TravelogueDetail', { travelogueId })
+              }
+            />
+          ),
 
 
 
@@ -917,61 +958,44 @@ export function PlanDetailScreen({ navigation, route }: Props) {
       />
 
       <PlaceDetailModal
-
-
-
         visible={!!selectedRoute}
-
-
-
         route={selectedRoute}
-
-
-
         copy={copy}
-
-
-
+        placeReview={
+          selectedRoute
+            ? getReviewForRoute(planReviews, selectedRoute.itemId)
+            : undefined
+        }
         onClose={() => setSelectedRoute(null)}
-
-
-
         onToggleVisited={() => {
-
-
-
           if (selectedRoute) {
-
-
-
             toggleVisited(planId, selectedRoute.itemId);
-
-
-
             setSelectedRoute({
-
-
-
               ...selectedRoute,
-
-
-
               isVisited: !selectedRoute.isVisited,
-
-
-
             });
-
-
-
           }
-
-
-
         }}
+        onWriteReview={() => {
+          if (selectedRoute) {
+            setReviewFormRoute(selectedRoute);
+          }
+        }}
+      />
 
-
-
+      <PlaceReviewFormModal
+        visible={!!reviewFormRoute}
+        route={reviewFormRoute}
+        existing={
+          reviewFormRoute
+            ? getReviewForRoute(planReviews, reviewFormRoute.itemId)
+            : undefined
+        }
+        copy={reviewCopy}
+        language={language}
+        planId={planId}
+        onClose={() => setReviewFormRoute(null)}
+        onSave={payload => upsertPlaceReview(planId, payload)}
       />
 
 

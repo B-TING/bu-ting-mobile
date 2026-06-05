@@ -28,3 +28,9 @@ export type {
   TravelLeg,
 } from './travelPlan';
 export { toTravelPlanResponse } from './travelPlan';
+export type {
+  PlaceReview,
+  ReviewMedia,
+  ReviewMediaType,
+  Travelogue,
+} from './travelReview';

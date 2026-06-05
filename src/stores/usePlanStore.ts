@@ -24,6 +24,7 @@ type PlanState = {
   reorderRoutesInPlan: (planId: string, dayNumber: number, orderedItemIds: string[]) => void;
   addBudgetEntry: (entry: Omit<BudgetEntry, 'entryId'>) => void;
   getBudgetForPlan: (planId: string) => BudgetEntry[];
+  completePlan: (planId: string) => void;
 };
 
 export const usePlanStore = create<PlanState>()(
@@ -162,6 +163,12 @@ export const usePlanStore = create<PlanState>()(
         }));
       },
       getBudgetForPlan: planId => get().budgetByPlan[planId] ?? [],
+      completePlan: planId =>
+        set(state => ({
+          plans: state.plans.map(p =>
+            p.planId === planId ? { ...p, status: 'COMPLETED' } : p,
+          ),
+        })),
     }),
     {
       name: '@buting/plans',

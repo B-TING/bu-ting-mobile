@@ -19,7 +19,8 @@ import {
 } from '../constants/mainHome';
 import { layout } from '../constants/layout';
 import type { RootStackParamList } from '../navigation/types';
-import { selectActivePlan, useAppStore, usePlanStore } from '../stores';
+import { selectActivePlan, useAppStore, usePlanStore, useTravelogueStore } from '../stores';
+import { isTraveloguePublic } from '../utils/travelReview';
 import { getNearestUpcomingStop } from '../utils/planSchedule';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MainHome'>;
@@ -30,6 +31,11 @@ export function MainHomeScreen({ navigation }: Props) {
   const language = useAppStore(s => s.language) ?? 'ko';
   const copy = MAIN_HOME_COPY[language];
   const activePlan = usePlanStore(selectActivePlan);
+  const publishedTravelogues = useTravelogueStore(s => s.publishedTravelogues);
+  const latestTravelogue = useMemo(
+    () => publishedTravelogues.find(isTraveloguePublic),
+    [publishedTravelogues],
+  );
   const [activeTab, setActiveTab] = useState<NavbarTab>('home');
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -54,6 +60,8 @@ export function MainHomeScreen({ navigation }: Props) {
         navigation.navigate('PlanDetail');
         break;
       case 'feed':
+        navigation.navigate('TravelogueFeed');
+        break;
       case 'my':
         break;
       default:
@@ -117,6 +125,17 @@ export function MainHomeScreen({ navigation }: Props) {
           travelogue={MOCK_TRAVELOGUE}
           specialOffer={MOCK_SPECIAL_OFFER}
           language={language}
+          latestTravelogue={latestTravelogue}
+          onTraveloguePress={() => {
+            if (latestTravelogue) {
+              navigation.navigate('TravelogueDetail', {
+                travelogueId: latestTravelogue.travelogueId,
+              });
+            } else {
+              navigation.navigate('TravelogueFeed');
+            }
+          }}
+          onFeedPress={() => navigation.navigate('TravelogueFeed')}
         />
       </ScrollView>
 

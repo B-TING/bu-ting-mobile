@@ -32,7 +32,10 @@ export const PLAN_DETAIL_COPY: Record<
     budgetAdd: string;
     budgetEmpty: string;
     exploreSoon: string;
-    recordsSoon: string;
+    recordsProgress: (done: number, total: number) => string;
+    recordsReady: string;
+    recordsPublished: string;
+    recordsHint: string;
     inviteMembers: string;
     tripPeriod: string;
     nights: (n: number) => string;
@@ -74,6 +77,9 @@ export const PLAN_DETAIL_COPY: Record<
     addPlaceBrowseTitle: string;
     addPlaceClose: string;
     addPlaceConfirm: string;
+    writeReview: string;
+    editReview: string;
+    visitFirstReview: string;
   }
 > = {
   ko: {
@@ -96,7 +102,10 @@ export const PLAN_DETAIL_COPY: Record<
     budgetAdd: '지출 추가',
     budgetEmpty: '아직 기록된 지출이 없어요',
     exploreSoon: '탐색 탭은 곧 TourAPI·맵 연동과 함께 제공됩니다.',
-    recordsSoon: '사진·메모 기록 기능은 준비 중입니다.',
+    recordsProgress: (done, total) => `${done} / ${total}곳 후기 완료`,
+    recordsReady: '여행기 작성 가능',
+    recordsPublished: '여행기 게시 완료',
+    recordsHint: '방문한 여행지마다 후기를 남겨 보세요',
     inviteMembers: '일행 초대하기',
     tripPeriod: '여행 기간',
     nights: n => `${n}박`,
@@ -138,6 +147,9 @@ export const PLAN_DETAIL_COPY: Record<
     addPlaceBrowseTitle: '추천 장소',
     addPlaceClose: '닫기',
     addPlaceConfirm: '일정에 추가',
+    writeReview: '후기 남기기',
+    editReview: '후기 수정',
+    visitFirstReview: '방문 체크 후 후기를 남길 수 있어요',
   },
   en: {
     routeOptimize: 'Optimize route',
@@ -159,7 +171,10 @@ export const PLAN_DETAIL_COPY: Record<
     budgetAdd: 'Add expense',
     budgetEmpty: 'No expenses yet',
     exploreSoon: 'Explore will arrive with TourAPI and maps.',
-    recordsSoon: 'Photo and note records are coming soon.',
+    recordsProgress: (done, total) => `${done} / ${total} reviews done`,
+    recordsReady: 'Ready to publish travelogue',
+    recordsPublished: 'Travelogue published',
+    recordsHint: 'Leave a review for each place you visit',
     inviteMembers: 'Invite companions',
     tripPeriod: 'Trip dates',
     nights: n => `${n} night${n === 1 ? '' : 's'}`,
@@ -202,6 +217,9 @@ export const PLAN_DETAIL_COPY: Record<
     addPlaceBrowseTitle: 'Suggested places',
     addPlaceClose: 'Close',
     addPlaceConfirm: 'Add to schedule',
+    writeReview: 'Write review',
+    editReview: 'Edit review',
+    visitFirstReview: 'Mark visited before writing a review',
   },
   ja: {
     routeOptimize: 'ルート最適化',
@@ -223,7 +241,10 @@ export const PLAN_DETAIL_COPY: Record<
     budgetAdd: '支出を追加',
     budgetEmpty: '支出記録なし',
     exploreSoon: '探索はTourAPI連携後に提供します。',
-    recordsSoon: '記録機能は準備中です。',
+    recordsProgress: (done, total) => `${done} / ${total} 件完了`,
+    recordsReady: '旅行記を作成できます',
+    recordsPublished: '旅行記を公開済み',
+    recordsHint: '訪問した各スポットにレビューを書きましょう',
     inviteMembers: '同行者を招待',
     tripPeriod: '旅行期間',
     nights: n => `${n}泊`,
@@ -266,6 +287,9 @@ export const PLAN_DETAIL_COPY: Record<
     addPlaceBrowseTitle: 'おすすめ',
     addPlaceClose: '閉じる',
     addPlaceConfirm: '予定に追加',
+    writeReview: 'レビューを書く',
+    editReview: 'レビューを編集',
+    visitFirstReview: '訪問チェック後にレビューを書けます',
   },
   zh: {
     routeOptimize: '优化路线',
@@ -287,7 +311,10 @@ export const PLAN_DETAIL_COPY: Record<
     budgetAdd: '添加支出',
     budgetEmpty: '暂无支出记录',
     exploreSoon: '探索将与 TourAPI 和地图一同上线。',
-    recordsSoon: '照片与笔记记录即将推出。',
+    recordsProgress: (done, total) => `已完成 ${done} / ${total}`,
+    recordsReady: '可发布游记',
+    recordsPublished: '游记已发布',
+    recordsHint: '为每个到访地点写点评',
     inviteMembers: '邀请同行',
     tripPeriod: '行程日期',
     nights: n => `${n}晚`,
@@ -329,5 +356,8 @@ export const PLAN_DETAIL_COPY: Record<
     addPlaceBrowseTitle: '推荐地点',
     addPlaceClose: '关闭',
     addPlaceConfirm: '加入行程',
+    writeReview: '写点评',
+    editReview: '编辑点评',
+    visitFirstReview: '标记到访后可写点评',
   },
 };

@@ -8,6 +8,8 @@ export type RootStackParamList = {
   /** planId 생략 시 진행 중(active) 플랜 사용 */
   PlanDetail: { planId?: string } | undefined;
   MenuPlaceholder: { title: string };
+  TravelogueFeed: undefined;
+  TravelogueDetail: { travelogueId: string };
 };
 
 export type SetupPhase = 'language' | 'login' | 'onboarding' | 'main';

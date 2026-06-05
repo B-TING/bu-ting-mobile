@@ -4,6 +4,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { layout } from '../constants/layout';
+import { TravelogueDetailScreen } from '../screens/feed/TravelogueDetailScreen';
+import { TravelogueFeedScreen } from '../screens/feed/TravelogueFeedScreen';
 import { MainHomeScreen } from '../screens/MainHomeScreen';
 import { MenuPlaceholderScreen } from '../screens/MenuPlaceholderScreen';
 import { PlanCandidatesScreen } from '../screens/plan/PlanCandidatesScreen';
@@ -89,6 +91,8 @@ export function RootNavigator() {
         <Stack.Screen name="PlanWizard" component={PlanWizardScreen} />
         <Stack.Screen name="PlanCandidates" component={PlanCandidatesScreen} />
         <Stack.Screen name="PlanDetail" component={PlanDetailScreen} />
+        <Stack.Screen name="TravelogueFeed" component={TravelogueFeedScreen} />
+        <Stack.Screen name="TravelogueDetail" component={TravelogueDetailScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
