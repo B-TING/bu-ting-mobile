@@ -16,19 +16,20 @@ import { LoginScreen } from '../screens/setup/LoginScreen';
 import { OnboardingScreen } from '../screens/setup/OnboardingScreen';
 import {
   hydrateAppStore,
+  selectActivePlan,
   selectSetupPhase,
   useAppStore,
+  usePlanStore,
 } from '../stores';
 import type { SetupPhase } from './types';
 import type { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-const INITIAL_ROUTES: Record<SetupPhase, keyof RootStackParamList> = {
+const INITIAL_ROUTES: Record<Exclude<SetupPhase, 'main'>, keyof RootStackParamList> = {
   language: 'LanguageSelection',
   login: 'Login',
   onboarding: 'Onboarding',
-  main: 'PlanDetail',
 };
 
 const HYDRATE_TIMEOUT_MS = 5000;
@@ -36,6 +37,7 @@ const HYDRATE_TIMEOUT_MS = 5000;
 export function RootNavigator() {
   const hasHydrated = useAppStore(state => state._hasHydrated);
   const phase = useAppStore(selectSetupPhase);
+  const activePlan = usePlanStore(selectActivePlan);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -73,7 +75,8 @@ export function RootNavigator() {
     );
   }
 
-  const initialRoute = INITIAL_ROUTES[phase];
+  const initialRoute =
+    phase === 'main' ? (activePlan ? 'PlanDetail' : 'PlanWizard') : INITIAL_ROUTES[phase];
 
   return (
     <NavigationContainer>

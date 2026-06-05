@@ -33,4 +33,6 @@ export type {
   ReviewMedia,
   ReviewMediaType,
   Travelogue,
+  TravelogueDaySnapshot,
+  TravelogueRouteSnapshot,
 } from './travelReview';

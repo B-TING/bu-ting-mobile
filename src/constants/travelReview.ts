@@ -63,6 +63,15 @@ export const TRAVEL_REVIEW_COPY: Record<
     composePartialHint: string;
     detailBy: (name: string) => string;
     overallSummary: string;
+    itinerarySection: string;
+    tripEndedSuccess: string;
+    noReviewForPlace: string;
+    dayLabel: (n: number) => string;
+    visitedBadge: string;
+    notVisitedBadge: string;
+    mapTitle: string;
+    mapSubtitle: string;
+    tripPeriod: (start: string, end: string) => string;
   }
 > = {
   ko: {
@@ -119,6 +128,15 @@ export const TRAVEL_REVIEW_COPY: Record<
     composePartialHint: '후기를 모두 작성하지 않아도 여행기를 등록할 수 있어요',
     detailBy: name => `${name}님의 여행기`,
     overallSummary: '종합 후기',
+    itinerarySection: '방문 순서',
+    tripEndedSuccess: '여행이 종료됐어요. 새 여행을 시작해 보세요!',
+    noReviewForPlace: '후기 없음',
+    dayLabel: n => `Day ${n}`,
+    visitedBadge: '방문',
+    notVisitedBadge: '미방문',
+    mapTitle: '여행 경로',
+    mapSubtitle: '장소를 탭하면 지도가 해당 위치로 이동해요',
+    tripPeriod: (start, end) => `${start} ~ ${end}`,
   },
   en: {
     writeReview: 'Write review',
@@ -174,6 +192,15 @@ export const TRAVEL_REVIEW_COPY: Record<
     composePartialHint: 'You can publish a travelogue without completing every review',
     detailBy: name => `Travelogue by ${name}`,
     overallSummary: 'Overall review',
+    itinerarySection: 'Visit order',
+    tripEndedSuccess: 'Trip ended. Start a new journey!',
+    noReviewForPlace: 'No review',
+    dayLabel: n => `Day ${n}`,
+    visitedBadge: 'Visited',
+    notVisitedBadge: 'Not visited',
+    mapTitle: 'Trip route',
+    mapSubtitle: 'Tap a place to focus the map',
+    tripPeriod: (start, end) => `${start} – ${end}`,
   },
   ja: {
     writeReview: 'レビューを書く',
@@ -229,6 +256,15 @@ export const TRAVEL_REVIEW_COPY: Record<
     composePartialHint: 'すべてのレビューがなくても旅行記を登録できます',
     detailBy: name => `${name}さんの旅行記`,
     overallSummary: '総合レビュー',
+    itinerarySection: '訪問順',
+    tripEndedSuccess: '旅行が終了しました。新しい旅を始めましょう！',
+    noReviewForPlace: 'レビューなし',
+    dayLabel: n => `Day ${n}`,
+    visitedBadge: '訪問済み',
+    notVisitedBadge: '未訪問',
+    mapTitle: '旅行ルート',
+    mapSubtitle: '場所をタップすると地図がその位置に移動します',
+    tripPeriod: (start, end) => `${start} 〜 ${end}`,
   },
   zh: {
     writeReview: '写点评',
@@ -284,5 +320,14 @@ export const TRAVEL_REVIEW_COPY: Record<
     composePartialHint: '无需完成全部点评即可发布游记',
     detailBy: name => `${name}的游记`,
     overallSummary: '综合点评',
+    itinerarySection: '访问顺序',
+    tripEndedSuccess: '行程已结束，开始新的旅行吧！',
+    noReviewForPlace: '无点评',
+    dayLabel: n => `第 ${n} 天`,
+    visitedBadge: '已到访',
+    notVisitedBadge: '未到访',
+    mapTitle: '行程路线',
+    mapSubtitle: '点击地点，地图将移动到该位置',
+    tripPeriod: (start, end) => `${start} ~ ${end}`,
   },
 };

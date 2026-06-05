@@ -82,7 +82,7 @@ export function OnboardingScreen({ navigation }: Props) {
       };
       profile.aiPromptContext = buildUserPromptContext(profile);
       completeOnboardingStore(profile);
-      navigation.replace('PlanDetail');
+      navigation.replace('PlanWizard');
     },
     [language, navigation, completeOnboardingStore],
   );

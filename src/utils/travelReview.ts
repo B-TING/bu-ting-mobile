@@ -1,5 +1,11 @@
-import type { PlaceReview, Travelogue } from '../types/travelReview';
-import type { RouteItem } from '../types/travelPlan';
+import type {
+  PlaceReview,
+  Travelogue,
+  TravelogueDaySnapshot,
+  TravelogueRouteSnapshot,
+} from '../types/travelReview';
+import type { RouteItem, TravelPlan } from '../types/travelPlan';
+import { sortedRoutes } from './planItinerary';
 
 export function averageRating(reviews: PlaceReview[]): number {
   if (reviews.length === 0) {
@@ -75,6 +81,61 @@ export function buildDefaultOverallReview(
     default:
       return `Visited ${reviews.length} spots including ${highlights.join(', ')}. See place reviews below!`;
   }
+}
+
+export function buildItinerarySnapshot(plan: TravelPlan): TravelogueDaySnapshot[] {
+  return plan.itinerary.map(day => ({
+    dayNumber: day.dayNumber,
+    date: day.date,
+    routes: sortedRoutes(day.routes)
+      .filter(r => r.type !== 'LOCKER')
+      .map(
+        (r): TravelogueRouteSnapshot => ({
+          itemId: r.itemId,
+          sequence: r.sequence,
+          placeId: r.placeId,
+          placeName: r.placeName,
+          type: r.type,
+          location: r.location,
+          isVisited: r.isVisited,
+        }),
+      ),
+  }));
+}
+
+export function flattenItineraryRoutes(
+  itinerary: TravelogueDaySnapshot[],
+): TravelogueRouteSnapshot[] {
+  const routes: TravelogueRouteSnapshot[] = [];
+  itinerary.forEach(day => {
+    day.routes.forEach(route => {
+      routes.push(route);
+    });
+  });
+  return routes;
+}
+
+export function resolveTravelogueItinerary(
+  travelogue: Travelogue,
+  plan: TravelPlan | null,
+): TravelogueDaySnapshot[] {
+  if (travelogue.itinerary?.length) {
+    return travelogue.itinerary;
+  }
+  if (plan) {
+    return buildItinerarySnapshot(plan);
+  }
+  return [];
+}
+
+export function snapshotToRouteItems(
+  routes: TravelogueRouteSnapshot[],
+): RouteItem[] {
+  return routes.map((r, index) => ({
+    ...r,
+    sequence: index,
+    placeInfo: undefined,
+  }));
 }
 
 export function isTraveloguePublic(travelogue: Travelogue): boolean {

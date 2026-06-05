@@ -168,6 +168,8 @@ export const usePlanStore = create<PlanState>()(
           plans: state.plans.map(p =>
             p.planId === planId ? { ...p, status: 'COMPLETED' } : p,
           ),
+          activePlanId:
+            state.activePlanId === planId ? null : state.activePlanId,
         })),
     }),
     {
@@ -183,13 +185,16 @@ export const usePlanStore = create<PlanState>()(
 );
 
 export function selectActivePlan(state: PlanState): TravelPlan | null {
-  if (!state.activePlanId) {
-    return (
-      state.plans.find(p => p.status === 'DRAFT' || p.status === 'CONFIRMED') ??
-      null
-    );
+  if (state.activePlanId) {
+    const active = state.plans.find(p => p.planId === state.activePlanId);
+    if (active && active.status !== 'COMPLETED') {
+      return active;
+    }
   }
-  return state.plans.find(p => p.planId === state.activePlanId) ?? null;
+  return (
+    state.plans.find(p => p.status === 'DRAFT' || p.status === 'CONFIRMED') ??
+    null
+  );
 }
 
 export function selectPlanById(planId: string) {

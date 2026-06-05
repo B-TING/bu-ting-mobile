@@ -47,14 +47,27 @@ export function NaverMapPlaceholder({
     );
   }
 
-  const lats = routes.map(r => r.location.lat);
-  const lngs = routes.map(r => r.location.lng);
-  const bounds = {
-    minLat: Math.min(...lats) - 0.01,
-    maxLat: Math.max(...lats) + 0.01,
-    minLng: Math.min(...lngs) - 0.01,
-    maxLng: Math.max(...lngs) + 0.01,
-  };
+  const focusedRoute = highlightItemId
+    ? routes.find(r => r.itemId === highlightItemId)
+    : undefined;
+
+  const bounds = focusedRoute
+    ? {
+        minLat: focusedRoute.location.lat - 0.008,
+        maxLat: focusedRoute.location.lat + 0.008,
+        minLng: focusedRoute.location.lng - 0.012,
+        maxLng: focusedRoute.location.lng + 0.012,
+      }
+    : (() => {
+        const lats = routes.map(r => r.location.lat);
+        const lngs = routes.map(r => r.location.lng);
+        return {
+          minLat: Math.min(...lats) - 0.01,
+          maxLat: Math.max(...lats) + 0.01,
+          minLng: Math.min(...lngs) - 0.01,
+          maxLng: Math.max(...lngs) + 0.01,
+        };
+      })();
 
   const mapBody = (
     <View

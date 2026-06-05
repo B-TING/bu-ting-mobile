@@ -9,6 +9,7 @@ import { EMPTY_REVIEWS, useTravelogueStore } from '../../../stores/useTravelogue
 import type { AppLanguage } from '../../../types/user';
 import type { RouteItem, TravelPlan } from '../../../types/travelPlan';
 import {
+  buildItinerarySnapshot,
   collectPlanRoutes,
   getReviewForRoute,
   isTraveloguePublic,
@@ -21,7 +22,9 @@ type PlanRecordsTabProps = {
   language: AppLanguage;
   authorName: string;
   destinationLabel: string;
+  isTripActive: boolean;
   onPublished?: () => void;
+  onEndTrip?: () => void;
   onViewFeed?: () => void;
   onViewTravelogue?: (travelogueId: string) => void;
 };
@@ -32,7 +35,9 @@ export function PlanRecordsTab({
   language,
   authorName,
   destinationLabel,
+  isTripActive,
   onPublished,
+  onEndTrip,
   onViewFeed,
   onViewTravelogue,
 }: PlanRecordsTabProps) {
@@ -71,6 +76,9 @@ export function PlanRecordsTab({
       overallReview: payload.overallReview,
       placeReviews: reviews,
       destinationLabel,
+      startDate: plan.startDate,
+      endDate: plan.endDate,
+      itinerary: buildItinerarySnapshot(plan),
       isPublic: payload.isPublic,
     });
     setSuccessMsg(
@@ -171,6 +179,14 @@ export function PlanRecordsTab({
         <Text className="mt-2 text-center text-xs text-brand-muted">
           {copy.composePartialHint}
         </Text>
+      ) : null}
+
+      {isTripActive && onEndTrip ? (
+        <Pressable
+          onPress={onEndTrip}
+          className="mt-3 items-center rounded-2xl border border-brand-border bg-brand-surface py-3 active:opacity-90">
+          <Text className="font-bold text-brand-text">{copy.completeTrip}</Text>
+        </Pressable>
       ) : null}
 
       <PlaceReviewFormModal

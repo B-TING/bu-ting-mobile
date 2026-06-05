@@ -155,8 +155,10 @@ export function PlanWizardScreen({ navigation }: Props) {
   const goBack = () => {
     if (step > 0) {
       setStep(s => s - 1);
-    } else {
+    } else if (navigation.canGoBack()) {
       navigation.goBack();
+    } else {
+      navigation.navigate('MainHome');
     }
   };
 

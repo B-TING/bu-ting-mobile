@@ -50,7 +50,6 @@ type PlanScheduleTabProps = {
   onToggleVisited: (itemId: string) => void;
   onRouteRemoved?: (itemId: string) => void;
   onScheduleModalChange: (modal: ScheduleModalState) => void;
-  onRebootFabEnabledChange?: (enabled: boolean) => void;
   onReorderActiveChange?: (active: boolean) => void;
 };
 
@@ -67,7 +66,6 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
       onToggleVisited,
       onRouteRemoved,
       onScheduleModalChange,
-      onRebootFabEnabledChange,
       onReorderActiveChange,
     },
     ref,
@@ -76,7 +74,6 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
     const reorderRoutes = usePlanStore(s => s.reorderRoutesInPlan);
 
     const [reboot, setReboot] = useState<RebootState>(null);
-    const [rebootFabEnabled, setRebootFabEnabled] = useState(false);
     const [orderedIds, setOrderedIds] = useState<string[]>([]);
     const [swapPickId, setSwapPickId] = useState<string | null>(null);
     const onModalChangeRef = useRef(onScheduleModalChange);
@@ -146,10 +143,6 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
         setOrderedIds([]);
       }
     }, [selectedDay, routeIdSetKey]);
-
-    useEffect(() => {
-      onRebootFabEnabledChange?.(rebootFabEnabled);
-    }, [rebootFabEnabled]);
 
     const clearReboot = () => {
       setReboot(null);
@@ -233,14 +226,10 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
       ref,
       () => ({
         handleRebootFabPress: () => {
-          if (!rebootFabEnabled) {
-            setRebootFabEnabled(true);
-            return;
-          }
           openNearestReboot();
         },
       }),
-      [rebootFabEnabled, openNearestReboot],
+      [openNearestReboot],
     );
 
     return (

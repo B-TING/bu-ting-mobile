@@ -57,7 +57,7 @@ export function MainHomeScreen({ navigation }: Props) {
       case 'home':
         break;
       case 'route':
-        navigation.navigate('PlanDetail');
+        navigation.navigate(activePlan ? 'PlanDetail' : 'PlanWizard');
         break;
       case 'feed':
         navigation.navigate('TravelogueFeed');

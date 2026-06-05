@@ -1,10 +1,8 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 
 
-import { Pressable, Text, View } from 'react-native';
-
-import { CommonActions } from '@react-navigation/native';
+import { Text, View } from 'react-native';
 
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
@@ -56,10 +54,6 @@ import { ScheduleRebootFab } from '../../components/plan/ScheduleRebootFab';
 
 
 
-import { PrimaryButton } from '../../components/setup/PrimaryButton';
-
-
-
 import {
 
 
@@ -73,10 +67,6 @@ import {
 
 
 } from '../../constants/planDetail';
-
-
-
-import { PLAN_WIZARD_COPY } from '../../constants/planWizard';
 
 
 
@@ -143,11 +133,6 @@ export function PlanDetailScreen({ navigation, route }: Props) {
 
 
 
-  const onboarding = useAppStore(s => s.onboarding);
-
-
-
-  const resetSetup = useAppStore(s => s.resetSetup);
 
 
 
@@ -198,7 +183,19 @@ export function PlanDetailScreen({ navigation, route }: Props) {
 
 
 
-      return plans.find(p => p.planId === activePlanId) ?? null;
+      const active = plans.find(p => p.planId === activePlanId);
+
+
+
+      if (active && active.status !== 'COMPLETED') {
+
+
+
+        return active;
+
+
+
+      }
 
 
 
@@ -259,10 +256,6 @@ export function PlanDetailScreen({ navigation, route }: Props) {
 
 
 
-  const wizardCopy = PLAN_WIZARD_COPY[language];
-
-
-
   const [tab, setTab] = useState<PlanDetailTab>('overview');
 
 
@@ -273,7 +266,6 @@ export function PlanDetailScreen({ navigation, route }: Props) {
 
   const [selectedRoute, setSelectedRoute] = useState<RouteItem | null>(null);
   const scheduleRef = useRef<PlanScheduleTabHandle>(null);
-  const [rebootFabEnabled, setRebootFabEnabled] = useState(false);
   const [scheduleModal, setScheduleModal] = useState<ScheduleModalState>({ kind: 'none' });
   const [scheduleReorderActive, setScheduleReorderActive] = useState(false);
   const [reviewFormRoute, setReviewFormRoute] = useState<RouteItem | null>(null);
@@ -405,198 +397,14 @@ export function PlanDetailScreen({ navigation, route }: Props) {
     [scheduleDay, scheduleRoutes.length, language, planId, addRoute, closeScheduleModal],
   );
 
+  useEffect(() => {
+    if (!enrichedPlan) {
+      navigation.replace('PlanWizard');
+    }
+  }, [enrichedPlan, navigation]);
+
   if (!enrichedPlan) {
-
-
-
-    return (
-
-
-
-      <View
-
-
-
-        className="flex-1 bg-brand-background px-6"
-
-
-
-        style={{ paddingTop: insets.top + 8, paddingBottom: insets.bottom + 24 }}>
-
-
-
-        <View className="mb-6 flex-row items-center">
-
-
-
-          <BackButton
-
-
-
-            accessibilityLabel={language === 'ko' ? '메인으로' : 'Back to home'}
-
-
-
-            onPress={() => navigation.navigate('MainHome')}
-
-
-
-          />
-
-
-
-          <Text className="flex-1 text-2xl font-bold text-brand-primary">부팅</Text>
-
-
-
-        </View>
-
-
-
-        <Text className="mb-10 text-base text-brand-muted">
-
-
-
-          {language === 'ko' ? '나만의 부산 여행 가이드' : 'Your Busan travel guide'}
-
-
-
-        </Text>
-
-
-
-        <View className="mb-8 flex-1 justify-center rounded-2xl border-2 border-dashed border-brand-border bg-brand-surface p-8">
-
-
-
-          <Text className="mb-2 text-center text-lg font-semibold text-brand-text">
-
-
-
-            {wizardCopy.noPlan}
-
-
-
-          </Text>
-
-
-
-          <Text className="text-center text-sm text-brand-muted">
-
-
-
-            {wizardCopy.noPlanSub}
-
-
-
-          </Text>
-
-
-
-        </View>
-
-
-
-        <PrimaryButton
-
-
-
-          label={wizardCopy.createPlan}
-
-
-
-          onPress={() => navigation.navigate('PlanWizard')}
-
-
-
-        />
-
-
-
-        {__DEV__ && (
-
-
-
-          <Pressable
-
-
-
-            className="mt-6 self-center p-3 active:opacity-80"
-
-
-
-            onPress={() => {
-
-
-
-              resetSetup();
-
-
-
-              navigation.dispatch(
-
-
-
-                CommonActions.reset({
-
-
-
-                  index: 0,
-
-
-
-                  routes: [{ name: 'LanguageSelection' }],
-
-
-
-                }),
-
-
-
-              );
-
-
-
-            }}>
-
-
-
-            <Text className="text-[13px] text-brand-primary underline">
-
-
-
-              {onboarding?.language === 'ko'
-
-
-
-                ? '[DEV] 초기 설정 초기화'
-
-
-
-                : '[DEV] Reset setup'}
-
-
-
-            </Text>
-
-
-
-          </Pressable>
-
-
-
-        )}
-
-
-
-      </View>
-
-
-
-    );
-
-
-
+    return null;
   }
 
 
@@ -826,7 +634,6 @@ export function PlanDetailScreen({ navigation, route }: Props) {
                   setSelectedRoute(null);
                 }
               }}
-              onRebootFabEnabledChange={setRebootFabEnabled}
               onScheduleModalChange={setScheduleModal}
               onReorderActiveChange={setScheduleReorderActive}
             />
@@ -888,7 +695,15 @@ export function PlanDetailScreen({ navigation, route }: Props) {
               language={language}
               authorName={displayName}
               destinationLabel={enrichedPlan.title}
-              onPublished={() => completePlan(planId)}
+              isTripActive={enrichedPlan.status !== 'COMPLETED'}
+              onPublished={() => {
+                completePlan(planId);
+                navigation.navigate('MainHome');
+              }}
+              onEndTrip={() => {
+                completePlan(planId);
+                navigation.navigate('MainHome');
+              }}
               onViewFeed={() => navigation.navigate('TravelogueFeed')}
               onViewTravelogue={travelogueId =>
                 navigation.navigate('TravelogueDetail', { travelogueId })
@@ -912,8 +727,6 @@ export function PlanDetailScreen({ navigation, route }: Props) {
 
       {tab === 'schedule' && (
         <ScheduleRebootFab
-          enabled={rebootFabEnabled}
-          label={copy.rebootFabLabel}
           bottom={insets.bottom + 72}
           onPress={() => scheduleRef.current?.handleRebootFabPress()}
         />
