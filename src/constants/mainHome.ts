@@ -113,28 +113,35 @@ export const MAIN_HOME_COPY: Record<
 
 export const QUICK_ACCESS_ITEMS: QuickAccessItem[] = [
   {
+    id: 'hotels',
+    icon: '🏨',
+    labelKo: '숙소 정보',
+    labelEn: 'Hotels',
+  },
+
+  {
+    id: 'festivals',
+    icon: '📅',
+    labelKo: '축제 캘린더',
+    labelEn: 'Festivals',
+  },
+  {
+    id: 'help',
+    icon: '✱',
+    labelKo: '헬프데스크',
+    labelEn: 'Help Desk',
+  },
+  {
+    id: 'funCorner',
+    icon: '🎉',
+    labelKo: '재미 코너',
+    labelEn: 'Fun Corner',
+  },
+  {
     id: 'luggage',
     icon: '🧳',
     labelKo: '짐 보관소',
     labelEn: 'Luggage',
-  },
-  {
-    id: 'community',
-    icon: '👥',
-    labelKo: '커뮤니티',
-    labelEn: 'Community',
-  },
-  {
-    id: 'calendar',
-    icon: '📅',
-    labelKo: '캘린더',
-    labelEn: 'Calendar',
-  },
-  {
-    id: 'emergency',
-    icon: '✱',
-    labelKo: '비상연락',
-    labelEn: 'Emergency',
   },
 ];
 

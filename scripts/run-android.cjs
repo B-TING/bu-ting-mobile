@@ -56,6 +56,12 @@ if (adb) {
       .map(line => line.split('\t')[0].trim()) ?? [];
 }
 
+function useX86AvdBuild(deviceId, reason) {
+  // gradle.properties는 ARM 실기기용만 빌드 → x86 AVD에서 libreactnative.so 누락으로 즉시 종료됨
+  env.ORG_GRADLE_PROJECT_reactNativeArchitectures = 'x86_64';
+  console.log(`[Bu-Ting] AVD 대상: ${deviceId} (네이티브 ABI: x86_64${reason ? `, ${reason}` : ''})`);
+}
+
 if (wantsAvd) {
   const emulator = deviceLines.find(id => id.startsWith('emulator-'));
   if (!emulator) {
@@ -65,10 +71,25 @@ if (wantsAvd) {
     process.exit(1);
   }
   extraArgs.push('--deviceId', emulator);
-  // gradle.properties는 ARM 실기기용만 빌드 → x86 AVD에서 libreactnative.so 누락으로 즉시 종료됨
-  env.ORG_GRADLE_PROJECT_reactNativeArchitectures = 'x86_64';
-  console.log(`[Bu-Ting] AVD 대상: ${emulator} (네이티브 ABI: x86_64)`);
-} else if (adb && !hasDeviceArg && deviceLines.length > 1) {
+  useX86AvdBuild(emulator);
+} else {
+  const deviceIdArg = extraArgs.find(a => a.startsWith('--deviceId='))?.split('=')[1];
+  const deviceIdIdx = extraArgs.indexOf('--deviceId');
+  const explicitDeviceId =
+    deviceIdArg ?? (deviceIdIdx >= 0 ? extraArgs[deviceIdIdx + 1] : null);
+  const targetDeviceId =
+    explicitDeviceId ??
+    (deviceLines.length === 1 ? deviceLines[0] : null);
+
+  if (targetDeviceId?.startsWith('emulator-')) {
+    useX86AvdBuild(
+      targetDeviceId,
+      explicitDeviceId ? '명시적 deviceId' : '연결된 기기 1대',
+    );
+  }
+}
+
+if (adb && !hasDeviceArg && !wantsAvd && deviceLines.length > 1) {
   const emulators = deviceLines.filter(id => id.startsWith('emulator-'));
   console.warn(
     `[Bu-Ting] 연결된 기기가 ${deviceLines.length}대입니다: ${deviceLines.join(', ')}`,
