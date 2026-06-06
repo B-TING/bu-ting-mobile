@@ -27,6 +27,18 @@ export function buildUserPromptContext(profile: OnboardingProfile): string {
         : 'Highlight features: nearby suggestions (primary), trip planner (secondary)',
     );
   }
+  if (profile.schedulePace) {
+    lines.push(
+      profile.schedulePace === 'packed'
+        ? 'Schedule pace: packed — prefer more stops per day, efficient routing'
+        : 'Schedule pace: relaxed — prefer fewer stops, generous breaks between places',
+    );
+    lines.push(
+      profile.schedulePace === 'packed'
+        ? 'Itinerary hint: maximize daily coverage, minimize idle time'
+        : 'Itinerary hint: leave buffer time, avoid back-to-back tight transitions',
+    );
+  }
   if (profile.companions) {
     lines.push(
       `Companions: ${profile.companions === 'solo' ? 'solo traveler' : 'travels with others (sync/offline relevant)'}`,

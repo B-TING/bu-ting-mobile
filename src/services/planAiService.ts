@@ -43,10 +43,36 @@ function attractionToRoute(attractionId: string, sequence: number): RouteItem | 
   };
 }
 
+function resolvePace(onboarding: OnboardingProfile | null): PlanConstraints['pace'] {
+  if (onboarding?.schedulePace === 'packed') {
+    return 'active';
+  }
+  if (onboarding?.schedulePace === 'relaxed') {
+    return 'relaxed';
+  }
+  return 'moderate';
+}
+
+function placesPerDay(
+  pace: PlanConstraints['pace'],
+  attractionCount: number,
+  dayCount: number,
+): number {
+  const base = Math.max(2, Math.ceil(attractionCount / dayCount));
+  if (pace === 'relaxed') {
+    return Math.max(2, base - 1);
+  }
+  if (pace === 'active') {
+    return base + 1;
+  }
+  return base;
+}
+
 function buildItinerary(
   wizard: PlanWizardAnswers,
   dayCount: number,
   variant: number,
+  pace: PlanConstraints['pace'],
 ): DailyItinerary[] {
   const attractionIds = [...wizard.attractionIds];
   if (attractionIds.length === 0) {
@@ -76,7 +102,7 @@ function buildItinerary(
       });
     }
 
-    const perDay = Math.max(2, Math.ceil(rotated.length / dayCount));
+    const perDay = placesPerDay(pace, rotated.length, dayCount);
     for (let i = 0; i < perDay && cursor < rotated.length; i++) {
       const route = attractionToRoute(rotated[cursor], routes.length);
       if (route) {
@@ -113,7 +139,10 @@ function buildItinerary(
   return days;
 }
 
-function buildConstraints(wizard: PlanWizardAnswers): PlanConstraints {
+function buildConstraints(
+  wizard: PlanWizardAnswers,
+  onboarding: OnboardingProfile | null,
+): PlanConstraints {
   const otherIds = wizard.otherConstraintIds.filter(
     id => id !== 'heavy_luggage' && id !== 'light_luggage' && id !== 'pets',
   );
@@ -126,7 +155,7 @@ function buildConstraints(wizard: PlanWizardAnswers): PlanConstraints {
       wizard.hasHeavyBaggage ||
       wizard.otherConstraintIds.includes('wheelchair') ||
       wizard.otherConstraintIds.includes('stroller'),
-    pace: 'moderate',
+    pace: resolvePace(onboarding),
     companionCount: wizard.companionCount,
     companionTypes: wizard.companionTypes,
     preferredFoods: wizard.foodIds,
@@ -164,15 +193,17 @@ function buildPlan(
     });
   }
 
+  const pace = resolvePace(onboarding);
+
   return {
     planId: createId('plan-'),
     title: titles[variant % titles.length],
     startDate: wizard.startDate,
     endDate: wizard.endDate,
     status,
-    constraints: buildConstraints(wizard),
+    constraints: buildConstraints(wizard, onboarding),
     members,
-    itinerary: buildItinerary(wizard, dayCount, variant),
+    itinerary: buildItinerary(wizard, dayCount, variant, pace),
     createdAt: new Date().toISOString(),
     aiPromptContext: buildPlanRequestPrompt(wizard, onboarding),
   };
