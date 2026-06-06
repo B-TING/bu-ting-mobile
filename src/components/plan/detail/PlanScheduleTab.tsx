@@ -7,21 +7,25 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 
 import { DayChips } from '../DayChips';
+import { NaverMapPlaceholder } from '../NaverMapPlaceholder';
 import { TravelLegRow } from '../TravelLegRow';
 import { ScheduleRouteSlot, type RebootPhase } from './ScheduleRouteSlot';
 import type { PLAN_DETAIL_COPY } from '../../../constants/planDetail';
 import { usePlanStore } from '../../../stores';
 import type { AppLanguage } from '../../../types/user';
-import type { RouteItem, TravelPlan } from '../../../types/travelPlan';
+import type { PlaceReview } from '../../../types/travelReview';
+import type { RouteItem, TravelLegMode, TravelPlan } from '../../../types/travelPlan';
 import {
   estimateUserLocation,
   findNearestScheduleRoute,
 } from '../../../utils/scheduleRoute';
 import { sortedRoutes } from '../../../utils/planItinerary';
 import { estimateTravelLeg } from '../../../utils/geo';
+import { computeDayTotalMinutes, formatDurationMinutes } from '../../../utils/tripDuration';
+import { getReviewForRoute } from '../../../utils/travelReview';
 
 type Copy = (typeof PLAN_DETAIL_COPY)[AppLanguage];
 
@@ -32,11 +36,13 @@ type RebootState = {
 
 export type ScheduleModalState =
   | { kind: 'none' }
-  | { kind: 'add' }
+  | { kind: 'add'; legMode?: TravelLegMode }
   | { kind: 'pick'; itemId: string };
 
 export type PlanScheduleTabHandle = {
   handleRebootFabPress: () => void;
+  handleRouteOptimize: () => void;
+  handleAddPlacePress: () => void;
 };
 
 type PlanScheduleTabProps = {
@@ -45,9 +51,12 @@ type PlanScheduleTabProps = {
   language: AppLanguage;
   copy: Copy;
   selectedDay: number;
+  planReviews: PlaceReview[];
   onSelectDay: (day: number) => void;
   onSelectRoute: (route: RouteItem) => void;
   onToggleVisited: (itemId: string) => void;
+  onWriteReview: (route: RouteItem) => void;
+  onQuickRating: (route: RouteItem, rating: number) => void;
   onRouteRemoved?: (itemId: string) => void;
   onScheduleModalChange: (modal: ScheduleModalState) => void;
   onReorderActiveChange?: (active: boolean) => void;
@@ -61,9 +70,12 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
       language,
       copy,
       selectedDay,
+      planReviews,
       onSelectDay,
       onSelectRoute,
       onToggleVisited,
+      onWriteReview,
+      onQuickRating,
       onRouteRemoved,
       onScheduleModalChange,
       onReorderActiveChange,
@@ -72,6 +84,11 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
   ) {
     const removeRoute = usePlanStore(s => s.removeRouteFromPlan);
     const reorderRoutes = usePlanStore(s => s.reorderRoutesInPlan);
+    const updateLegMode = usePlanStore(s => s.updateRouteLegMode);
+    const optimizeDayRoute = usePlanStore(s => s.optimizeDayRoute);
+
+    const { height: windowHeight } = useWindowDimensions();
+    const mapHeight = Math.round(windowHeight * 0.32);
 
     const [reboot, setReboot] = useState<RebootState>(null);
     const [orderedIds, setOrderedIds] = useState<string[]>([]);
@@ -110,9 +127,13 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
 
     dayRoutesRef.current = dayRoutes;
 
-    const hasStay = plan.itinerary.some(d =>
-      d.routes.some(r => r.type === 'ACCOMMODATION'),
-    );
+    const dayDurationLabel = useMemo(() => {
+      if (dayRoutes.length === 0) {
+        return null;
+      }
+      const minutes = computeDayTotalMinutes(dayRoutes);
+      return copy.dayDuration(formatDurationMinutes(minutes, language));
+    }, [dayRoutes, copy, language]);
 
     const slotCopy = useMemo(
       () => ({
@@ -122,6 +143,12 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
         rebootDelete: copy.rebootDelete,
         rebootReplace: copy.rebootReplace,
         rebootCancel: copy.rebootCancel,
+        recordReview: copy.recordReview,
+        quickRatingHint: copy.quickRatingHint,
+        transportModeTitle: copy.transportModeTitle,
+        legWalk: copy.legWalk,
+        legDrive: copy.legDrive,
+        legTransit: copy.legTransit,
       }),
       [copy],
     );
@@ -222,104 +249,123 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
       }
     }, [dayRoutes, onScheduleModalChange]);
 
+    const handleRouteOptimize = useCallback(() => {
+      if (!day || dayRoutes.length < 2) {
+        return;
+      }
+      optimizeDayRoute(planId, day.dayNumber);
+      Alert.alert(copy.routeOptimize, copy.routeOptimized);
+    }, [day, dayRoutes.length, optimizeDayRoute, planId, copy]);
+
+    const handleAddPlacePress = useCallback(() => {
+      clearReboot();
+      onScheduleModalChange({ kind: 'add' });
+    }, [onScheduleModalChange]);
+
     useImperativeHandle(
       ref,
       () => ({
         handleRebootFabPress: () => {
           openNearestReboot();
         },
+        handleRouteOptimize,
+        handleAddPlacePress,
       }),
-      [openNearestReboot],
+      [openNearestReboot, handleRouteOptimize, handleAddPlacePress],
     );
 
     return (
-      <View className="px-4">
-        <DayChips
-          days={plan.itinerary}
-          selectedDayNumber={day?.dayNumber ?? 1}
-          onSelect={onSelectDay}
-          language={language}
-        />
-
-        {!hasStay && (
-          <View className="mb-4 rounded-2xl border border-[#C4B5FD] bg-[#F5F3FF] p-4">
-            <Text className="mb-2 text-sm text-brand-text">{copy.hotelHint}</Text>
-            <Pressable className="self-start rounded-full bg-[#7C3AED] px-4 py-2 active:opacity-90">
-              <Text className="text-sm font-semibold text-white">{copy.hotelCta}</Text>
-            </Pressable>
-          </View>
-        )}
-
-        <View className="mb-3 flex-row gap-2">
-          <Pressable className="rounded-full border border-brand-border bg-brand-surface px-3 py-1.5 active:opacity-80">
-            <Text className="text-xs font-semibold text-brand-text">{copy.routeOptimize}</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => {
-              clearReboot();
-              onScheduleModalChange({ kind: 'add' });
-            }}
-            className="rounded-full border border-brand-border bg-brand-surface px-3 py-1.5 active:opacity-80">
-            <Text className="text-xs font-semibold text-brand-muted">{copy.addPlace}</Text>
-          </Pressable>
+      <View className="flex-1">
+        <View style={{ height: mapHeight }} className="border-b border-brand-border">
+          <NaverMapPlaceholder
+            title={copy.mapPlaceholder}
+            subtitle={copy.mapPlaceholderSub}
+            routes={dayRoutes}
+            size="fill"
+          />
         </View>
 
-        <Text className="mb-2 mt-2 text-lg font-bold text-brand-text">
-          {day?.date} · Day {day?.dayNumber}
-        </Text>
+        <ScrollView
+          className="flex-1 px-4"
+          contentContainerStyle={{ paddingBottom: 140 }}
+          showsVerticalScrollIndicator={false}
+          nestedScrollEnabled>
+          <DayChips
+            days={plan.itinerary}
+            selectedDayNumber={day?.dayNumber ?? 1}
+            onSelect={onSelectDay}
+            language={language}
+          />
 
-        {swapPickId != null && (
-          <View className="mb-3 rounded-xl border border-brand-primary bg-brand-selected px-3 py-2">
-            <Text className="text-xs text-brand-text">{copy.reorderActiveHint}</Text>
+          <View className="mb-2 flex-row items-baseline justify-between">
+            <Text className="text-lg font-bold text-brand-text">
+              {day?.date} · Day {day?.dayNumber}
+            </Text>
+            {dayDurationLabel ? (
+              <Text className="text-xs font-semibold text-brand-muted">{dayDurationLabel}</Text>
+            ) : null}
           </View>
-        )}
 
-        {dayRoutes.map((r, index) => {
-          const prev = dayRoutes[index - 1];
-          const leg =
-            prev && index > 0 ? estimateTravelLeg(prev.location, r.location) : null;
-          const indexSelected = swapPickId === r.itemId;
-          const indexHint = indexSelected
-            ? copy.reorderHandleHintSelected
-            : copy.reorderHandleHint;
-          return (
-            <View key={r.itemId}>
-              {leg && (
-                <TravelLegRow
-                  leg={leg}
-                  directionsLabel={copy.directions}
-                  copy={{
-                    legWalk: copy.legWalk,
-                    legDrive: copy.legDrive,
-                    legTransit: copy.legTransit,
-                  }}
-                />
-              )}
-              <ScheduleRouteSlot
-                route={r}
-                displayIndex={index + 1}
-                phase={phaseFor(r.itemId)}
-                copy={slotCopy}
-                onPress={() => onSelectRoute(r)}
-                onEdit={() => {
-                  setSwapPickId(null);
-                  onModalChangeRef.current({ kind: 'none' });
-                  setReboot({ itemId: r.itemId, phase: 'choose' });
-                }}
-                indexSelected={indexSelected}
-                indexHint={indexHint}
-                onIndexPress={() => handleIndexPress(r.itemId)}
-                onToggleVisited={() => onToggleVisited(r.itemId)}
-                onDelete={() => handleDelete(r)}
-                onReplace={() => openPickModal(r.itemId)}
-                onCancel={clearReboot}
-              />
+          {swapPickId != null && (
+            <View className="mb-3 rounded-xl border border-brand-primary bg-brand-selected px-3 py-2">
+              <Text className="text-xs text-brand-text">{copy.reorderActiveHint}</Text>
             </View>
-          );
-        })}
+          )}
 
-        <Text className="mt-2 text-xs text-brand-muted">{copy.reorderLongPressHint}</Text>
-        <Text className="mb-20 mt-1 text-xs text-brand-muted">{copy.closedHint}</Text>
+          {dayRoutes.map((r, index) => {
+            const prev = dayRoutes[index - 1];
+            const leg =
+              prev && index > 0
+                ? estimateTravelLeg(prev.location, r.location, r.legMode)
+                : null;
+            const indexSelected = swapPickId === r.itemId;
+            const indexHint = indexSelected
+              ? copy.reorderHandleHintSelected
+              : copy.reorderHandleHint;
+            const review = getReviewForRoute(planReviews, r.itemId);
+            return (
+              <View key={r.itemId}>
+                {leg && (
+                  <TravelLegRow
+                    leg={leg}
+                    directionsLabel={copy.directions}
+                    copy={{
+                      legWalk: copy.legWalk,
+                      legDrive: copy.legDrive,
+                      legTransit: copy.legTransit,
+                    }}
+                  />
+                )}
+                <ScheduleRouteSlot
+                  route={r}
+                  displayIndex={index + 1}
+                  phase={phaseFor(r.itemId)}
+                  copy={slotCopy}
+                  reviewRating={review?.rating ?? 0}
+                  onPress={() => onSelectRoute(r)}
+                  onEdit={() => {
+                    setSwapPickId(null);
+                    onModalChangeRef.current({ kind: 'none' });
+                    setReboot({ itemId: r.itemId, phase: 'choose' });
+                  }}
+                  indexSelected={indexSelected}
+                  indexHint={indexHint}
+                  onIndexPress={() => handleIndexPress(r.itemId)}
+                  onToggleVisited={() => onToggleVisited(r.itemId)}
+                  onWriteReview={() => onWriteReview(r)}
+                  onQuickRating={rating => onQuickRating(r, rating)}
+                  onLegModeChange={mode => updateLegMode(planId, r.itemId, mode)}
+                  onDelete={() => handleDelete(r)}
+                  onReplace={() => openPickModal(r.itemId)}
+                  onCancel={clearReboot}
+                />
+              </View>
+            );
+          })}
+
+          <Text className="mt-2 text-xs text-brand-muted">{copy.reorderLongPressHint}</Text>
+          <Text className="mb-4 mt-1 text-xs text-brand-muted">{copy.closedHint}</Text>
+        </ScrollView>
       </View>
     );
   },

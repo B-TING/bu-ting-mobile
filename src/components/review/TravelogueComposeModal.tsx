@@ -30,6 +30,7 @@ type TravelogueComposeModalProps = {
   destinationLabel: string;
   placeReviews: PlaceReview[];
   defaultTitle?: string;
+  totalDurationLabel?: string | null;
   onClose: () => void;
   onPublish: (payload: {
     title: string;
@@ -47,6 +48,7 @@ export function TravelogueComposeModal({
   destinationLabel,
   placeReviews,
   defaultTitle,
+  totalDurationLabel,
   onClose,
   onPublish,
 }: TravelogueComposeModalProps) {
@@ -97,6 +99,11 @@ export function TravelogueComposeModal({
             showsVerticalScrollIndicator={false}>
             <Text className="mb-1 text-xl font-bold text-brand-text">{copy.composeTitle}</Text>
             <Text className="mb-4 text-sm text-brand-muted">{copy.composeSub}</Text>
+            {totalDurationLabel ? (
+              <Text className="-mt-2 mb-4 text-sm font-semibold text-brand-primary">
+                {totalDurationLabel}
+              </Text>
+            ) : null}
 
             <Text className="mb-1 text-xs font-bold text-brand-muted">{copy.travelogueTitle}</Text>
             <TextInput

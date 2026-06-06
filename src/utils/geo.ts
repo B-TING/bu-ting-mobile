@@ -1,4 +1,4 @@
-import type { TravelLeg } from '../types/travelPlan';
+import type { TravelLeg, TravelLegMode } from '../types/travelPlan';
 
 export function haversineKm(
   lat1: number,
@@ -21,16 +21,21 @@ export function haversineKm(
 export function estimateTravelLeg(
   from: { lat: number; lng: number },
   to: { lat: number; lng: number },
+  preferredMode?: TravelLegMode,
 ): TravelLeg {
   const km = haversineKm(from.lat, from.lng, to.lat, to.lng);
-  if (km < 0.8) {
+  const mode =
+    preferredMode ??
+    (km < 0.8 ? 'walk' : km < 4 ? 'transit' : 'drive');
+
+  if (mode === 'walk') {
     return {
       mode: 'walk',
       durationMinutes: Math.max(3, Math.round(km * 12)),
       distanceKm: Math.round(km * 10) / 10,
     };
   }
-  if (km < 4) {
+  if (mode === 'transit') {
     return {
       mode: 'transit',
       durationMinutes: Math.max(8, Math.round(km * 5)),

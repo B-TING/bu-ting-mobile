@@ -8,8 +8,21 @@ export type RouteItemType =
   | 'ACCOMMODATION'
   | 'LOCKER';
 
+export type TravelLegMode = 'walk' | 'drive' | 'transit';
+
+export type BudgetCategory =
+  | 'food'
+  | 'shopping'
+  | 'accommodation'
+  | 'transport'
+  | 'entertainment'
+  | 'other';
+
 export type PlanConstraints = {
   hasHeavyBaggage?: boolean;
+  hasPets?: boolean;
+  travelStyleIds?: string[];
+  otherConstraintIds?: string[];
   preferFlatTerrain?: boolean;
   pace?: 'relaxed' | 'moderate' | 'active';
   companionCount?: number;
@@ -43,6 +56,8 @@ export type RouteItem = {
   type: RouteItemType;
   location: { lat: number; lng: number };
   isVisited: boolean;
+  /** 이전 장소에서 이동할 때 사용하는 교통수단 */
+  legMode?: TravelLegMode;
   placeInfo?: PlaceInfo;
 };
 
@@ -50,10 +65,14 @@ export type BudgetEntry = {
   entryId: string;
   planId: string;
   label: string;
+  category: BudgetCategory;
   amount: number;
   currency: 'KRW';
   date: string;
   paidByUserId: string;
+  /** 비용을 나눌 참여자 userId 목록 (미지정 시 지불자 1인) */
+  splitWithUserIds: string[];
+  memo?: string;
   routeItemId?: string;
 };
 

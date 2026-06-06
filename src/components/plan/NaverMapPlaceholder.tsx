@@ -7,7 +7,7 @@ type NaverMapPlaceholderProps = {
   subtitle: string;
   routes: RouteItem[];
   highlightItemId?: string | null;
-  size?: 'compact' | 'fullscreen';
+  size?: 'compact' | 'fullscreen' | 'fill';
   onPress?: () => void;
   tapHint?: string;
 };
@@ -36,8 +36,13 @@ export function NaverMapPlaceholder({
   tapHint,
 }: NaverMapPlaceholderProps) {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
-  const mapWidth = size === 'fullscreen' ? screenWidth : screenWidth - 48;
-  const mapHeight = size === 'fullscreen' ? screenHeight * 0.72 : 160;
+  const mapWidth = size === 'fullscreen' ? screenWidth : screenWidth - (size === 'fill' ? 0 : 48);
+  const mapHeight =
+    size === 'fullscreen'
+      ? screenHeight * 0.72
+      : size === 'fill'
+        ? undefined
+        : 160;
 
   if (routes.length === 0) {
     return (
@@ -72,11 +77,13 @@ export function NaverMapPlaceholder({
   const mapBody = (
     <View
       className={
-        size === 'fullscreen'
+        size === 'fullscreen' || size === 'fill'
           ? 'flex-1 bg-[#E8F4E8]'
           : 'overflow-hidden rounded-2xl border border-brand-border bg-[#E8F4E8]'
       }>
-      <View style={{ width: '100%', height: mapHeight }} className="relative">
+      <View
+        style={size === 'fill' ? { flex: 1, width: '100%' } : { width: '100%', height: mapHeight }}
+        className="relative">
         <View className="absolute inset-0 opacity-30">
           {Array.from({ length: size === 'fullscreen' ? 12 : 6 }).map((_, row) => (
             <View key={row} className="flex-1 flex-row">
@@ -87,12 +94,13 @@ export function NaverMapPlaceholder({
           ))}
         </View>
         {routes.map((r, i) => {
+          const effectiveHeight = size === 'fill' ? 200 : (mapHeight ?? 160);
           const pos = project(
             r.location.lat,
             r.location.lng,
             bounds,
             mapWidth,
-            mapHeight,
+            effectiveHeight,
           );
           const active = r.itemId === highlightItemId;
           const pinSize = size === 'fullscreen' ? 36 : 28;

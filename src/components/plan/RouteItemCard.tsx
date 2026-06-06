@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { StarRating } from '../review/StarRating';
 import { catalogThumbnail } from '../../constants/placeCatalog';
 import type { RouteItem } from '../../types/travelPlan';
 
@@ -14,6 +15,11 @@ type RouteItemCardProps = {
   visitedLabel: string;
   editLabel: string;
   indexHint: string;
+  recordReviewLabel?: string;
+  quickRatingHint?: string;
+  reviewRating?: number;
+  onWriteReview?: () => void;
+  onQuickRating?: (rating: number) => void;
 };
 
 export function RouteItemCard({
@@ -27,6 +33,11 @@ export function RouteItemCard({
   visitedLabel,
   editLabel,
   indexHint,
+  recordReviewLabel,
+  quickRatingHint,
+  reviewRating = 0,
+  onWriteReview,
+  onQuickRating,
 }: RouteItemCardProps) {
   const info = route.placeInfo;
   const thumb = catalogThumbnail(route.placeId);
@@ -69,8 +80,25 @@ export function RouteItemCard({
             {route.isVisited ? `✓ ${visitedLabel}` : `○ ${visitedLabel}`}
           </Text>
         </Pressable>
+        {route.isVisited && onWriteReview && recordReviewLabel ? (
+          <View className="mt-2 flex-row flex-wrap items-center gap-2">
+            <Pressable
+              onPress={onWriteReview}
+              className="rounded-full bg-brand-primary px-3 py-1 active:opacity-90">
+              <Text className="text-[11px] font-bold text-white">{recordReviewLabel}</Text>
+            </Pressable>
+            {onQuickRating ? (
+              <View className="flex-row items-center gap-1">
+                <StarRating value={reviewRating} onChange={onQuickRating} size="sm" />
+                {quickRatingHint ? (
+                  <Text className="text-[9px] text-brand-muted">{quickRatingHint}</Text>
+                ) : null}
+              </View>
+            ) : null}
+          </View>
+        ) : null}
       </Pressable>
-      <View className="items-end justify-between">
+      <View className="items-end">
         <Pressable
           onPress={onEditPress}
           accessibilityLabel={editLabel}

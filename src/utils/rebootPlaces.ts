@@ -121,6 +121,7 @@ export function candidateToRouteItem(
   sequence: number,
   language: AppLanguage,
   type: RouteItemType = 'ATTRACTION',
+  legMode?: RouteItem['legMode'],
 ): RouteItem {
   return {
     itemId: createId('r'),
@@ -130,6 +131,7 @@ export function candidateToRouteItem(
     type,
     location: candidate.location,
     isVisited: false,
+    legMode,
     placeInfo: enrichPlaceInfo(
       candidate.placeId,
       candidate.placeName,

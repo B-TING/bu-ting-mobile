@@ -1,81 +1,26 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-
-
-
 import { Text, View } from 'react-native';
-
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-
-
-
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-
-
-
-
-
-
+import { BudgetEntryModal } from '../../components/plan/BudgetEntryModal';
 import { BackButton } from '../../components/plan/BackButton';
-
-
-
 import { PlaceDetailModal } from '../../components/plan/PlaceDetailModal';
-
-
-
+import { PlacePickModal } from '../../components/plan/PlacePickModal';
 import { PlanTabPager } from '../../components/plan/PlanTabPager';
-
-
-
+import { RouteOptimizeFab } from '../../components/plan/RouteOptimizeFab';
 import { PlanBudgetTab } from '../../components/plan/detail/PlanBudgetTab';
-
-
-
-import { PlanExploreTab } from '../../components/plan/detail/PlanExploreTab';
-
-
-
 import { PlanOverviewTab } from '../../components/plan/detail/PlanOverviewTab';
-
-
-
 import { PlanRecordsTab } from '../../components/plan/detail/PlanRecordsTab';
-
-
-
 import {
   PlanScheduleTab,
   type PlanScheduleTabHandle,
   type ScheduleModalState,
 } from '../../components/plan/detail/PlanScheduleTab';
-import { PlacePickModal } from '../../components/plan/PlacePickModal';
-import { ScheduleRebootFab } from '../../components/plan/ScheduleRebootFab';
-
-
-
-import {
-
-
-
-  PLAN_DETAIL_COPY,
-
-
-
-  type PlanDetailTab,
-
-
-
-} from '../../constants/planDetail';
-
-
-
-import type { RootStackParamList } from '../../navigation/types';
-
-
-
 import { PlaceReviewFormModal } from '../../components/review/PlaceReviewFormModal';
+import { PLAN_DETAIL_COPY, type PlanDetailTab } from '../../constants/planDetail';
 import { TRAVEL_REVIEW_COPY } from '../../constants/travelReview';
+import type { RootStackParamList } from '../../navigation/types';
 import {
   EMPTY_REVIEWS,
   hydrateRoutePlaceInfo,
@@ -83,148 +28,48 @@ import {
   usePlanStore,
   useTravelogueStore,
 } from '../../stores';
-import { getReviewForRoute, reviewProgress } from '../../utils/travelReview';
-
-
-
-import type { BudgetEntry, RouteItem } from '../../types/travelPlan';
-
-
-
+import type { BudgetEntry, RouteItem, TravelLegMode } from '../../types/travelPlan';
 import { sortedRoutes } from '../../utils/planItinerary';
-import { candidateToRouteItem } from '../../utils/rebootPlaces';
-import type { RebootPlaceCandidate } from '../../utils/rebootPlaces';
-
-
-
-
-
-
+import {
+  candidateToRouteItem,
+  type RebootPlaceCandidate,
+} from '../../utils/rebootPlaces';
+import { getReviewForRoute, reviewProgress } from '../../utils/travelReview';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PlanDetail'>;
 
-
-
-
-
-
-
 const EMPTY_BUDGET: BudgetEntry[] = [];
 
-
-
-
-
-
-
 export function PlanDetailScreen({ navigation, route }: Props) {
-
-
-
   const paramPlanId = route.params?.planId;
-
-
-
   const insets = useSafeAreaInsets();
-
-
-
   const language = useAppStore(s => s.language) ?? 'ko';
 
-
-
-
-
-
   const plans = usePlanStore(s => s.plans);
-
-
-
   const activePlanId = usePlanStore(s => s.activePlanId);
-
-
-
   const budgetByPlan = usePlanStore(s => s.budgetByPlan);
-
-
-
   const toggleVisited = usePlanStore(s => s.toggleRouteVisited);
   const replaceRoute = usePlanStore(s => s.replaceRouteInPlan);
   const addRoute = usePlanStore(s => s.addRouteToPlan);
-
   const addBudgetEntry = usePlanStore(s => s.addBudgetEntry);
   const completePlan = usePlanStore(s => s.completePlan);
   const upsertPlaceReview = useTravelogueStore(s => s.upsertPlaceReview);
   const displayName = useAppStore(s => s.auth.displayName) ?? 'Traveler';
 
-
-
-
-
-
-
   const plan = useMemo(() => {
-
-
-
     if (paramPlanId) {
-
-
-
       return plans.find(p => p.planId === paramPlanId) ?? null;
-
-
-
     }
-
-
-
     if (activePlanId) {
-
-
-
       const active = plans.find(p => p.planId === activePlanId);
-
-
-
       if (active && active.status !== 'COMPLETED') {
-
-
-
         return active;
-
-
-
       }
-
-
-
     }
-
-
-
-    return (
-
-
-
-      plans.find(p => p.status === 'DRAFT' || p.status === 'CONFIRMED') ?? null
-
-
-
-    );
-
-
-
+    return plans.find(p => p.status === 'DRAFT' || p.status === 'CONFIRMED') ?? null;
   }, [paramPlanId, plans, activePlanId]);
 
-
-
-
-
-
-
   const planId = plan?.planId ?? '';
-
   const planReviews =
     useTravelogueStore(s => (planId ? s.reviewsByPlan[planId] : undefined)) ??
     EMPTY_REVIEWS;
@@ -233,112 +78,39 @@ export function PlanDetailScreen({ navigation, route }: Props) {
   );
 
   const budgetEntries = useMemo(
-
-
-
     () => (planId ? budgetByPlan[planId] : undefined) ?? EMPTY_BUDGET,
-
-
-
     [budgetByPlan, planId],
-
-
-
   );
 
-
-
-
-
-
-
   const copy = PLAN_DETAIL_COPY[language];
+  const reviewCopy = TRAVEL_REVIEW_COPY[language];
 
-
-
-  const [tab, setTab] = useState<PlanDetailTab>('overview');
-
-
-
+  const [tab, setTab] = useState<PlanDetailTab>(route.params?.tab ?? 'overview');
   const [selectedDay, setSelectedDay] = useState(1);
-
-
-
   const [selectedRoute, setSelectedRoute] = useState<RouteItem | null>(null);
-  const scheduleRef = useRef<PlanScheduleTabHandle>(null);
   const [scheduleModal, setScheduleModal] = useState<ScheduleModalState>({ kind: 'none' });
   const [scheduleReorderActive, setScheduleReorderActive] = useState(false);
   const [reviewFormRoute, setReviewFormRoute] = useState<RouteItem | null>(null);
-  const reviewCopy = TRAVEL_REVIEW_COPY[language];
+  const [budgetModalOpen, setBudgetModalOpen] = useState(false);
 
-
-
-
-
-
+  const scheduleRef = useRef<PlanScheduleTabHandle>(null);
 
   const enrichedPlan = useMemo(() => {
-
-
-
     if (!plan) {
-
-
-
       return null;
-
-
-
     }
-
-
-
     return {
-
-
-
       ...plan,
-
-
-
       itinerary: plan.itinerary.map(day => ({
-
-
-
         ...day,
-
-
-
-        routes: sortedRoutes(day.routes).map(r =>
-
-
-
-          hydrateRoutePlaceInfo(r, language),
-
-
-
-        ),
-
-
-
+        routes: sortedRoutes(day.routes).map(r => hydrateRoutePlaceInfo(r, language)),
       })),
-
-
-
     };
-
-
-
   }, [plan, language]);
 
-
-
   const allRoutes = useMemo(
-
     () => enrichedPlan?.itinerary.flatMap(d => d.routes) ?? [],
-
     [enrichedPlan],
-
   );
 
   const recordsProgress = useMemo(
@@ -362,7 +134,7 @@ export function PlanDetailScreen({ navigation, route }: Props) {
   }, []);
 
   const handlePickReplacement = useCallback(
-    (candidate: RebootPlaceCandidate) => {
+    (candidate: RebootPlaceCandidate, legMode?: TravelLegMode) => {
       if (!pickRoute || !planId) {
         return;
       }
@@ -371,6 +143,7 @@ export function PlanDetailScreen({ navigation, route }: Props) {
         pickRoute.sequence,
         language,
         pickRoute.type === 'LOCKER' ? 'ATTRACTION' : pickRoute.type,
+        legMode ?? pickRoute.legMode,
       );
       replaceRoute(planId, pickRoute.itemId, replacement);
       if (selectedRoute?.itemId === pickRoute.itemId) {
@@ -386,16 +159,51 @@ export function PlanDetailScreen({ navigation, route }: Props) {
   );
 
   const handleAddPlace = useCallback(
-    (candidate: RebootPlaceCandidate) => {
+    (candidate: RebootPlaceCandidate, legMode?: TravelLegMode) => {
       if (!scheduleDay || !planId) {
         return;
       }
-      const newRoute = candidateToRouteItem(candidate, scheduleRoutes.length, language);
+      const newRoute = candidateToRouteItem(
+        candidate,
+        scheduleRoutes.length,
+        language,
+        'ATTRACTION',
+        legMode ?? 'walk',
+      );
       addRoute(planId, scheduleDay.dayNumber, newRoute);
       closeScheduleModal();
     },
     [scheduleDay, scheduleRoutes.length, language, planId, addRoute, closeScheduleModal],
   );
+
+  const handleQuickRating = useCallback(
+    (routeItem: RouteItem, rating: number) => {
+      if (!planId) {
+        return;
+      }
+      upsertPlaceReview(planId, {
+        planId,
+        routeItemId: routeItem.itemId,
+        placeId: routeItem.placeId,
+        placeName: routeItem.placeName,
+        rating,
+        tags: [],
+        comment: '',
+        media: [],
+      });
+    },
+    [planId, upsertPlaceReview],
+  );
+
+  useEffect(() => {
+    if (route.params?.openReboot && enrichedPlan) {
+      setTab('schedule');
+      const timer = setTimeout(() => {
+        scheduleRef.current?.handleRebootFabPress();
+      }, 400);
+      return () => clearTimeout(timer);
+    }
+  }, [route.params?.openReboot, enrichedPlan]);
 
   useEffect(() => {
     if (!enrichedPlan) {
@@ -407,218 +215,57 @@ export function PlanDetailScreen({ navigation, route }: Props) {
     return null;
   }
 
-
-
-
-
-
-
   const roleLabels = {
-
-
-
     OWNER: copy.roleOwner,
-
-
-
     EDITOR: copy.roleEditor,
-
-
-
     VIEWER: copy.roleViewer,
-
-
-
   };
-
-
-
-
-
-
 
   const budgetTotal = budgetEntries.reduce((s, e) => s + e.amount, 0);
-
-
-
   const day =
-
-
-
     enrichedPlan.itinerary.find(d => d.dayNumber === selectedDay) ??
-
-
-
     enrichedPlan.itinerary[0];
 
-  const addSampleExpense = () => {
-
-
-
-    addBudgetEntry({
-
-
-
-      planId,
-
-
-
-      label: language === 'ko' ? '점심 (자갈치)' : 'Lunch',
-
-
-
-      amount: 28000,
-
-
-
-      currency: 'KRW',
-
-
-
-      date: day?.date ?? enrichedPlan.startDate,
-
-
-
-      paidByUserId: enrichedPlan.members[0]?.userId ?? 'local-user',
-
-
-
-    });
-
-
-
+  const transportCopy = {
+    transportModeTitle: copy.transportModeTitle,
+    legWalk: copy.legWalk,
+    legDrive: copy.legDrive,
+    legTransit: copy.legTransit,
   };
 
-
-
-
-
-
-
   return (
-
-
-
     <View className="flex-1 bg-brand-background" style={{ paddingTop: insets.top }}>
-
-
-
       <View className="flex-row items-center border-b border-brand-border bg-brand-surface px-4 py-3">
-
-
-
         <BackButton
-
-
-
           accessibilityLabel={language === 'ko' ? '메인으로' : 'Back to home'}
-
-
-
           onPress={() => navigation.navigate('MainHome')}
-
-
-
         />
-
-
-
         <Text className="flex-1 text-lg font-bold text-brand-text" numberOfLines={1}>
-
-
-
           {enrichedPlan.title}
-
-
-
         </Text>
-
-
-
       </View>
 
-
-
-
-
-
-
       <PlanTabPager
-
-
-
         active={tab}
-
-
-
         onChange={setTab}
-
-
-
         language={language}
-
-
-
         bottomInset={insets.bottom}
-
         horizontalScrollEnabled={!scheduleReorderActive}
-
         pages={{
-
-
-
           overview: (
-
-
-
             <PlanOverviewTab
-
-
-
               plan={enrichedPlan}
-
-
-
               language={language}
-
-
-
               copy={copy}
-
-
-
               roleLabels={roleLabels}
-
-
-
               budgetEntries={budgetEntries}
-
-
-
               budgetTotal={budgetTotal}
-
-
-
               onNavigateToTab={setTab}
-
               recordsProgress={recordsProgress}
-
               isTraveloguePublished={isPlanPublished}
-
-
-
             />
-
-
-
           ),
-
-
-
           schedule: (
-
-
-
             <PlanScheduleTab
               ref={scheduleRef}
               planId={planId}
@@ -626,9 +273,12 @@ export function PlanDetailScreen({ navigation, route }: Props) {
               language={language}
               copy={copy}
               selectedDay={selectedDay}
+              planReviews={planReviews}
               onSelectDay={setSelectedDay}
               onSelectRoute={setSelectedRoute}
               onToggleVisited={itemId => toggleVisited(planId, itemId)}
+              onWriteReview={setReviewFormRoute}
+              onQuickRating={handleQuickRating}
               onRouteRemoved={itemId => {
                 if (selectedRoute?.itemId === itemId) {
                   setSelectedRoute(null);
@@ -637,57 +287,16 @@ export function PlanDetailScreen({ navigation, route }: Props) {
               onScheduleModalChange={setScheduleModal}
               onReorderActiveChange={setScheduleReorderActive}
             />
-
-
-
           ),
-
-
-
-          explore: (
-
-
-
-            <PlanExploreTab copy={copy} language={language} allRoutes={allRoutes} />
-
-
-
-          ),
-
-
-
           budget: (
-
-
-
             <PlanBudgetTab
-
-
-
               copy={copy}
-
-
-
               budgetEntries={budgetEntries}
-
-
-
               budgetTotal={budgetTotal}
-
-
-
-              onAddSample={addSampleExpense}
-
-
-
+              members={enrichedPlan.members}
+              onAddExpense={() => setBudgetModalOpen(true)}
             />
-
-
-
           ),
-
-
-
           records: (
             <PlanRecordsTab
               plan={enrichedPlan}
@@ -710,32 +319,36 @@ export function PlanDetailScreen({ navigation, route }: Props) {
               }
             />
           ),
-
-
-
         }}
-
-
-
       />
 
-
-
-
-
-
-
       {tab === 'schedule' && (
-        <ScheduleRebootFab
+        <RouteOptimizeFab
           bottom={insets.bottom + 72}
-          onPress={() => scheduleRef.current?.handleRebootFabPress()}
+          label={copy.routeOptimize}
+          addPlaceLabel={copy.addPlace}
+          onPress={() => scheduleRef.current?.handleRouteOptimize()}
+          onAddPlace={() => scheduleRef.current?.handleAddPlacePress()}
         />
       )}
+
+      <BudgetEntryModal
+        visible={budgetModalOpen}
+        copy={copy}
+        language={language}
+        members={enrichedPlan.members}
+        defaultDate={day?.date ?? enrichedPlan.startDate}
+        planId={planId}
+        onClose={() => setBudgetModalOpen(false)}
+        onSave={entry => addBudgetEntry(entry)}
+      />
 
       <PlacePickModal
         visible={scheduleModal.kind === 'pick' && !!pickRoute}
         anchor={pickRoute?.location}
         language={language}
+        showTransportMode
+        defaultLegMode={pickRoute?.legMode ?? 'walk'}
         copy={{
           title: copy.rebootModalTitle,
           subtitle: pickRoute ? copy.rebootModalSub(pickRoute.placeName) : undefined,
@@ -745,6 +358,7 @@ export function PlanDetailScreen({ navigation, route }: Props) {
           applyLabel: copy.rebootApply,
           cancelLabel: copy.rebootCancel,
           distance: copy.rebootDistance,
+          ...transportCopy,
         }}
         excludePlaceIds={schedulePlaceIds}
         onClose={closeScheduleModal}
@@ -755,6 +369,8 @@ export function PlanDetailScreen({ navigation, route }: Props) {
         visible={scheduleModal.kind === 'add'}
         anchor={lastScheduleRoute?.location}
         language={language}
+        showTransportMode
+        defaultLegMode="walk"
         copy={{
           title: copy.addPlaceTitle,
           subtitle: copy.addPlaceSub,
@@ -764,6 +380,7 @@ export function PlanDetailScreen({ navigation, route }: Props) {
           applyLabel: copy.addPlaceConfirm,
           cancelLabel: copy.addPlaceClose,
           distance: copy.rebootDistance,
+          ...transportCopy,
         }}
         excludePlaceIds={schedulePlaceIds}
         onClose={closeScheduleModal}
@@ -810,17 +427,6 @@ export function PlanDetailScreen({ navigation, route }: Props) {
         onClose={() => setReviewFormRoute(null)}
         onSave={payload => upsertPlaceReview(planId, payload)}
       />
-
-
-
     </View>
-
-
-
   );
-
-
-
 }
-
-

@@ -13,6 +13,8 @@ import { WizardStepLayout } from '../../components/plan/WizardStepLayout';
 import { OptionCard } from '../../components/setup/OptionCard';
 import { PrimaryButton } from '../../components/setup/PrimaryButton';
 import {
+  TRAVEL_CONSTRAINT_OPTIONS,
+  TRAVEL_STYLE_OPTIONS,
   ACCOMMODATION_AREAS,
   ACCOMMODATION_SEARCH,
   BUSAN_ATTRACTIONS,
@@ -82,7 +84,9 @@ export function PlanWizardScreen({ navigation }: Props) {
         return answers.companionCount >= 1 && answers.companionCount <= 20;
       case 'companionType':
         return answers.companionTypes.length > 0;
-      case 'luggage':
+      case 'travelStyle':
+        return answers.travelStyleIds.length > 0;
+      case 'constraints':
         return true;
       case 'attractions':
         return answers.attractionIds.length > 0;
@@ -119,6 +123,52 @@ export function PlanWizardScreen({ navigation }: Props) {
         companionTypes: exists
           ? prev.companionTypes.filter(t => t !== type)
           : [...prev.companionTypes, type],
+      };
+    });
+  };
+
+  const toggleTravelStyle = (id: string) => {
+    setAnswers(prev => {
+      const exists = prev.travelStyleIds.includes(id);
+      return {
+        ...prev,
+        travelStyleIds: exists
+          ? prev.travelStyleIds.filter(x => x !== id)
+          : [...prev.travelStyleIds, id],
+      };
+    });
+  };
+
+  const isConstraintSelected = (id: string): boolean => {
+    if (id === 'heavy_luggage') {
+      return answers.hasHeavyBaggage;
+    }
+    if (id === 'light_luggage') {
+      return !answers.hasHeavyBaggage;
+    }
+    if (id === 'pets') {
+      return answers.hasPets;
+    }
+    return answers.otherConstraintIds.includes(id);
+  };
+
+  const toggleConstraint = (id: string) => {
+    setAnswers(prev => {
+      if (id === 'heavy_luggage') {
+        return { ...prev, hasHeavyBaggage: true };
+      }
+      if (id === 'light_luggage') {
+        return { ...prev, hasHeavyBaggage: false };
+      }
+      if (id === 'pets') {
+        return { ...prev, hasPets: !prev.hasPets };
+      }
+      const exists = prev.otherConstraintIds.includes(id);
+      return {
+        ...prev,
+        otherConstraintIds: exists
+          ? prev.otherConstraintIds.filter(x => x !== id)
+          : [...prev.otherConstraintIds, id],
       };
     });
   };
@@ -232,20 +282,33 @@ export function PlanWizardScreen({ navigation }: Props) {
             ))}
           </ScrollView>
         );
-      case 'luggage':
+      case 'travelStyle':
         return (
-          <>
-            <OptionCard
-              label={copy.heavyYes}
-              selected={answers.hasHeavyBaggage}
-              onPress={() => setAnswers(p => ({ ...p, hasHeavyBaggage: true }))}
-            />
-            <OptionCard
-              label={copy.heavyNo}
-              selected={!answers.hasHeavyBaggage}
-              onPress={() => setAnswers(p => ({ ...p, hasHeavyBaggage: false }))}
-            />
-          </>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {TRAVEL_STYLE_OPTIONS.map(opt => (
+              <OptionCard
+                key={opt.id}
+                label={opt.label[language]}
+                selected={answers.travelStyleIds.includes(opt.id)}
+                compact
+                onPress={() => toggleTravelStyle(opt.id)}
+              />
+            ))}
+          </ScrollView>
+        );
+      case 'constraints':
+        return (
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <Text className="mb-3 text-sm text-brand-muted">{copy.constraintHint}</Text>
+            {TRAVEL_CONSTRAINT_OPTIONS.map(opt => (
+              <OptionCard
+                key={opt.id}
+                label={opt.label[language]}
+                selected={isConstraintSelected(opt.id)}
+                onPress={() => toggleConstraint(opt.id)}
+              />
+            ))}
+          </ScrollView>
         );
       case 'attractions':
         return (

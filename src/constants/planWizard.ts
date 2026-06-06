@@ -1,7 +1,7 @@
 import type { AppLanguage } from '../types/user';
 import type { LocalizedLabel, PlanWizardStepId } from '../types/planWizard';
 
-export const PLAN_WIZARD_STEP_COUNT = 8;
+export const PLAN_WIZARD_STEP_COUNT = 9;
 
 export type PlanWizardStepConfig = {
   id: PlanWizardStepId;
@@ -56,18 +56,33 @@ export const PLAN_WIZARD_STEPS: PlanWizardStepConfig[] = [
     },
   },
   {
-    id: 'luggage',
+    id: 'travelStyle',
     title: {
-      ko: '짐이 많은 편인가요?',
-      en: 'Traveling with heavy luggage?',
-      ja: '荷物は多めですか？',
-      zh: '行李多吗？',
+      ko: '선호하는 여행 스타일은?',
+      en: 'What travel style do you prefer?',
+      ja: '好みの旅行スタイルは？',
+      zh: '偏好的旅行风格？',
     },
     subtitle: {
-      ko: '보관소·평지 코스 추천에 반영',
-      en: 'Affects locker and flat-route tips',
-      ja: '預かり・平坦ルートに反映',
-      zh: '影响寄存与平缓路线',
+      ko: '여행 테마 · 복수 선택',
+      en: 'Travel themes · multi-select',
+      ja: 'テーマ · 複数選択',
+      zh: '旅行主题 · 多选',
+    },
+  },
+  {
+    id: 'constraints',
+    title: {
+      ko: '여행 제약 조건이 있나요?',
+      en: 'Any travel constraints?',
+      ja: '旅行の制約はありますか？',
+      zh: '有旅行限制吗？',
+    },
+    subtitle: {
+      ko: '짐, 애완동물, 기타 조건 선택',
+      en: 'Luggage, pets, and other needs',
+      ja: '荷物・ペット・その他',
+      zh: '行李、宠物及其他',
     },
   },
   {
@@ -134,6 +149,25 @@ export const PLAN_WIZARD_STEPS: PlanWizardStepConfig[] = [
 
 type SelectOption = { id: string; label: LocalizedLabel; meta?: { lat: number; lng: number; placeId?: string } };
 
+export const TRAVEL_STYLE_OPTIONS: SelectOption[] = [
+  { id: 'culture', label: { ko: '문화·역사', en: 'Culture & history', ja: '文化・歴史', zh: '文化历史' } },
+  { id: 'nature', label: { ko: '자연·힐링', en: 'Nature & wellness', ja: '自然・癒し', zh: '自然疗愈' } },
+  { id: 'food', label: { ko: '미식·맛집', en: 'Food & dining', ja: 'グルメ', zh: '美食' } },
+  { id: 'shopping', label: { ko: '쇼핑', en: 'Shopping', ja: 'ショッピング', zh: '购物' } },
+  { id: 'adventure', label: { ko: '액티비티', en: 'Adventure', ja: 'アクティビティ', zh: '冒险活动' } },
+  { id: 'photo', label: { ko: '사진·인스타', en: 'Photo spots', ja: '写真スポット', zh: '拍照打卡' } },
+  { id: 'nightlife', label: { ko: '야경·나이트', en: 'Nightlife', ja: 'ナイト', zh: '夜生活' } },
+];
+
+export const TRAVEL_CONSTRAINT_OPTIONS: SelectOption[] = [
+  { id: 'heavy_luggage', label: { ko: '짐이 많음', en: 'Heavy luggage', ja: '荷物多め', zh: '行李较多' } },
+  { id: 'light_luggage', label: { ko: '짐이 적음', en: 'Light luggage', ja: '荷物少なめ', zh: '行李较少' } },
+  { id: 'pets', label: { ko: '애완동물 동반', en: 'Traveling with pets', ja: 'ペット同伴', zh: '携带宠物' } },
+  { id: 'stroller', label: { ko: '유모차', en: 'Stroller', ja: 'ベビーカー', zh: '婴儿车' } },
+  { id: 'wheelchair', label: { ko: '휠체어·접근성', en: 'Wheelchair access', ja: '車椅子', zh: '轮椅无障碍' } },
+  { id: 'dietary', label: { ko: '식단·알레르기', en: 'Dietary restrictions', ja: '食事制限', zh: '饮食限制' } },
+];
+
 export const BUSAN_ATTRACTIONS: SelectOption[] = [
   { id: 'gamcheon', label: { ko: '감천문화마을', en: 'Gamcheon Village', ja: '甘川文化村', zh: '甘川文化村' }, meta: { lat: 35.0974, lng: 129.0107, placeId: 'tour_gamcheon' } },
   { id: 'haeundae', label: { ko: '해운대 해수욕장', en: 'Haeundae Beach', ja: '海雲台', zh: '海云台' }, meta: { lat: 35.1587, lng: 129.1604, placeId: 'tour_haeundae' } },
@@ -194,6 +228,7 @@ export const PLAN_WIZARD_COPY: Record<
     countLabel: (n: number) => string;
     heavyYes: string;
     heavyNo: string;
+    constraintHint: string;
     accBooked: string;
     accArea: string;
     accSearch: string;
@@ -221,6 +256,7 @@ export const PLAN_WIZARD_COPY: Record<
     countLabel: n => `${n}명`,
     heavyYes: '짐이 많아요',
     heavyNo: '가볍게 다녀요',
+    constraintHint: '해당하는 항목을 모두 선택해 주세요',
     accBooked: '숙소 예약 완료',
     accArea: '숙소 후보 지역만',
     accSearch: '숙소 검색',
@@ -247,6 +283,7 @@ export const PLAN_WIZARD_COPY: Record<
     countLabel: n => `${n} travelers`,
     heavyYes: 'Heavy luggage',
     heavyNo: 'Travel light',
+    constraintHint: 'Select all that apply',
     accBooked: 'Already booked',
     accArea: 'Pick stay areas only',
     accSearch: 'Search stay',
@@ -273,6 +310,7 @@ export const PLAN_WIZARD_COPY: Record<
     countLabel: n => `${n}名`,
     heavyYes: '荷物多め',
     heavyNo: '少なめ',
+    constraintHint: '該当する項目を選んでください',
     accBooked: '宿泊予約済み',
     accArea: 'エリア候補のみ',
     accSearch: '宿を検索',
@@ -299,6 +337,7 @@ export const PLAN_WIZARD_COPY: Record<
     countLabel: n => `${n}人`,
     heavyYes: '行李较多',
     heavyNo: '轻装',
+    constraintHint: '请选择所有适用项',
     accBooked: '已预订住宿',
     accArea: '仅选住宿区域',
     accSearch: '搜索住宿',

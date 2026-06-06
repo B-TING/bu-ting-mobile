@@ -15,6 +15,7 @@ import {
   isTraveloguePublic,
   reviewProgress,
 } from '../../../utils/travelReview';
+import { computeTripTotalMinutes, formatDurationMinutes } from '../../../utils/tripDuration';
 
 type PlanRecordsTabProps = {
   plan: TravelPlan;
@@ -61,6 +62,16 @@ export function PlanRecordsTab({
     [allRoutes, reviews],
   );
 
+  const totalDurationLabel = useMemo(() => {
+    const minutes = computeTripTotalMinutes(plan.itinerary);
+    if (minutes <= 0) {
+      return null;
+    }
+    return TRAVEL_REVIEW_COPY[language].totalDuration(
+      formatDurationMinutes(minutes, language),
+    );
+  }, [plan.itinerary, language]);
+
   const handlePublish = (payload: {
     title: string;
     overallReview: string;
@@ -90,7 +101,12 @@ export function PlanRecordsTab({
   return (
     <View className="px-4 pb-8">
       <Text className="mb-1 text-lg font-bold text-brand-text">{copy.recordsTitle}</Text>
-      <Text className="mb-4 text-sm text-brand-muted">{copy.recordsSub}</Text>
+      <Text className="mb-1 text-sm text-brand-muted">{copy.recordsSub}</Text>
+      {totalDurationLabel ? (
+        <Text className="mb-4 text-sm font-semibold text-brand-primary">{totalDurationLabel}</Text>
+      ) : (
+        <View className="mb-4" />
+      )}
 
       <View className="mb-4 rounded-2xl border border-brand-border bg-brand-surface px-4 py-3">
         <Text className="text-sm font-semibold text-brand-text">
@@ -210,6 +226,7 @@ export function PlanRecordsTab({
         destinationLabel={destinationLabel}
         placeReviews={reviews}
         defaultTitle={plan.title}
+        totalDurationLabel={totalDurationLabel}
         onClose={() => setComposeOpen(false)}
         onPublish={handlePublish}
       />

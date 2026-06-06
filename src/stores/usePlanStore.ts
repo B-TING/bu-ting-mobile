@@ -4,8 +4,9 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { enrichPlaceInfo } from '../constants/placeCatalog';
 import type { PlanWizardAnswers } from '../types/planWizard';
-import type { BudgetEntry, RouteItem, TravelPlan } from '../types/travelPlan';
+import type { BudgetEntry, RouteItem, TravelLegMode, TravelPlan } from '../types/travelPlan';
 import { createId } from '../utils/id';
+import { optimizeRouteOrder } from '../utils/routeOptimize';
 
 type PlanState = {
   plans: TravelPlan[];
@@ -22,6 +23,8 @@ type PlanState = {
   replaceRouteInPlan: (planId: string, itemId: string, replacement: RouteItem) => void;
   addRouteToPlan: (planId: string, dayNumber: number, route: RouteItem) => void;
   reorderRoutesInPlan: (planId: string, dayNumber: number, orderedItemIds: string[]) => void;
+  updateRouteLegMode: (planId: string, itemId: string, legMode: TravelLegMode) => void;
+  optimizeDayRoute: (planId: string, dayNumber: number) => void;
   addBudgetEntry: (entry: Omit<BudgetEntry, 'entryId'>) => void;
   getBudgetForPlan: (planId: string) => BudgetEntry[];
   completePlan: (planId: string) => void;
@@ -153,6 +156,40 @@ export const usePlanStore = create<PlanState>()(
             };
           }),
         })),
+      updateRouteLegMode: (planId, itemId, legMode) =>
+        set(state => ({
+          plans: state.plans.map(plan => {
+            if (plan.planId !== planId) {
+              return plan;
+            }
+            return {
+              ...plan,
+              itinerary: plan.itinerary.map(day => ({
+                ...day,
+                routes: day.routes.map(r =>
+                  r.itemId === itemId ? { ...r, legMode } : r,
+                ),
+              })),
+            };
+          }),
+        })),
+      optimizeDayRoute: (planId, dayNumber) =>
+        set(state => ({
+          plans: state.plans.map(plan => {
+            if (plan.planId !== planId) {
+              return plan;
+            }
+            return {
+              ...plan,
+              itinerary: plan.itinerary.map(day => {
+                if (day.dayNumber !== dayNumber) {
+                  return day;
+                }
+                return { ...day, routes: optimizeRouteOrder(day.routes) };
+              }),
+            };
+          }),
+        })),
       addBudgetEntry: entry => {
         const full: BudgetEntry = { ...entry, entryId: createId('exp-') };
         set(state => ({
@@ -221,7 +258,10 @@ export const emptyWizardAnswers = (): PlanWizardAnswers => ({
   endDate: '',
   companionCount: 1,
   companionTypes: [],
+  travelStyleIds: [],
   hasHeavyBaggage: false,
+  hasPets: false,
+  otherConstraintIds: [],
   attractionIds: [],
   foodIds: [],
   accommodationMode: 'area_only',

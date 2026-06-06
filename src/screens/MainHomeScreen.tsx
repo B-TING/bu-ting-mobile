@@ -7,6 +7,7 @@ import { EventsSectionMock } from '../components/home/EventsSectionMock';
 import { HeroBanner } from '../components/home/HeroBanner';
 import { QuickAccessRow } from '../components/home/QuickAccessRow';
 import { TraveloguePreviewMock } from '../components/home/TraveloguePreviewMock';
+import { ScheduleRebootFab } from '../components/plan/ScheduleRebootFab';
 import { AppBar } from '../components/navigation/AppBar';
 import { AppMenuDrawer } from '../components/navigation/AppMenuDrawer';
 import { Navbar, type NavbarTab } from '../components/navigation/Navbar';
@@ -17,6 +18,7 @@ import {
   MOCK_TRAVELOGUE,
   QUICK_ACCESS_ITEMS,
 } from '../constants/mainHome';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { layout } from '../constants/layout';
 import type { RootStackParamList } from '../navigation/types';
 import { selectActivePlan, useAppStore, usePlanStore, useTravelogueStore } from '../stores';
@@ -28,6 +30,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'MainHome'>;
 const NAVBAR_HEIGHT = 72;
 
 export function MainHomeScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
   const language = useAppStore(s => s.language) ?? 'ko';
   const copy = MAIN_HOME_COPY[language];
   const activePlan = usePlanStore(selectActivePlan);
@@ -49,6 +52,17 @@ export function MainHomeScreen({ navigation }: Props) {
       'PlanDetail',
       activePlan ? { planId: activePlan.planId } : undefined,
     );
+  };
+
+  const goToReboot = () => {
+    if (!activePlan) {
+      return;
+    }
+    navigation.navigate('PlanDetail', {
+      planId: activePlan.planId,
+      tab: 'schedule',
+      openReboot: true,
+    });
   };
 
   const handleNavbarPress = (tab: NavbarTab) => {
@@ -140,6 +154,10 @@ export function MainHomeScreen({ navigation }: Props) {
       </ScrollView>
 
       <Navbar activeTab={activeTab} language={language} onTabPress={handleNavbarPress} />
+
+      {activePlan ? (
+        <ScheduleRebootFab bottom={insets.bottom + NAVBAR_HEIGHT + 8} onPress={goToReboot} />
+      ) : null}
     </View>
   );
 }

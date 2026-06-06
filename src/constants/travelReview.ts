@@ -72,6 +72,7 @@ export const TRAVEL_REVIEW_COPY: Record<
     mapTitle: string;
     mapSubtitle: string;
     tripPeriod: (start: string, end: string) => string;
+    totalDuration: (duration: string) => string;
   }
 > = {
   ko: {
@@ -137,6 +138,7 @@ export const TRAVEL_REVIEW_COPY: Record<
     mapTitle: '여행 경로',
     mapSubtitle: '장소를 탭하면 지도가 해당 위치로 이동해요',
     tripPeriod: (start, end) => `${start} ~ ${end}`,
+    totalDuration: d => `총 소요시간 ${d}`,
   },
   en: {
     writeReview: 'Write review',
@@ -201,6 +203,7 @@ export const TRAVEL_REVIEW_COPY: Record<
     mapTitle: 'Trip route',
     mapSubtitle: 'Tap a place to focus the map',
     tripPeriod: (start, end) => `${start} – ${end}`,
+    totalDuration: d => `Total time ${d}`,
   },
   ja: {
     writeReview: 'レビューを書く',
@@ -265,6 +268,7 @@ export const TRAVEL_REVIEW_COPY: Record<
     mapTitle: '旅行ルート',
     mapSubtitle: '場所をタップすると地図がその位置に移動します',
     tripPeriod: (start, end) => `${start} 〜 ${end}`,
+    totalDuration: d => `総所要時間 ${d}`,
   },
   zh: {
     writeReview: '写点评',
@@ -329,5 +333,6 @@ export const TRAVEL_REVIEW_COPY: Record<
     mapTitle: '行程路线',
     mapSubtitle: '点击地点，地图将移动到该位置',
     tripPeriod: (start, end) => `${start} ~ ${end}`,
+    totalDuration: d => `总耗时 ${d}`,
   },
 };

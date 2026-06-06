@@ -114,9 +114,18 @@ function buildItinerary(
 }
 
 function buildConstraints(wizard: PlanWizardAnswers): PlanConstraints {
+  const otherIds = wizard.otherConstraintIds.filter(
+    id => id !== 'heavy_luggage' && id !== 'light_luggage' && id !== 'pets',
+  );
   return {
     hasHeavyBaggage: wizard.hasHeavyBaggage,
-    preferFlatTerrain: wizard.hasHeavyBaggage,
+    hasPets: wizard.hasPets,
+    travelStyleIds: wizard.travelStyleIds,
+    otherConstraintIds: otherIds,
+    preferFlatTerrain:
+      wizard.hasHeavyBaggage ||
+      wizard.otherConstraintIds.includes('wheelchair') ||
+      wizard.otherConstraintIds.includes('stroller'),
     pace: 'moderate',
     companionCount: wizard.companionCount,
     companionTypes: wizard.companionTypes,

@@ -16,7 +16,10 @@ export type PlanWizardAnswers = {
   endDate: string;
   companionCount: number;
   companionTypes: CompanionGroupType[];
+  travelStyleIds: string[];
   hasHeavyBaggage: boolean;
+  hasPets: boolean;
+  otherConstraintIds: string[];
   attractionIds: string[];
   foodIds: string[];
   accommodationMode: AccommodationMode;
@@ -32,7 +35,8 @@ export type PlanWizardStepId =
   | 'dates'
   | 'companions'
   | 'companionType'
-  | 'luggage'
+  | 'travelStyle'
+  | 'constraints'
   | 'attractions'
   | 'foods'
   | 'accommodation'

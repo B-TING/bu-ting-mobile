@@ -11,7 +11,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { catalogThumbnail } from '../../constants/placeCatalog';
+import { TransportModePicker } from './TransportModePicker';
 import type { AppLanguage } from '../../types/user';
+import type { TravelLegMode } from '../../types/travelPlan';
 import {
   findNearbyRebootCandidates,
   formatDistanceKm,
@@ -30,6 +32,10 @@ export type PlacePickModalCopy = {
   applyLabel: string;
   cancelLabel: string;
   distance: (d: string) => string;
+  transportModeTitle?: string;
+  legWalk?: string;
+  legDrive?: string;
+  legTransit?: string;
 };
 
 type PlacePickModalProps = {
@@ -38,8 +44,10 @@ type PlacePickModalProps = {
   language: AppLanguage;
   copy: PlacePickModalCopy;
   excludePlaceIds: string[];
+  showTransportMode?: boolean;
+  defaultLegMode?: TravelLegMode;
   onClose: () => void;
-  onSelect: (candidate: RebootPlaceCandidate) => void;
+  onSelect: (candidate: RebootPlaceCandidate, legMode?: TravelLegMode) => void;
 };
 
 export function PlacePickModal({
@@ -48,12 +56,15 @@ export function PlacePickModal({
   language,
   copy,
   excludePlaceIds,
+  showTransportMode = false,
+  defaultLegMode = 'walk',
   onClose,
   onSelect,
 }: PlacePickModalProps) {
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [legMode, setLegMode] = useState<TravelLegMode>(defaultLegMode);
 
   const nearby = useMemo(() => {
     if (anchor) {
@@ -76,15 +87,17 @@ export function PlacePickModal({
   const handleClose = () => {
     setQuery('');
     setSelectedId(null);
+    setLegMode(defaultLegMode);
     onClose();
   };
 
   const handleApply = () => {
     const pick = list.find(c => c.placeId === selectedId);
     if (pick) {
-      onSelect(pick);
+      onSelect(pick, showTransportMode ? legMode : undefined);
       setQuery('');
       setSelectedId(null);
+      setLegMode(defaultLegMode);
     }
   };
 
@@ -104,6 +117,21 @@ export function PlacePickModal({
             <Text className="mb-1 text-xl font-bold text-brand-text">{copy.title}</Text>
             {copy.subtitle ? (
               <Text className="mb-4 text-sm text-brand-muted">{copy.subtitle}</Text>
+            ) : null}
+
+            {showTransportMode && copy.transportModeTitle && copy.legWalk ? (
+              <View className="mb-4">
+                <TransportModePicker
+                  title={copy.transportModeTitle}
+                  value={legMode}
+                  onChange={setLegMode}
+                  labels={{
+                    walk: copy.legWalk!,
+                    drive: copy.legDrive!,
+                    transit: copy.legTransit!,
+                  }}
+                />
+              </View>
             ) : null}
 
             <Text className="mb-2 text-sm font-bold text-brand-text">

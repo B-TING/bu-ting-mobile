@@ -6,7 +6,7 @@ export type RootStackParamList = {
   PlanWizard: undefined;
   PlanCandidates: undefined;
   /** planId 생략 시 진행 중(active) 플랜 사용 */
-  PlanDetail: { planId?: string } | undefined;
+  PlanDetail: { planId?: string; openReboot?: boolean; tab?: 'overview' | 'schedule' | 'budget' | 'records' } | undefined;
   MenuPlaceholder: { title: string };
   TravelogueFeed: undefined;
   TravelogueDetail: { travelogueId: string };

@@ -76,20 +76,27 @@ export function PlanTabPager({
         horizontal
         pagingEnabled
         scrollEnabled={horizontalScrollEnabled}
+        style={{ flex: 1 }}
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={syncTabFromScroll}
         onScrollEndDrag={syncTabFromScroll}
         scrollEventThrottle={16}>
-        {TAB_ORDER.map(tab => (
-          <ScrollView
-            key={tab}
-            style={{ width }}
-            contentContainerStyle={{ paddingBottom: bottomInset + 24 }}
-            showsVerticalScrollIndicator={false}
-            nestedScrollEnabled>
-            {pages[tab]}
-          </ScrollView>
-        ))}
+        {TAB_ORDER.map(tab =>
+          tab === 'schedule' ? (
+            <View key={tab} style={{ width, flex: 1 }}>
+              {pages[tab]}
+            </View>
+          ) : (
+            <ScrollView
+              key={tab}
+              style={{ width }}
+              contentContainerStyle={{ paddingBottom: bottomInset + 24 }}
+              showsVerticalScrollIndicator={false}
+              nestedScrollEnabled>
+              {pages[tab]}
+            </ScrollView>
+          ),
+        )}
       </ScrollView>
     </View>
   );

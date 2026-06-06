@@ -2,7 +2,8 @@ import { useEffect, useRef } from 'react';
 import { Animated, Pressable, Text, View } from 'react-native';
 
 import { RouteItemCard } from '../RouteItemCard';
-import type { RouteItem } from '../../../types/travelPlan';
+import { TransportModePicker } from '../TransportModePicker';
+import type { RouteItem, TravelLegMode } from '../../../types/travelPlan';
 
 export type RebootPhase = 'idle' | 'choose';
 
@@ -17,7 +18,17 @@ type ScheduleRouteSlotProps = {
     rebootDelete: string;
     rebootReplace: string;
     rebootCancel: string;
+    recordReview?: string;
+    quickRatingHint?: string;
+    transportModeTitle?: string;
+    legWalk: string;
+    legDrive: string;
+    legTransit: string;
   };
+  reviewRating?: number;
+  onWriteReview?: () => void;
+  onQuickRating?: (rating: number) => void;
+  onLegModeChange?: (mode: TravelLegMode) => void;
   onPress: () => void;
   onEdit: () => void;
   indexSelected: boolean;
@@ -46,6 +57,10 @@ export function ScheduleRouteSlot({
   onDelete,
   onReplace,
   onCancel,
+  reviewRating,
+  onWriteReview,
+  onQuickRating,
+  onLegModeChange,
 }: ScheduleRouteSlotProps) {
   const cardOpacity = useRef(new Animated.Value(1)).current;
   const cardSlide = useRef(new Animated.Value(0)).current;
@@ -136,6 +151,11 @@ export function ScheduleRouteSlot({
             onToggleVisited={onToggleVisited}
             visitedLabel={copy.markVisited}
             editLabel={copy.editRoute}
+            recordReviewLabel={copy.recordReview}
+            quickRatingHint={copy.quickRatingHint}
+            reviewRating={reviewRating}
+            onWriteReview={onWriteReview}
+            onQuickRating={onQuickRating}
           />
         </Animated.View>
       )}
@@ -147,10 +167,24 @@ export function ScheduleRouteSlot({
             transform: [{ translateY: panelSlide }],
           }}
           className="mb-2 overflow-hidden rounded-2xl border border-[#BAE6FD] bg-[#F0F9FF]">
-          <View className="flex-row flex-wrap items-center gap-2 p-3">
-            <Text className="min-w-[120px] flex-1 text-sm leading-5 text-brand-text">
+          <View className="p-3">
+            <Text className="mb-3 text-sm leading-5 text-brand-text">
               {copy.rebootActionSub(route.placeName)}
             </Text>
+            {onLegModeChange && copy.transportModeTitle ? (
+              <View className="mb-3">
+                <TransportModePicker
+                  title={copy.transportModeTitle}
+                  value={route.legMode ?? 'walk'}
+                  onChange={onLegModeChange}
+                  labels={{
+                    walk: copy.legWalk,
+                    drive: copy.legDrive,
+                    transit: copy.legTransit,
+                  }}
+                />
+              </View>
+            ) : null}
             <View className="flex-row flex-wrap gap-1.5">
               <Pressable
                 onPress={onDelete}

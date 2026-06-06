@@ -113,15 +113,6 @@ export function PlanOverviewTab({
         </TabPreviewCard>
 
         <TabPreviewCard
-          title={copy.explorePreview}
-          hint={copy.viewTab}
-          onPress={() => onNavigateToTab('explore')}>
-          <Text className="text-sm text-brand-muted" numberOfLines={2}>
-            {copy.exploreSoon}
-          </Text>
-        </TabPreviewCard>
-
-        <TabPreviewCard
           title={copy.budgetPreview}
           hint={copy.viewTab}
           onPress={() => onNavigateToTab('budget')}>

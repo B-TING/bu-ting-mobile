@@ -1,11 +1,10 @@
 import type { AppLanguage } from '../types/user';
 
-export type PlanDetailTab = 'overview' | 'schedule' | 'explore' | 'budget' | 'records';
+export type PlanDetailTab = 'overview' | 'schedule' | 'budget' | 'records';
 
 export const PLAN_DETAIL_TABS: { id: PlanDetailTab; label: Record<AppLanguage, string> }[] = [
   { id: 'overview', label: { ko: '개요', en: 'Overview', ja: '概要', zh: '概览' } },
   { id: 'schedule', label: { ko: '일정', en: 'Schedule', ja: '日程', zh: '行程' } },
-  { id: 'explore', label: { ko: '탐색', en: 'Explore', ja: '探索', zh: '探索' } },
   { id: 'budget', label: { ko: '가계부', en: 'Budget', ja: '家計', zh: '账本' } },
   { id: 'records', label: { ko: '기록', en: 'Records', ja: '記録', zh: '记录' } },
 ];
@@ -80,6 +79,29 @@ export const PLAN_DETAIL_COPY: Record<
     writeReview: string;
     editReview: string;
     visitFirstReview: string;
+    recordReview: string;
+    quickRatingHint: string;
+    transportModeTitle: string;
+    routeOptimized: string;
+    budgetPayer: string;
+    budgetSplit: string;
+    budgetDate: string;
+    budgetItem: string;
+    budgetAmount: string;
+    budgetMemo: string;
+    budgetMemoPlaceholder: string;
+    budgetCategoryFood: string;
+    budgetCategoryShopping: string;
+    budgetCategoryAccommodation: string;
+    budgetCategoryTransport: string;
+    budgetCategoryEntertainment: string;
+    budgetCategoryOther: string;
+    budgetSplitAll: string;
+    budgetOcrScan: string;
+    budgetOcrSoon: string;
+    budgetSave: string;
+    budgetCancel: string;
+    dayDuration: (m: string) => string;
   }
 > = {
   ko: {
@@ -150,6 +172,29 @@ export const PLAN_DETAIL_COPY: Record<
     writeReview: '후기 남기기',
     editReview: '후기 수정',
     visitFirstReview: '방문 체크 후 후기를 남길 수 있어요',
+    recordReview: '기록 남기기',
+    quickRatingHint: '별점만 남기기',
+    transportModeTitle: '이동 수단',
+    routeOptimized: '경로를 최적화했어요',
+    budgetPayer: '지불자',
+    budgetSplit: '나누기',
+    budgetDate: '날짜',
+    budgetItem: '항목',
+    budgetAmount: '금액',
+    budgetMemo: '메모',
+    budgetMemoPlaceholder: '세부 사항 (선택)',
+    budgetCategoryFood: '식비',
+    budgetCategoryShopping: '쇼핑',
+    budgetCategoryAccommodation: '숙박비',
+    budgetCategoryTransport: '교통비',
+    budgetCategoryEntertainment: '관람·체험',
+    budgetCategoryOther: '기타',
+    budgetSplitAll: '전원',
+    budgetOcrScan: '영수증 OCR',
+    budgetOcrSoon: '곧 제공 예정',
+    budgetSave: '저장',
+    budgetCancel: '취소',
+    dayDuration: m => `예상 소요 ${m}`,
   },
   en: {
     routeOptimize: 'Optimize route',
@@ -220,6 +265,29 @@ export const PLAN_DETAIL_COPY: Record<
     writeReview: 'Write review',
     editReview: 'Edit review',
     visitFirstReview: 'Mark visited before writing a review',
+    recordReview: 'Leave a record',
+    quickRatingHint: 'Quick rating',
+    transportModeTitle: 'Transport mode',
+    routeOptimized: 'Route optimized',
+    budgetPayer: 'Paid by',
+    budgetSplit: 'Split with',
+    budgetDate: 'Date',
+    budgetItem: 'Item',
+    budgetAmount: 'Amount',
+    budgetMemo: 'Memo',
+    budgetMemoPlaceholder: 'Details (optional)',
+    budgetCategoryFood: 'Food',
+    budgetCategoryShopping: 'Shopping',
+    budgetCategoryAccommodation: 'Lodging',
+    budgetCategoryTransport: 'Transport',
+    budgetCategoryEntertainment: 'Activities',
+    budgetCategoryOther: 'Other',
+    budgetSplitAll: 'Everyone',
+    budgetOcrScan: 'Receipt OCR',
+    budgetOcrSoon: 'Coming soon',
+    budgetSave: 'Save',
+    budgetCancel: 'Cancel',
+    dayDuration: m => `Est. ${m}`,
   },
   ja: {
     routeOptimize: 'ルート最適化',
@@ -290,6 +358,29 @@ export const PLAN_DETAIL_COPY: Record<
     writeReview: 'レビューを書く',
     editReview: 'レビューを編集',
     visitFirstReview: '訪問チェック後にレビューを書けます',
+    recordReview: '記録を残す',
+    quickRatingHint: '星だけ付ける',
+    transportModeTitle: '移動手段',
+    routeOptimized: 'ルートを最適化しました',
+    budgetPayer: '支払者',
+    budgetSplit: '割り勘',
+    budgetDate: '日付',
+    budgetItem: '項目',
+    budgetAmount: '金額',
+    budgetMemo: 'メモ',
+    budgetMemoPlaceholder: '詳細（任意）',
+    budgetCategoryFood: '食費',
+    budgetCategoryShopping: '買い物',
+    budgetCategoryAccommodation: '宿泊',
+    budgetCategoryTransport: '交通',
+    budgetCategoryEntertainment: '体験',
+    budgetCategoryOther: 'その他',
+    budgetSplitAll: '全員',
+    budgetOcrScan: 'レシートOCR',
+    budgetOcrSoon: '近日提供',
+    budgetSave: '保存',
+    budgetCancel: 'キャンセル',
+    dayDuration: m => `所要約 ${m}`,
   },
   zh: {
     routeOptimize: '优化路线',
@@ -359,5 +450,28 @@ export const PLAN_DETAIL_COPY: Record<
     writeReview: '写点评',
     editReview: '编辑点评',
     visitFirstReview: '标记到访后可写点评',
+    recordReview: '留下记录',
+    quickRatingHint: '仅评分',
+    transportModeTitle: '交通方式',
+    routeOptimized: '路线已优化',
+    budgetPayer: '付款人',
+    budgetSplit: '分摊',
+    budgetDate: '日期',
+    budgetItem: '项目',
+    budgetAmount: '金额',
+    budgetMemo: '备注',
+    budgetMemoPlaceholder: '详情（可选）',
+    budgetCategoryFood: '餐饮',
+    budgetCategoryShopping: '购物',
+    budgetCategoryAccommodation: '住宿',
+    budgetCategoryTransport: '交通',
+    budgetCategoryEntertainment: '体验',
+    budgetCategoryOther: '其他',
+    budgetSplitAll: '全员',
+    budgetOcrScan: '收据 OCR',
+    budgetOcrSoon: '即将上线',
+    budgetSave: '保存',
+    budgetCancel: '取消',
+    dayDuration: m => `预计 ${m}`,
   },
 };
