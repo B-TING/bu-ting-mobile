@@ -7,11 +7,15 @@ import {
   View,
 } from 'react-native';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { routeFabScrollPadding } from '../fab/RouteOptimizeFab';
 import { NaverMapPlaceholder } from '../map/NaverMapPlaceholder';
 import type { RouteItem } from '../../../types/travelPlan';
 
-const DEFAULT_MAP_RATIO = 0.32;
-const MAX_MAP_RATIO = 0.58;
+const DEFAULT_SCHEDULE_RATIO = 0.38;
+const MAX_SCHEDULE_RATIO = 1.0;
+const MIN_MAP_HEIGHT = 0;
 const SNAP_CLOSE_THRESHOLD = 72;
 const HANDLE_HEIGHT = 32;
 
@@ -24,10 +28,16 @@ type ScheduleMapSplitProps = {
   children: ReactNode;
 };
 
-function snapMapHeight(height: number, containerHeight: number): number {
+function snapScheduleHeight(height: number, containerHeight: number): number {
   const closed = 0;
-  const defaultHeight = Math.round(containerHeight * DEFAULT_MAP_RATIO);
-  const maxHeight = Math.round(containerHeight * MAX_MAP_RATIO);
+  const maxHeight = Math.min(
+    Math.round(containerHeight * MAX_SCHEDULE_RATIO),
+    containerHeight - HANDLE_HEIGHT - MIN_MAP_HEIGHT,
+  );
+  const defaultHeight = Math.min(
+    Math.round(containerHeight * DEFAULT_SCHEDULE_RATIO),
+    maxHeight,
+  );
 
   if (height < SNAP_CLOSE_THRESHOLD) {
     return closed;
@@ -54,16 +64,20 @@ export function ScheduleMapSplit({
   mapClosedHint,
   children,
 }: ScheduleMapSplitProps) {
-  const [mapHeight, setMapHeight] = useState(0);
-  const mapHeightRef = useRef(0);
+  const insets = useSafeAreaInsets();
+  const [scheduleHeight, setScheduleHeight] = useState(0);
+  const scheduleHeightRef = useRef(0);
   const dragStartHeightRef = useRef(0);
   const containerHeightRef = useRef(0);
 
-  const applyMapHeight = useCallback((height: number) => {
-    const max = Math.round(containerHeightRef.current * MAX_MAP_RATIO);
+  const applyScheduleHeight = useCallback((height: number) => {
+    const max = Math.min(
+      Math.round(containerHeightRef.current * MAX_SCHEDULE_RATIO),
+      containerHeightRef.current - HANDLE_HEIGHT - MIN_MAP_HEIGHT,
+    );
     const clamped = Math.max(0, Math.min(height, max));
-    mapHeightRef.current = clamped;
-    setMapHeight(clamped);
+    scheduleHeightRef.current = clamped;
+    setScheduleHeight(clamped);
   }, []);
 
   const handleContainerLayout = useCallback(
@@ -73,11 +87,11 @@ export function ScheduleMapSplit({
         return;
       }
       containerHeightRef.current = nextHeight;
-      if (mapHeightRef.current === 0) {
-        applyMapHeight(Math.round(nextHeight * DEFAULT_MAP_RATIO));
+      if (scheduleHeightRef.current === 0) {
+        applyScheduleHeight(Math.round(nextHeight * DEFAULT_SCHEDULE_RATIO));
       }
     },
-    [applyMapHeight],
+    [applyScheduleHeight],
   );
 
   const panResponder = useMemo(
@@ -86,31 +100,32 @@ export function ScheduleMapSplit({
         onStartShouldSetPanResponder: () => true,
         onMoveShouldSetPanResponder: (_, gesture) => Math.abs(gesture.dy) > 4,
         onPanResponderGrant: () => {
-          dragStartHeightRef.current = mapHeightRef.current;
+          dragStartHeightRef.current = scheduleHeightRef.current;
         },
         onPanResponderMove: (_, gesture) => {
-          applyMapHeight(dragStartHeightRef.current + gesture.dy);
+          applyScheduleHeight(dragStartHeightRef.current - gesture.dy);
         },
         onPanResponderRelease: (_, gesture) => {
-          const projected = dragStartHeightRef.current + gesture.dy;
-          applyMapHeight(snapMapHeight(projected, containerHeightRef.current));
+          const projected = dragStartHeightRef.current - gesture.dy;
+          applyScheduleHeight(snapScheduleHeight(projected, containerHeightRef.current));
         },
         onPanResponderTerminationRequest: () => false,
       }),
-    [applyMapHeight],
+    [applyScheduleHeight],
   );
 
-  const mapOpen = mapHeight > SNAP_CLOSE_THRESHOLD;
+  const scheduleOpen = scheduleHeight > SNAP_CLOSE_THRESHOLD;
 
   return (
     <View className="flex-1" onLayout={handleContainerLayout}>
-      <ScrollView
-        className="min-h-0 flex-1 px-4"
-        contentContainerStyle={{ paddingBottom: 140 }}
-        showsVerticalScrollIndicator={false}
-        nestedScrollEnabled>
-        {children}
-      </ScrollView>
+      <View className="min-h-0 flex-1 overflow-hidden bg-[#E8F4E8]">
+        <NaverMapPlaceholder
+          title={mapTitle}
+          subtitle={mapSubtitle}
+          routes={routes}
+          size="fill"
+        />
+      </View>
 
       <View
         {...panResponder.panHandlers}
@@ -120,21 +135,20 @@ export function ScheduleMapSplit({
         className="items-center justify-center border-y border-brand-border bg-brand-surface py-2"
         style={{ minHeight: HANDLE_HEIGHT }}>
         <View className="rounded-full bg-brand-border" style={{ width: 44, height: 5 }} />
-        {!mapOpen ? (
+        {!scheduleOpen ? (
           <Text className="mt-1.5 text-[10px] font-medium text-brand-muted">{mapClosedHint}</Text>
         ) : null}
       </View>
 
-      {mapOpen ? (
-        <View
-          style={{ height: mapHeight }}
-          className="overflow-hidden bg-[#E8F4E8]">
-          <NaverMapPlaceholder
-            title={mapTitle}
-            subtitle={mapSubtitle}
-            routes={routes}
-            size="fill"
-          />
+      {scheduleOpen ? (
+        <View style={{ height: scheduleHeight }} className="min-h-0 bg-brand-background">
+          <ScrollView
+            className="flex-1 px-4"
+            contentContainerStyle={{ paddingBottom: routeFabScrollPadding(insets.bottom) }}
+            showsVerticalScrollIndicator={false}
+            nestedScrollEnabled>
+            {children}
+          </ScrollView>
         </View>
       ) : null}
     </View>
