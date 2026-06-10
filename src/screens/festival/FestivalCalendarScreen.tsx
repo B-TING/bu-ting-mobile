@@ -1,17 +1,14 @@
 import { useMemo, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FestivalCard } from '../../components/festival/FestivalCard';
-import { MonthCalendar } from '../../components/festival/MonthCalendar';
 import { BackButton } from '../../components/shared/buttons/BackButton';
 import {
   FESTIVAL_CALENDAR_COPY,
   MOCK_BUSAN_FESTIVALS,
-  festivalDaysInMonth,
-  festivalsOnDate,
-  formatSelectedDateLabel,
+  festivalsInMonth,
   parseIsoDate,
   todayIso,
 } from '../../constants/festivalCalendar';
@@ -28,32 +25,30 @@ export function FestivalCalendarScreen({ navigation, route }: Props) {
   const initialDate = route.params?.initialDate ?? todayIso();
   const initialParsed = parseIsoDate(initialDate);
 
-  const [selectedDate, setSelectedDate] = useState(initialDate);
   const [year, setYear] = useState(initialParsed.getFullYear());
   const [month, setMonth] = useState(initialParsed.getMonth());
 
-  const festivalDays = useMemo(
-    () => festivalDaysInMonth(MOCK_BUSAN_FESTIVALS, year, month),
+  const monthFestivals = useMemo(
+    () => festivalsInMonth(MOCK_BUSAN_FESTIVALS, year, month),
     [year, month],
   );
 
-  const dayFestivals = useMemo(
-    () => festivalsOnDate(MOCK_BUSAN_FESTIVALS, selectedDate),
-    [selectedDate],
-  );
-
-  const dateLabel = formatSelectedDateLabel(selectedDate, language);
-
-  const handleSelectDate = (iso: string) => {
-    setSelectedDate(iso);
-    const parsed = parseIsoDate(iso);
-    setYear(parsed.getFullYear());
-    setMonth(parsed.getMonth());
+  const goPrevMonth = () => {
+    if (month === 0) {
+      setYear(y => y - 1);
+      setMonth(11);
+    } else {
+      setMonth(m => m - 1);
+    }
   };
 
-  const handleMonthChange = (nextYear: number, nextMonth: number) => {
-    setYear(nextYear);
-    setMonth(nextMonth);
+  const goNextMonth = () => {
+    if (month === 11) {
+      setYear(y => y + 1);
+      setMonth(0);
+    } else {
+      setMonth(m => m + 1);
+    }
   };
 
   return (
@@ -68,41 +63,47 @@ export function FestivalCalendarScreen({ navigation, route }: Props) {
         <Text className="flex-1 text-lg font-bold text-brand-text">{copy.screenTitle}</Text>
       </View>
 
-      <ScrollView
-        className="flex-1 px-4"
-        contentContainerStyle={{ paddingBottom: 24 }}
-        showsVerticalScrollIndicator={false}>
-        <View className="py-4">
-          <MonthCalendar
-            year={year}
-            month={month}
-            selectedDate={selectedDate}
-            festivalDays={festivalDays}
-            language={language}
-            onSelectDate={handleSelectDate}
-            onMonthChange={handleMonthChange}
-          />
-        </View>
-
-        <View className="mb-3 flex-row items-baseline justify-between">
+      <View className="flex-row items-center justify-between border-b border-brand-border bg-brand-surface px-4 py-3">
+        <Pressable
+          onPress={goPrevMonth}
+          hitSlop={12}
+          className="h-9 w-9 items-center justify-center rounded-full active:bg-brand-selected"
+          accessibilityRole="button"
+          accessibilityLabel={copy.prevMonth}>
+          <Text className="text-xl font-bold text-brand-primary">‹</Text>
+        </Pressable>
+        <View className="items-center">
           <Text className="text-base font-bold text-brand-text">
-            {copy.selectedDateLabel(dateLabel)}
+            {copy.monthFestivalsLabel(year, month)}
           </Text>
-          {dayFestivals.length > 0 ? (
-            <Text className="text-xs font-semibold text-brand-muted">
-              {copy.festivalCount(dayFestivals.length)}
+          {monthFestivals.length > 0 ? (
+            <Text className="mt-0.5 text-xs text-brand-muted">
+              {copy.festivalCount(monthFestivals.length)}
             </Text>
           ) : null}
         </View>
+        <Pressable
+          onPress={goNextMonth}
+          hitSlop={12}
+          className="h-9 w-9 items-center justify-center rounded-full active:bg-brand-selected"
+          accessibilityRole="button"
+          accessibilityLabel={copy.nextMonth}>
+          <Text className="text-xl font-bold text-brand-primary">›</Text>
+        </Pressable>
+      </View>
 
-        {dayFestivals.length === 0 ? (
-          <View className="items-center rounded-2xl border border-dashed border-brand-border bg-brand-surface px-6 py-10">
-            <Text className="text-4xl">📅</Text>
-            <Text className="mt-3 text-sm font-semibold text-brand-text">{copy.emptyList}</Text>
-            <Text className="mt-1 text-xs text-brand-muted">{copy.emptyListSub}</Text>
+      <ScrollView
+        className="flex-1 px-4"
+        contentContainerStyle={{ paddingTop: 16, paddingBottom: 24 }}
+        showsVerticalScrollIndicator={false}>
+        {monthFestivals.length === 0 ? (
+          <View className="items-center rounded-2xl border border-dashed border-brand-border bg-brand-surface px-6 py-12">
+            <Text className="text-4xl">🎪</Text>
+            <Text className="mt-3 text-sm font-semibold text-brand-text">{copy.emptyMonthList}</Text>
+            <Text className="mt-1 text-xs text-brand-muted">{copy.emptyMonthListSub}</Text>
           </View>
         ) : (
-          dayFestivals.map(festival => (
+          monthFestivals.map(festival => (
             <FestivalCard
               key={festival.id}
               festival={festival}
@@ -114,7 +115,7 @@ export function FestivalCalendarScreen({ navigation, route }: Props) {
           ))
         )}
 
-        <Text className="mt-4 text-center text-[10px] text-brand-muted">{copy.mockHint}</Text>
+        <Text className="mt-2 text-center text-[10px] text-brand-muted">{copy.mockHint}</Text>
       </ScrollView>
     </View>
   );

@@ -28,19 +28,33 @@ export type BusanFestival = {
   endDate: string;
   /** 0=일 ~ 6=토. 설정 시 기간 내 해당 요일만 진행 */
   recurringWeekday?: number;
+  summaryKo: string;
+  summaryEn: string;
+  summaryJa: string;
+  summaryZh: string;
+  imageUri: string;
   imageColor: string;
   imageEmoji: string;
   location: { lat: number; lng: number };
+};
+
+export const MONTH_NAMES: Record<AppLanguage, string[]> = {
+  ko: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
+  en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+  ja: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
+  zh: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
 };
 
 export const FESTIVAL_CALENDAR_COPY: Record<
   AppLanguage,
   {
     screenTitle: string;
-    selectedDateLabel: (label: string) => string;
-    emptyList: string;
-    emptyListSub: string;
+    monthFestivalsLabel: (year: number, month: number) => string;
+    emptyMonthList: string;
+    emptyMonthListSub: string;
     festivalCount: (n: number) => string;
+    prevMonth: string;
+    nextMonth: string;
     detailTitle: string;
     locationLabel: string;
     periodLabel: string;
@@ -56,10 +70,12 @@ export const FESTIVAL_CALENDAR_COPY: Record<
 > = {
   ko: {
     screenTitle: '축제 캘린더',
-    selectedDateLabel: label => `${label} 진행 축제`,
-    emptyList: '이 날짜에 예정된 축제가 없어요',
-    emptyListSub: '다른 날짜를 선택해 보세요',
+    monthFestivalsLabel: (year, month) => `${year}년 ${MONTH_NAMES.ko[month]} 축제`,
+    emptyMonthList: '이 달에 예정된 축제가 없어요',
+    emptyMonthListSub: '다른 달을 선택해 보세요',
     festivalCount: n => `${n}개 축제`,
+    prevMonth: '이전 달',
+    nextMonth: '다음 달',
     detailTitle: '축제 상세',
     locationLabel: '장소',
     periodLabel: '기간',
@@ -74,10 +90,12 @@ export const FESTIVAL_CALENDAR_COPY: Record<
   },
   en: {
     screenTitle: 'Festival Calendar',
-    selectedDateLabel: label => `Festivals on ${label}`,
-    emptyList: 'No festivals on this date',
-    emptyListSub: 'Try selecting another date',
+    monthFestivalsLabel: (year, month) => `Festivals in ${MONTH_NAMES.en[month]} ${year}`,
+    emptyMonthList: 'No festivals this month',
+    emptyMonthListSub: 'Try browsing another month',
     festivalCount: n => `${n} festival${n === 1 ? '' : 's'}`,
+    prevMonth: 'Previous month',
+    nextMonth: 'Next month',
     detailTitle: 'Festival details',
     locationLabel: 'Venue',
     periodLabel: 'Period',
@@ -92,10 +110,12 @@ export const FESTIVAL_CALENDAR_COPY: Record<
   },
   ja: {
     screenTitle: '祭りカレンダー',
-    selectedDateLabel: label => `${label}の祭り`,
-    emptyList: 'この日に予定された祭りはありません',
-    emptyListSub: '別の日付を選んでみてください',
+    monthFestivalsLabel: (year, month) => `${year}年${MONTH_NAMES.ja[month]}の祭り`,
+    emptyMonthList: '今月予定の祭りはありません',
+    emptyMonthListSub: '別の月を選んでみてください',
     festivalCount: n => `${n}件の祭り`,
+    prevMonth: '前の月',
+    nextMonth: '次の月',
     detailTitle: '祭り詳細',
     locationLabel: '会場',
     periodLabel: '期間',
@@ -110,10 +130,12 @@ export const FESTIVAL_CALENDAR_COPY: Record<
   },
   zh: {
     screenTitle: '节庆日历',
-    selectedDateLabel: label => `${label} 的节庆`,
-    emptyList: '该日期没有节庆活动',
-    emptyListSub: '请尝试选择其他日期',
+    monthFestivalsLabel: (year, month) => `${year}年${MONTH_NAMES.zh[month]}节庆`,
+    emptyMonthList: '本月没有节庆活动',
+    emptyMonthListSub: '请尝试浏览其他月份',
     festivalCount: n => `${n} 个节庆`,
+    prevMonth: '上个月',
+    nextMonth: '下个月',
     detailTitle: '节庆详情',
     locationLabel: '地点',
     periodLabel: '期间',
@@ -157,6 +179,11 @@ export const MOCK_BUSAN_FESTIVALS: BusanFestival[] = [
     hoursEn: '10:00 AM - 9:00 PM',
     hoursJa: '10:00〜21:00',
     hoursZh: '10:00 - 21:00',
+    summaryKo: '세계적인 모래조각 작품과 체험 부스가 가득한 여름 대표 축제',
+    summaryEn: 'Summer festival with world-class sand sculptures and hands-on booths',
+    summaryJa: '世界的な砂の彫刻と体験ブースが楽しめる夏の代表祭り',
+    summaryZh: '世界级沙雕作品与体验摊位齐聚的夏季代表节庆',
+    imageUri: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80',
     startDate: '2026-06-01',
     endDate: '2026-06-15',
     imageColor: '#f59e0b',
@@ -190,6 +217,11 @@ export const MOCK_BUSAN_FESTIVALS: BusanFestival[] = [
     hoursEn: '2:00 PM - 10:00 PM',
     hoursJa: '14:00〜22:00',
     hoursZh: '14:00 - 22:00',
+    summaryKo: '국내외 거리무용 팀의 화려한 퍼포먼스, 저녁 공연이 특히 인기',
+    summaryEn: 'Vibrant street dance performances from crews around the world',
+    summaryJa: '国内外のストリートダンスチームによる華やかなパフォーマンス',
+    summaryZh: '国内外街舞团队的精彩演出，晚间场次尤其热门',
+    imageUri: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&q=80',
     startDate: '2026-06-05',
     endDate: '2026-06-07',
     imageColor: '#7c3aed',
@@ -223,6 +255,11 @@ export const MOCK_BUSAN_FESTIVALS: BusanFestival[] = [
     hoursEn: '8:30 PM - 9:00 PM',
     hoursJa: '20:30〜21:00',
     hoursZh: '20:30 - 21:00',
+    summaryKo: '매주 토요일 밤, 광안대교를 배경으로 펼쳐지는 드론 라이트쇼',
+    summaryEn: 'Saturday night drone light show over Gwangandaegyo Bridge',
+    summaryJa: '毎週土曜の夜、広安大橋を背景に繰り広げられるドローンショー',
+    summaryZh: '每周六夜晚，以广安大桥为背景的无人机灯光秀',
+    imageUri: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&q=80',
     startDate: '2026-01-01',
     endDate: '2026-12-31',
     recurringWeekday: 6,
@@ -257,6 +294,11 @@ export const MOCK_BUSAN_FESTIVALS: BusanFestival[] = [
     hoursEn: '11:00 AM - 9:00 PM',
     hoursJa: '11:00〜21:00',
     hoursZh: '11:00 - 21:00',
+    summaryKo: '부산 대표 먹거리와 전국 미식 트럭이 한자리에 모이는 미식 축제',
+    summaryEn: 'Busan signature dishes and gourmet food trucks in one place',
+    summaryJa: '釜山代表グルメと全国のグルメトラックが集まる食の祭典',
+    summaryZh: '釜山特色美食与全国美食餐车齐聚一堂的美食节',
+    imageUri: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80',
     startDate: '2026-06-18',
     endDate: '2026-06-22',
     imageColor: '#dc2626',
@@ -290,6 +332,11 @@ export const MOCK_BUSAN_FESTIVALS: BusanFestival[] = [
     hoursEn: '2:00 PM - 11:00 PM',
     hoursJa: '14:00〜23:00',
     hoursZh: '14:00 - 23:00',
+    summaryKo: '국내외 록·인디 밴드가 모이는 대규모 야외 음악 축제',
+    summaryEn: 'Large outdoor music festival with rock and indie bands',
+    summaryJa: '国内外のロック・インディーバンドが集う大規模野外音楽祭',
+    summaryZh: '国内外摇滚与独立乐队齐聚的大型户外音乐节',
+    imageUri: 'https://images.unsplash.com/photo-1459747229923-d7f20585ecc5?w=800&q=80',
     startDate: '2026-10-04',
     endDate: '2026-10-06',
     imageColor: '#1e3a5f',
@@ -323,6 +370,11 @@ export const MOCK_BUSAN_FESTIVALS: BusanFestival[] = [
     hoursEn: '10:00 AM - 10:00 PM',
     hoursJa: '10:00〜22:00',
     hoursZh: '10:00 - 22:00',
+    summaryKo: '아시아 최대 규모 영화제, 상영작·GV·야외 상영까지',
+    summaryEn: 'Asia\'s largest film festival with screenings and director talks',
+    summaryJa: 'アジア最大級の映画祭、上映・トーク・野外上映を開催',
+    summaryZh: '亚洲最大规模电影节，展映、见面会、露天放映应有尽有',
+    imageUri: 'https://images.unsplash.com/photo-1489599849927-2fa91eadacb4?w=800&q=80',
     startDate: '2026-09-24',
     endDate: '2026-10-03',
     imageColor: '#312e81',
@@ -356,6 +408,11 @@ export const MOCK_BUSAN_FESTIVALS: BusanFestival[] = [
     hoursEn: '6:00 PM - 9:30 PM',
     hoursJa: '18:00〜21:30',
     hoursZh: '18:00 - 21:30',
+    summaryKo: '광안대교를 배경으로 펼쳐지는 화려한 불꽃쇼와 해변 축제',
+    summaryEn: 'Spectacular fireworks over Gwangandaegyo Bridge and beach festivities',
+    summaryJa: '広安大橋を背景に繰り広げられる華やかな花火とビーチフェス',
+    summaryZh: '以广安大桥为背景的绚烂烟花秀与海滩庆典',
+    imageUri: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80',
     startDate: '2026-11-07',
     endDate: '2026-11-08',
     imageColor: '#be123c',
@@ -402,6 +459,24 @@ export function festivalsOnDate(
   return festivals.filter(f => festivalActiveOnDate(f, dateIso));
 }
 
+export function festivalsInMonth(
+  festivals: BusanFestival[],
+  year: number,
+  month: number,
+): BusanFestival[] {
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  return festivals
+    .filter(f => {
+      for (let day = 1; day <= daysInMonth; day++) {
+        if (festivalActiveOnDate(f, toIsoDate(year, month, day))) {
+          return true;
+        }
+      }
+      return false;
+    })
+    .sort((a, b) => a.startDate.localeCompare(b.startDate));
+}
+
 export function festivalDaysInMonth(
   festivals: BusanFestival[],
   year: number,
@@ -441,6 +516,13 @@ export function festivalAddress(festival: BusanFestival, language: AppLanguage):
   if (language === 'ja') return festival.addressJa;
   if (language === 'zh') return festival.addressZh;
   return festival.addressEn;
+}
+
+export function festivalSummary(festival: BusanFestival, language: AppLanguage): string {
+  if (language === 'ko') return festival.summaryKo;
+  if (language === 'ja') return festival.summaryJa;
+  if (language === 'zh') return festival.summaryZh;
+  return festival.summaryEn;
 }
 
 export function festivalDescription(festival: BusanFestival, language: AppLanguage): string {
