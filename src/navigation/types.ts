@@ -10,6 +10,8 @@ export type RootStackParamList = {
   MenuPlaceholder: { title: string };
   TravelogueFeed: undefined;
   TravelogueDetail: { travelogueId: string };
+  FestivalCalendar: { initialDate?: string } | undefined;
+  FestivalDetail: { festivalId: string };
 };
 
 export type SetupPhase = 'language' | 'login' | 'onboarding' | 'main';

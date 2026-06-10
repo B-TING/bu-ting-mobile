@@ -125,6 +125,11 @@ export function MainHomeScreen({ navigation }: Props) {
         <QuickAccessRow
           items={QUICK_ACCESS_ITEMS}
           language={language}
+          onItemPress={id => {
+            if (id === 'festivals') {
+              navigation.navigate('FestivalCalendar');
+            }
+          }}
         />
 
         <EventsSectionMock
@@ -132,6 +137,8 @@ export function MainHomeScreen({ navigation }: Props) {
           viewAllLabel={copy.eventsViewAll}
           events={MOCK_EVENTS}
           language={language}
+          onViewAllPress={() => navigation.navigate('FestivalCalendar')}
+          onEventPress={id => navigation.navigate('FestivalDetail', { festivalId: id })}
         />
 
         <TraveloguePreviewMock

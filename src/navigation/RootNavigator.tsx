@@ -4,6 +4,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { layout } from '../constants/layout';
+import { FestivalCalendarScreen } from '../screens/festival/FestivalCalendarScreen';
+import { FestivalDetailScreen } from '../screens/festival/FestivalDetailScreen';
 import { TravelogueDetailScreen } from '../screens/feed/TravelogueDetailScreen';
 import { TravelogueFeedScreen } from '../screens/feed/TravelogueFeedScreen';
 import { MainHomeScreen } from '../screens/MainHomeScreen';
@@ -96,6 +98,8 @@ export function RootNavigator() {
         <Stack.Screen name="PlanDetail" component={PlanDetailScreen} />
         <Stack.Screen name="TravelogueFeed" component={TravelogueFeedScreen} />
         <Stack.Screen name="TravelogueDetail" component={TravelogueDetailScreen} />
+        <Stack.Screen name="FestivalCalendar" component={FestivalCalendarScreen} />
+        <Stack.Screen name="FestivalDetail" component={FestivalDetailScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
