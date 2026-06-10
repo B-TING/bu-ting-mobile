@@ -18,6 +18,8 @@ export const PLAN_DETAIL_COPY: Record<
     mapPlaceholder: string;
     mapPlaceholderSub: string;
     mapTapHint: string;
+    mapDragLabel: string;
+    mapClosedHint: string;
     membersTitle: string;
     roleOwner: string;
     roleEditor: string;
@@ -111,6 +113,8 @@ export const PLAN_DETAIL_COPY: Record<
     mapPlaceholder: '네이버 지도 (준비 중)',
     mapPlaceholderSub: 'API 연동 전 · 좌표 기반 미리보기',
     mapTapHint: '탭하여 크게 보기',
+    mapDragLabel: '지도 크기 조절',
+    mapClosedHint: '아래로 당겨 지도 열기',
     membersTitle: '함께하는 일행',
     roleOwner: '방장',
     roleEditor: '편집',
@@ -203,6 +207,8 @@ export const PLAN_DETAIL_COPY: Record<
     mapPlaceholder: 'Naver Map (coming soon)',
     mapPlaceholderSub: 'Preview by coordinates until API is ready',
     mapTapHint: 'Tap to expand map',
+    mapDragLabel: 'Resize map panel',
+    mapClosedHint: 'Drag down to open map',
     membersTitle: 'Travel companions',
     roleOwner: 'Owner',
     roleEditor: 'Editor',
@@ -296,6 +302,8 @@ export const PLAN_DETAIL_COPY: Record<
     mapPlaceholder: 'NAVERマップ（準備中）',
     mapPlaceholderSub: 'API連携前のプレビュー',
     mapTapHint: 'タップで拡大',
+    mapDragLabel: '地図サイズ調整',
+    mapClosedHint: '下にドラッグして地図を開く',
     membersTitle: '同行者',
     roleOwner: 'オーナー',
     roleEditor: '編集',
@@ -389,6 +397,8 @@ export const PLAN_DETAIL_COPY: Record<
     mapPlaceholder: 'Naver 地图（即将上线）',
     mapPlaceholderSub: 'API 接入前的坐标预览',
     mapTapHint: '点击放大地图',
+    mapDragLabel: '调整地图大小',
+    mapClosedHint: '向下拖动打开地图',
     membersTitle: '同行伙伴',
     roleOwner: '房主',
     roleEditor: '可编辑',

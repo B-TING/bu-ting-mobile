@@ -3,7 +3,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { PrimaryButton } from '../../components/setup/PrimaryButton';
+import { PrimaryButton } from '../../components/shared/buttons/PrimaryButton';
 import { PLAN_WIZARD_COPY, dayCountBetween } from '../../constants/planWizard';
 import { layout } from '../../constants/layout';
 import type { RootStackParamList } from '../../navigation/types';

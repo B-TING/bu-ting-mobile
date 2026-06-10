@@ -1,7 +1,7 @@
 import { StatusBar, useColorScheme, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { AppErrorBoundary } from './src/components/AppErrorBoundary';
+import { AppErrorBoundary } from './src/components/shared/layout/AppErrorBoundary';
 import { layout } from './src/constants/layout';
 import { RootNavigator } from './src/navigation/RootNavigator';
 

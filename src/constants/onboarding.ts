@@ -4,14 +4,16 @@ import type {
   CompanionType,
   LuggageLevel,
   OnboardingAnswers,
+  SchedulePace,
   TravelStyle,
   VisitPurpose,
 } from '../types/user';
 
-export const ONBOARDING_QUESTION_COUNT = 5;
+export const ONBOARDING_QUESTION_COUNT = 6;
 
 export type OnboardingStepId =
   | 'travelStyle'
+  | 'schedulePace'
   | 'companions'
   | 'luggage'
   | 'purposes'
@@ -37,6 +39,21 @@ export const ONBOARDING_STEPS: OnboardingStepConfig[] = [
       en: 'Choose planned vs spontaneous',
       ja: '計画的か、その場次第か',
       zh: '选择计划型或随性型',
+    },
+  },
+  {
+    id: 'schedulePace',
+    title: {
+      ko: '일정은 어떻게 짜는 편인가요?',
+      en: 'How packed should your days be?',
+      ja: '日程はどのくらい詰めますか？',
+      zh: '您喜欢怎样的行程密度？',
+    },
+    subtitle: {
+      ko: '여유롭게 vs 빡빡하게 중 선택',
+      en: 'Choose relaxed or packed days',
+      ja: 'ゆったりか、ぎゅうぎゅうか',
+      zh: '选择宽松或紧凑的行程',
     },
   },
   {
@@ -313,6 +330,32 @@ export function getFeatureStepContent(
   });
 
   switch (forQuestion) {
+    case 'schedulePace': {
+      const packed = answers.schedulePace === 'packed';
+      return {
+        title: {
+          ko: '일정 밀도에 맞는 플래너',
+          en: 'Planner for your pace',
+          ja: 'ペースに合ったプランナー',
+          zh: '匹配您节奏的规划器',
+        },
+        subtitle: {
+          ko: packed
+            ? '하루에 더 많은 장소를 담은 알찬 일정을 추천해 드려요'
+            : '이동·휴식 시간을 넉넉히 두는 여유로운 일정을 만들어요',
+          en: packed
+            ? 'We fit more stops into each day for you'
+            : 'We leave room for breaks and unhurried travel',
+          ja: packed
+            ? '1日により多くのスポットを組み込みます'
+            : '移動と休憩の余裕を持たせた行程にします',
+          zh: packed ? '每日为您安排更多景点' : '预留充足的移动与休息时间',
+        },
+        features: packed
+          ? [emphasize('planner'), plain('nearby')]
+          : [plain('planner'), emphasize('amenities')],
+      };
+    }
     case 'travelStyle': {
       const planned = answers.travelStyle === 'planned';
       return {
@@ -476,6 +519,27 @@ export const TRAVEL_STYLE_OPTIONS: Option<TravelStyle>[] = [
       en: 'I go with the flow',
       ja: 'その場の気分で',
       zh: '随性而行',
+    },
+  },
+];
+
+export const SCHEDULE_PACE_OPTIONS: Option<SchedulePace>[] = [
+  {
+    value: 'relaxed',
+    label: {
+      ko: '여유롭게',
+      en: 'Relaxed pace',
+      ja: 'ゆったり',
+      zh: '宽松悠闲',
+    },
+  },
+  {
+    value: 'packed',
+    label: {
+      ko: '빡빡하게',
+      en: 'Packed schedule',
+      ja: 'ぎゅうぎゅう',
+      zh: '紧凑满满',
     },
   },
 ];

@@ -3,8 +3,8 @@ import { ScrollView, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { TravelogueCard } from '../../components/feed/TravelogueCard';
-import { BackButton } from '../../components/plan/BackButton';
+import { TravelogueCard } from '../../components/feed/cards/TravelogueCard';
+import { BackButton } from '../../components/shared/buttons/BackButton';
 import { TRAVEL_REVIEW_COPY } from '../../constants/travelReview';
 import type { RootStackParamList } from '../../navigation/types';
 import { useAppStore, useTravelogueStore } from '../../stores';

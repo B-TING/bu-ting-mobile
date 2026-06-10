@@ -2,6 +2,9 @@ export type AppLanguage = 'ko' | 'en' | 'ja' | 'zh';
 
 export type TravelStyle = 'planned' | 'spontaneous';
 
+/** 일정을 빡빡하게 vs 여유롭게 짜는 편 */
+export type SchedulePace = 'relaxed' | 'packed';
+
 export type CompanionType = 'solo' | 'group';
 
 export type LuggageLevel = 'light' | 'heavy';
@@ -18,6 +21,7 @@ export type BusanFamiliarity = 'novice' | 'familiar';
 
 export type OnboardingAnswers = {
   travelStyle: TravelStyle | null;
+  schedulePace: SchedulePace | null;
   companions: CompanionType | null;
   luggage: LuggageLevel | null;
   purposes: VisitPurpose[];

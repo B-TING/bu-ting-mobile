@@ -2,11 +2,11 @@ import { useCallback, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import { FeatureHighlightCard } from '../../components/setup/FeatureHighlightCard';
-import { OnboardingThankYouView } from '../../components/setup/OnboardingThankYouView';
-import { OnboardingStepLayout } from '../../components/setup/OnboardingStepLayout';
-import { OptionCard } from '../../components/setup/OptionCard';
-import { PrimaryButton } from '../../components/setup/PrimaryButton';
+import { PrimaryButton } from '../../components/shared/buttons/PrimaryButton';
+import { FeatureHighlightCard } from '../../components/shared/cards/FeatureHighlightCard';
+import { OptionCard } from '../../components/shared/cards/OptionCard';
+import { OnboardingStepLayout } from '../../components/shared/layout/OnboardingStepLayout';
+import { OnboardingThankYouView } from '../../components/shared/layout/OnboardingThankYouView';
 import {
   COMPANION_OPTIONS,
   FAMILIARITY_OPTIONS,
@@ -16,6 +16,7 @@ import {
   ONBOARDING_QUESTION_COUNT,
   ONBOARDING_STEP_COUNT,
   PURPOSE_OPTIONS,
+  SCHEDULE_PACE_OPTIONS,
   SETUP_COPY,
   TRAVEL_STYLE_OPTIONS,
 } from '../../constants/onboarding';
@@ -27,6 +28,7 @@ import type {
   BusanFamiliarity,
   OnboardingAnswers,
   OnboardingProfile,
+  SchedulePace,
   VisitPurpose,
 } from '../../types/user';
 
@@ -34,6 +36,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Onboarding'>;
 
 const QUESTION_ORDER: OnboardingStepId[] = [
   'travelStyle',
+  'schedulePace',
   'companions',
   'luggage',
   'purposes',
@@ -42,6 +45,7 @@ const QUESTION_ORDER: OnboardingStepId[] = [
 
 const emptyAnswers = (): OnboardingAnswers => ({
   travelStyle: null,
+  schedulePace: null,
   companions: null,
   luggage: null,
   purposes: [],
@@ -146,6 +150,8 @@ export function OnboardingScreen({ navigation }: Props) {
     switch (stepConfig.id) {
       case 'travelStyle':
         return answers.travelStyle !== null;
+      case 'schedulePace':
+        return answers.schedulePace !== null;
       case 'companions':
         return answers.companions !== null;
       case 'luggage':
@@ -184,6 +190,17 @@ export function OnboardingScreen({ navigation }: Props) {
             selected={answers.travelStyle === opt.value}
             onPress={() =>
               setAnswers(prev => ({ ...prev, travelStyle: opt.value }))
+            }
+          />
+        ));
+      case 'schedulePace':
+        return SCHEDULE_PACE_OPTIONS.map(opt => (
+          <OptionCard
+            key={opt.value}
+            label={opt.label[language]}
+            selected={answers.schedulePace === opt.value}
+            onPress={() =>
+              setAnswers(prev => ({ ...prev, schedulePace: opt.value as SchedulePace }))
             }
           />
         ));

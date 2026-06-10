@@ -3,9 +3,9 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { NaverMapPlaceholder } from '../../components/plan/NaverMapPlaceholder';
-import { BackButton } from '../../components/plan/BackButton';
-import { StarRating } from '../../components/review/StarRating';
+import { NaverMapPlaceholder } from '../../components/plan/map/NaverMapPlaceholder';
+import { BackButton } from '../../components/shared/buttons/BackButton';
+import { StarRating } from '../../components/shared/rating/StarRating';
 import { TRAVEL_REVIEW_COPY } from '../../constants/travelReview';
 import type { RootStackParamList } from '../../navigation/types';
 import { selectPlanById, useAppStore, usePlanStore, useTravelogueStore } from '../../stores';
