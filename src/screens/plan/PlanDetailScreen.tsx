@@ -7,7 +7,7 @@ import { BackButton } from '../../components/shared/buttons/BackButton';
 import { BudgetEntryModal } from '../../components/plan/modals/BudgetEntryModal';
 import { PlaceDetailModal } from '../../components/plan/modals/PlaceDetailModal';
 import { PlacePickModal } from '../../components/plan/modals/PlacePickModal';
-import { RouteOptimizeFab } from '../../components/plan/fab/RouteOptimizeFab';
+import { RouteOptimizeFab, routeFabBottom } from '../../components/plan/fab/RouteOptimizeFab';
 import { PlanBudgetTab } from '../../components/plan/tabs/PlanBudgetTab';
 import { PlanOverviewTab } from '../../components/plan/tabs/PlanOverviewTab';
 import { PlanRecordsTab } from '../../components/plan/tabs/PlanRecordsTab';
@@ -234,7 +234,9 @@ export function PlanDetailScreen({ navigation, route }: Props) {
   };
 
   return (
-    <View className="flex-1 bg-brand-background" style={{ paddingTop: insets.top }}>
+    <View
+      className="flex-1 bg-brand-background"
+      style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
       <View className="flex-row items-center border-b border-brand-border bg-brand-surface px-4 py-3">
         <BackButton
           accessibilityLabel={language === 'ko' ? '메인으로' : 'Back to home'}
@@ -249,7 +251,6 @@ export function PlanDetailScreen({ navigation, route }: Props) {
         active={tab}
         onChange={setTab}
         language={language}
-        bottomInset={insets.bottom}
         horizontalScrollEnabled={!scheduleReorderActive}
         pages={{
           overview: (
@@ -324,7 +325,7 @@ export function PlanDetailScreen({ navigation, route }: Props) {
 
       {tab === 'schedule' && (
         <RouteOptimizeFab
-          bottom={insets.bottom + 72}
+          bottom={routeFabBottom(insets.bottom)}
           label={copy.routeOptimize}
           addPlaceLabel={copy.addPlace}
           onPress={() => scheduleRef.current?.handleRouteOptimize()}

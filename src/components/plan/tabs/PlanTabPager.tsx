@@ -17,7 +17,6 @@ type PlanTabPagerProps = {
   active: PlanDetailTab;
   onChange: (tab: PlanDetailTab) => void;
   language: AppLanguage;
-  bottomInset: number;
   horizontalScrollEnabled?: boolean;
   pages: Record<PlanDetailTab, ReactNode>;
 };
@@ -26,7 +25,6 @@ export function PlanTabPager({
   active,
   onChange,
   language,
-  bottomInset,
   horizontalScrollEnabled = true,
   pages,
 }: PlanTabPagerProps) {
@@ -90,7 +88,7 @@ export function PlanTabPager({
             <ScrollView
               key={tab}
               style={{ width }}
-              contentContainerStyle={{ paddingBottom: bottomInset + 24 }}
+              contentContainerStyle={{ paddingBottom: 24 }}
               showsVerticalScrollIndicator={false}
               nestedScrollEnabled>
               {pages[tab]}
