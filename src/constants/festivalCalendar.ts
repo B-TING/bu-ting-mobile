@@ -65,6 +65,12 @@ export const FESTIVAL_CALENDAR_COPY: Record<
     notFound: string;
     weekDays: string[];
     today: string;
+    statusComingSoon: string;
+    statusEnded: string;
+    commentsTitle: string;
+    commentPlaceholder: string;
+    commentsEmpty: string;
+    commentsComingSoon: string;
     mockHint: string;
   }
 > = {
@@ -86,6 +92,12 @@ export const FESTIVAL_CALENDAR_COPY: Record<
     notFound: '축제 정보를 찾을 수 없어요',
     weekDays: ['일', '월', '화', '수', '목', '금', '토'],
     today: '오늘',
+    statusComingSoon: 'COMING SOON',
+    statusEnded: '종료된 행사입니다',
+    commentsTitle: '코멘트',
+    commentPlaceholder: '축제 후기를 남겨보세요',
+    commentsEmpty: '아직 코멘트가 없어요',
+    commentsComingSoon: '코멘트 기능은 준비 중이에요',
     mockHint: '축제 API 연동 전 목업 데이터입니다.',
   },
   en: {
@@ -106,6 +118,12 @@ export const FESTIVAL_CALENDAR_COPY: Record<
     notFound: 'Festival not found',
     weekDays: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
     today: 'Today',
+    statusComingSoon: 'COMING SOON',
+    statusEnded: 'This event has ended',
+    commentsTitle: 'Comments',
+    commentPlaceholder: 'Share your festival experience',
+    commentsEmpty: 'No comments yet',
+    commentsComingSoon: 'Comments are coming soon',
     mockHint: 'Mock data until festival API is connected.',
   },
   ja: {
@@ -126,6 +144,12 @@ export const FESTIVAL_CALENDAR_COPY: Record<
     notFound: '祭り情報が見つかりません',
     weekDays: ['日', '月', '火', '水', '木', '金', '土'],
     today: '今日',
+    statusComingSoon: 'COMING SOON',
+    statusEnded: '終了したイベントです',
+    commentsTitle: 'コメント',
+    commentPlaceholder: '祭りの感想を書いてみましょう',
+    commentsEmpty: 'まだコメントがありません',
+    commentsComingSoon: 'コメント機能は準備中です',
     mockHint: '祭りAPI連携前のモックデータです。',
   },
   zh: {
@@ -146,8 +170,22 @@ export const FESTIVAL_CALENDAR_COPY: Record<
     notFound: '找不到节庆信息',
     weekDays: ['日', '一', '二', '三', '四', '五', '六'],
     today: '今天',
+    statusComingSoon: 'COMING SOON',
+    statusEnded: '活动已结束',
+    commentsTitle: '评论',
+    commentPlaceholder: '分享你的节庆体验',
+    commentsEmpty: '暂无评论',
+    commentsComingSoon: '评论功能即将上线',
     mockHint: '节庆 API 接入前的模拟数据。',
   },
+};
+
+export type FestivalStatus = 'upcoming' | 'ongoing' | 'ended';
+
+const FESTIVAL_STATUS_ORDER: Record<FestivalStatus, number> = {
+  ongoing: 0,
+  upcoming: 1,
+  ended: 2,
 };
 
 /** 축제 API 연동 전 부산 축제 목업 */
@@ -439,6 +477,27 @@ export function isSameIsoDate(a: string, b: string): boolean {
   return a === b;
 }
 
+export function getFestivalStatus(
+  festival: BusanFestival,
+  refDate: string = todayIso(),
+): FestivalStatus {
+  const today = parseIsoDate(refDate);
+  const start = parseIsoDate(festival.startDate);
+  const end = parseIsoDate(festival.endDate);
+  if (today < start) {
+    return 'upcoming';
+  }
+  if (today > end) {
+    return 'ended';
+  }
+  return 'ongoing';
+}
+
+export function festivalStatusLabel(status: FestivalStatus, language: AppLanguage): string {
+  const copy = FESTIVAL_CALENDAR_COPY[language];
+  return status === 'upcoming' ? copy.statusComingSoon : copy.statusEnded;
+}
+
 export function festivalActiveOnDate(festival: BusanFestival, dateIso: string): boolean {
   const d = parseIsoDate(dateIso);
   const start = parseIsoDate(festival.startDate);
@@ -459,22 +518,36 @@ export function festivalsOnDate(
   return festivals.filter(f => festivalActiveOnDate(f, dateIso));
 }
 
+export function sortFestivalsByStatus(
+  festivals: BusanFestival[],
+  refDate: string = todayIso(),
+): BusanFestival[] {
+  return [...festivals].sort((a, b) => {
+    const statusDiff =
+      FESTIVAL_STATUS_ORDER[getFestivalStatus(a, refDate)] -
+      FESTIVAL_STATUS_ORDER[getFestivalStatus(b, refDate)];
+    if (statusDiff !== 0) {
+      return statusDiff;
+    }
+    return a.startDate.localeCompare(b.startDate);
+  });
+}
+
 export function festivalsInMonth(
   festivals: BusanFestival[],
   year: number,
   month: number,
 ): BusanFestival[] {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  return festivals
-    .filter(f => {
-      for (let day = 1; day <= daysInMonth; day++) {
-        if (festivalActiveOnDate(f, toIsoDate(year, month, day))) {
-          return true;
-        }
+  const inMonth = festivals.filter(f => {
+    for (let day = 1; day <= daysInMonth; day++) {
+      if (festivalActiveOnDate(f, toIsoDate(year, month, day))) {
+        return true;
       }
-      return false;
-    })
-    .sort((a, b) => a.startDate.localeCompare(b.startDate));
+    }
+    return false;
+  });
+  return sortFestivalsByStatus(inMonth);
 }
 
 export function festivalDaysInMonth(

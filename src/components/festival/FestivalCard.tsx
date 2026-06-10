@@ -9,7 +9,7 @@ import {
   type BusanFestival,
 } from '../../constants/festivalCalendar';
 import type { AppLanguage } from '../../types/user';
-import { cn } from '../../utils/cn';
+import { FestivalTagBadges } from './FestivalTagBadges';
 
 type FestivalCardProps = {
   festival: BusanFestival;
@@ -26,13 +26,7 @@ export function FestivalCard({ festival, language, onPress }: FestivalCardProps)
 
   const content = (
     <View style={styles.overlay}>
-      <View
-        className={cn(
-          'mb-2 self-start rounded-md px-2 py-0.5',
-          festival.tag === 'FESTIVAL' ? 'bg-brand-primary' : 'bg-orange-500',
-        )}>
-        <Text className="text-[10px] font-bold text-white">{festival.tag}</Text>
-      </View>
+      <FestivalTagBadges festival={festival} language={language} className="mb-2" />
       <Text className="text-lg font-bold leading-snug text-white" numberOfLines={2}>
         {title}
       </Text>
