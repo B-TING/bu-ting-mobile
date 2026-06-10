@@ -2,11 +2,11 @@ import { useCallback, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import { FeatureHighlightCard } from '../../components/setup/FeatureHighlightCard';
-import { OnboardingThankYouView } from '../../components/setup/OnboardingThankYouView';
-import { OnboardingStepLayout } from '../../components/setup/OnboardingStepLayout';
-import { OptionCard } from '../../components/setup/OptionCard';
-import { PrimaryButton } from '../../components/setup/PrimaryButton';
+import { PrimaryButton } from '../../components/shared/buttons/PrimaryButton';
+import { FeatureHighlightCard } from '../../components/shared/cards/FeatureHighlightCard';
+import { OptionCard } from '../../components/shared/cards/OptionCard';
+import { OnboardingStepLayout } from '../../components/shared/layout/OnboardingStepLayout';
+import { OnboardingThankYouView } from '../../components/shared/layout/OnboardingThankYouView';
 import {
   COMPANION_OPTIONS,
   FAMILIARITY_OPTIONS,

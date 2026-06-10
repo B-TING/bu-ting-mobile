@@ -3,7 +3,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import { PrimaryButton } from '../../components/setup/PrimaryButton';
+import { PrimaryButton } from '../../components/shared/buttons/PrimaryButton';
 import { layout } from '../../constants/layout';
 import { LANGUAGE_OPTIONS } from '../../constants/languages';
 import { SETUP_COPY } from '../../constants/onboarding';

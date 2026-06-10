@@ -2,15 +2,15 @@ import { useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import { ActivePlanHeroBanner } from '../components/home/ActivePlanHeroBanner';
-import { EventsSectionMock } from '../components/home/EventsSectionMock';
-import { HeroBanner } from '../components/home/HeroBanner';
-import { QuickAccessRow } from '../components/home/QuickAccessRow';
-import { TraveloguePreviewMock } from '../components/home/TraveloguePreviewMock';
-import { ScheduleRebootFab } from '../components/plan/ScheduleRebootFab';
-import { AppBar } from '../components/navigation/AppBar';
-import { AppMenuDrawer } from '../components/navigation/AppMenuDrawer';
-import { Navbar, type NavbarTab } from '../components/navigation/Navbar';
+import { ActivePlanHeroBanner } from '../components/home/banners/ActivePlanHeroBanner';
+import { HeroBanner } from '../components/home/banners/HeroBanner';
+import { EventsSectionMock } from '../components/home/sections/EventsSectionMock';
+import { QuickAccessRow } from '../components/home/sections/QuickAccessRow';
+import { TraveloguePreviewMock } from '../components/home/sections/TraveloguePreviewMock';
+import { ScheduleRebootFab } from '../components/plan/fab/ScheduleRebootFab';
+import { AppBar } from '../components/shared/navigation/AppBar';
+import { AppMenuDrawer } from '../components/shared/navigation/AppMenuDrawer';
+import { Navbar, type NavbarTab } from '../components/shared/navigation/Navbar';
 import {
   MAIN_HOME_COPY,
   MOCK_EVENTS,

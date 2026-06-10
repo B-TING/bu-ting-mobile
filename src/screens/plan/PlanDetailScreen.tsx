@@ -3,21 +3,21 @@ import { Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { BudgetEntryModal } from '../../components/plan/BudgetEntryModal';
-import { BackButton } from '../../components/plan/BackButton';
-import { PlaceDetailModal } from '../../components/plan/PlaceDetailModal';
-import { PlacePickModal } from '../../components/plan/PlacePickModal';
-import { PlanTabPager } from '../../components/plan/PlanTabPager';
-import { RouteOptimizeFab } from '../../components/plan/RouteOptimizeFab';
-import { PlanBudgetTab } from '../../components/plan/detail/PlanBudgetTab';
-import { PlanOverviewTab } from '../../components/plan/detail/PlanOverviewTab';
-import { PlanRecordsTab } from '../../components/plan/detail/PlanRecordsTab';
+import { BackButton } from '../../components/shared/buttons/BackButton';
+import { BudgetEntryModal } from '../../components/plan/modals/BudgetEntryModal';
+import { PlaceDetailModal } from '../../components/plan/modals/PlaceDetailModal';
+import { PlacePickModal } from '../../components/plan/modals/PlacePickModal';
+import { RouteOptimizeFab } from '../../components/plan/fab/RouteOptimizeFab';
+import { PlanBudgetTab } from '../../components/plan/tabs/PlanBudgetTab';
+import { PlanOverviewTab } from '../../components/plan/tabs/PlanOverviewTab';
+import { PlanRecordsTab } from '../../components/plan/tabs/PlanRecordsTab';
 import {
   PlanScheduleTab,
   type PlanScheduleTabHandle,
   type ScheduleModalState,
-} from '../../components/plan/detail/PlanScheduleTab';
-import { PlaceReviewFormModal } from '../../components/review/PlaceReviewFormModal';
+} from '../../components/plan/tabs/PlanScheduleTab';
+import { PlanTabPager } from '../../components/plan/tabs/PlanTabPager';
+import { PlaceReviewFormModal } from '../../components/review/modals/PlaceReviewFormModal';
 import { PLAN_DETAIL_COPY, type PlanDetailTab } from '../../constants/planDetail';
 import { TRAVEL_REVIEW_COPY } from '../../constants/travelReview';
 import type { RootStackParamList } from '../../navigation/types';

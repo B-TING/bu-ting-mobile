@@ -9,9 +9,9 @@ import {
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import { WizardStepLayout } from '../../components/plan/WizardStepLayout';
-import { OptionCard } from '../../components/setup/OptionCard';
-import { PrimaryButton } from '../../components/setup/PrimaryButton';
+import { WizardStepLayout } from '../../components/shared/layout/WizardStepLayout';
+import { OptionCard } from '../../components/shared/cards/OptionCard';
+import { PrimaryButton } from '../../components/shared/buttons/PrimaryButton';
 import {
   TRAVEL_CONSTRAINT_OPTIONS,
   TRAVEL_STYLE_OPTIONS,
