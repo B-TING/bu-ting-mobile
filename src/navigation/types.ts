@@ -12,6 +12,7 @@ export type RootStackParamList = {
   TravelogueDetail: { travelogueId: string };
   FestivalCalendar: { initialDate?: string } | undefined;
   FestivalDetail: { festivalId: string };
+  LuggageStorage: undefined;
 };
 
 export type SetupPhase = 'language' | 'login' | 'onboarding' | 'main';

@@ -28,7 +28,7 @@ export const APP_MENU_ITEMS: AppMenuItem[] = [
     id: 'luggage',
     labelKo: '짐 보관소',
     labelEn: 'Luggage storage',
-    target: { kind: 'placeholder', titleKo: '짐 보관소', titleEn: 'Luggage storage' },
+    target: { kind: 'screen', route: 'LuggageStorage' },
   },
   {
     id: 'community',
