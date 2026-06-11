@@ -40,7 +40,7 @@ export const APP_MENU_ITEMS: AppMenuItem[] = [
     id: 'calendar',
     labelKo: '캘린더',
     labelEn: 'Calendar',
-    target: { kind: 'placeholder', titleKo: '캘린더', titleEn: 'Calendar' },
+    target: { kind: 'screen', route: 'FestivalCalendar' },
   },
   {
     id: 'emergency',
