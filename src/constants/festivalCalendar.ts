@@ -71,6 +71,7 @@ export const FESTIVAL_CALENDAR_COPY: Record<
     commentPlaceholder: string;
     commentsEmpty: string;
     commentsComingSoon: string;
+    close: string;
     mockHint: string;
   }
 > = {
@@ -98,6 +99,7 @@ export const FESTIVAL_CALENDAR_COPY: Record<
     commentPlaceholder: '축제 후기를 남겨보세요',
     commentsEmpty: '아직 코멘트가 없어요',
     commentsComingSoon: '코멘트 기능은 준비 중이에요',
+    close: '닫기',
     mockHint: '축제 API 연동 전 목업 데이터입니다.',
   },
   en: {
@@ -124,6 +126,7 @@ export const FESTIVAL_CALENDAR_COPY: Record<
     commentPlaceholder: 'Share your festival experience',
     commentsEmpty: 'No comments yet',
     commentsComingSoon: 'Comments are coming soon',
+    close: 'Close',
     mockHint: 'Mock data until festival API is connected.',
   },
   ja: {
@@ -150,6 +153,7 @@ export const FESTIVAL_CALENDAR_COPY: Record<
     commentPlaceholder: '祭りの感想を書いてみましょう',
     commentsEmpty: 'まだコメントがありません',
     commentsComingSoon: 'コメント機能は準備中です',
+    close: '閉じる',
     mockHint: '祭りAPI連携前のモックデータです。',
   },
   zh: {
@@ -176,6 +180,7 @@ export const FESTIVAL_CALENDAR_COPY: Record<
     commentPlaceholder: '分享你的节庆体验',
     commentsEmpty: '暂无评论',
     commentsComingSoon: '评论功能即将上线',
+    close: '关闭',
     mockHint: '节庆 API 接入前的模拟数据。',
   },
 };

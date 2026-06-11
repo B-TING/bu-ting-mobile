@@ -1,9 +1,9 @@
-import { useMemo } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { FestivalCommentsPlaceholder } from '../../components/festival/FestivalCommentsPlaceholder';
+import { FestivalCommentsModal } from '../../components/festival/FestivalCommentsModal';
 import { FestivalDetailHero } from '../../components/festival/FestivalDetailHero';
 import { NaverMapPlaceholder } from '../../components/plan/map/NaverMapPlaceholder';
 import { BackButton } from '../../components/shared/buttons/BackButton';
@@ -17,11 +17,14 @@ import { useAppStore } from '../../stores';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FestivalDetail'>;
 
+const PLACEHOLDER_COMMENT_COUNT = 0;
+
 export function FestivalDetailScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const language = useAppStore(s => s.language) ?? 'ko';
   const copy = FESTIVAL_CALENDAR_COPY[language];
   const festival = getFestivalById(route.params.festivalId);
+  const [commentsOpen, setCommentsOpen] = useState(false);
 
   const mapRoutes = useMemo(
     () => (festival ? [festivalToRouteItem(festival, language)] : []),
@@ -56,13 +59,8 @@ export function FestivalDetailScreen({ navigation, route }: Props) {
         </Text>
       </View>
 
-      <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ paddingBottom: 24 }}
-        showsVerticalScrollIndicator={false}>
-        <FestivalDetailHero festival={festival} language={language} />
-
-        <View className="h-44 border-t border-brand-border">
+      <View className="min-h-0 flex-1">
+        <View className="min-h-0 border-b border-brand-border" style={{ flex: 2 }}>
           <NaverMapPlaceholder
             title={copy.mapTitle}
             subtitle={copy.mapSubtitle}
@@ -72,8 +70,23 @@ export function FestivalDetailScreen({ navigation, route }: Props) {
           />
         </View>
 
-        <FestivalCommentsPlaceholder copy={copy} />
-      </ScrollView>
+        <View className="min-h-0" style={{ flex: 3 }}>
+          <FestivalDetailHero
+            festival={festival}
+            language={language}
+            fill
+            commentCount={PLACEHOLDER_COMMENT_COUNT}
+            commentsAccessibilityLabel={`${copy.commentsTitle} ${PLACEHOLDER_COMMENT_COUNT}`}
+            onCommentsPress={() => setCommentsOpen(true)}
+          />
+        </View>
+      </View>
+
+      <FestivalCommentsModal
+        visible={commentsOpen}
+        copy={copy}
+        onClose={() => setCommentsOpen(false)}
+      />
     </View>
   );
 }

@@ -6,11 +6,13 @@ type Copy = (typeof FESTIVAL_CALENDAR_COPY)['ko'];
 
 type FestivalCommentsPlaceholderProps = {
   copy: Copy;
+  embedded?: boolean;
 };
 
-export function FestivalCommentsPlaceholder({ copy }: FestivalCommentsPlaceholderProps) {
+export function FestivalCommentsPlaceholder({ copy, embedded }: FestivalCommentsPlaceholderProps) {
   return (
-    <View className="border-t border-brand-border bg-brand-surface px-4 py-5">
+    <View
+      className={`bg-brand-surface px-4 py-5${embedded ? '' : ' border-t border-brand-border'}`}>
       <View className="mb-3 flex-row items-center justify-between">
         <Text className="text-base font-bold text-brand-text">{copy.commentsTitle}</Text>
         <View className="rounded-full bg-brand-selected px-2.5 py-1">
