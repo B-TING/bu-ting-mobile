@@ -1,6 +1,8 @@
 import { Platform, Pressable, StatusBar, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { BrandLogo } from '../brand/BrandLogo';
+
 /** 상태바·전면 카메라(펀치홀) 아래 여백 */
 const TOP_GAP = 10;
 /** 메뉴·로고·프로필이 들어가는 바 본문 높이 */
@@ -48,9 +50,7 @@ export function AppBar({ onMenuPress, onProfilePress }: AppBarProps) {
           <MenuIcon />
         </Pressable>
 
-        <Text className="text-lg font-bold tracking-tight text-brand-primary">
-          BU-TING
-        </Text>
+        <BrandLogo height={26} />
 
         <Pressable
           onPress={onProfilePress}

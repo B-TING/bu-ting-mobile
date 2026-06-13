@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { PrimaryButton } from '../../components/shared/buttons/PrimaryButton';
+import { BrandLogo } from '../../components/shared/brand/BrandLogo';
 import { layout } from '../../constants/layout';
 import { SETUP_COPY } from '../../constants/onboarding';
 import type { RootStackParamList } from '../../navigation/types';
@@ -41,7 +42,7 @@ export function LoginScreen({ navigation }: Props) {
       style={[layout.screenPad24, { paddingTop: insets.top + 32 }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View className="mb-8">
-        <Text className="mb-3 text-sm font-bold text-brand-primary">부팅</Text>
+        <BrandLogo height={32} style={{ marginBottom: 20 }} />
         <Text className="mb-2 text-[28px] font-bold text-brand-text">
           {copy.loginTitle}
         </Text>

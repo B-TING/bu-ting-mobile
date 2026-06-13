@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { PrimaryButton } from '../../components/shared/buttons/PrimaryButton';
+import { BrandLogo } from '../../components/shared/brand/BrandLogo';
 import { layout } from '../../constants/layout';
 import { LANGUAGE_OPTIONS } from '../../constants/languages';
 import { SETUP_COPY } from '../../constants/onboarding';
@@ -33,9 +34,7 @@ export function LanguageSelectionScreen({ navigation }: Props) {
       className="flex-1 bg-brand-background px-6"
       style={[layout.screenPad24, { paddingTop: insets.top + 24 }]}>
       <View className="mb-6">
-        <Text className="mb-3 text-sm font-bold tracking-wide text-brand-primary">
-          부팅
-        </Text>
+        <BrandLogo height={32} style={{ marginBottom: 20 }} />
         <Text className="mb-2 text-[28px] font-bold text-brand-text">
           {selected ? copy.languageTitle : 'Choose your language / 언어 선택'}
         </Text>
