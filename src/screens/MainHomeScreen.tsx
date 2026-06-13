@@ -132,6 +132,9 @@ export function MainHomeScreen({ navigation }: Props) {
             if (id === 'luggage') {
               navigation.navigate('LuggageStorage');
             }
+            if (id === 'hotels') {
+              navigation.navigate('BusanAccommodation');
+            }
           }}
         />
 

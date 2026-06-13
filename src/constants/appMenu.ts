@@ -31,6 +31,12 @@ export const APP_MENU_ITEMS: AppMenuItem[] = [
     target: { kind: 'screen', route: 'LuggageStorage' },
   },
   {
+    id: 'accommodation',
+    labelKo: '부산 숙소',
+    labelEn: 'Busan stays',
+    target: { kind: 'screen', route: 'BusanAccommodation' },
+  },
+  {
     id: 'community',
     labelKo: '커뮤니티',
     labelEn: 'Community',
