@@ -24,7 +24,7 @@ type TravelogueFeedItemProps = {
   onPressDetail: () => void;
   onToggleHelpful: () => void;
   onImportPlan: () => void;
-  onAddComment: (text: string) => void;
+  onOpenComposer?: () => void;
   variant?: 'feed' | 'detail';
 };
 
@@ -38,7 +38,7 @@ export function TravelogueFeedItem({
   onPressDetail,
   onToggleHelpful,
   onImportPlan,
-  onAddComment,
+  onOpenComposer,
   variant = 'feed',
 }: TravelogueFeedItemProps) {
   const images = collectTravelogueImages(travelogue);
@@ -113,8 +113,8 @@ export function TravelogueFeedItem({
             currentUserName={userName}
             language={language}
             previewLimit={isFeed ? 2 : undefined}
-            onAddComment={onAddComment}
             onViewAllPress={isFeed ? onPressDetail : undefined}
+            onOpenComposer={onOpenComposer}
           />
         </View>
       </View>

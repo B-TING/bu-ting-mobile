@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import type { TRAVEL_REVIEW_COPY } from '../../constants/travelReview';
 import type { TravelogueComment } from '../../types/travelReview';
@@ -13,8 +12,8 @@ type TravelogueCommentsSectionProps = {
   currentUserName: string;
   language?: 'ko' | 'en' | 'ja' | 'zh';
   previewLimit?: number;
-  onAddComment: (text: string) => void;
   onViewAllPress?: () => void;
+  onOpenComposer?: () => void;
 };
 
 function formatCommentDate(iso: string, language: 'ko' | 'en' | 'ja' | 'zh'): string {
@@ -31,21 +30,11 @@ export function TravelogueCommentsSection({
   currentUserName,
   language = 'ko',
   previewLimit,
-  onAddComment,
   onViewAllPress,
+  onOpenComposer,
 }: TravelogueCommentsSectionProps) {
-  const [draft, setDraft] = useState('');
   const visibleComments = previewLimit ? comments.slice(-previewLimit) : comments;
   const hiddenCount = previewLimit ? Math.max(comments.length - previewLimit, 0) : 0;
-
-  const handleSubmit = () => {
-    const trimmed = draft.trim();
-    if (!trimmed) {
-      return;
-    }
-    onAddComment(trimmed);
-    setDraft('');
-  };
 
   return (
     <View>
@@ -80,34 +69,20 @@ export function TravelogueCommentsSection({
         ))
       )}
 
-      <View className="mt-1 flex-row items-end gap-2">
-        <View className="h-9 w-9 items-center justify-center rounded-full bg-brand-selected">
-          <Text className="text-xs font-bold text-brand-primary">
-            {authorInitial(currentUserName)}
-          </Text>
-        </View>
-        <View className="min-h-[44px] flex-1 flex-row items-end rounded-2xl border border-brand-border bg-brand-background px-3 py-2">
-          <TextInput
-            value={draft}
-            onChangeText={setDraft}
-            placeholder={copy.feedCommentPlaceholder}
-            placeholderTextColor="#94A3B8"
-            multiline
-            className="max-h-24 flex-1 text-sm text-brand-text"
-          />
-          <Pressable
-            onPress={handleSubmit}
-            disabled={!draft.trim()}
-            className="ml-2 active:opacity-80">
-            <Text
-              className={`text-sm font-bold ${
-                draft.trim() ? 'text-brand-primary' : 'text-brand-muted'
-              }`}>
-              {copy.feedAddComment}
+      {onOpenComposer ? (
+        <Pressable
+          onPress={onOpenComposer}
+          className="mt-1 flex-row items-end gap-2 active:opacity-90">
+          <View className="h-9 w-9 items-center justify-center rounded-full bg-brand-selected">
+            <Text className="text-xs font-bold text-brand-primary">
+              {authorInitial(currentUserName)}
             </Text>
-          </Pressable>
-        </View>
-      </View>
+          </View>
+          <View className="min-h-[44px] flex-1 justify-center rounded-2xl border border-brand-border bg-brand-background px-3 py-2">
+            <Text className="text-sm text-brand-muted">{copy.feedCommentPlaceholder}</Text>
+          </View>
+        </Pressable>
+      ) : null}
     </View>
   );
 }

@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NaverMapPlaceholder } from '../../components/plan/map/NaverMapPlaceholder';
 import { TravelogueCommentsSection } from '../../components/feed/TravelogueCommentsSection';
 import { ImportPlanModal } from '../../components/feed/modals/ImportPlanModal';
+import { TravelogueCommentModal } from '../../components/feed/modals/TravelogueCommentModal';
 import { TravelogueImageCarousel } from '../../components/feed/TravelogueImageCarousel';
 import { TravelogueSocialBar } from '../../components/feed/TravelogueSocialBar';
 import { useTravelogueSocialActions } from '../../components/feed/useTravelogueSocialActions';
@@ -105,7 +106,7 @@ function TravelogueDetailBody({
   );
 
   const feedImages = useMemo(() => collectTravelogueImages(travelogue), [travelogue]);
-
+  const [commentOpen, setCommentOpen] = useState(false);
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -167,6 +168,7 @@ function TravelogueDetailBody({
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}>
         <View className="flex-row items-center px-4 py-3">
           <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-brand-primary">
@@ -321,11 +323,20 @@ function TravelogueDetailBody({
               comments={social.comments}
               currentUserName={userName}
               language={language}
-              onAddComment={handleAddComment}
+              onOpenComposer={() => setCommentOpen(true)}
             />
           </View>
         </View>
       </ScrollView>
+
+      <TravelogueCommentModal
+        visible={commentOpen}
+        copy={copy}
+        userName={userName}
+        subtitle={travelogue.title}
+        onClose={() => setCommentOpen(false)}
+        onSubmit={handleAddComment}
+      />
       <ImportPlanModal {...importPlanModalProps} />
     </View>
   );

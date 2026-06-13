@@ -1,10 +1,11 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { FlatList, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { TravelogueFeedItem } from '../../components/feed/TravelogueFeedItem';
 import { ImportPlanModal } from '../../components/feed/modals/ImportPlanModal';
+import { TravelogueCommentModal } from '../../components/feed/modals/TravelogueCommentModal';
 import { useTravelogueSocialActions } from '../../components/feed/useTravelogueSocialActions';
 import { BackButton } from '../../components/shared/buttons/BackButton';
 import { TRAVEL_REVIEW_COPY } from '../../constants/travelReview';
@@ -20,16 +21,21 @@ type FeedRowProps = {
   travelogue: Travelogue;
   language: AppLanguage;
   navigation: Props['navigation'];
+  onOpenComposer: (travelogue: Travelogue) => void;
 };
 
-function TravelogueFeedRow({ travelogue, language, navigation }: FeedRowProps) {
+function TravelogueFeedRow({
+  travelogue,
+  language,
+  navigation,
+  onOpenComposer,
+}: FeedRowProps) {
   const copy = TRAVEL_REVIEW_COPY[language];
   const {
     social,
     userId,
     userName,
     handleToggleHelpful,
-    handleAddComment,
     handleImportPlan,
     importPlanModalProps,
   } = useTravelogueSocialActions(travelogue, copy, navigation);
@@ -37,21 +43,21 @@ function TravelogueFeedRow({ travelogue, language, navigation }: FeedRowProps) {
   return (
     <>
       <TravelogueFeedItem
-      travelogue={travelogue}
-      copy={copy}
-      language={language}
-      social={social}
-      userId={userId}
-      userName={userName}
-      onPressDetail={() =>
-        navigation.navigate('TravelogueDetail', {
-          travelogueId: travelogue.travelogueId,
-        })
-      }
-      onToggleHelpful={handleToggleHelpful}
-      onImportPlan={handleImportPlan}
-      onAddComment={handleAddComment}
-    />
+        travelogue={travelogue}
+        copy={copy}
+        language={language}
+        social={social}
+        userId={userId}
+        userName={userName}
+        onPressDetail={() =>
+          navigation.navigate('TravelogueDetail', {
+            travelogueId: travelogue.travelogueId,
+          })
+        }
+        onToggleHelpful={handleToggleHelpful}
+        onImportPlan={handleImportPlan}
+        onOpenComposer={() => onOpenComposer(travelogue)}
+      />
       <ImportPlanModal {...importPlanModalProps} />
     </>
   );
@@ -60,12 +66,30 @@ function TravelogueFeedRow({ travelogue, language, navigation }: FeedRowProps) {
 export function TravelogueFeedScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const language = useAppStore(s => s.language) ?? 'ko';
+  const auth = useAppStore(s => s.auth);
   const copy = TRAVEL_REVIEW_COPY[language];
   const publishedTravelogues = useTravelogueStore(s => s.publishedTravelogues);
+  const addComment = useTravelogueStore(s => s.addComment);
   const travelogues = useMemo(
     () => publishedTravelogues.filter(isTraveloguePublic),
     [publishedTravelogues],
   );
+
+  const [commentTarget, setCommentTarget] = useState<Travelogue | null>(null);
+
+  const userId = auth.userId ?? 'local-user';
+  const userName = auth.displayName ?? (language === 'ko' ? '여행자' : 'Traveler');
+
+  const handleSubmitComment = (text: string) => {
+    if (!commentTarget) {
+      return;
+    }
+    addComment(commentTarget.travelogueId, {
+      authorId: userId,
+      authorName: userName,
+      text,
+    });
+  };
 
   return (
     <View className="flex-1 bg-brand-background" style={{ paddingTop: insets.top }}>
@@ -98,12 +122,23 @@ export function TravelogueFeedScreen({ navigation }: Props) {
               travelogue={item}
               language={language}
               navigation={navigation}
+              onOpenComposer={setCommentTarget}
             />
           )}
+          keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+          contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
         />
       )}
+
+      <TravelogueCommentModal
+        visible={commentTarget != null}
+        copy={copy}
+        userName={userName}
+        subtitle={commentTarget?.title}
+        onClose={() => setCommentTarget(null)}
+        onSubmit={handleSubmitComment}
+      />
     </View>
   );
 }
