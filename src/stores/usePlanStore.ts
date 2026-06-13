@@ -5,7 +5,9 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { enrichPlaceInfo } from '../constants/placeCatalog';
 import type { PlanWizardAnswers } from '../types/planWizard';
 import type { BudgetEntry, RouteItem, TravelLegMode, TravelPlan } from '../types/travelPlan';
+import type { Travelogue } from '../types/travelReview';
 import { createId } from '../utils/id';
+import { buildPlanFromTravelogue } from '../utils/travelReview';
 import { optimizeRouteOrder } from '../utils/routeOptimize';
 
 type PlanState = {
@@ -28,6 +30,10 @@ type PlanState = {
   addBudgetEntry: (entry: Omit<BudgetEntry, 'entryId'>) => void;
   getBudgetForPlan: (planId: string) => BudgetEntry[];
   completePlan: (planId: string) => void;
+  importPlanFromTravelogue: (
+    travelogue: Travelogue,
+    member: { userId: string; displayName: string },
+  ) => TravelPlan | null;
 };
 
 export const usePlanStore = create<PlanState>()(
@@ -208,6 +214,15 @@ export const usePlanStore = create<PlanState>()(
           activePlanId:
             state.activePlanId === planId ? null : state.activePlanId,
         })),
+      importPlanFromTravelogue: (travelogue, member) => {
+        const linked = get().plans.find(p => p.planId === travelogue.planId) ?? null;
+        const plan = buildPlanFromTravelogue(travelogue, linked, member, createId);
+        if (!plan) {
+          return null;
+        }
+        get().addPlan(plan);
+        return plan;
+      },
     }),
     {
       name: '@buting/plans',
