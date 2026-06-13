@@ -15,7 +15,8 @@
     "connect:android": "node scripts/connect-android.cjs",
     "start:tunnel": "node scripts/start-tunnel.cjs",
     "ngrok:auth": "node scripts/ngrok-auth.cjs",
-    "test": "jest"
+    "test": "jest",
+    "icons:generate": "node scripts/generate-app-icons.cjs"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^3.1.1",
