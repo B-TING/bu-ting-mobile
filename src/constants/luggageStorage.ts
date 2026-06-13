@@ -29,6 +29,9 @@ export const LUGGAGE_STORAGE_COPY: Record<
     selectStationHint: string;
     lineLabel: (line: number) => string;
     pinA11y: (name: string, count: number) => string;
+    bookmark: string;
+    unbookmark: string;
+    bookmarkedPinA11y: (name: string, count: number) => string;
   }
 > = {
   ko: {
@@ -58,6 +61,9 @@ export const LUGGAGE_STORAGE_COPY: Record<
     selectStationHint: '지도에서 역을 선택하면 상세 정보를 볼 수 있어요',
     lineLabel: line => `${line}호선`,
     pinA11y: (name, count) => `${name}역 물품보관함 ${count}개`,
+    bookmark: '북마크',
+    unbookmark: '북마크 해제',
+    bookmarkedPinA11y: (name, count) => `북마크한 ${name}역 물품보관함 ${count}개`,
   },
   en: {
     screenTitle: 'Luggage storage',
@@ -86,6 +92,9 @@ export const LUGGAGE_STORAGE_COPY: Record<
     selectStationHint: 'Tap a station on the map to see details',
     lineLabel: line => `Line ${line}`,
     pinA11y: (name, count) => `${name} station, ${count} lockers`,
+    bookmark: 'Bookmark',
+    unbookmark: 'Remove bookmark',
+    bookmarkedPinA11y: (name, count) => `Bookmarked ${name} station, ${count} lockers`,
   },
   ja: {
     screenTitle: '荷物預かり',
@@ -114,6 +123,9 @@ export const LUGGAGE_STORAGE_COPY: Record<
     selectStationHint: '地図の駅をタップすると詳細が表示されます',
     lineLabel: line => `${line}号線`,
     pinA11y: (name, count) => `${name}駅 ロッカー${count}個`,
+    bookmark: 'ブックマーク',
+    unbookmark: 'ブックマーク解除',
+    bookmarkedPinA11y: (name, count) => `ブックマーク済み ${name}駅 ロッカー${count}個`,
   },
   zh: {
     screenTitle: '行李寄存',
@@ -142,5 +154,8 @@ export const LUGGAGE_STORAGE_COPY: Record<
     selectStationHint: '点击地图上的车站查看详情',
     lineLabel: line => `${line}号线`,
     pinA11y: (name, count) => `${name}站 寄存柜 ${count} 个`,
+    bookmark: '收藏',
+    unbookmark: '取消收藏',
+    bookmarkedPinA11y: (name, count) => `已收藏 ${name}站 寄存柜 ${count} 个`,
   },
 };

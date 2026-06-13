@@ -25,6 +25,8 @@ type SubwayLockerDetailSheetProps = {
   visible: boolean;
   station: SubwayLockerStation | null;
   copy: Copy;
+  bookmarked?: boolean;
+  onToggleBookmark?: () => void;
   onClose: () => void;
 };
 
@@ -56,6 +58,8 @@ export function SubwayLockerDetailSheet({
   visible,
   station,
   copy,
+  bookmarked = false,
+  onToggleBookmark,
   onClose,
 }: SubwayLockerDetailSheetProps) {
   const insets = useSafeAreaInsets();
@@ -85,13 +89,32 @@ export function SubwayLockerDetailSheet({
             contentContainerStyle={styles.sheetScrollContent}
             showsVerticalScrollIndicator={false}
             bounces={false}>
-            <View className="flex-row items-center gap-2">
-              <Text className="text-xl font-bold text-brand-text">{station.name}</Text>
-              <View className="rounded-full bg-brand-selected px-2.5 py-1">
-                <Text className="text-[10px] font-semibold text-brand-primary">
-                  {copy.lineLabel(station.line)}
-                </Text>
+            <View className="flex-row items-center justify-between gap-2">
+              <View className="min-w-0 flex-1 flex-row items-center gap-2">
+                <Text className="text-xl font-bold text-brand-text">{station.name}</Text>
+                <View className="rounded-full bg-brand-selected px-2.5 py-1">
+                  <Text className="text-[10px] font-semibold text-brand-primary">
+                    {copy.lineLabel(station.line)}
+                  </Text>
+                </View>
               </View>
+              {onToggleBookmark ? (
+                <Pressable
+                  onPress={onToggleBookmark}
+                  accessibilityRole="button"
+                  accessibilityLabel={bookmarked ? copy.unbookmark : copy.bookmark}
+                  className={`flex-row items-center gap-1 rounded-full px-3 py-2 active:opacity-80 ${
+                    bookmarked ? 'bg-amber-100' : 'bg-brand-selected'
+                  }`}>
+                  <Text className="text-sm">{bookmarked ? '📌' : '☆'}</Text>
+                  <Text
+                    className={`text-xs font-bold ${
+                      bookmarked ? 'text-amber-700' : 'text-brand-primary'
+                    }`}>
+                    {bookmarked ? copy.unbookmark : copy.bookmark}
+                  </Text>
+                </Pressable>
+              ) : null}
             </View>
 
             <Text className="mt-1 text-sm text-brand-muted">

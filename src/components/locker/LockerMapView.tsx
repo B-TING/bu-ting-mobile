@@ -6,11 +6,13 @@ import type { SubwayLockerStation } from '../../types/subwayLocker';
 type LockerMapViewProps = {
   stations: SubwayLockerStation[];
   selectedId?: string | null;
+  bookmarkedIds?: readonly string[];
   lineLabel?: (line: number) => string;
   onSelectStation?: (station: SubwayLockerStation) => void;
   mapTitle: string;
   mapSubtitle: string;
   pinA11y: (name: string, count: number) => string;
+  bookmarkedPinA11y?: (name: string, count: number) => string;
 };
 
 function project(
@@ -30,12 +32,15 @@ function project(
 export function LockerMapView({
   stations,
   selectedId,
+  bookmarkedIds = [],
   onSelectStation,
   mapTitle,
   mapSubtitle,
   pinA11y,
+  bookmarkedPinA11y,
   lineLabel,
 }: LockerMapViewProps) {
+  const bookmarkSet = new Set(bookmarkedIds);
   const { width: screenWidth } = useWindowDimensions();
   const mapWidth = screenWidth;
   const [mapHeight, setMapHeight] = useState(280);
@@ -90,6 +95,7 @@ export function LockerMapView({
 
         {stations.map(station => {
           const active = station.id === selectedId;
+          const bookmarked = bookmarkSet.has(station.id);
           const pos = project(
             station.location.lat,
             station.location.lng,
@@ -102,27 +108,39 @@ export function LockerMapView({
               ? '99+'
               : String(station.lockers.total);
 
+          const pinColor = active ? '#0077B6' : bookmarked ? '#F59E0B' : '#03C75A';
+          const pinEmoji = bookmarked ? '📌' : '🧳';
+
           return (
             <Pressable
               key={station.id}
               onPress={() => onSelectStation?.(station)}
               accessibilityRole="button"
-              accessibilityLabel={pinA11y(station.name, station.lockers.total)}
+              accessibilityLabel={
+                bookmarked && bookmarkedPinA11y
+                  ? bookmarkedPinA11y(station.name, station.lockers.total)
+                  : pinA11y(station.name, station.lockers.total)
+              }
               className="absolute items-center"
               style={{ left: pos.left - 22, top: pos.top - 28 }}>
               <View
                 className="min-w-[44px] items-center justify-center rounded-full border-2 border-white px-2 py-1"
                 style={{
-                  backgroundColor: active ? '#0077B6' : '#03C75A',
+                  backgroundColor: pinColor,
                   shadowColor: '#000',
                   shadowOpacity: 0.2,
                   shadowRadius: 3,
                   shadowOffset: { width: 0, height: 1 },
                   elevation: 3,
                 }}>
-                <Text className="text-[10px]">🧳</Text>
+                <Text className="text-[10px]">{pinEmoji}</Text>
                 <Text className="text-[11px] font-bold text-white">{countLabel}</Text>
               </View>
+              {bookmarked ? (
+                <View className="absolute -right-1 -top-1 h-4 w-4 items-center justify-center rounded-full bg-white">
+                  <Text className="text-[8px]">⭐</Text>
+                </View>
+              ) : null}
               {active ? (
                 <View className="mt-1 rounded-md bg-white/95 px-2 py-0.5">
                   <Text className="text-[10px] font-bold text-brand-text">
