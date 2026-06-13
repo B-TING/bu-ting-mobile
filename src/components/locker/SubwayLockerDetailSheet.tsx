@@ -11,11 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { LUGGAGE_STORAGE_COPY } from '../../constants/luggageStorage';
 import type { SubwayLockerStation } from '../../types/subwayLocker';
-import {
-  feeScheduleLabel,
-  formatLockerFeeLine,
-  sortedFeeItems,
-} from '../../utils/subwayLockerFees';
+import { LockerInventoryTable } from './LockerInventoryTable';
 
 type Copy = (typeof LUGGAGE_STORAGE_COPY)['ko'];
 
@@ -38,18 +34,6 @@ function DetailRow({ label, value }: { label: string; value: string }) {
     <View className="mt-3 flex-row">
       <Text className="w-20 text-xs font-bold text-brand-muted">{label}</Text>
       <Text className="flex-1 text-sm leading-5 text-brand-text">{value}</Text>
-    </View>
-  );
-}
-
-function SizeChip({ label, count }: { label: string; count: number }) {
-  if (count <= 0) {
-    return null;
-  }
-  return (
-    <View className="rounded-xl border border-brand-border bg-brand-surface px-3 py-2">
-      <Text className="text-[10px] font-semibold text-brand-muted">{label}</Text>
-      <Text className="mt-0.5 text-lg font-bold text-brand-primary">{count}</Text>
     </View>
   );
 }
@@ -122,32 +106,19 @@ export function SubwayLockerDetailSheet({
             </Text>
 
             <DetailRow label={copy.locationDetailLabel} value={station.locationDetail} />
-
-            <View className="mt-4 flex-row flex-wrap gap-2">
-              <SizeChip label={copy.sizeExtraLarge} count={station.lockers.extraLarge} />
-              <SizeChip label={copy.sizeLarge} count={station.lockers.large} />
-              <SizeChip label={copy.sizeMedium} count={station.lockers.medium} />
-              <SizeChip label={copy.sizeSmall} count={station.lockers.small} />
-            </View>
-
             <DetailRow label={copy.companyLabel} value={station.company} />
 
             {station.fees.length > 0 ? (
               <View className="mt-4">
                 <Text className="text-xs font-bold text-brand-muted">{copy.costLabel}</Text>
                 {station.fees.map(group => (
-                  <View key={group.schedule} className="mt-2 rounded-xl border border-brand-border bg-brand-surface p-3">
-                    {station.fees.length > 1 ? (
-                      <Text className="mb-1 text-xs font-bold text-brand-primary">
-                        {feeScheduleLabel(group.schedule, copy)}
-                      </Text>
-                    ) : null}
-                    {sortedFeeItems(group.items).map(item => (
-                      <Text key={`${group.schedule}-${item.size}`} className="mt-1 text-sm text-brand-text">
-                        · {formatLockerFeeLine(item.size, item.amount, item.unit, copy)}
-                      </Text>
-                    ))}
-                  </View>
+                  <LockerInventoryTable
+                    key={group.schedule}
+                    station={station}
+                    feeGroup={group}
+                    copy={copy}
+                    showScheduleLabel={station.fees.length > 1}
+                  />
                 ))}
               </View>
             ) : null}

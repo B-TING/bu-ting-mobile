@@ -20,6 +20,9 @@ export const LUGGAGE_STORAGE_COPY: Record<
     sizeExtraLarge: string;
     companyLabel: string;
     costLabel: string;
+    lockerTableType: string;
+    lockerTableCount: string;
+    lockerTablePrice: string;
     feeDefault: string;
     feeWeekday: string;
     feeWeekend: string;
@@ -52,6 +55,9 @@ export const LUGGAGE_STORAGE_COPY: Record<
     sizeExtraLarge: '특대형',
     companyLabel: '운영',
     costLabel: '이용 요금',
+    lockerTableType: '종류',
+    lockerTableCount: '개수',
+    lockerTablePrice: '가격',
     feeDefault: '기본 요금',
     feeWeekday: '평일',
     feeWeekend: '주말',
@@ -83,6 +89,9 @@ export const LUGGAGE_STORAGE_COPY: Record<
     sizeExtraLarge: 'Extra large',
     companyLabel: 'Operator',
     costLabel: 'Fees',
+    lockerTableType: 'Type',
+    lockerTableCount: 'Qty',
+    lockerTablePrice: 'Price',
     feeDefault: 'Standard',
     feeWeekday: 'Weekday',
     feeWeekend: 'Weekend',
@@ -114,6 +123,9 @@ export const LUGGAGE_STORAGE_COPY: Record<
     sizeExtraLarge: '特大',
     companyLabel: '運営',
     costLabel: '利用料金',
+    lockerTableType: '種類',
+    lockerTableCount: '個数',
+    lockerTablePrice: '料金',
     feeDefault: '基本料金',
     feeWeekday: '平日',
     feeWeekend: '週末',
@@ -145,6 +157,9 @@ export const LUGGAGE_STORAGE_COPY: Record<
     sizeExtraLarge: '特大型',
     companyLabel: '运营方',
     costLabel: '使用费用',
+    lockerTableType: '种类',
+    lockerTableCount: '数量',
+    lockerTablePrice: '价格',
     feeDefault: '基本费用',
     feeWeekday: '平日',
     feeWeekend: '周末',
