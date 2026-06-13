@@ -1,8 +1,10 @@
 import type {
   PlaceReview,
+  ReviewMedia,
   Travelogue,
   TravelogueDaySnapshot,
   TravelogueRouteSnapshot,
+  TravelogueSocial,
 } from '../types/travelReview';
 import type { RouteItem, TravelPlan } from '../types/travelPlan';
 import { sortedRoutes } from './planItinerary';
@@ -142,6 +144,37 @@ export function isTraveloguePublic(travelogue: Travelogue): boolean {
   return travelogue.isPublic !== false;
 }
 
+export function collectTravelogueImages(travelogue: Travelogue): ReviewMedia[] {
+  const images: ReviewMedia[] = [];
+  travelogue.placeReviews.forEach(review => {
+    review.media.forEach(media => {
+      if (media.type === 'image') {
+        images.push(media);
+      }
+    });
+  });
+  return images;
+}
+
+export function getHelpfulCount(social: TravelogueSocial | undefined): number {
+  return social?.helpfulUserIds.length ?? 0;
+}
+
+export function isHelpfulByUser(
+  social: TravelogueSocial | undefined,
+  userId: string,
+): boolean {
+  return social?.helpfulUserIds.includes(userId) ?? false;
+}
+
+export function authorInitial(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) {
+    return '?';
+  }
+  return trimmed.charAt(0).toUpperCase();
+}
+
 export function travelogueThumbnailEmoji(travelogue: Travelogue): string {
   const top = travelogue.placeReviews.find(r => r.rating >= 4);
   if (top?.tags.includes('맛집') || top?.tags.includes('food')) {
@@ -151,4 +184,47 @@ export function travelogueThumbnailEmoji(travelogue: Travelogue): string {
     return '🌅';
   }
   return '🗺️';
+}
+
+export function buildPlanFromTravelogue(
+  travelogue: Travelogue,
+  linkedPlan: TravelPlan | null,
+  member: { userId: string; displayName: string },
+  idFactory: (prefix: string) => string,
+): TravelPlan | null {
+  const snapshot = resolveTravelogueItinerary(travelogue, linkedPlan);
+  if (snapshot.length === 0) {
+    return null;
+  }
+
+  const startDate =
+    travelogue.startDate ?? snapshot[0]?.date ?? new Date().toISOString().slice(0, 10);
+  const endDate =
+    travelogue.endDate ?? snapshot[snapshot.length - 1]?.date ?? startDate;
+
+  return {
+    planId: idFactory('plan-'),
+    title: travelogue.title,
+    startDate,
+    endDate,
+    status: 'DRAFT',
+    constraints: linkedPlan?.constraints ?? {},
+    members: [{ userId: member.userId, nickname: member.displayName, role: 'OWNER' }],
+    itinerary: snapshot.map(day => ({
+      dailyId: idFactory('day-'),
+      dayNumber: day.dayNumber,
+      date: day.date,
+      routes: day.routes.map((route, index) => ({
+        itemId: idFactory('route-'),
+        sequence: index,
+        placeId: route.placeId,
+        placeName: route.placeName,
+        type: route.type,
+        location: route.location,
+        isVisited: false,
+      })),
+    })),
+    createdAt: new Date().toISOString(),
+    aiPromptContext: linkedPlan?.aiPromptContext,
+  };
 }

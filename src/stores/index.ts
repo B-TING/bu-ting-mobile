@@ -11,4 +11,4 @@ export {
   selectPlanById,
   usePlanStore,
 } from './usePlanStore';
-export { EMPTY_REVIEWS, useTravelogueStore } from './useTravelogueStore';
+export { EMPTY_REVIEWS, EMPTY_SOCIAL, useTravelogueStore } from './useTravelogueStore';

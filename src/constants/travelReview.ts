@@ -73,6 +73,28 @@ export const TRAVEL_REVIEW_COPY: Record<
     mapSubtitle: string;
     tripPeriod: (start: string, end: string) => string;
     totalDuration: (duration: string) => string;
+    helpfulLabel: string;
+    helpfulCount: (n: number) => string;
+    importPlan: string;
+    importPlanConfirmTitle: string;
+    importPlanConfirmMessage: (title: string) => string;
+    importPlanSuccess: string;
+    importPlanSuccessSub: string;
+    importPlanGo: string;
+    importPlanClose: string;
+    importPlanNoItinerary: string;
+    tripPeriodLabel: string;
+    importPlanActivePlanTitle: string;
+    importPlanActivePlanMessage: (title: string) => string;
+    importPlanActivePlanConfirm: string;
+    activePlanLabel: string;
+    feedCommentsTitle: string;
+    feedCommentPlaceholder: string;
+    feedCommentsEmpty: string;
+    feedAddComment: string;
+    feedViewAllComments: (n: number) => string;
+    viewDetail: string;
+    feedTapHint: string;
   }
 > = {
   ko: {
@@ -139,6 +161,30 @@ export const TRAVEL_REVIEW_COPY: Record<
     mapSubtitle: '장소를 탭하면 지도가 해당 위치로 이동해요',
     tripPeriod: (start, end) => `${start} ~ ${end}`,
     totalDuration: d => `총 소요시간 ${d}`,
+    helpfulLabel: '도움이 되었어요!',
+    helpfulCount: n => `${n}명`,
+    importPlan: '여행 계획 가져오기',
+    importPlanConfirmTitle: '여행 계획 가져오기',
+    importPlanConfirmMessage: title =>
+      `"${title}" 일정을 내 여행 계획으로 추가할까요?`,
+    importPlanSuccess: '여행 계획을 가져왔어요!',
+    importPlanSuccessSub: '내 여행 계획 목록에 추가됐어요. 바로 확인해 보세요.',
+    importPlanGo: '계획 보기',
+    importPlanClose: '확인',
+    importPlanNoItinerary: '가져올 수 있는 일정 정보가 없어요.',
+    tripPeriodLabel: '기간',
+    importPlanActivePlanTitle: '진행 중인 여행이 있어요',
+    importPlanActivePlanMessage: title =>
+      `현재 "${title}" 여행이 진행 중이에요. 새 계획을 가져오면 해당 계획이 활성 여행이 됩니다. 계속할까요?`,
+    importPlanActivePlanConfirm: '그래도 가져오기',
+    activePlanLabel: '진행 중인 계획',
+    feedCommentsTitle: '댓글',
+    feedCommentPlaceholder: '응원의 댓글을 남겨보세요',
+    feedCommentsEmpty: '아직 댓글이 없어요. 첫 댓글을 남겨보세요!',
+    feedAddComment: '등록',
+    feedViewAllComments: n => `댓글 ${n}개 모두 보기`,
+    viewDetail: '자세히 보기',
+    feedTapHint: '탭하면 상세 여행기를 볼 수 있어요',
   },
   en: {
     writeReview: 'Write review',
@@ -204,6 +250,30 @@ export const TRAVEL_REVIEW_COPY: Record<
     mapSubtitle: 'Tap a place to focus the map',
     tripPeriod: (start, end) => `${start} – ${end}`,
     totalDuration: d => `Total time ${d}`,
+    helpfulLabel: 'Helpful!',
+    helpfulCount: n => `${n}`,
+    importPlan: 'Import trip plan',
+    importPlanConfirmTitle: 'Import trip plan',
+    importPlanConfirmMessage: title =>
+      `Add the itinerary from "${title}" to your plans?`,
+    importPlanSuccess: 'Trip plan imported!',
+    importPlanSuccessSub: 'It has been added to your plans. Take a look anytime.',
+    importPlanGo: 'View plan',
+    importPlanClose: 'OK',
+    importPlanNoItinerary: 'There is no itinerary available to import.',
+    tripPeriodLabel: 'Dates',
+    importPlanActivePlanTitle: 'You have a trip in progress',
+    importPlanActivePlanMessage: title =>
+      `"${title}" is currently active. Importing a new plan will switch your active trip. Continue?`,
+    importPlanActivePlanConfirm: 'Import anyway',
+    activePlanLabel: 'Active plan',
+    feedCommentsTitle: 'Comments',
+    feedCommentPlaceholder: 'Leave an encouraging comment',
+    feedCommentsEmpty: 'No comments yet. Be the first!',
+    feedAddComment: 'Post',
+    feedViewAllComments: n => `View all ${n} comments`,
+    viewDetail: 'View details',
+    feedTapHint: 'Tap to open the full travelogue',
   },
   ja: {
     writeReview: 'レビューを書く',
@@ -269,6 +339,30 @@ export const TRAVEL_REVIEW_COPY: Record<
     mapSubtitle: '場所をタップすると地図がその位置に移動します',
     tripPeriod: (start, end) => `${start} 〜 ${end}`,
     totalDuration: d => `総所要時間 ${d}`,
+    helpfulLabel: '参考になった！',
+    helpfulCount: n => `${n}人`,
+    importPlan: '旅行プランを取り込む',
+    importPlanConfirmTitle: '旅行プランを取り込む',
+    importPlanConfirmMessage: title =>
+      `「${title}」の日程を自分の旅行プランに追加しますか？`,
+    importPlanSuccess: '旅行プランを取り込みました！',
+    importPlanSuccessSub: 'マイ旅行プランに追加されました。すぐに確認できます。',
+    importPlanGo: 'プランを見る',
+    importPlanClose: '確認',
+    importPlanNoItinerary: '取り込める日程情報がありません。',
+    tripPeriodLabel: '期間',
+    importPlanActivePlanTitle: '進行中の旅行があります',
+    importPlanActivePlanMessage: title =>
+      `現在「${title}」が進行中です。新しいプランを取り込むと、アクティブな旅行が切り替わります。続けますか？`,
+    importPlanActivePlanConfirm: 'それでも取り込む',
+    activePlanLabel: '進行中のプラン',
+    feedCommentsTitle: 'コメント',
+    feedCommentPlaceholder: '応援コメントを書いてみましょう',
+    feedCommentsEmpty: 'まだコメントがありません。最初のコメントをどうぞ！',
+    feedAddComment: '投稿',
+    feedViewAllComments: n => `コメント${n}件をすべて見る`,
+    viewDetail: '詳細を見る',
+    feedTapHint: 'タップで旅行記の詳細を表示',
   },
   zh: {
     writeReview: '写点评',
@@ -334,5 +428,28 @@ export const TRAVEL_REVIEW_COPY: Record<
     mapSubtitle: '点击地点，地图将移动到该位置',
     tripPeriod: (start, end) => `${start} ~ ${end}`,
     totalDuration: d => `总耗时 ${d}`,
+    helpfulLabel: '有帮助！',
+    helpfulCount: n => `${n}人`,
+    importPlan: '导入旅行计划',
+    importPlanConfirmTitle: '导入旅行计划',
+    importPlanConfirmMessage: title => `将「${title}」的行程添加到我的旅行计划？`,
+    importPlanSuccess: '已导入旅行计划！',
+    importPlanSuccessSub: '已添加到你的旅行计划，可随时查看。',
+    importPlanGo: '查看计划',
+    importPlanClose: '确认',
+    importPlanNoItinerary: '没有可导入的行程信息。',
+    tripPeriodLabel: '日期',
+    importPlanActivePlanTitle: '你有进行中的旅行',
+    importPlanActivePlanMessage: title =>
+      `当前「${title}」正在进行。导入新计划后，活跃旅行将切换为新计划。是否继续？`,
+    importPlanActivePlanConfirm: '仍然导入',
+    activePlanLabel: '进行中的计划',
+    feedCommentsTitle: '评论',
+    feedCommentPlaceholder: '留下鼓励的评论吧',
+    feedCommentsEmpty: '暂无评论，来发表第一条吧！',
+    feedAddComment: '发布',
+    feedViewAllComments: n => `查看全部 ${n} 条评论`,
+    viewDetail: '查看详情',
+    feedTapHint: '点击查看完整游记',
   },
 };

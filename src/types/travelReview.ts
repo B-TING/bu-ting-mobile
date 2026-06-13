@@ -41,6 +41,21 @@ export type TravelogueDaySnapshot = {
   routes: TravelogueRouteSnapshot[];
 };
 
+/** 여행기 피드 댓글 */
+export type TravelogueComment = {
+  commentId: string;
+  authorId: string;
+  authorName: string;
+  text: string;
+  createdAt: string;
+};
+
+/** 여행기별 좋아요·댓글 (피드 상호작용) */
+export type TravelogueSocial = {
+  helpfulUserIds: string[];
+  comments: TravelogueComment[];
+};
+
 /** 게시된 종합 여행기 */
 export type Travelogue = {
   travelogueId: string;

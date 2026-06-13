@@ -1,0 +1,3198 @@
+[
+  {
+    "id": "1",
+    "line": 1,
+    "name": "다대포해수욕장",
+    "locationDetail": "(B1) 대합실 고객센터 근처",
+    "counts": {
+      "small": 10,
+      "medium": 8,
+      "large": 0,
+      "extraLarge": 4
+    },
+    "costRaw": "특대: 6,000원 / 대:4,000원 / 중: 3,000원 / 소: 2,000원(3시간당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "large",
+            "amount": 4000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "위드락커"
+  },
+  {
+    "id": "2",
+    "line": 1,
+    "name": "다대포항",
+    "locationDetail": "(B1) 표내는 곳 인근, 1번 엘리베이터 옆",
+    "counts": {
+      "small": 10,
+      "medium": 8,
+      "large": 0,
+      "extraLarge": 2
+    },
+    "costRaw": "특대: 6,000원 / 대:4,000원 / 중: 3,000원 / 소: 2,000원(3시간당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "large",
+            "amount": 4000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "위드락커"
+  },
+  {
+    "id": "3",
+    "line": 1,
+    "name": "하단",
+    "locationDetail": "(B1) 1번 엘리베이터 옆, 3번출입구 방향",
+    "counts": {
+      "small": 10,
+      "medium": 16,
+      "large": 0,
+      "extraLarge": 4
+    },
+    "costRaw": "특대: 6,000원 / 대:4,000원 / 중: 3,000원 / 소: 2,000원(3시간당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "large",
+            "amount": 4000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "위드락커"
+  },
+  {
+    "id": "4",
+    "line": 1,
+    "name": "괴정",
+    "locationDetail": "(B1) 3번출입구 방향",
+    "counts": {
+      "small": 10,
+      "medium": 8,
+      "large": 0,
+      "extraLarge": 4
+    },
+    "costRaw": "특대: 6,000원 / 대:4,000원 / 중: 3,000원 / 소: 2,000원(3시간당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "large",
+            "amount": 4000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "위드락커"
+  },
+  {
+    "id": "5",
+    "line": 1,
+    "name": "토성",
+    "locationDetail": "(B1) 표내는 곳 인근, 3번출입구 방향",
+    "counts": {
+      "small": 10,
+      "medium": 8,
+      "large": 0,
+      "extraLarge": 4
+    },
+    "costRaw": "특대: 6,000원 / 대:4,000원 / 중: 3,000원 / 소: 2,000원(3시간당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "large",
+            "amount": 4000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "위드락커"
+  },
+  {
+    "id": "6",
+    "line": 1,
+    "name": "자갈치",
+    "locationDetail": "(B1) 표내는 곳 인근, 3번출입구 방향",
+    "counts": {
+      "small": 34,
+      "medium": 42,
+      "large": 4,
+      "extraLarge": 27
+    },
+    "costRaw": "특대: 6,000원 / 대:4,000원 / 중: 3,000원 / 소: 2,000원(3시간당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "large",
+            "amount": 4000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "위드락커"
+  },
+  {
+    "id": "7",
+    "line": 1,
+    "name": "남포",
+    "locationDetail": "(B1) 표내는 곳 인근, 2, 5번출입구 방향",
+    "counts": {
+      "small": 33,
+      "medium": 45,
+      "large": 0,
+      "extraLarge": 42
+    },
+    "costRaw": "특대: 6,000원 / 대:4,000원 / 중: 3,000원 / 소: 2,000원(3시간당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "large",
+            "amount": 4000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "위드락커"
+  },
+  {
+    "id": "8",
+    "line": 1,
+    "name": "중앙",
+    "locationDetail": "(B1) 14번출입구 방향",
+    "counts": {
+      "small": 10,
+      "medium": 16,
+      "large": 0,
+      "extraLarge": 4
+    },
+    "costRaw": "특대: 6,000원 / 대:4,000원 / 중: 3,000원 / 소: 2,000원(3시간당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "large",
+            "amount": 4000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "위드락커"
+  },
+  {
+    "id": "9",
+    "line": 1,
+    "name": "부산",
+    "locationDetail": "(B1) 3번, 4번, 6번 출입구 방향",
+    "counts": {
+      "small": 18,
+      "medium": 52,
+      "large": 6,
+      "extraLarge": 56
+    },
+    "costRaw": "특대: 6,000원 / 대:4,000원 / 중: 3,000원 / 소: 2,000원(3시간당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "large",
+            "amount": 4000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "위드락커"
+  },
+  {
+    "id": "10",
+    "line": 1,
+    "name": "초량",
+    "locationDetail": "(B1) 8번출입구 방향",
+    "counts": {
+      "small": 10,
+      "medium": 8,
+      "large": 0,
+      "extraLarge": 4
+    },
+    "costRaw": "특대: 6,000원 / 대:4,000원 / 중: 3,000원 / 소: 2,000원(3시간당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "large",
+            "amount": 4000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "위드락커"
+  },
+  {
+    "id": "11",
+    "line": 1,
+    "name": "부산진",
+    "locationDetail": "(B1) 2번 엘리베이터 옆, 6번출입구 방향",
+    "counts": {
+      "small": 10,
+      "medium": 8,
+      "large": 0,
+      "extraLarge": 4
+    },
+    "costRaw": "특대: 6,000원 / 대:4,000원 / 중: 3,000원 / 소: 2,000원(3시간당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "large",
+            "amount": 4000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "위드락커"
+  },
+  {
+    "id": "12",
+    "line": 1,
+    "name": "범일",
+    "locationDetail": "(B1) 대합실 고객센터 근처, 3번출입구 방향",
+    "counts": {
+      "small": 10,
+      "medium": 16,
+      "large": 0,
+      "extraLarge": 4
+    },
+    "costRaw": "특대: 6,000원 / 대:4,000원 / 중: 3,000원 / 소: 2,000원(3시간당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "large",
+            "amount": 4000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "위드락커"
+  },
+  {
+    "id": "13",
+    "line": 1,
+    "name": "범내골",
+    "locationDetail": "(B1) 대합실 고객센터 근처, 8번출입구 방향",
+    "counts": {
+      "small": 6,
+      "medium": 8,
+      "large": 0,
+      "extraLarge": 4
+    },
+    "costRaw": "특대: 6,000원 / 대:4,000원 / 중: 3,000원 / 소: 2,000원(3시간당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "large",
+            "amount": 4000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "위드락커"
+  },
+  {
+    "id": "14",
+    "line": 1,
+    "name": "서면",
+    "locationDetail": "(B1) 표내는 곳 인근, 2호선 환승계단, 13번 출구 인근 ",
+    "counts": {
+      "small": 38,
+      "medium": 64,
+      "large": 14,
+      "extraLarge": 46
+    },
+    "costRaw": "특대: 6,000원 / 대:4,000원 / 중: 3,000원 / 소: 2,000원(3시간당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "large",
+            "amount": 4000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "위드락커"
+  },
+  {
+    "id": "15",
+    "line": 1,
+    "name": "부전",
+    "locationDetail": "(B1) 표내는 곳 인근, 만남의 장소 인근",
+    "counts": {
+      "small": 10,
+      "medium": 12,
+      "large": 0,
+      "extraLarge": 4
+    },
+    "costRaw": "특대: 6,000원 / 대:4,000원 / 중: 3,000원 / 소: 2,000원(3시간당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "large",
+            "amount": 4000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "위드락커"
+  },
+  {
+    "id": "16",
+    "line": 1,
+    "name": "양정",
+    "locationDetail": "(B1) 표내는 곳 인근, 화장실 옆",
+    "counts": {
+      "small": 10,
+      "medium": 8,
+      "large": 0,
+      "extraLarge": 2
+    },
+    "costRaw": "특대: 6,000원 / 대:4,000원 / 중: 3,000원 / 소: 2,000원(3시간당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "large",
+            "amount": 4000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "위드락커"
+  },
+  {
+    "id": "17",
+    "line": 1,
+    "name": "시청",
+    "locationDetail": "(B1) 표내는 곳 인근, 1번 엘리베이터 옆",
+    "counts": {
+      "small": 6,
+      "medium": 10,
+      "large": 0,
+      "extraLarge": 3
+    },
+    "costRaw": "특대: 6,000원 / 대:4,000원 / 중: 3,000원 / 소: 2,000원(3시간당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "large",
+            "amount": 4000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "위드락커"
+  },
+  {
+    "id": "18",
+    "line": 1,
+    "name": "연산",
+    "locationDetail": "(B1) 표내는 곳 인근, (B1) 12번출입구 방향",
+    "counts": {
+      "small": 6,
+      "medium": 14,
+      "large": 0,
+      "extraLarge": 5
+    },
+    "costRaw": "특대: 6,000원 / 대:4,000원 / 중: 3,000원 / 소: 2,000원(3시간당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "large",
+            "amount": 4000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "위드락커"
+  },
+  {
+    "id": "19",
+    "line": 1,
+    "name": "동래",
+    "locationDetail": "(1F) 1번 출입구 방향",
+    "counts": {
+      "small": 9,
+      "medium": 14,
+      "large": 0,
+      "extraLarge": 6
+    },
+    "costRaw": "특대: 6,000원 / 대:4,000원 / 중: 3,000원 / 소: 2,000원(3시간당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "large",
+            "amount": 4000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "위드락커"
+  },
+  {
+    "id": "20",
+    "line": 1,
+    "name": "명륜",
+    "locationDetail": "(1F) 2번 출입구 방향",
+    "counts": {
+      "small": 10,
+      "medium": 8,
+      "large": 0,
+      "extraLarge": 2
+    },
+    "costRaw": "특대: 6,000원 / 대:4,000원 / 중: 3,000원 / 소: 2,000원(3시간당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "large",
+            "amount": 4000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "위드락커"
+  },
+  {
+    "id": "21",
+    "line": 1,
+    "name": "온천장",
+    "locationDetail": "(1F) 3번 출입구 방향",
+    "counts": {
+      "small": 10,
+      "medium": 8,
+      "large": 0,
+      "extraLarge": 4
+    },
+    "costRaw": "특대: 6,000원 / 대:4,000원 / 중: 3,000원 / 소: 2,000원(3시간당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "large",
+            "amount": 4000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "위드락커"
+  },
+  {
+    "id": "22",
+    "line": 1,
+    "name": "부산대",
+    "locationDetail": "(1F) 4번 출입구 방향",
+    "counts": {
+      "small": 12,
+      "medium": 26,
+      "large": 0,
+      "extraLarge": 9
+    },
+    "costRaw": "특대: 6,000원 / 대:4,000원 / 중: 3,000원 / 소: 2,000원(3시간당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "large",
+            "amount": 4000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "위드락커"
+  },
+  {
+    "id": "23",
+    "line": 1,
+    "name": "장전",
+    "locationDetail": "(1F) 4번 출입구 방향",
+    "counts": {
+      "small": 10,
+      "medium": 8,
+      "large": 0,
+      "extraLarge": 2
+    },
+    "costRaw": "특대: 6,000원 / 대:4,000원 / 중: 3,000원 / 소: 2,000원(3시간당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "large",
+            "amount": 4000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "위드락커"
+  },
+  {
+    "id": "24",
+    "line": 1,
+    "name": "노포",
+    "locationDetail": "(1F) 대합실 고객센터 근처",
+    "counts": {
+      "small": 10,
+      "medium": 8,
+      "large": 0,
+      "extraLarge": 2
+    },
+    "costRaw": "특대: 6,000원 / 대:4,000원 / 중: 3,000원 / 소: 2,000원(3시간당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "large",
+            "amount": 4000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "위드락커"
+  },
+  {
+    "id": "25",
+    "line": 2,
+    "name": "장산",
+    "locationDetail": "(B1) 표 내는 곳 앞쪽",
+    "counts": {
+      "small": 20,
+      "medium": 0,
+      "large": 8,
+      "extraLarge": 4
+    },
+    "costRaw": "특대: 6,000원 / 대:4,500원 /  소: 2,500원 (평일), 특대: 6,600원 / 대: 4,950원 / 소: 2,750원 (주말)",
+    "fees": [
+      {
+        "schedule": "weekday",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4500,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2500,
+            "unit": "기본"
+          }
+        ]
+      },
+      {
+        "schedule": "weekend",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6600,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4950,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2750,
+            "unit": "기본"
+          }
+        ]
+      }
+    ],
+    "company": "㈜테크앤롤"
+  },
+  {
+    "id": "26",
+    "line": 2,
+    "name": "중동",
+    "locationDetail": "(B1) 화장실 근처",
+    "counts": {
+      "small": 15,
+      "medium": 0,
+      "large": 6,
+      "extraLarge": 3
+    },
+    "costRaw": "특대: 6,000원 / 대:4,500원 /  소: 2,500원 (평일), 특대: 6,600원 / 대: 4,950원 / 소: 2,751원 (주말)",
+    "fees": [
+      {
+        "schedule": "weekday",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4500,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2500,
+            "unit": "기본"
+          }
+        ]
+      },
+      {
+        "schedule": "weekend",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6600,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4950,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2751,
+            "unit": "기본"
+          }
+        ]
+      }
+    ],
+    "company": "㈜테크앤롤"
+  },
+  {
+    "id": "27",
+    "line": 2,
+    "name": "해운대",
+    "locationDetail": "(B1) 7번 출입구 방향",
+    "counts": {
+      "small": 85,
+      "medium": 0,
+      "large": 40,
+      "extraLarge": 29
+    },
+    "costRaw": "특대: 6,000원 / 대:4,500원 /  소: 2,500원 (평일), 특대: 6,600원 / 대: 4,950원 / 소: 2,752원 (주말)",
+    "fees": [
+      {
+        "schedule": "weekday",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4500,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2500,
+            "unit": "기본"
+          }
+        ]
+      },
+      {
+        "schedule": "weekend",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6600,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4950,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2752,
+            "unit": "기본"
+          }
+        ]
+      }
+    ],
+    "company": "㈜테크앤롤"
+  },
+  {
+    "id": "28",
+    "line": 2,
+    "name": "동백",
+    "locationDetail": "(B1) 1번 출입구 방향",
+    "counts": {
+      "small": 16,
+      "medium": 0,
+      "large": 4,
+      "extraLarge": 4
+    },
+    "costRaw": "특대: 6,000원 / 대:4,500원 /  소: 2,500원 (평일), 특대: 6,600원 / 대: 4,950원 / 소: 2,753원 (주말)",
+    "fees": [
+      {
+        "schedule": "weekday",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4500,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2500,
+            "unit": "기본"
+          }
+        ]
+      },
+      {
+        "schedule": "weekend",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6600,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4950,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2753,
+            "unit": "기본"
+          }
+        ]
+      }
+    ],
+    "company": "㈜테크앤롤"
+  },
+  {
+    "id": "29",
+    "line": 2,
+    "name": "벡스코",
+    "locationDetail": "(B1) 5번 출입구 방향",
+    "counts": {
+      "small": 18,
+      "medium": 0,
+      "large": 12,
+      "extraLarge": 2
+    },
+    "costRaw": "특대: 6,000원 / 대:4,500원 /  소: 2,500원 (평일), 특대: 6,600원 / 대: 4,950원 / 소: 2,754원 (주말)",
+    "fees": [
+      {
+        "schedule": "weekday",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4500,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2500,
+            "unit": "기본"
+          }
+        ]
+      },
+      {
+        "schedule": "weekend",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6600,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4950,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2754,
+            "unit": "기본"
+          }
+        ]
+      }
+    ],
+    "company": "㈜테크앤롤"
+  },
+  {
+    "id": "30",
+    "line": 2,
+    "name": "센텀시티",
+    "locationDetail": "(B1) GS편의점 근처 ",
+    "counts": {
+      "small": 70,
+      "medium": 0,
+      "large": 28,
+      "extraLarge": 14
+    },
+    "costRaw": "특대: 6,000원 / 대:4,500원 /  소: 2,500원 (평일), 특대: 6,600원 / 대: 4,950원 / 소: 2,755원 (주말)",
+    "fees": [
+      {
+        "schedule": "weekday",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4500,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2500,
+            "unit": "기본"
+          }
+        ]
+      },
+      {
+        "schedule": "weekend",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6600,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4950,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2755,
+            "unit": "기본"
+          }
+        ]
+      }
+    ],
+    "company": "㈜테크앤롤"
+  },
+  {
+    "id": "31",
+    "line": 2,
+    "name": "수영",
+    "locationDetail": "(B1) 11번 출입구 방향",
+    "counts": {
+      "small": 10,
+      "medium": 0,
+      "large": 4,
+      "extraLarge": 2
+    },
+    "costRaw": "특대: 6,000원 / 대:4,500원 /  소: 2,500원 (평일), 특대: 6,600원 / 대: 4,950원 / 소: 2,756원 (주말)",
+    "fees": [
+      {
+        "schedule": "weekday",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4500,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2500,
+            "unit": "기본"
+          }
+        ]
+      },
+      {
+        "schedule": "weekend",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6600,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4950,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2756,
+            "unit": "기본"
+          }
+        ]
+      }
+    ],
+    "company": "㈜테크앤롤"
+  },
+  {
+    "id": "32",
+    "line": 2,
+    "name": "광안",
+    "locationDetail": "(B1) 5번 출입구 방향",
+    "counts": {
+      "small": 50,
+      "medium": 0,
+      "large": 20,
+      "extraLarge": 10
+    },
+    "costRaw": "특대: 6,000원 / 대:4,500원 /  소: 2,500원 (평일), 특대: 6,600원 / 대: 4,950원 / 소: 2,757원 (주말)",
+    "fees": [
+      {
+        "schedule": "weekday",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4500,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2500,
+            "unit": "기본"
+          }
+        ]
+      },
+      {
+        "schedule": "weekend",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6600,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4950,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2757,
+            "unit": "기본"
+          }
+        ]
+      }
+    ],
+    "company": "㈜테크앤롤"
+  },
+  {
+    "id": "33",
+    "line": 2,
+    "name": "금련산",
+    "locationDetail": "(B2) 1번 출입구 방향",
+    "counts": {
+      "small": 28,
+      "medium": 0,
+      "large": 16,
+      "extraLarge": 4
+    },
+    "costRaw": "특대: 6,000원 / 대:4,500원 /  소: 2,500원 (평일), 특대: 6,600원 / 대: 4,950원 / 소: 2,758원 (주말)",
+    "fees": [
+      {
+        "schedule": "weekday",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4500,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2500,
+            "unit": "기본"
+          }
+        ]
+      },
+      {
+        "schedule": "weekend",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6600,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4950,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2758,
+            "unit": "기본"
+          }
+        ]
+      }
+    ],
+    "company": "㈜테크앤롤"
+  },
+  {
+    "id": "34",
+    "line": 2,
+    "name": "남천",
+    "locationDetail": "(B1) 2번 출입구 방향",
+    "counts": {
+      "small": 10,
+      "medium": 0,
+      "large": 4,
+      "extraLarge": 2
+    },
+    "costRaw": "특대: 6,000원 / 대:4,500원 /  소: 2,500원 (평일), 특대: 6,600원 / 대: 4,950원 / 소: 2,759원 (주말)",
+    "fees": [
+      {
+        "schedule": "weekday",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4500,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2500,
+            "unit": "기본"
+          }
+        ]
+      },
+      {
+        "schedule": "weekend",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6600,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4950,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2759,
+            "unit": "기본"
+          }
+        ]
+      }
+    ],
+    "company": "㈜테크앤롤"
+  },
+  {
+    "id": "35",
+    "line": 2,
+    "name": "경성대부경대",
+    "locationDetail": "(B1) 고객센터 맞은편",
+    "counts": {
+      "small": 20,
+      "medium": 0,
+      "large": 8,
+      "extraLarge": 4
+    },
+    "costRaw": "특대: 6,000원 / 대:4,500원 /  소: 2,500원 (평일), 특대: 6,600원 / 대: 4,950원 / 소: 2,760원 (주말)",
+    "fees": [
+      {
+        "schedule": "weekday",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4500,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2500,
+            "unit": "기본"
+          }
+        ]
+      },
+      {
+        "schedule": "weekend",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6600,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4950,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2760,
+            "unit": "기본"
+          }
+        ]
+      }
+    ],
+    "company": "㈜테크앤롤"
+  },
+  {
+    "id": "36",
+    "line": 2,
+    "name": "대연",
+    "locationDetail": "(B1) 1번 출입구 방향",
+    "counts": {
+      "small": 10,
+      "medium": 0,
+      "large": 4,
+      "extraLarge": 2
+    },
+    "costRaw": "특대: 6,000원 / 대:4,500원 /  소: 2,500원 (평일), 특대: 6,600원 / 대: 4,950원 / 소: 2,761원 (주말)",
+    "fees": [
+      {
+        "schedule": "weekday",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4500,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2500,
+            "unit": "기본"
+          }
+        ]
+      },
+      {
+        "schedule": "weekend",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6600,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4950,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2761,
+            "unit": "기본"
+          }
+        ]
+      }
+    ],
+    "company": "㈜테크앤롤"
+  },
+  {
+    "id": "37",
+    "line": 2,
+    "name": "못골",
+    "locationDetail": "(B1) 1번 출입구 방향",
+    "counts": {
+      "small": 10,
+      "medium": 0,
+      "large": 4,
+      "extraLarge": 2
+    },
+    "costRaw": "특대: 6,000원 / 대:4,500원 /  소: 2,500원 (평일), 특대: 6,600원 / 대: 4,950원 / 소: 2,762원 (주말)",
+    "fees": [
+      {
+        "schedule": "weekday",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4500,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2500,
+            "unit": "기본"
+          }
+        ]
+      },
+      {
+        "schedule": "weekend",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6600,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4950,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2762,
+            "unit": "기본"
+          }
+        ]
+      }
+    ],
+    "company": "㈜테크앤롤"
+  },
+  {
+    "id": "38",
+    "line": 2,
+    "name": "국제금융센터",
+    "locationDetail": "(B1) 1번 출입구 방향",
+    "counts": {
+      "small": 10,
+      "medium": 0,
+      "large": 4,
+      "extraLarge": 2
+    },
+    "costRaw": "특대: 6,000원 / 대:4,500원 /  소: 2,500원 (평일), 특대: 6,600원 / 대: 4,950원 / 소: 2,763원 (주말)",
+    "fees": [
+      {
+        "schedule": "weekday",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4500,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2500,
+            "unit": "기본"
+          }
+        ]
+      },
+      {
+        "schedule": "weekend",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6600,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4950,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2763,
+            "unit": "기본"
+          }
+        ]
+      }
+    ],
+    "company": "㈜테크앤롤"
+  },
+  {
+    "id": "39",
+    "line": 2,
+    "name": "전포",
+    "locationDetail": "(B1) 현금지급기 옆",
+    "counts": {
+      "small": 32,
+      "medium": 0,
+      "large": 26,
+      "extraLarge": 14
+    },
+    "costRaw": "특대: 6,000원 / 대:4,500원 /  소: 2,500원 (평일), 특대: 6,600원 / 대: 4,950원 / 소: 2,764원 (주말)",
+    "fees": [
+      {
+        "schedule": "weekday",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4500,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2500,
+            "unit": "기본"
+          }
+        ]
+      },
+      {
+        "schedule": "weekend",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6600,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4950,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2764,
+            "unit": "기본"
+          }
+        ]
+      }
+    ],
+    "company": "㈜테크앤롤"
+  },
+  {
+    "id": "40",
+    "line": 2,
+    "name": "서면",
+    "locationDetail": "(B1) 서면롯데백화점 출입구 방향",
+    "counts": {
+      "small": 58,
+      "medium": 0,
+      "large": 22,
+      "extraLarge": 30
+    },
+    "costRaw": "특대: 6,000원 / 대:4,500원 /  소: 2,500원 (평일), 특대: 6,600원 / 대: 4,950원 / 소: 2,765원 (주말)",
+    "fees": [
+      {
+        "schedule": "weekday",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4500,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2500,
+            "unit": "기본"
+          }
+        ]
+      },
+      {
+        "schedule": "weekend",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6600,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4950,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2765,
+            "unit": "기본"
+          }
+        ]
+      }
+    ],
+    "company": "㈜테크앤롤"
+  },
+  {
+    "id": "41",
+    "line": 2,
+    "name": "동의대",
+    "locationDetail": "(B1) 1번 출입구 방향",
+    "counts": {
+      "small": 10,
+      "medium": 0,
+      "large": 4,
+      "extraLarge": 2
+    },
+    "costRaw": "특대: 6,000원 / 대:4,500원 /  소: 2,500원 (평일), 특대: 6,600원 / 대: 4,950원 / 소: 2,766원 (주말)",
+    "fees": [
+      {
+        "schedule": "weekday",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4500,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2500,
+            "unit": "기본"
+          }
+        ]
+      },
+      {
+        "schedule": "weekend",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6600,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4950,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2766,
+            "unit": "기본"
+          }
+        ]
+      }
+    ],
+    "company": "㈜테크앤롤"
+  },
+  {
+    "id": "42",
+    "line": 2,
+    "name": "개금",
+    "locationDetail": "(B1) 1,3번 출입구 방향",
+    "counts": {
+      "small": 10,
+      "medium": 0,
+      "large": 4,
+      "extraLarge": 2
+    },
+    "costRaw": "특대: 6,000원 / 대:4,500원 /  소: 2,500원 (평일), 특대: 6,600원 / 대: 4,950원 / 소: 2,767원 (주말)",
+    "fees": [
+      {
+        "schedule": "weekday",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4500,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2500,
+            "unit": "기본"
+          }
+        ]
+      },
+      {
+        "schedule": "weekend",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6600,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4950,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2767,
+            "unit": "기본"
+          }
+        ]
+      }
+    ],
+    "company": "㈜테크앤롤"
+  },
+  {
+    "id": "43",
+    "line": 2,
+    "name": "냉정",
+    "locationDetail": "(B1) 1번 출입구 방향",
+    "counts": {
+      "small": 10,
+      "medium": 0,
+      "large": 4,
+      "extraLarge": 2
+    },
+    "costRaw": "특대: 6,000원 / 대:4,500원 /  소: 2,500원 (평일), 특대: 6,600원 / 대: 4,950원 / 소: 2,768원 (주말)",
+    "fees": [
+      {
+        "schedule": "weekday",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4500,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2500,
+            "unit": "기본"
+          }
+        ]
+      },
+      {
+        "schedule": "weekend",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6600,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4950,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2768,
+            "unit": "기본"
+          }
+        ]
+      }
+    ],
+    "company": "㈜테크앤롤"
+  },
+  {
+    "id": "44",
+    "line": 2,
+    "name": "주례",
+    "locationDetail": "(B1) 1,3번 출입구 방향",
+    "counts": {
+      "small": 10,
+      "medium": 0,
+      "large": 4,
+      "extraLarge": 2
+    },
+    "costRaw": "특대: 6,000원 / 대:4,500원 /  소: 2,500원 (평일), 특대: 6,600원 / 대: 4,950원 / 소: 2,769원 (주말)",
+    "fees": [
+      {
+        "schedule": "weekday",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4500,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2500,
+            "unit": "기본"
+          }
+        ]
+      },
+      {
+        "schedule": "weekend",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6600,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4950,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2769,
+            "unit": "기본"
+          }
+        ]
+      }
+    ],
+    "company": "㈜테크앤롤"
+  },
+  {
+    "id": "45",
+    "line": 2,
+    "name": "사상",
+    "locationDetail": "(B1) 5번 출입구 방향",
+    "counts": {
+      "small": 36,
+      "medium": 0,
+      "large": 12,
+      "extraLarge": 8
+    },
+    "costRaw": "특대: 6,000원 / 대:4,500원 /  소: 2,500원 (평일), 특대: 6,600원 / 대: 4,950원 / 소: 2,770원 (주말)",
+    "fees": [
+      {
+        "schedule": "weekday",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4500,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2500,
+            "unit": "기본"
+          }
+        ]
+      },
+      {
+        "schedule": "weekend",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6600,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4950,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2770,
+            "unit": "기본"
+          }
+        ]
+      }
+    ],
+    "company": "㈜테크앤롤"
+  },
+  {
+    "id": "46",
+    "line": 2,
+    "name": "모라",
+    "locationDetail": "(B1) 1번 출입구 방향",
+    "counts": {
+      "small": 10,
+      "medium": 0,
+      "large": 4,
+      "extraLarge": 2
+    },
+    "costRaw": "특대: 6,000원 / 대:4,500원 /  소: 2,500원 (평일), 특대: 6,600원 / 대: 4,950원 / 소: 2,771원 (주말)",
+    "fees": [
+      {
+        "schedule": "weekday",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4500,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2500,
+            "unit": "기본"
+          }
+        ]
+      },
+      {
+        "schedule": "weekend",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6600,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4950,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2771,
+            "unit": "기본"
+          }
+        ]
+      }
+    ],
+    "company": "㈜테크앤롤"
+  },
+  {
+    "id": "47",
+    "line": 2,
+    "name": "덕천",
+    "locationDetail": "(B1) GS편의점 맞은편",
+    "counts": {
+      "small": 11,
+      "medium": 0,
+      "large": 2,
+      "extraLarge": 3
+    },
+    "costRaw": "특대: 6,000원 / 대:4,500원 /  소: 2,500원 (평일), 특대: 6,600원 / 대: 4,950원 / 소: 2,772원 (주말)",
+    "fees": [
+      {
+        "schedule": "weekday",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4500,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2500,
+            "unit": "기본"
+          }
+        ]
+      },
+      {
+        "schedule": "weekend",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6600,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4950,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2772,
+            "unit": "기본"
+          }
+        ]
+      }
+    ],
+    "company": "㈜테크앤롤"
+  },
+  {
+    "id": "48",
+    "line": 2,
+    "name": "화명",
+    "locationDetail": "(B1) 3번 출입구 방향",
+    "counts": {
+      "small": 5,
+      "medium": 0,
+      "large": 2,
+      "extraLarge": 1
+    },
+    "costRaw": "특대: 6,000원 / 대:4,500원 /  소: 2,500원 (평일), 특대: 6,600원 / 대: 4,950원 / 소: 2,773원 (주말)",
+    "fees": [
+      {
+        "schedule": "weekday",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4500,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2500,
+            "unit": "기본"
+          }
+        ]
+      },
+      {
+        "schedule": "weekend",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6600,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4950,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2773,
+            "unit": "기본"
+          }
+        ]
+      }
+    ],
+    "company": "㈜테크앤롤"
+  },
+  {
+    "id": "49",
+    "line": 2,
+    "name": "남양산",
+    "locationDetail": "(2F) 3번 출입구 방향",
+    "counts": {
+      "small": 10,
+      "medium": 0,
+      "large": 4,
+      "extraLarge": 2
+    },
+    "costRaw": "특대: 6,000원 / 대:4,500원 /  소: 2,500원 (평일), 특대: 6,600원 / 대: 4,950원 / 소: 2,774원 (주말)",
+    "fees": [
+      {
+        "schedule": "weekday",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4500,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2500,
+            "unit": "기본"
+          }
+        ]
+      },
+      {
+        "schedule": "weekend",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6600,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4950,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2774,
+            "unit": "기본"
+          }
+        ]
+      }
+    ],
+    "company": "㈜테크앤롤"
+  },
+  {
+    "id": "50",
+    "line": 2,
+    "name": "양산",
+    "locationDetail": "(2F) 고객센터 근처",
+    "counts": {
+      "small": 10,
+      "medium": 0,
+      "large": 4,
+      "extraLarge": 2
+    },
+    "costRaw": "특대: 6,000원 / 대:4,500원 /  소: 2,500원 (평일), 특대: 6,600원 / 대: 4,950원 / 소: 2,775원 (주말)",
+    "fees": [
+      {
+        "schedule": "weekday",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6000,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4500,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2500,
+            "unit": "기본"
+          }
+        ]
+      },
+      {
+        "schedule": "weekend",
+        "items": [
+          {
+            "size": "extraLarge",
+            "amount": 6600,
+            "unit": "기본"
+          },
+          {
+            "size": "large",
+            "amount": 4950,
+            "unit": "기본"
+          },
+          {
+            "size": "small",
+            "amount": 2775,
+            "unit": "기본"
+          }
+        ]
+      }
+    ],
+    "company": "㈜테크앤롤"
+  },
+  {
+    "id": "51",
+    "line": 3,
+    "name": "수영",
+    "locationDetail": "(B1) 8번 출입구 방향",
+    "counts": {
+      "small": 10,
+      "medium": 0,
+      "large": 6,
+      "extraLarge": 4
+    },
+    "costRaw": "대 : 5,000원 / 중 : 3,000원 / 소 : 2,000원 (3시간 당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "large",
+            "amount": 5000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "㈜에스엠디지털락커"
+  },
+  {
+    "id": "52",
+    "line": 3,
+    "name": "망미",
+    "locationDetail": "(B1) 고객센터 맞은편",
+    "counts": {
+      "small": 5,
+      "medium": 0,
+      "large": 3,
+      "extraLarge": 2
+    },
+    "costRaw": "대 : 5,000원 / 중 : 3,000원 / 소 : 2,000원 (3시간 당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "large",
+            "amount": 5000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "㈜에스엠디지털락커"
+  },
+  {
+    "id": "53",
+    "line": 3,
+    "name": "배산",
+    "locationDetail": "(B1) 3번 출입구 방향",
+    "counts": {
+      "small": 10,
+      "medium": 0,
+      "large": 3,
+      "extraLarge": 2
+    },
+    "costRaw": "대 : 5,000원 / 중 : 3,000원 / 소 : 2,000원 (3시간 당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "large",
+            "amount": 5000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "㈜에스엠디지털락커"
+  },
+  {
+    "id": "54",
+    "line": 3,
+    "name": "연산",
+    "locationDetail": "(B1) 3번 출입구 방향",
+    "counts": {
+      "small": 10,
+      "medium": 0,
+      "large": 6,
+      "extraLarge": 4
+    },
+    "costRaw": "대 : 5,000원 / 중 : 3,000원 / 소 : 2,000원 (3시간 당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "large",
+            "amount": 5000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "㈜에스엠디지털락커"
+  },
+  {
+    "id": "55",
+    "line": 3,
+    "name": "거제",
+    "locationDetail": "(B1) 고객센터 근처",
+    "counts": {
+      "small": 10,
+      "medium": 0,
+      "large": 3,
+      "extraLarge": 2
+    },
+    "costRaw": "대 : 5,000원 / 중 : 3,000원 / 소 : 2,000원 (3시간 당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "large",
+            "amount": 5000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "㈜에스엠디지털락커"
+  },
+  {
+    "id": "56",
+    "line": 3,
+    "name": "종합운동장",
+    "locationDetail": "(B1) 4번 출입구 방향",
+    "counts": {
+      "small": 10,
+      "medium": 0,
+      "large": 6,
+      "extraLarge": 4
+    },
+    "costRaw": "대 : 5,000원 / 중 : 3,000원 / 소 : 2,000원 (3시간 당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "large",
+            "amount": 5000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "㈜에스엠디지털락커"
+  },
+  {
+    "id": "57",
+    "line": 3,
+    "name": "사직",
+    "locationDetail": "(B1) 1번 출입구 방향",
+    "counts": {
+      "small": 20,
+      "medium": 0,
+      "large": 12,
+      "extraLarge": 6
+    },
+    "costRaw": "대 : 5,000원 / 중 : 3,000원 / 소 : 2,000원 (3시간 당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "large",
+            "amount": 5000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "㈜에스엠디지털락커"
+  },
+  {
+    "id": "58",
+    "line": 3,
+    "name": "미남",
+    "locationDetail": "(B1) 고객센터 맞은편",
+    "counts": {
+      "small": 10,
+      "medium": 0,
+      "large": 3,
+      "extraLarge": 2
+    },
+    "costRaw": "대 : 5,000원 / 중 : 3,000원 / 소 : 2,000원 (3시간 당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "large",
+            "amount": 5000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "㈜에스엠디지털락커"
+  },
+  {
+    "id": "59",
+    "line": 3,
+    "name": "만덕",
+    "locationDetail": "(B1) 화장실 근처",
+    "counts": {
+      "small": 10,
+      "medium": 0,
+      "large": 3,
+      "extraLarge": 2
+    },
+    "costRaw": "대 : 5,000원 / 중 : 3,000원 / 소 : 2,000원 (3시간 당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "large",
+            "amount": 5000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "㈜에스엠디지털락커"
+  },
+  {
+    "id": "60",
+    "line": 3,
+    "name": "남산정",
+    "locationDetail": "(B1) 고객센터 맞은편",
+    "counts": {
+      "small": 10,
+      "medium": 0,
+      "large": 6,
+      "extraLarge": 0
+    },
+    "costRaw": "대 : 5,000원 / 중 : 3,000원 / 소 : 2,000원 (3시간 당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "large",
+            "amount": 5000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "㈜에스엠디지털락커"
+  },
+  {
+    "id": "61",
+    "line": 3,
+    "name": "숙등",
+    "locationDetail": "(B1) 고객센터 맞은편",
+    "counts": {
+      "small": 10,
+      "medium": 0,
+      "large": 3,
+      "extraLarge": 2
+    },
+    "costRaw": "대 : 5,000원 / 중 : 3,000원 / 소 : 2,000원 (3시간 당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "large",
+            "amount": 5000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "㈜에스엠디지털락커"
+  },
+  {
+    "id": "62",
+    "line": 3,
+    "name": "덕천",
+    "locationDetail": "(B1) 8번 출입구 방향",
+    "counts": {
+      "small": 8,
+      "medium": 0,
+      "large": 2,
+      "extraLarge": 2
+    },
+    "costRaw": "대 : 5,000원 / 중 : 3,000원 / 소 : 2,000원 (3시간 당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "large",
+            "amount": 5000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "㈜에스엠디지털락커"
+  },
+  {
+    "id": "63",
+    "line": 3,
+    "name": "구포",
+    "locationDetail": "(B2) 1번 출입구 방향",
+    "counts": {
+      "small": 10,
+      "medium": 0,
+      "large": 3,
+      "extraLarge": 2
+    },
+    "costRaw": "대 : 5,000원 / 중 : 3,000원 / 소 : 2,000원 (3시간 당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "large",
+            "amount": 5000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "㈜에스엠디지털락커"
+  },
+  {
+    "id": "64",
+    "line": 3,
+    "name": "강서구청",
+    "locationDetail": "(B2) 에스컬레이터 방향",
+    "counts": {
+      "small": 10,
+      "medium": 0,
+      "large": 3,
+      "extraLarge": 4
+    },
+    "costRaw": "대 : 5,000원 / 중 : 3,000원 / 소 : 2,000원 (3시간 당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "large",
+            "amount": 5000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "㈜에스엠디지털락커"
+  },
+  {
+    "id": "65",
+    "line": 3,
+    "name": "대저",
+    "locationDetail": "(B1) 엘리베이터 출입구 방향",
+    "counts": {
+      "small": 5,
+      "medium": 0,
+      "large": 3,
+      "extraLarge": 0
+    },
+    "costRaw": "대 : 5,000원 / 중 : 3,000원 / 소 : 2,000원 (3시간 당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "large",
+            "amount": 5000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "㈜에스엠디지털락커"
+  },
+  {
+    "id": "66",
+    "line": 4,
+    "name": "동래",
+    "locationDetail": "(B1) 6번 출입구 방향",
+    "counts": {
+      "small": 5,
+      "medium": 0,
+      "large": 3,
+      "extraLarge": 0
+    },
+    "costRaw": "대 : 5,000원 / 중 : 3,000원 / 소 : 2,000원 (3시간 당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "large",
+            "amount": 5000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "㈜에스엠디지털락커"
+  },
+  {
+    "id": "67",
+    "line": 4,
+    "name": "수안",
+    "locationDetail": "(B1) 고객센터 근처",
+    "counts": {
+      "small": 5,
+      "medium": 0,
+      "large": 3,
+      "extraLarge": 0
+    },
+    "costRaw": "대 : 5,000원 / 중 : 3,000원 / 소 : 2,000원 (3시간 당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "large",
+            "amount": 5000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "㈜에스엠디지털락커"
+  },
+  {
+    "id": "68",
+    "line": 4,
+    "name": "충렬사",
+    "locationDetail": "(B1) 1번 출입구 방향",
+    "counts": {
+      "small": 5,
+      "medium": 0,
+      "large": 3,
+      "extraLarge": 0
+    },
+    "costRaw": "대 : 5,000원 / 중 : 3,000원 / 소 : 2,000원 (3시간 당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "large",
+            "amount": 5000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "㈜에스엠디지털락커"
+  },
+  {
+    "id": "69",
+    "line": 4,
+    "name": "영산대",
+    "locationDetail": "(B2) 2번 출입구 방향",
+    "counts": {
+      "small": 5,
+      "medium": 0,
+      "large": 3,
+      "extraLarge": 0
+    },
+    "costRaw": "대 : 5,000원 / 중 : 3,000원 / 소 : 2,000원 (3시간 당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "large",
+            "amount": 5000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "㈜에스엠디지털락커"
+  },
+  {
+    "id": "70",
+    "line": 4,
+    "name": "윗반송",
+    "locationDetail": "(B2) 2번 출입구 방향",
+    "counts": {
+      "small": 5,
+      "medium": 0,
+      "large": 3,
+      "extraLarge": 0
+    },
+    "costRaw": "대 : 5,000원 / 중 : 3,000원 / 소 : 2,000원 (3시간 당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "large",
+            "amount": 5000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "㈜에스엠디지털락커"
+  },
+  {
+    "id": "71",
+    "line": 4,
+    "name": "안평",
+    "locationDetail": "(B2) 2번 출입구 방향",
+    "counts": {
+      "small": 5,
+      "medium": 0,
+      "large": 3,
+      "extraLarge": 0
+    },
+    "costRaw": "대 : 5,000원 / 중 : 3,000원 / 소 : 2,000원 (3시간 당)",
+    "fees": [
+      {
+        "schedule": "default",
+        "items": [
+          {
+            "size": "large",
+            "amount": 5000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "medium",
+            "amount": 3000,
+            "unit": "3시간당"
+          },
+          {
+            "size": "small",
+            "amount": 2000,
+            "unit": "3시간당"
+          }
+        ]
+      }
+    ],
+    "company": "㈜에스엠디지털락커"
+  }
+]

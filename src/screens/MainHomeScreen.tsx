@@ -129,6 +129,9 @@ export function MainHomeScreen({ navigation }: Props) {
             if (id === 'festivals') {
               navigation.navigate('FestivalCalendar');
             }
+            if (id === 'luggage') {
+              navigation.navigate('LuggageStorage');
+            }
           }}
         />
 

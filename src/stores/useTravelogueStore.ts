@@ -2,15 +2,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import type { PlaceReview, Travelogue } from '../types/travelReview';
+import type { PlaceReview, Travelogue, TravelogueComment, TravelogueSocial } from '../types/travelReview';
 import { createId } from '../utils/id';
 
 export const EMPTY_REVIEWS: PlaceReview[] = [];
+export const EMPTY_SOCIAL: TravelogueSocial = { helpfulUserIds: [], comments: [] };
 
 type TravelogueState = {
   reviewsByPlan: Record<string, PlaceReview[]>;
   publishedTravelogues: Travelogue[];
   publishedPlanIds: string[];
+  socialByTravelogue: Record<string, TravelogueSocial>;
   upsertPlaceReview: (
     planId: string,
     payload: Omit<PlaceReview, 'reviewId' | 'createdAt' | 'updatedAt'> & {
@@ -21,6 +23,12 @@ type TravelogueState = {
   publishTravelogue: (travelogue: Omit<Travelogue, 'travelogueId' | 'publishedAt'>) => Travelogue;
   getTravelogueForPlan: (planId: string) => Travelogue | undefined;
   isPlanPublished: (planId: string) => boolean;
+  getSocialForTravelogue: (travelogueId: string) => TravelogueSocial;
+  toggleHelpful: (travelogueId: string, userId: string) => void;
+  addComment: (
+    travelogueId: string,
+    payload: { authorId: string; authorName: string; text: string },
+  ) => TravelogueComment;
 };
 
 export const useTravelogueStore = create<TravelogueState>()(
@@ -29,6 +37,7 @@ export const useTravelogueStore = create<TravelogueState>()(
       reviewsByPlan: {},
       publishedTravelogues: [],
       publishedPlanIds: [],
+      socialByTravelogue: {},
       upsertPlaceReview: (planId, payload) => {
         const now = new Date().toISOString();
         const existing = get().reviewsByPlan[planId] ?? [];
@@ -78,6 +87,41 @@ export const useTravelogueStore = create<TravelogueState>()(
       getTravelogueForPlan: planId =>
         get().publishedTravelogues.find(t => t.planId === planId),
       isPlanPublished: planId => get().publishedPlanIds.includes(planId),
+      getSocialForTravelogue: travelogueId =>
+        get().socialByTravelogue[travelogueId] ?? EMPTY_SOCIAL,
+      toggleHelpful: (travelogueId, userId) => {
+        const current = get().getSocialForTravelogue(travelogueId);
+        const liked = current.helpfulUserIds.includes(userId);
+        const helpfulUserIds = liked
+          ? current.helpfulUserIds.filter(id => id !== userId)
+          : [...current.helpfulUserIds, userId];
+        set(state => ({
+          socialByTravelogue: {
+            ...state.socialByTravelogue,
+            [travelogueId]: { ...current, helpfulUserIds },
+          },
+        }));
+      },
+      addComment: (travelogueId, payload) => {
+        const current = get().getSocialForTravelogue(travelogueId);
+        const comment: TravelogueComment = {
+          commentId: createId('cmt-'),
+          authorId: payload.authorId,
+          authorName: payload.authorName,
+          text: payload.text.trim(),
+          createdAt: new Date().toISOString(),
+        };
+        set(state => ({
+          socialByTravelogue: {
+            ...state.socialByTravelogue,
+            [travelogueId]: {
+              ...current,
+              comments: [...current.comments, comment],
+            },
+          },
+        }));
+        return comment;
+      },
     }),
     {
       name: '@buting/travelogues',
@@ -86,6 +130,7 @@ export const useTravelogueStore = create<TravelogueState>()(
         reviewsByPlan: state.reviewsByPlan,
         publishedTravelogues: state.publishedTravelogues,
         publishedPlanIds: state.publishedPlanIds,
+        socialByTravelogue: state.socialByTravelogue,
       }),
     },
   ),
