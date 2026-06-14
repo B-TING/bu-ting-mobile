@@ -11,6 +11,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { APP_MENU_ITEMS } from '../../../constants/appMenu';
+import { APP_MODAL } from '../modals';
 import type { AppLanguage } from '../../../types/user';
 import type { RootStackParamList } from '../../../navigation/types';
 import { BrandLogo } from '../brand/BrandLogo';
@@ -162,7 +163,7 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    backgroundColor: APP_MODAL.backdropColor,
   },
   drawer: {
     position: 'absolute',

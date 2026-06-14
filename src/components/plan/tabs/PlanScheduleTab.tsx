@@ -7,8 +7,9 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Alert, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
+import { useAppAlert } from '../../shared/modals';
 import { DayChips } from '../schedule/DayChips';
 import { ScheduleMapSplit } from '../schedule/ScheduleMapSplit';
 import { TravelLegRow } from '../schedule/TravelLegRow';
@@ -82,6 +83,7 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
     },
     ref,
   ) {
+    const { alert } = useAppAlert();
     const removeRoute = usePlanStore(s => s.removeRouteFromPlan);
     const reorderRoutes = usePlanStore(s => s.reorderRoutesInPlan);
     const updateLegMode = usePlanStore(s => s.updateRouteLegMode);
@@ -251,8 +253,8 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
         return;
       }
       optimizeDayRoute(planId, day.dayNumber);
-      Alert.alert(copy.routeOptimize, copy.routeOptimized);
-    }, [day, dayRoutes.length, optimizeDayRoute, planId, copy]);
+      alert({ title: copy.routeOptimize, message: copy.routeOptimized });
+    }, [day, dayRoutes.length, optimizeDayRoute, planId, copy, alert]);
 
     const handleAddPlacePress = useCallback(() => {
       clearReboot();
