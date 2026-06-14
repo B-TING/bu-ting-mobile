@@ -11,8 +11,10 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { APP_MENU_ITEMS } from '../../../constants/appMenu';
+import { APP_MODAL } from '../modals';
 import type { AppLanguage } from '../../../types/user';
 import type { RootStackParamList } from '../../../navigation/types';
+import { BrandLogo } from '../brand/BrandLogo';
 import { useAppBarTopInset } from './AppBar';
 
 const DRAWER_WIDTH = 280;
@@ -121,8 +123,8 @@ export function AppMenuDrawer({
             },
           ]}>
           <View className="border-b border-brand-border px-5 py-4">
-            <Text className="text-lg font-bold text-brand-primary">BU-TING</Text>
-            <Text className="mt-0.5 text-xs text-brand-muted">
+            <BrandLogo height={24} />
+            <Text className="mt-2 text-xs text-brand-muted">
               {language === 'ko' ? '메뉴' : 'Menu'}
             </Text>
           </View>
@@ -161,7 +163,7 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    backgroundColor: APP_MODAL.backdropColor,
   },
   drawer: {
     position: 'absolute',

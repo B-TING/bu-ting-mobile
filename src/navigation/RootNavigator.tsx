@@ -3,9 +3,12 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
+import { BrandIcon } from '../components/shared/brand/BrandIcon';
 import { layout } from '../constants/layout';
 import { FestivalCalendarScreen } from '../screens/festival/FestivalCalendarScreen';
 import { FestivalDetailScreen } from '../screens/festival/FestivalDetailScreen';
+import { BusanAccommodationScreen } from '../screens/accommodation/BusanAccommodationScreen';
+import { HelpDeskChatScreen } from '../screens/helpdesk/HelpDeskChatScreen';
 import { LuggageStorageScreen } from '../screens/locker/LuggageStorageScreen';
 import { TravelogueDetailScreen } from '../screens/feed/TravelogueDetailScreen';
 import { TravelogueFeedScreen } from '../screens/feed/TravelogueFeedScreen';
@@ -73,7 +76,8 @@ export function RootNavigator() {
   if (!ready || !hasHydrated) {
     return (
       <View style={[layout.screen, styles.loading]}>
-        <ActivityIndicator size="large" color="#0077B6" />
+        <BrandIcon size={72} />
+        <ActivityIndicator size="large" color="#0077B6" style={styles.spinner} />
       </View>
     );
   }
@@ -102,6 +106,8 @@ export function RootNavigator() {
         <Stack.Screen name="FestivalCalendar" component={FestivalCalendarScreen} />
         <Stack.Screen name="FestivalDetail" component={FestivalDetailScreen} />
         <Stack.Screen name="LuggageStorage" component={LuggageStorageScreen} />
+        <Stack.Screen name="BusanAccommodation" component={BusanAccommodationScreen} />
+        <Stack.Screen name="HelpDeskChat" component={HelpDeskChatScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -111,5 +117,8 @@ const styles = StyleSheet.create({
   loading: {
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  spinner: {
+    marginTop: 24,
   },
 });

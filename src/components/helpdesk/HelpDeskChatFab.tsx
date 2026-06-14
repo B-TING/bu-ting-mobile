@@ -1,0 +1,89 @@
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+
+const FAB_SIZE = 56;
+const GLOW_RING = 12;
+
+type HelpDeskChatFabProps = {
+  onPress: () => void;
+  bottom: number;
+  accessibilityLabel: string;
+};
+
+export function HelpDeskChatFab({ onPress, bottom, accessibilityLabel }: HelpDeskChatFabProps) {
+  return (
+    <View
+      className="absolute right-4 z-20"
+      style={{ bottom }}
+      pointerEvents="box-none">
+      <View style={styles.glowOuter}>
+        <View style={styles.glowHalo} />
+        <Pressable
+          onPress={onPress}
+          accessibilityRole="button"
+          accessibilityLabel={accessibilityLabel}
+          style={({ pressed }) => [styles.pressable, pressed && styles.pressed]}>
+          <View style={styles.fab}>
+            <View style={styles.shine} />
+            <Text style={styles.icon}>💬</Text>
+          </View>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  glowOuter: {
+    width: FAB_SIZE + GLOW_RING * 2,
+    height: FAB_SIZE + GLOW_RING * 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  glowHalo: {
+    position: 'absolute',
+    width: FAB_SIZE + GLOW_RING,
+    height: FAB_SIZE + GLOW_RING,
+    borderRadius: (FAB_SIZE + GLOW_RING) / 2,
+    backgroundColor: 'rgba(124, 58, 237, 0.22)',
+    shadowColor: '#7C3AED',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.75,
+    shadowRadius: 16,
+    elevation: 12,
+  },
+  pressable: {
+    borderRadius: FAB_SIZE / 2,
+    shadowColor: '#5B21B6',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.45,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  pressed: {
+    opacity: 0.92,
+    transform: [{ scale: 0.96 }],
+  },
+  fab: {
+    width: FAB_SIZE,
+    height: FAB_SIZE,
+    borderRadius: FAB_SIZE / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.45)',
+    overflow: 'hidden',
+    backgroundColor: '#7C3AED',
+  },
+  shine: {
+    position: 'absolute',
+    top: 4,
+    left: 8,
+    width: FAB_SIZE * 0.45,
+    height: FAB_SIZE * 0.28,
+    borderRadius: FAB_SIZE / 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  icon: {
+    fontSize: 24,
+  },
+});
