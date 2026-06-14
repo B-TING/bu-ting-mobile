@@ -7,10 +7,11 @@ import { HeroBanner } from '../components/home/banners/HeroBanner';
 import { EventsSectionMock } from '../components/home/sections/EventsSectionMock';
 import { QuickAccessRow } from '../components/home/sections/QuickAccessRow';
 import { TraveloguePreviewMock } from '../components/home/sections/TraveloguePreviewMock';
-import { ScheduleRebootFab } from '../components/plan/fab/ScheduleRebootFab';
+import { HomeActionFabs, FAB_GAP, FAB_SIZE } from '../components/helpdesk/HomeActionFabs';
 import { AppBar } from '../components/shared/navigation/AppBar';
 import { AppMenuDrawer } from '../components/shared/navigation/AppMenuDrawer';
 import { Navbar, type NavbarTab } from '../components/shared/navigation/Navbar';
+import { HELP_DESK_COPY } from '../constants/helpDesk';
 import {
   MAIN_HOME_COPY,
   MOCK_EVENTS,
@@ -33,6 +34,7 @@ export function MainHomeScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const language = useAppStore(s => s.language) ?? 'ko';
   const copy = MAIN_HOME_COPY[language];
+  const helpCopy = HELP_DESK_COPY[language];
   const activePlan = usePlanStore(selectActivePlan);
   const publishedTravelogues = useTravelogueStore(s => s.publishedTravelogues);
   const latestTravelogue = useMemo(
@@ -63,6 +65,10 @@ export function MainHomeScreen({ navigation }: Props) {
       tab: 'schedule',
       openReboot: true,
     });
+  };
+
+  const goToHelpDesk = () => {
+    navigation.navigate('HelpDeskChat');
   };
 
   const handleNavbarPress = (tab: NavbarTab) => {
@@ -96,7 +102,10 @@ export function MainHomeScreen({ navigation }: Props) {
 
       <ScrollView
         className="flex-1 px-5"
-        contentContainerStyle={{ paddingBottom: NAVBAR_HEIGHT + 16 }}
+        contentContainerStyle={{
+          paddingBottom:
+            NAVBAR_HEIGHT + 16 + (activePlan ? FAB_SIZE + FAB_GAP : 0),
+        }}
         showsVerticalScrollIndicator={false}>
         {activePlan ? (
           <ActivePlanHeroBanner
@@ -135,6 +144,9 @@ export function MainHomeScreen({ navigation }: Props) {
             if (id === 'hotels') {
               navigation.navigate('BusanAccommodation');
             }
+            if (id === 'help') {
+              goToHelpDesk();
+            }
           }}
         />
 
@@ -168,9 +180,13 @@ export function MainHomeScreen({ navigation }: Props) {
 
       <Navbar activeTab={activeTab} language={language} onTabPress={handleNavbarPress} />
 
-      {activePlan ? (
-        <ScheduleRebootFab bottom={insets.bottom + NAVBAR_HEIGHT + 8} onPress={goToReboot} />
-      ) : null}
+      <HomeActionFabs
+        bottom={insets.bottom + NAVBAR_HEIGHT + 8}
+        helpLabel={helpCopy.fabLabel}
+        showReboot={!!activePlan}
+        onHelpPress={goToHelpDesk}
+        onRebootPress={goToReboot}
+      />
     </View>
   );
 }
