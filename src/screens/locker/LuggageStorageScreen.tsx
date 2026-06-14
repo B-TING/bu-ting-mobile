@@ -9,8 +9,9 @@ import { BackButton } from '../../components/shared/buttons/BackButton';
 import { LUGGAGE_STORAGE_COPY } from '../../constants/luggageStorage';
 import type { RootStackParamList } from '../../navigation/types';
 import { fetchSubwayLockerStations } from '../../services/subwayLockerService';
-import { useAppStore } from '../../stores';
+import { useAppStore, useLockerBookmarkStore } from '../../stores';
 import type { SubwayLockerStation } from '../../types/subwayLocker';
+import { sortLockerStations } from '../../utils/subwayLockerSort';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LuggageStorage'>;
 
@@ -18,6 +19,10 @@ export function LuggageStorageScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const language = useAppStore(s => s.language) ?? 'ko';
   const copy = LUGGAGE_STORAGE_COPY[language];
+
+  const bookmarkedStationIds = useLockerBookmarkStore(s => s.bookmarkedStationIds);
+  const toggleBookmark = useLockerBookmarkStore(s => s.toggleBookmark);
+  const isBookmarked = useLockerBookmarkStore(s => s.isBookmarked);
 
   const [stations, setStations] = useState<SubwayLockerStation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,6 +49,11 @@ export function LuggageStorageScreen({ navigation }: Props) {
     };
   }, []);
 
+  const sortedStations = useMemo(
+    () => sortLockerStations(stations, bookmarkedStationIds),
+    [stations, bookmarkedStationIds],
+  );
+
   const totalLockers = useMemo(
     () => stations.reduce((sum, station) => sum + station.lockers.total, 0),
     [stations],
@@ -57,6 +67,13 @@ export function LuggageStorageScreen({ navigation }: Props) {
   const handleCloseDetail = useCallback(() => {
     setDetailOpen(false);
   }, []);
+
+  const handleToggleBookmark = useCallback(() => {
+    if (!selectedStation) {
+      return;
+    }
+    toggleBookmark(selectedStation.id);
+  }, [selectedStation, toggleBookmark]);
 
   return (
     <View
@@ -93,12 +110,14 @@ export function LuggageStorageScreen({ navigation }: Props) {
 
           <View className="min-h-0 flex-1">
             <LockerMapView
-              stations={stations}
+              stations={sortedStations}
               selectedId={selectedStation?.id}
+              bookmarkedIds={bookmarkedStationIds}
               onSelectStation={handleSelectStation}
               mapTitle={copy.mapTitle}
               mapSubtitle={copy.mapSubtitle}
               pinA11y={copy.pinA11y}
+              bookmarkedPinA11y={copy.bookmarkedPinA11y}
               lineLabel={copy.lineLabel}
             />
           </View>
@@ -110,21 +129,31 @@ export function LuggageStorageScreen({ navigation }: Props) {
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12, gap: 8 }}>
-                {stations.map(station => (
-                  <Pressable
-                    key={station.id}
-                    onPress={() => handleSelectStation(station)}
-                    className={`rounded-2xl border px-4 py-3 active:opacity-80 ${
-                      selectedStation?.id === station.id
-                        ? 'border-brand-primary bg-brand-selected'
-                        : 'border-brand-border bg-brand-background'
-                    }`}>
-                    <Text className="text-sm font-bold text-brand-text">{station.name}</Text>
-                    <Text className="mt-0.5 text-xs text-brand-muted">
-                      {copy.lineLabel(station.line)} · 🧳 {station.lockers.total}
-                    </Text>
-                  </Pressable>
-                ))}
+                {sortedStations.map(station => {
+                  const bookmarked = isBookmarked(station.id);
+                  const selected = selectedStation?.id === station.id;
+
+                  return (
+                    <Pressable
+                      key={station.id}
+                      onPress={() => handleSelectStation(station)}
+                      className={`rounded-2xl border px-4 py-3 active:opacity-80 ${
+                        selected
+                          ? 'border-brand-primary bg-brand-selected'
+                          : bookmarked
+                            ? 'border-amber-300 bg-amber-50'
+                            : 'border-brand-border bg-brand-background'
+                      }`}>
+                      <View className="flex-row items-center gap-1">
+                        {bookmarked ? <Text className="text-xs">📌</Text> : null}
+                        <Text className="text-sm font-bold text-brand-text">{station.name}</Text>
+                      </View>
+                      <Text className="mt-0.5 text-xs text-brand-muted">
+                        {copy.lineLabel(station.line)} · 🧳 {station.lockers.total}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
               </ScrollView>
             </View>
           ) : null}
@@ -135,6 +164,8 @@ export function LuggageStorageScreen({ navigation }: Props) {
         visible={detailOpen}
         station={selectedStation}
         copy={copy}
+        bookmarked={selectedStation ? isBookmarked(selectedStation.id) : false}
+        onToggleBookmark={handleToggleBookmark}
         onClose={handleCloseDetail}
       />
     </View>

@@ -12,3 +12,4 @@ export {
   usePlanStore,
 } from './usePlanStore';
 export { EMPTY_REVIEWS, EMPTY_SOCIAL, useTravelogueStore } from './useTravelogueStore';
+export { useLockerBookmarkStore } from './useLockerBookmarkStore';

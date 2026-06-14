@@ -1,13 +1,9 @@
-import { ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import { Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 
 import type { LUGGAGE_STORAGE_COPY } from '../../constants/luggageStorage';
 import type { SubwayLockerStation } from '../../types/subwayLocker';
-import {
-  feeScheduleLabel,
-  formatLockerFeeLine,
-  sortedFeeItems,
-} from '../../utils/subwayLockerFees';
 import { AppModal, AppModalActions } from '../shared/modals';
+import { LockerInventoryTable } from './LockerInventoryTable';
 
 type Copy = (typeof LUGGAGE_STORAGE_COPY)['ko'];
 
@@ -17,6 +13,8 @@ type SubwayLockerDetailSheetProps = {
   visible: boolean;
   station: SubwayLockerStation | null;
   copy: Copy;
+  bookmarked?: boolean;
+  onToggleBookmark?: () => void;
   onClose: () => void;
 };
 
@@ -32,22 +30,12 @@ function DetailRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function SizeChip({ label, count }: { label: string; count: number }) {
-  if (count <= 0) {
-    return null;
-  }
-  return (
-    <View className="rounded-xl border border-brand-border bg-brand-surface px-3 py-2">
-      <Text className="text-[10px] font-semibold text-brand-muted">{label}</Text>
-      <Text className="mt-0.5 text-lg font-bold text-brand-primary">{count}</Text>
-    </View>
-  );
-}
-
 export function SubwayLockerDetailSheet({
   visible,
   station,
   copy,
+  bookmarked = false,
+  onToggleBookmark,
   onClose,
 }: SubwayLockerDetailSheetProps) {
   const { height: screenHeight } = useWindowDimensions();
@@ -74,13 +62,32 @@ export function SubwayLockerDetailSheet({
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 8 }}
         showsVerticalScrollIndicator={false}
         bounces={false}>
-        <View className="flex-row items-center gap-2">
-          <Text className="text-xl font-bold text-brand-text">{station.name}</Text>
-          <View className="rounded-full bg-brand-selected px-2.5 py-1">
-            <Text className="text-[10px] font-semibold text-brand-primary">
-              {copy.lineLabel(station.line)}
-            </Text>
+        <View className="flex-row items-center justify-between gap-2">
+          <View className="min-w-0 flex-1 flex-row items-center gap-2">
+            <Text className="text-xl font-bold text-brand-text">{station.name}</Text>
+            <View className="rounded-full bg-brand-selected px-2.5 py-1">
+              <Text className="text-[10px] font-semibold text-brand-primary">
+                {copy.lineLabel(station.line)}
+              </Text>
+            </View>
           </View>
+          {onToggleBookmark ? (
+            <Pressable
+              onPress={onToggleBookmark}
+              accessibilityRole="button"
+              accessibilityLabel={bookmarked ? copy.unbookmark : copy.bookmark}
+              className={`flex-row items-center gap-1 rounded-full px-3 py-2 active:opacity-80 ${
+                bookmarked ? 'bg-amber-100' : 'bg-brand-selected'
+              }`}>
+              <Text className="text-sm">{bookmarked ? '📌' : '☆'}</Text>
+              <Text
+                className={`text-xs font-bold ${
+                  bookmarked ? 'text-amber-700' : 'text-brand-primary'
+                }`}>
+                {bookmarked ? copy.unbookmark : copy.bookmark}
+              </Text>
+            </Pressable>
+          ) : null}
         </View>
 
         <Text className="mt-1 text-sm text-brand-muted">
@@ -88,34 +95,19 @@ export function SubwayLockerDetailSheet({
         </Text>
 
         <DetailRow label={copy.locationDetailLabel} value={station.locationDetail} />
-
-        <View className="mt-4 flex-row flex-wrap gap-2">
-          <SizeChip label={copy.sizeExtraLarge} count={station.lockers.extraLarge} />
-          <SizeChip label={copy.sizeLarge} count={station.lockers.large} />
-          <SizeChip label={copy.sizeMedium} count={station.lockers.medium} />
-          <SizeChip label={copy.sizeSmall} count={station.lockers.small} />
-        </View>
-
         <DetailRow label={copy.companyLabel} value={station.company} />
 
         {station.fees.length > 0 ? (
           <View className="mt-4">
             <Text className="text-xs font-bold text-brand-muted">{copy.costLabel}</Text>
             {station.fees.map(group => (
-              <View
+              <LockerInventoryTable
                 key={group.schedule}
-                className="mt-2 rounded-xl border border-brand-border bg-brand-surface p-3">
-                {station.fees.length > 1 ? (
-                  <Text className="mb-1 text-xs font-bold text-brand-primary">
-                    {feeScheduleLabel(group.schedule, copy)}
-                  </Text>
-                ) : null}
-                {sortedFeeItems(group.items).map(item => (
-                  <Text key={`${group.schedule}-${item.size}`} className="mt-1 text-sm text-brand-text">
-                    · {formatLockerFeeLine(item.size, item.amount, item.unit, copy)}
-                  </Text>
-                ))}
-              </View>
+                station={station}
+                feeGroup={group}
+                copy={copy}
+                showScheduleLabel={station.fees.length > 1}
+              />
             ))}
           </View>
         ) : null}
