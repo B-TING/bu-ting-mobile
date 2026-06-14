@@ -43,6 +43,7 @@ export const PLAN_DETAIL_COPY: Record<
     dayLabel: (n: number) => string;
     schedulePreview: string;
     dailyHighlights: string;
+    nextScheduleTitle: string;
     explorePreview: string;
     budgetPreview: string;
     recordsPreview: string;
@@ -89,6 +90,7 @@ export const PLAN_DETAIL_COPY: Record<
     budgetSplit: string;
     budgetDate: string;
     budgetItem: string;
+    budgetColCategory: string;
     budgetAmount: string;
     budgetMemo: string;
     budgetMemoPlaceholder: string;
@@ -138,6 +140,7 @@ export const PLAN_DETAIL_COPY: Record<
     dayLabel: n => `Day ${n}`,
     schedulePreview: '일정',
     dailyHighlights: '일정 하이라이트',
+    nextScheduleTitle: '다음 일정',
     explorePreview: '탐색',
     budgetPreview: '가계부',
     recordsPreview: '기록',
@@ -184,6 +187,7 @@ export const PLAN_DETAIL_COPY: Record<
     budgetSplit: '나누기',
     budgetDate: '날짜',
     budgetItem: '항목',
+    budgetColCategory: '분류',
     budgetAmount: '금액',
     budgetMemo: '메모',
     budgetMemoPlaceholder: '세부 사항 (선택)',
@@ -232,6 +236,7 @@ export const PLAN_DETAIL_COPY: Record<
     dayLabel: n => `Day ${n}`,
     schedulePreview: 'Schedule',
     dailyHighlights: 'Daily highlights',
+    nextScheduleTitle: 'Up next',
     explorePreview: 'Explore',
     budgetPreview: 'Budget',
     recordsPreview: 'Records',
@@ -279,6 +284,7 @@ export const PLAN_DETAIL_COPY: Record<
     budgetSplit: 'Split with',
     budgetDate: 'Date',
     budgetItem: 'Item',
+    budgetColCategory: 'Category',
     budgetAmount: 'Amount',
     budgetMemo: 'Memo',
     budgetMemoPlaceholder: 'Details (optional)',
@@ -327,6 +333,7 @@ export const PLAN_DETAIL_COPY: Record<
     dayLabel: n => `Day ${n}`,
     schedulePreview: '日程',
     dailyHighlights: '日程ハイライト',
+    nextScheduleTitle: '次の予定',
     explorePreview: '探索',
     budgetPreview: '家計',
     recordsPreview: '記録',
@@ -374,6 +381,7 @@ export const PLAN_DETAIL_COPY: Record<
     budgetSplit: '割り勘',
     budgetDate: '日付',
     budgetItem: '項目',
+    budgetColCategory: '分類',
     budgetAmount: '金額',
     budgetMemo: 'メモ',
     budgetMemoPlaceholder: '詳細（任意）',
@@ -422,6 +430,7 @@ export const PLAN_DETAIL_COPY: Record<
     dayLabel: n => `第 ${n} 天`,
     schedulePreview: '行程',
     dailyHighlights: '每日亮点',
+    nextScheduleTitle: '下一行程',
     explorePreview: '探索',
     budgetPreview: '账本',
     recordsPreview: '记录',
@@ -468,6 +477,7 @@ export const PLAN_DETAIL_COPY: Record<
     budgetSplit: '分摊',
     budgetDate: '日期',
     budgetItem: '项目',
+    budgetColCategory: '分类',
     budgetAmount: '金额',
     budgetMemo: '备注',
     budgetMemoPlaceholder: '详情（可选）',

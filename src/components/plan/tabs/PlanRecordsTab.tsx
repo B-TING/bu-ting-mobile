@@ -99,7 +99,7 @@ export function PlanRecordsTab({
   };
 
   return (
-    <View className="px-4 pb-8">
+    <View className="px-4 py-4">
       <Text className="mb-1 text-lg font-bold text-brand-text">{copy.recordsTitle}</Text>
       <Text className="mb-1 text-sm text-brand-muted">{copy.recordsSub}</Text>
       {totalDurationLabel ? (
