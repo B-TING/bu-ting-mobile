@@ -6,8 +6,11 @@ import {
   resolveAccommodationPlaceId,
 } from '../constants/accommodation';
 import type { BusanAccommodation } from '../types/accommodation';
-import type { AccommodationPlaceDetail } from '../types/googlePlaces';
+import type { AccommodationPlaceDetail, GooglePlaceDetailsResponse, PlaceDetailVO } from '../types/googlePlaces';
 import type { AppLanguage } from '../types/user';
+import { mapGooglePlaceDetailsResponse } from '../utils/googlePlacesMapper';
+
+export { mapGooglePlaceDetailsResponse, toPlaceInfo, toPlaceListItem } from '../utils/googlePlacesMapper';
 
 function delay(ms: number) {
   return new Promise<void>(resolve => {
@@ -41,6 +44,18 @@ export async function fetchAccommodationDetail(
 ): Promise<AccommodationPlaceDetail | null> {
   await delay(250);
   return getAccommodationMockDetail(placeId);
+}
+
+/**
+ * Google Places Place Details API 연동 시 사용.
+ * 백엔드가 Google 응답 JSON을 그대로 내려주거나, 앱이 Places API를 직접 호출할 때 map 후 반환.
+ */
+export async function fetchPlaceDetailFromGoogleResponse(
+  response: GooglePlaceDetailsResponse,
+  options?: { internalPlaceId?: string },
+): Promise<PlaceDetailVO | null> {
+  await delay(100);
+  return mapGooglePlaceDetailsResponse(response, options);
 }
 
 export function buildGoogleMapsUrl(detail: AccommodationPlaceDetail): string {

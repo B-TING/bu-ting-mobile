@@ -36,3 +36,12 @@ export type {
   TravelogueDaySnapshot,
   TravelogueRouteSnapshot,
 } from './travelReview';
+export type {
+  GooglePlaceDetailsResponse,
+  PlaceDetailVO,
+  PlaceListItemVO,
+  PlaceReviewVO,
+  PlaceKind,
+  AccommodationPlaceDetail,
+  AttractionPlaceDetail,
+} from './googlePlaces';

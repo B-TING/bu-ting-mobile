@@ -136,7 +136,7 @@ export function AccommodationDetailSheet({
 
             <View className="mt-4 rounded-2xl border border-brand-border bg-brand-surface p-4">
               <DetailRow label={copy.addressLabel} value={detail.formattedAddress} />
-              <DetailRow label={copy.phoneLabel} value={detail.internationalPhoneNumber} />
+              <DetailRow label={copy.phoneLabel} value={detail.phones?.international} />
               {detail.priceLevel ? (
                 <DetailRow
                   label={copy.priceLevelLabel}
@@ -163,9 +163,9 @@ export function AccommodationDetailSheet({
                 <Text className="text-sm font-bold text-brand-text">{copy.reviewsTitle}</Text>
                 <Text className="mt-0.5 text-[11px] text-brand-muted">{copy.reviewsSource}</Text>
                 <View className="mt-2">
-                  {detail.reviews.map(review => (
+                  {detail.reviews.map((review, index) => (
                     <GoogleReviewCard
-                      key={`${review.authorName}-${review.time}`}
+                      key={review.reviewId ?? `${review.authorName}-${index}`}
                       review={review}
                     />
                   ))}
