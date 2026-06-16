@@ -13,6 +13,8 @@ type RouteMapViewProps = {
   size?: 'compact' | 'fullscreen' | 'fill';
   onPress?: () => void;
   tapHint?: string;
+  /** false면 지도 하단 타이틀 바 숨김 (상세 모달 등) */
+  showFooter?: boolean;
 };
 
 export function RouteMapView({
@@ -23,6 +25,7 @@ export function RouteMapView({
   size = 'compact',
   onPress,
   tapHint,
+  showFooter = true,
 }: RouteMapViewProps) {
   const points = routes.map(route => route.location);
   const focusPoint = highlightItemId
@@ -38,7 +41,7 @@ export function RouteMapView({
       onPress={onPress}
       tapHint={tapHint}
       emptySubtitle={subtitle}
-      footer={{ title, subtitle }}>
+      footer={showFooter ? { title, subtitle } : undefined}>
       {routes.map((route, index) => {
         const active = route.itemId === highlightItemId;
         return (

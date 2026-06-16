@@ -253,6 +253,8 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
       if (!day || dayRoutes.length < 2) {
         return;
       }
+      clearReboot();
+      onModalChangeRef.current({ kind: 'none' });
       optimizeDayRoute(planId, day.dayNumber);
       alert({ title: copy.routeOptimize, message: copy.routeOptimized });
     }, [day, dayRoutes.length, optimizeDayRoute, planId, copy, alert]);
@@ -353,7 +355,11 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
                   indexSelected={indexSelected}
                   indexHint={indexHint}
                   onIndexPress={() => handleIndexPress(r.itemId)}
-                  onToggleVisited={() => onToggleVisited(r.itemId)}
+                  onToggleVisited={() => {
+                    clearReboot();
+                    onModalChangeRef.current({ kind: 'none' });
+                    onToggleVisited(r.itemId);
+                  }}
                   onWriteReview={() => onWriteReview(r)}
                   onQuickRating={rating => onQuickRating(r, rating)}
                   onLegModeChange={mode => updateLegMode(planId, r.itemId, mode)}
