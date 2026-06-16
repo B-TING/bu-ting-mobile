@@ -1,21 +1,30 @@
-import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Linking, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { RouteMapView } from '../../map/RouteMapView';
+import {
+  buildGoogleMapsUrl,
+  fetchRoutePlaceDetail,
+  shouldFetchGooglePlaceDetail,
+} from '../../../services/googlePlacesService';
 import type { PlaceReview } from '../../../types/travelReview';
 import type { RouteItem } from '../../../types/travelPlan';
+import type { PlaceDetailVO } from '../../../types/googlePlaces';
+import type { AppLanguage } from '../../../types/user';
+import { RouteMapView } from '../../map/RouteMapView';
+import { PlaceGoogleDetailBody } from '../../places/PlaceGoogleDetailBody';
 import { StarRating } from '../../shared/rating/StarRating';
 import { AppModal, AppModalActions } from '../../shared/modals';
 
 /** 하단 시트 최대 높이 (화면 대비) */
-const SHEET_HEIGHT_RATIO = 0.52;
+const SHEET_HEIGHT_RATIO = 0.62;
 /** 지도 확대 시 상단 지도 영역 */
 const MAP_AREA_RATIO = 0.5;
 
 type PlaceDetailModalProps = {
   visible: boolean;
   route: RouteItem | null;
+  language: AppLanguage;
   copy: {
     markVisited: string;
     visited: string;
@@ -28,6 +37,17 @@ type PlaceDetailModalProps = {
     writeReview?: string;
     editReview?: string;
     visitFirstReview?: string;
+    detailLoading: string;
+    notFound: string;
+    addressLabel: string;
+    phoneLabel: string;
+    hoursLabel: string;
+    openNow: string;
+    closedNow: string;
+    reviewsTitle: string;
+    reviewsSource: string;
+    openInGoogleMaps: string;
+    placeRatingSummary: (rating: number, count: number) => string;
   };
   placeReview?: PlaceReview;
   onClose: () => void;
@@ -38,6 +58,7 @@ type PlaceDetailModalProps = {
 export function PlaceDetailModal({
   visible,
   route,
+  language,
   copy,
   placeReview,
   onClose,
@@ -47,18 +68,78 @@ export function PlaceDetailModal({
   const insets = useSafeAreaInsets();
   const { height: screenHeight } = useWindowDimensions();
   const [mapExpanded, setMapExpanded] = useState(false);
+  const [googleDetail, setGoogleDetail] = useState<PlaceDetailVO | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
 
   const sheetMaxHeight = Math.round(screenHeight * SHEET_HEIGHT_RATIO);
   const mapAreaHeight = Math.round(screenHeight * MAP_AREA_RATIO);
 
+  const showGoogleDetail = route != null && shouldFetchGooglePlaceDetail(route.type);
+
+  useEffect(() => {
+    if (!visible || !route || !showGoogleDetail) {
+      setGoogleDetail(null);
+      return;
+    }
+
+    let cancelled = false;
+    setLoadingDetail(true);
+
+    fetchRoutePlaceDetail(route.placeId, route.type)
+      .then(result => {
+        if (!cancelled) {
+          setGoogleDetail(result);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoadingDetail(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [visible, route?.placeId, route?.type, showGoogleDetail]);
+
   if (!route) {
     return null;
   }
+
   const info = route.placeInfo;
+  const rating = googleDetail?.rating ?? info?.rating;
+  const reviewCount = googleDetail?.userRatingCount ?? info?.reviewCount ?? 0;
+  const category =
+    googleDetail?.primaryTypeLabel ??
+    googleDetail?.googleMapsTypeLabel ??
+    info?.category;
 
   const handleClose = () => {
     setMapExpanded(false);
     onClose();
+  };
+
+  const openGoogleMaps = () => {
+    if (googleDetail) {
+      Linking.openURL(buildGoogleMapsUrl(googleDetail)).catch(() => {});
+      return;
+    }
+    const query = encodeURIComponent(route.placeName);
+    Linking.openURL(
+      `https://www.google.com/maps/search/?api=1&query=${query}&center=${route.location.lat},${route.location.lng}`,
+    ).catch(() => {});
+  };
+
+  const googleDetailCopy = {
+    detailLoading: copy.detailLoading,
+    notFound: copy.notFound,
+    addressLabel: copy.addressLabel,
+    phoneLabel: copy.phoneLabel,
+    hoursLabel: copy.hoursLabel,
+    openNow: copy.openNow,
+    closedNow: copy.closedNow,
+    reviewsTitle: copy.reviewsTitle,
+    reviewsSource: copy.reviewsSource,
   };
 
   return (
@@ -87,21 +168,31 @@ export function PlaceDetailModal({
         ) : null
       }
       footer={
-        <AppModalActions
-          className="mt-2"
-          actions={[{ label: copy.close, onPress: handleClose, variant: 'primary' }]}
-        />
+        <View className="mt-2 px-5">
+          {showGoogleDetail ? (
+            <Pressable
+              onPress={openGoogleMaps}
+              className="mb-2 items-center rounded-2xl border border-brand-primary bg-brand-selected py-3 active:opacity-90">
+              <Text className="text-[15px] font-bold text-brand-primary">{copy.openInGoogleMaps}</Text>
+            </Pressable>
+          ) : null}
+          <AppModalActions
+            actions={[{ label: copy.close, onPress: handleClose, variant: 'primary' }]}
+          />
+        </View>
       }>
       <ScrollView
         style={{ flexGrow: 0 }}
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 8 }}
         showsVerticalScrollIndicator={false}
         bounces={false}>
-        {info && (
-          <Text className="mb-3 text-sm text-brand-muted">
-            ★ {info.rating ?? '—'} ({info.reviewCount?.toLocaleString() ?? 0}) · {info.category}
+        {rating != null || category ? (
+          <Text className="mb-3 text-sm font-semibold text-brand-primary">
+            {[rating != null ? copy.placeRatingSummary(rating, reviewCount) : null, category]
+              .filter(Boolean)
+              .join(' · ')}
           </Text>
-        )}
+        ) : null}
 
         {!mapExpanded && (
           <RouteMapView
@@ -146,6 +237,9 @@ export function PlaceDetailModal({
 
         {placeReview ? (
           <View className="mt-4 rounded-2xl border border-brand-border bg-brand-surface p-4">
+            <Text className="mb-2 text-xs font-bold text-brand-muted">
+              {language === 'ko' ? '내 후기' : 'My review'}
+            </Text>
             <StarRating value={placeReview.rating} readonly size="sm" />
             {placeReview.comment ? (
               <Text className="mt-2 text-sm text-brand-text">{placeReview.comment}</Text>
@@ -155,7 +249,14 @@ export function PlaceDetailModal({
           <Text className="mt-2 text-xs text-brand-muted">{copy.visitFirstReview}</Text>
         ) : null}
 
-        {info && (
+        {showGoogleDetail ? (
+          <PlaceGoogleDetailBody
+            detail={googleDetail}
+            loading={loadingDetail}
+            fallbackAddress={info?.address}
+            copy={googleDetailCopy}
+          />
+        ) : info ? (
           <View className="mt-4 rounded-2xl border border-brand-border bg-brand-surface p-4">
             <Text className="mb-2 text-sm leading-5 text-brand-text">{info.description}</Text>
             {info.dwellMinutes ? (
@@ -164,7 +265,7 @@ export function PlaceDetailModal({
             <Text className="text-xs text-brand-muted">{info.hours}</Text>
             <Text className="mt-1 text-xs text-brand-muted">{info.address}</Text>
           </View>
-        )}
+        ) : null}
       </ScrollView>
     </AppModal>
   );

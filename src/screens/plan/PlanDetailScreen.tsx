@@ -391,6 +391,7 @@ export function PlanDetailScreen({ navigation, route }: Props) {
       <PlaceDetailModal
         visible={!!selectedRoute}
         route={selectedRoute}
+        language={language}
         copy={copy}
         placeReview={
           selectedRoute

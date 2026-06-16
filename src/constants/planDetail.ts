@@ -84,6 +84,17 @@ export const PLAN_DETAIL_COPY: Record<
     visitFirstReview: string;
     recordReview: string;
     quickRatingHint: string;
+    detailLoading: string;
+    notFound: string;
+    addressLabel: string;
+    phoneLabel: string;
+    hoursLabel: string;
+    openNow: string;
+    closedNow: string;
+    reviewsTitle: string;
+    reviewsSource: string;
+    openInGoogleMaps: string;
+    placeRatingSummary: (rating: number, count: number) => string;
     transportModeTitle: string;
     routeOptimized: string;
     budgetPayer: string;
@@ -181,6 +192,18 @@ export const PLAN_DETAIL_COPY: Record<
     visitFirstReview: '방문 체크 후 후기를 남길 수 있어요',
     recordReview: '기록 남기기',
     quickRatingHint: '별점만 남기기',
+    detailLoading: '리뷰·평점을 불러오는 중…',
+    notFound: '장소 정보를 찾을 수 없어요.',
+    addressLabel: '주소',
+    phoneLabel: '전화',
+    hoursLabel: '영업 시간',
+    openNow: '영업 중',
+    closedNow: '영업 종료',
+    reviewsTitle: 'Google 리뷰',
+    reviewsSource: 'Google Maps에서 제공하는 리뷰입니다.',
+    openInGoogleMaps: 'Google 지도에서 보기',
+    placeRatingSummary: (rating, count) =>
+      `★ ${rating.toFixed(1)} · 리뷰 ${count.toLocaleString()}개`,
     transportModeTitle: '이동 수단',
     routeOptimized: '경로를 최적화했어요',
     budgetPayer: '지불자',
@@ -278,6 +301,18 @@ export const PLAN_DETAIL_COPY: Record<
     visitFirstReview: 'Mark visited before writing a review',
     recordReview: 'Leave a record',
     quickRatingHint: 'Quick rating',
+    detailLoading: 'Loading ratings and reviews…',
+    notFound: 'Place not found.',
+    addressLabel: 'Address',
+    phoneLabel: 'Phone',
+    hoursLabel: 'Hours',
+    openNow: 'Open now',
+    closedNow: 'Closed',
+    reviewsTitle: 'Google reviews',
+    reviewsSource: 'Reviews provided by Google Maps.',
+    openInGoogleMaps: 'Open in Google Maps',
+    placeRatingSummary: (rating, count) =>
+      `★ ${rating.toFixed(1)} · ${count.toLocaleString()} reviews`,
     transportModeTitle: 'Transport mode',
     routeOptimized: 'Route optimized',
     budgetPayer: 'Paid by',
@@ -375,6 +410,18 @@ export const PLAN_DETAIL_COPY: Record<
     visitFirstReview: '訪問チェック後にレビューを書けます',
     recordReview: '記録を残す',
     quickRatingHint: '星だけ付ける',
+    detailLoading: '評価・レビューを読み込み中…',
+    notFound: '場所情報が見つかりません。',
+    addressLabel: '住所',
+    phoneLabel: '電話',
+    hoursLabel: '営業時間',
+    openNow: '営業中',
+    closedNow: '営業終了',
+    reviewsTitle: 'Googleレビュー',
+    reviewsSource: 'Google Mapsのレビューです。',
+    openInGoogleMaps: 'Googleマップで見る',
+    placeRatingSummary: (rating, count) =>
+      `★ ${rating.toFixed(1)} · レビュー ${count.toLocaleString()}件`,
     transportModeTitle: '移動手段',
     routeOptimized: 'ルートを最適化しました',
     budgetPayer: '支払者',
@@ -471,6 +518,18 @@ export const PLAN_DETAIL_COPY: Record<
     visitFirstReview: '标记到访后可写点评',
     recordReview: '留下记录',
     quickRatingHint: '仅评分',
+    detailLoading: '正在加载评分与评价…',
+    notFound: '未找到地点信息。',
+    addressLabel: '地址',
+    phoneLabel: '电话',
+    hoursLabel: '营业时间',
+    openNow: '营业中',
+    closedNow: '已打烊',
+    reviewsTitle: 'Google 评价',
+    reviewsSource: '评价来自 Google Maps。',
+    openInGoogleMaps: '在 Google 地图中打开',
+    placeRatingSummary: (rating, count) =>
+      `★ ${rating.toFixed(1)} · ${count.toLocaleString()} 条评价`,
     transportModeTitle: '交通方式',
     routeOptimized: '路线已优化',
     budgetPayer: '付款人',

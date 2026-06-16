@@ -5,9 +5,20 @@ import {
   localizedAccommodationName,
   resolveAccommodationPlaceId,
 } from '../constants/accommodation';
+import {
+  ATTRACTION_MOCK_DETAILS,
+  getAttractionMockDetail,
+  resolveAttractionPlaceId,
+} from '../constants/attractionPlaces';
 import type { BusanAccommodation } from '../types/accommodation';
-import type { AccommodationPlaceDetail, GooglePlaceDetailsResponse, PlaceDetailVO } from '../types/googlePlaces';
+import type {
+  AccommodationPlaceDetail,
+  AttractionPlaceDetail,
+  GooglePlaceDetailsResponse,
+  PlaceDetailVO,
+} from '../types/googlePlaces';
 import type { AppLanguage } from '../types/user';
+import type { RouteItemType } from '../types/travelPlan';
 import { mapGooglePlaceDetailsResponse } from '../utils/googlePlacesMapper';
 
 export { mapGooglePlaceDetailsResponse, toPlaceInfo, toPlaceListItem } from '../utils/googlePlacesMapper';
@@ -47,6 +58,31 @@ export async function fetchAccommodationDetail(
 }
 
 /**
+ * Google Places Place Details API 연동 예정.
+ * 현재는 ATTRACTION_MOCK_DETAILS 목업을 반환합니다.
+ */
+export async function fetchAttractionDetail(
+  placeId: string,
+): Promise<AttractionPlaceDetail | null> {
+  await delay(250);
+  return getAttractionMockDetail(placeId);
+}
+
+export function shouldFetchGooglePlaceDetail(type: RouteItemType): boolean {
+  return type === 'ATTRACTION' || type === 'RESTAURANT';
+}
+
+export async function fetchRoutePlaceDetail(
+  placeId: string,
+  type: RouteItemType,
+): Promise<PlaceDetailVO | null> {
+  if (!shouldFetchGooglePlaceDetail(type)) {
+    return null;
+  }
+  return fetchAttractionDetail(placeId);
+}
+
+/**
  * Google Places Place Details API 연동 시 사용.
  * 백엔드가 Google 응답 JSON을 그대로 내려주거나, 앱이 Places API를 직접 호출할 때 map 후 반환.
  */
@@ -58,7 +94,9 @@ export async function fetchPlaceDetailFromGoogleResponse(
   return mapGooglePlaceDetailsResponse(response, options);
 }
 
-export function buildGoogleMapsUrl(detail: AccommodationPlaceDetail): string {
+export function buildGoogleMapsUrl(
+  detail: Pick<PlaceDetailVO, 'googlePlaceId' | 'name' | 'location'>,
+): string {
   const { googlePlaceId, name, location } = detail;
   const query = encodeURIComponent(name);
   return `https://www.google.com/maps/search/?api=1&query=${query}&query_place_id=${googlePlaceId}&center=${location.lat},${location.lng}`;
@@ -68,4 +106,8 @@ export function listKnownAccommodationPlaceIds(): string[] {
   return Object.keys(ACCOMMODATION_MOCK_DETAILS);
 }
 
-export { resolveAccommodationPlaceId };
+export function listKnownAttractionPlaceIds(): string[] {
+  return Object.keys(ATTRACTION_MOCK_DETAILS);
+}
+
+export { resolveAccommodationPlaceId, resolveAttractionPlaceId };

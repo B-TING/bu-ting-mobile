@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import { Linking, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 
 import { ACCOMMODATION_COPY, localizedAreaName } from '../../constants/accommodation';
 import { fetchAccommodationDetail, buildGoogleMapsUrl } from '../../services/googlePlacesService';
 import type { BusanAccommodation } from '../../types/accommodation';
 import type { AccommodationPlaceDetail } from '../../types/googlePlaces';
 import type { AppLanguage } from '../../types/user';
+import { PlaceGoogleDetailBody } from '../places/PlaceGoogleDetailBody';
 import { AppModal, AppModalActions } from '../shared/modals';
-import { GoogleReviewCard } from './GoogleReviewCard';
 
 type Copy = (typeof ACCOMMODATION_COPY)['ko'];
 
@@ -20,18 +20,6 @@ type AccommodationDetailSheetProps = {
   copy: Copy;
   onClose: () => void;
 };
-
-function DetailRow({ label, value }: { label: string; value?: string }) {
-  if (!value) {
-    return null;
-  }
-  return (
-    <View className="mt-3 flex-row">
-      <Text className="w-20 text-xs font-bold text-brand-muted">{label}</Text>
-      <Text className="flex-1 text-sm leading-5 text-brand-text">{value}</Text>
-    </View>
-  );
-}
 
 export function AccommodationDetailSheet({
   visible,
@@ -87,6 +75,20 @@ export function AccommodationDetailSheet({
     ).catch(() => {});
   };
 
+  const googleDetailCopy = {
+    detailLoading: copy.detailLoading,
+    notFound: copy.notFound,
+    addressLabel: copy.addressLabel,
+    phoneLabel: copy.phoneLabel,
+    hoursLabel: copy.hoursLabel,
+    openNow: copy.openNow,
+    closedNow: copy.closedNow,
+    reviewsTitle: copy.reviewsTitle,
+    reviewsSource: copy.reviewsSource,
+    priceLevelLabel: copy.priceLevelLabel,
+    priceLevel: copy.priceLevel,
+  };
+
   return (
     <AppModal
       visible={visible}
@@ -123,62 +125,13 @@ export function AccommodationDetailSheet({
           {copy.ratingSummary(stay.rating, stay.userRatingsTotal)}
         </Text>
 
-        {loading ? (
-          <View className="my-6 items-center">
-            <ActivityIndicator size="small" color="#0077B6" />
-            <Text className="mt-2 text-xs text-brand-muted">{copy.detailLoading}</Text>
-          </View>
-        ) : detail ? (
-          <>
-            {detail.editorialSummary ? (
-              <Text className="mt-3 text-sm leading-5 text-brand-text">{detail.editorialSummary}</Text>
-            ) : null}
-
-            <View className="mt-4 rounded-2xl border border-brand-border bg-brand-surface p-4">
-              <DetailRow label={copy.addressLabel} value={detail.formattedAddress} />
-              <DetailRow label={copy.phoneLabel} value={detail.phones?.international} />
-              {detail.priceLevel ? (
-                <DetailRow
-                  label={copy.priceLevelLabel}
-                  value={copy.priceLevel(detail.priceLevel)}
-                />
-              ) : null}
-              {detail.openingHours ? (
-                <View className="mt-3">
-                  <View className="flex-row items-center">
-                    <Text className="w-20 text-xs font-bold text-brand-muted">{copy.hoursLabel}</Text>
-                    <Text
-                      className={`text-xs font-semibold ${
-                        detail.openingHours.openNow ? 'text-emerald-600' : 'text-brand-muted'
-                      }`}>
-                      {detail.openingHours.openNow ? copy.openNow : copy.closedNow}
-                    </Text>
-                  </View>
-                </View>
-              ) : null}
-            </View>
-
-            {detail.reviews.length > 0 ? (
-              <View className="mt-4">
-                <Text className="text-sm font-bold text-brand-text">{copy.reviewsTitle}</Text>
-                <Text className="mt-0.5 text-[11px] text-brand-muted">{copy.reviewsSource}</Text>
-                <View className="mt-2">
-                  {detail.reviews.map((review, index) => (
-                    <GoogleReviewCard
-                      key={review.reviewId ?? `${review.authorName}-${index}`}
-                      review={review}
-                    />
-                  ))}
-                </View>
-              </View>
-            ) : null}
-          </>
-        ) : (
-          <View className="mt-4 rounded-2xl border border-brand-border bg-brand-surface p-4">
-            <DetailRow label={copy.addressLabel} value={stay.formattedAddress} />
-            <Text className="mt-2 text-xs text-brand-muted">{copy.notFound}</Text>
-          </View>
-        )}
+        <PlaceGoogleDetailBody
+          detail={detail}
+          loading={loading}
+          fallbackAddress={stay.formattedAddress}
+          copy={googleDetailCopy}
+          showPriceLevel
+        />
       </ScrollView>
     </AppModal>
   );
