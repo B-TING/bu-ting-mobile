@@ -15,6 +15,7 @@ import { ScheduleMapSplit } from '../schedule/ScheduleMapSplit';
 import { TravelLegRow } from '../schedule/TravelLegRow';
 import { ScheduleRouteSlot, type RebootPhase } from '../schedule/ScheduleRouteSlot';
 import type { PLAN_DETAIL_COPY } from '../../../constants/planDetail';
+import { getScheduleDayColor } from '../../../constants/scheduleDayColors';
 import { usePlanStore } from '../../../stores';
 import type { AppLanguage } from '../../../types/user';
 import type { PlaceReview } from '../../../types/travelReview';
@@ -273,9 +274,12 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
       [openNearestReboot, handleRouteOptimize, handleAddPlacePress],
     );
 
+    const dayColor = getScheduleDayColor(day?.dayNumber ?? 1);
+
     return (
       <ScheduleMapSplit
-        routes={dayRoutes}
+        planId={planId}
+        selectedDayNumber={day?.dayNumber ?? 1}
         mapTitle={copy.mapPlaceholder}
         mapSubtitle={copy.mapPlaceholderSub}
         dragLabel={copy.mapDragLabel}
@@ -288,9 +292,15 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
           />
 
           <View className="mb-2 flex-row items-baseline justify-between">
-            <Text className="text-lg font-bold text-brand-text">
-              {day?.date} · Day {day?.dayNumber}
-            </Text>
+            <View className="flex-row items-center gap-2">
+              <View
+                className="h-3 w-3 rounded-full"
+                style={{ backgroundColor: dayColor.main }}
+              />
+              <Text className="text-lg font-bold text-brand-text">
+                {day?.date} · Day {day?.dayNumber}
+              </Text>
+            </View>
             {dayDurationLabel ? (
               <Text className="text-xs font-semibold text-brand-muted">{dayDurationLabel}</Text>
             ) : null}
@@ -329,6 +339,8 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
                 <ScheduleRouteSlot
                   route={r}
                   displayIndex={index + 1}
+                  dayColor={dayColor.main}
+                  dayColorLight={dayColor.light}
                   phase={phaseFor(r.itemId)}
                   copy={slotCopy}
                   reviewRating={review?.rating ?? 0}

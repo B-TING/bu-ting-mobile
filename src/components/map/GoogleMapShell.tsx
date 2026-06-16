@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Platform, Pressable, Text, useWindowDimensions, View } from 'react-native';
 import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
 
@@ -16,7 +16,13 @@ type GoogleMapShellProps = {
   footer?: { title: string; subtitle: string };
   emptySubtitle?: string;
   children?: ReactNode;
+  /** true면 points 변경 시 카메라 region 자동 조정 (일정 지도) */
+  followPoints?: boolean;
 };
+
+function pointsSignature(points: MapPoint[]): string {
+  return points.map(point => `${point.lat.toFixed(5)},${point.lng.toFixed(5)}`).join('|');
+}
 
 export function GoogleMapShell({
   points,
@@ -27,16 +33,28 @@ export function GoogleMapShell({
   footer,
   emptySubtitle,
   children,
+  followPoints = false,
 }: GoogleMapShellProps) {
+  const mapRef = useRef<MapView>(null);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const mapWidth = size === 'fullscreen' ? screenWidth : screenWidth - (size === 'fill' ? 0 : 48);
   const mapHeight =
     size === 'fullscreen' ? screenHeight * 0.72 : size === 'fill' ? undefined : 160;
 
-  const initialRegion = useMemo(
+  const region = useMemo(
     () => regionFromPoints(points, focusPoint ? { focus: focusPoint } : undefined),
-    [focusPoint, points],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- signature stabilizes point changes
+    [pointsSignature(points), focusPoint?.lat, focusPoint?.lng],
   );
+
+  const regionSyncKey = pointsSignature(points);
+
+  useEffect(() => {
+    if (!followPoints || points.length === 0) {
+      return;
+    }
+    mapRef.current?.animateToRegion(region, 280);
+  }, [followPoints, points.length, region, regionSyncKey]);
 
   if (points.length === 0) {
     return (
@@ -58,9 +76,10 @@ export function GoogleMapShell({
         style={size === 'fill' ? { flex: 1, width: '100%' } : { width: '100%', height: mapHeight }}
         className="relative">
         <MapView
+          ref={mapRef}
           provider={PROVIDER_GOOGLE}
           style={{ width: mapWidth, height: size === 'fill' ? '100%' : mapHeight }}
-          initialRegion={initialRegion}
+          initialRegion={region}
           scrollEnabled={interactive}
           zoomEnabled={interactive}
           rotateEnabled={interactive}

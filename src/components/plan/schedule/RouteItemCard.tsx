@@ -7,6 +7,8 @@ import type { RouteItem } from '../../../types/travelPlan';
 type RouteItemCardProps = {
   route: RouteItem;
   displayIndex: number;
+  dayColor?: string;
+  dayColorLight?: string;
   onPress: () => void;
   onEditPress: () => void;
   onIndexPress?: () => void;
@@ -25,6 +27,8 @@ type RouteItemCardProps = {
 export function RouteItemCard({
   route,
   displayIndex,
+  dayColor = '#0077B6',
+  dayColorLight = '#E8F6FC',
   onPress,
   onEditPress,
   onIndexPress,
@@ -45,13 +49,22 @@ export function RouteItemCard({
   return (
     <View
       className="mb-2 flex-row rounded-2xl border bg-brand-surface p-3"
-      style={indexSelected ? styles.cardSelected : styles.cardDefault}>
+      style={
+        indexSelected
+          ? { borderColor: dayColor, borderWidth: 2, backgroundColor: dayColorLight }
+          : { borderColor: '#E2E8F0', borderLeftWidth: 4, borderLeftColor: dayColor }
+      }>
       <Pressable
         onPress={onIndexPress}
         disabled={!onIndexPress}
         className="mr-3 items-center"
         style={({ pressed }) => pressed && styles.pressed}>
-        <View style={[styles.indexCircle, indexSelected && styles.indexCircleSelected]}>
+        <View
+          style={[
+            styles.indexCircle,
+            { backgroundColor: dayColor },
+            indexSelected && { backgroundColor: dayColor, borderColor: '#FFFFFF' },
+          ]}>
           <Text style={styles.indexText}>{displayIndex}</Text>
         </View>
         <Text className="mt-1 max-w-[56px] text-center text-[9px] font-medium text-brand-muted">
@@ -115,25 +128,14 @@ export function RouteItemCard({
 }
 
 const styles = StyleSheet.create({
-  cardDefault: {
-    borderColor: '#E2E8F0',
-  },
-  cardSelected: {
-    borderColor: '#0077B6',
-    borderWidth: 2,
-  },
   indexCircle: {
     height: 36,
     width: 36,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 18,
-    backgroundColor: '#0077B6',
-  },
-  indexCircleSelected: {
-    backgroundColor: '#005A8C',
     borderWidth: 2,
-    borderColor: '#90E0EF',
+    borderColor: 'transparent',
   },
   indexText: {
     fontSize: 14,
