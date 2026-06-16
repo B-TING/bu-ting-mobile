@@ -1,6 +1,6 @@
 import { Text, View } from 'react-native';
 
-import { NaverMapPlaceholder } from '../map/NaverMapPlaceholder';
+import { RouteMapView } from '../../map/RouteMapView';
 import type { PLAN_DETAIL_COPY } from '../../../constants/planDetail';
 import type { AppLanguage } from '../../../types/user';
 import type { RouteItem } from '../../../types/travelPlan';
@@ -16,7 +16,7 @@ type PlanExploreTabProps = {
 export function PlanExploreTab({ copy, language, allRoutes }: PlanExploreTabProps) {
   return (
     <View className="px-4 pb-8">
-      <NaverMapPlaceholder
+      <RouteMapView
         title={copy.mapPlaceholder}
         subtitle={copy.mapPlaceholderSub}
         routes={allRoutes}

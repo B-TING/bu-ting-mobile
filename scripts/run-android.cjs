@@ -7,6 +7,12 @@ const {
   projectRoot,
 } = require('./lib/dev-android.cjs');
 
+spawnSync('node', ['scripts/sync-google-maps-key.cjs'], {
+  cwd: projectRoot,
+  stdio: 'inherit',
+  shell: true,
+});
+
 const port = Number(process.env.RCT_METRO_PORT || 8081);
 const { env, adb } = envWithAndroidSdk();
 

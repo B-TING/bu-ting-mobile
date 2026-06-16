@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { NaverMapPlaceholder } from '../map/NaverMapPlaceholder';
+import { RouteMapView } from '../../map/RouteMapView';
 import type { PlaceReview } from '../../../types/travelReview';
 import type { RouteItem } from '../../../types/travelPlan';
 import { StarRating } from '../../shared/rating/StarRating';
@@ -71,7 +71,7 @@ export function PlaceDetailModal({
       overlayAccessory={
         mapExpanded ? (
           <View style={[styles.mapLayer, { height: mapAreaHeight, paddingTop: insets.top }]}>
-            <NaverMapPlaceholder
+            <RouteMapView
               title={copy.mapPlaceholder}
               subtitle={copy.mapPlaceholderSub}
               routes={[route]}
@@ -104,7 +104,7 @@ export function PlaceDetailModal({
         )}
 
         {!mapExpanded && (
-          <NaverMapPlaceholder
+          <RouteMapView
             title={copy.mapPlaceholder}
             subtitle={copy.mapPlaceholderSub}
             routes={[route]}

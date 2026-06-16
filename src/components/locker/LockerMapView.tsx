@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { LayoutChangeEvent, Pressable, Text, useWindowDimensions, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import type { SubwayLockerStation } from '../../types/subwayLocker';
+import { GoogleMapShell } from '../map/GoogleMapShell';
+import { MapPinMarker } from '../map/MapPinMarker';
 
 type LockerMapViewProps = {
   stations: SubwayLockerStation[];
@@ -15,20 +16,6 @@ type LockerMapViewProps = {
   bookmarkedPinA11y?: (name: string, count: number) => string;
 };
 
-function project(
-  lat: number,
-  lng: number,
-  bounds: { minLat: number; maxLat: number; minLng: number; maxLng: number },
-  width: number,
-  height: number,
-) {
-  const latSpan = bounds.maxLat - bounds.minLat || 0.01;
-  const lngSpan = bounds.maxLng - bounds.minLng || 0.01;
-  const x = ((lng - bounds.minLng) / lngSpan) * (width - 24) + 12;
-  const y = (1 - (lat - bounds.minLat) / latSpan) * (height - 24) + 12;
-  return { left: x, top: y };
-}
-
 export function LockerMapView({
   stations,
   selectedId,
@@ -41,126 +28,49 @@ export function LockerMapView({
   lineLabel,
 }: LockerMapViewProps) {
   const bookmarkSet = new Set(bookmarkedIds);
-  const { width: screenWidth } = useWindowDimensions();
-  const mapWidth = screenWidth;
-  const [mapHeight, setMapHeight] = useState(280);
-
-  const handleMapLayout = (event: LayoutChangeEvent) => {
-    const nextHeight = event.nativeEvent.layout.height;
-    if (nextHeight > 0) {
-      setMapHeight(nextHeight);
-    }
-  };
-
-  if (stations.length === 0) {
-    return (
-      <View className="flex-1 items-center justify-center bg-[#E8F4E8]">
-        <Text className="text-sm text-brand-muted">{mapSubtitle}</Text>
-      </View>
-    );
-  }
-
-  const focused = selectedId ? stations.find(s => s.id === selectedId) : undefined;
-
-  const bounds = focused
-    ? {
-        minLat: focused.location.lat - 0.012,
-        maxLat: focused.location.lat + 0.012,
-        minLng: focused.location.lng - 0.018,
-        maxLng: focused.location.lng + 0.018,
-      }
-    : (() => {
-        const lats = stations.map(s => s.location.lat);
-        const lngs = stations.map(s => s.location.lng);
-        return {
-          minLat: Math.min(...lats) - 0.01,
-          maxLat: Math.max(...lats) + 0.01,
-          minLng: Math.min(...lngs) - 0.01,
-          maxLng: Math.max(...lngs) + 0.01,
-        };
-      })();
+  const points = stations.map(station => station.location);
+  const focusPoint = selectedId
+    ? stations.find(station => station.id === selectedId)?.location
+    : undefined;
 
   return (
-    <View className="flex-1 bg-[#E8F4E8]">
-      <View className="relative flex-1" onLayout={handleMapLayout}>
-        <View className="absolute inset-0 opacity-30">
-          {Array.from({ length: 10 }).map((_, row) => (
-            <View key={row} className="flex-1 flex-row">
-              {Array.from({ length: 8 }).map((__, col) => (
-                <View key={col} className="flex-1 border border-[#C8E6C9]" />
-              ))}
-            </View>
-          ))}
-        </View>
-
+    <View className="flex-1">
+      <GoogleMapShell
+        points={points}
+        focusPoint={focusPoint}
+        size="fill"
+        emptySubtitle={mapSubtitle}
+        footer={{ title: mapTitle, subtitle: mapSubtitle }}>
         {stations.map(station => {
           const active = station.id === selectedId;
           const bookmarked = bookmarkSet.has(station.id);
-          const pos = project(
-            station.location.lat,
-            station.location.lng,
-            bounds,
-            mapWidth,
-            mapHeight,
-          );
           const countLabel =
-            station.lockers.total >= 100
-              ? '99+'
-              : String(station.lockers.total);
-
-          const pinColor = active ? '#0077B6' : bookmarked ? '#F59E0B' : '#03C75A';
+            station.lockers.total >= 100 ? '99+' : String(station.lockers.total);
+          const pinColor = active ? '#0077B6' : bookmarked ? '#F59E0B' : '#4285F4';
           const pinEmoji = bookmarked ? '📌' : '🧳';
 
           return (
-            <Pressable
+            <MapPinMarker
               key={station.id}
+              point={station.location}
+              active={active}
+              color={pinColor}
               onPress={() => onSelectStation?.(station)}
-              accessibilityRole="button"
               accessibilityLabel={
                 bookmarked && bookmarkedPinA11y
                   ? bookmarkedPinA11y(station.name, station.lockers.total)
                   : pinA11y(station.name, station.lockers.total)
               }
-              className="absolute items-center"
-              style={{ left: pos.left - 22, top: pos.top - 28 }}>
-              <View
-                className="min-w-[44px] items-center justify-center rounded-full border-2 border-white px-2 py-1"
-                style={{
-                  backgroundColor: pinColor,
-                  shadowColor: '#000',
-                  shadowOpacity: 0.2,
-                  shadowRadius: 3,
-                  shadowOffset: { width: 0, height: 1 },
-                  elevation: 3,
-                }}>
-                <Text className="text-[10px]">{pinEmoji}</Text>
-                <Text className="text-[11px] font-bold text-white">{countLabel}</Text>
-              </View>
-              {bookmarked ? (
-                <View className="absolute -right-1 -top-1 h-4 w-4 items-center justify-center rounded-full bg-white">
-                  <Text className="text-[8px]">⭐</Text>
-                </View>
-              ) : null}
-              {active ? (
-                <View className="mt-1 rounded-md bg-white/95 px-2 py-0.5">
-                  <Text className="text-[10px] font-bold text-brand-text">
-                    {lineLabel ? `${station.name} · ${lineLabel(station.line)}` : station.name}
-                  </Text>
-                </View>
-              ) : null}
-            </Pressable>
+              caption={
+                lineLabel ? `${station.name} · ${lineLabel(station.line)}` : station.name
+              }>
+              <Text className="text-[10px]">{pinEmoji}</Text>
+              <Text className="text-[11px] font-bold text-white">{countLabel}</Text>
+              {bookmarked ? <Text className="text-[8px]">⭐</Text> : null}
+            </MapPinMarker>
           );
         })}
-
-        <View className="absolute bottom-3 left-3 rounded-md bg-white/90 px-2 py-1">
-          <Text className="text-[10px] font-bold text-[#03C75A]">NAVER</Text>
-        </View>
-      </View>
-
-      <View className="border-t border-brand-border bg-brand-surface px-3 py-2">
-        <Text className="text-xs font-semibold text-brand-text">{mapTitle}</Text>
-        <Text className="text-[11px] text-brand-muted">{mapSubtitle}</Text>
-      </View>
+      </GoogleMapShell>
     </View>
   );
 }
