@@ -35,7 +35,8 @@ local.properties
 !debug.keystore
 .kotlin/
 
-# Local env (ngrok token 등)
+# Local env (API keys, ngrok token 등 — 커밋 금지)
+.env
 .env.local
 
 # node.js

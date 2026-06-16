@@ -105,7 +105,31 @@ $env:NGROK_AUTHTOKEN="여기에_토큰"
 npm run start:tunnel
 ```
 
-`env.local.example`을 `.env.local`로 복사해 `NGROK_AUTHTOKEN=`에 넣어도 됩니다.
+`env.local.example`을 `.env.local`로 복사해 `NGROK_AUTHTOKEN=`에 넣어도 됩니다.  
+또는 `.env.example` → `.env` 로 복사해 한 파일에 ngrok·Google 키를 함께 관리할 수 있습니다.
+
+#### Google Places API (TourAPI ↔ place_id 연동)
+
+공공데이터 장소명·좌표로 Google `place_id`를 역추적할 때 사용합니다. **API 키는 `.env`에만 두고 git에 올리지 마세요.**
+
+```bash
+# 1) 템플릿 복사
+copy .env.example .env          # Windows
+# cp .env.example .env          # macOS/Linux
+
+# 2) .env 에 GOOGLE_PLACES_API_KEY= 발급 키 입력
+
+# 3) Find Place 테스트 (장소명, 위도, 경도)
+npm run places:resolve -- "해동용궁사" 35.1885 129.2233
+```
+
+| 변수 | 설명 |
+|------|------|
+| `GOOGLE_PLACES_API_KEY` | [Google Cloud Console](https://console.cloud.google.com/google/maps-apis) Places API 키 |
+| `GOOGLE_PLACES_FIND_RADIUS_M` | Find Place `locationbias` 반경(m). 기본 `150` (50~200 권장) |
+| `GOOGLE_PLACES_LANGUAGE` | 응답 언어. 기본 `ko` |
+
+> Find Place·Place Details 호출은 **백엔드**에서 수행하고, 모바일 앱에는 `place_id`와 캐시된 상세만 내려주는 구성을 권장합니다. Node 스크립트(`scripts/resolve-place-id.cjs`)는 배치 매핑·로컬 검증용입니다.
 
 ### 3. 앱 실행
 

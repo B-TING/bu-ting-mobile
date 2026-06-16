@@ -15,6 +15,7 @@
     "connect:android": "node scripts/connect-android.cjs",
     "start:tunnel": "node scripts/start-tunnel.cjs",
     "ngrok:auth": "node scripts/ngrok-auth.cjs",
+    "places:resolve": "node scripts/resolve-place-id.cjs",
     "test": "jest",
     "icons:generate": "node scripts/generate-app-icons.cjs"
   },
