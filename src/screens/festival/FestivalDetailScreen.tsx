@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FestivalCommentsModal } from '../../components/festival/FestivalCommentsModal';
 import { FestivalDetailHero } from '../../components/festival/FestivalDetailHero';
-import { NaverMapPlaceholder } from '../../components/plan/map/NaverMapPlaceholder';
+import { RouteMapView } from '../../components/map/RouteMapView';
 import { BackButton } from '../../components/shared/buttons/BackButton';
 import {
   FESTIVAL_CALENDAR_COPY,
@@ -61,7 +61,7 @@ export function FestivalDetailScreen({ navigation, route }: Props) {
 
       <View className="min-h-0 flex-1">
         <View className="min-h-0 border-b border-brand-border" style={{ flex: 2 }}>
-          <NaverMapPlaceholder
+          <RouteMapView
             title={copy.mapTitle}
             subtitle={copy.mapSubtitle}
             routes={mapRoutes}

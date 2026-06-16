@@ -39,7 +39,7 @@ export const LUGGAGE_STORAGE_COPY: Record<
 > = {
   ko: {
     screenTitle: '짐 보관소',
-    mapTitle: '네이버 지도 (준비 중)',
+    mapTitle: 'Google 지도',
     mapSubtitle: '지하철역 물품보관함 위치',
     summary: (stations, lockers) => `${stations}개 역 · 보관함 ${lockers}개`,
     loading: '역시설물 정보를 불러오는 중…',
@@ -73,7 +73,7 @@ export const LUGGAGE_STORAGE_COPY: Record<
   },
   en: {
     screenTitle: 'Luggage storage',
-    mapTitle: 'Naver Map (coming soon)',
+    mapTitle: 'Google Maps',
     mapSubtitle: 'Subway locker locations',
     summary: (stations, lockers) => `${stations} stations · ${lockers} lockers`,
     loading: 'Loading station facilities…',
@@ -107,7 +107,7 @@ export const LUGGAGE_STORAGE_COPY: Record<
   },
   ja: {
     screenTitle: '荷物預かり',
-    mapTitle: 'NAVERマップ（準備中）',
+    mapTitle: 'Googleマップ',
     mapSubtitle: '地下鉄駅ロッカー位置',
     summary: (stations, lockers) => `${stations}駅 · ロッカー${lockers}個`,
     loading: '駅施設情報を読み込み中…',
@@ -141,7 +141,7 @@ export const LUGGAGE_STORAGE_COPY: Record<
   },
   zh: {
     screenTitle: '行李寄存',
-    mapTitle: 'Naver 地图（即将上线）',
+    mapTitle: 'Google 地图',
     mapSubtitle: '地铁站寄存柜位置',
     summary: (stations, lockers) => `${stations} 个站 · ${lockers} 个柜子`,
     loading: '正在加载车站设施信息…',

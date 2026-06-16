@@ -35,8 +35,13 @@ local.properties
 !debug.keystore
 .kotlin/
 
-# Local env (ngrok token 등)
+# Local env (API keys, ngrok token 등 — 커밋 금지)
+.env
 .env.local
+
+# Google Maps SDK keys (npm run maps:sync 로 생성)
+android/app/src/main/res/values/google_maps_api.xml
+ios/BUTingMobile/GoogleMapsApiKey.swift
 
 # node.js
 #

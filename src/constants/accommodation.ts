@@ -43,7 +43,7 @@ export const ACCOMMODATION_COPY: Record<
     emptySub: '다른 지역을 확인해 보세요',
     summary: (count, areaCount) => `${areaCount}개 권역 · 숙소 ${count}곳`,
     dataHint: '평점·리뷰는 Google Maps API 연동 예정',
-    mapTitle: '지도 (준비 중)',
+    mapTitle: 'Google 지도',
     mapSubtitle: '부산 주요 숙소 위치',
     selectHint: '지도에서 숙소를 선택하면 평점·리뷰를 볼 수 있어요',
     close: '닫기',
@@ -71,7 +71,7 @@ export const ACCOMMODATION_COPY: Record<
     emptySub: 'Try another area',
     summary: (count, areaCount) => `${areaCount} areas · ${count} stays`,
     dataHint: 'Ratings and reviews via Google Maps API (planned)',
-    mapTitle: 'Map (coming soon)',
+    mapTitle: 'Google Maps',
     mapSubtitle: 'Major stays in Busan',
     selectHint: 'Select a stay on the map to see ratings and reviews',
     close: 'Close',
@@ -99,7 +99,7 @@ export const ACCOMMODATION_COPY: Record<
     emptySub: '他のエリアを確認してください',
     summary: (count, areaCount) => `${areaCount}エリア · 宿泊 ${count}件`,
     dataHint: '評価・レビューはGoogle Maps API連携予定',
-    mapTitle: '地図（準備中）',
+    mapTitle: 'Googleマップ',
     mapSubtitle: '釜山の主要宿泊施設',
     selectHint: '地図で宿を選ぶと評価・レビューが表示されます',
     close: '閉じる',
@@ -127,7 +127,7 @@ export const ACCOMMODATION_COPY: Record<
     emptySub: '请尝试其他区域',
     summary: (count, areaCount) => `${areaCount} 个区域 · ${count} 家住宿`,
     dataHint: '评分与评价将通过 Google Maps API 接入',
-    mapTitle: '地图（即将推出）',
+    mapTitle: 'Google 地图',
     mapSubtitle: '釜山主要住宿位置',
     selectHint: '在地图上选择住宿即可查看评分与评价',
     close: '关闭',
@@ -148,28 +148,28 @@ export const ACCOMMODATION_COPY: Record<
   },
 };
 
-const MOCK_REVIEWS = {
+const MOCK_REVIEWS: Record<string, import('../types/googlePlaces').PlaceReviewVO[]> = {
   paradise: [
     {
       authorName: '김민지',
       rating: 5,
       text: '해운대 바다뷰가 정말 좋아요. 조식도 훌륭하고 직원분들이 친절합니다.',
-      relativeTimeDescription: '2주 전',
-      time: 1715000000,
+      relativePublishTimeDescription: '2주 전',
+      publishTime: '2026-05-19T00:00:00.000Z',
     },
     {
       authorName: 'James Park',
       rating: 4,
       text: 'Great location near the beach. Room was clean but a bit pricey for the season.',
-      relativeTimeDescription: '1개월 전',
-      time: 1712000000,
+      relativePublishTimeDescription: '1개월 전',
+      publishTime: '2026-04-01T00:00:00.000Z',
     },
     {
       authorName: '佐藤花子',
       rating: 5,
       text: 'ロビーからの眺めが最高。チェックインもスムーズでした。',
-      relativeTimeDescription: '2개월 전',
-      time: 1709000000,
+      relativePublishTimeDescription: '2개월 전',
+      publishTime: '2026-03-01T00:00:00.000Z',
     },
   ],
   signiel: [
@@ -177,15 +177,15 @@ const MOCK_REVIEWS = {
       authorName: '이서준',
       rating: 5,
       text: '부산 최고급 호텔답게 서비스와 전망 모두 만족스러웠습니다.',
-      relativeTimeDescription: '3일 전',
-      time: 1716000000,
+      relativePublishTimeDescription: '3일 전',
+      publishTime: '2026-06-12T00:00:00.000Z',
     },
     {
       authorName: 'Chen Wei',
       rating: 5,
       text: 'Stunning ocean view from the lounge. Worth every won.',
-      relativeTimeDescription: '2주 전',
-      time: 1714800000,
+      relativePublishTimeDescription: '2주 전',
+      publishTime: '2026-05-29T00:00:00.000Z',
     },
   ],
   lotte: [
@@ -193,15 +193,15 @@ const MOCK_REVIEWS = {
       authorName: '박지훈',
       rating: 4,
       text: '서면 중심이라 쇼핑·교통 편해요. 객실은 조용하고 깔끔합니다.',
-      relativeTimeDescription: '1주 전',
-      time: 1715500000,
+      relativePublishTimeDescription: '1주 전',
+      publishTime: '2026-06-08T00:00:00.000Z',
     },
     {
       authorName: 'Maria Lopez',
       rating: 4,
       text: 'Central Seomyeon location. Easy access to subway and restaurants.',
-      relativeTimeDescription: '3주 전',
-      time: 1713500000,
+      relativePublishTimeDescription: '3주 전',
+      publishTime: '2026-05-25T00:00:00.000Z',
     },
   ],
   nampo: [
@@ -209,15 +209,15 @@ const MOCK_REVIEWS = {
       authorName: '최유나',
       rating: 4,
       text: '가성비 좋은 게스트하우스. 남포·자갈치 산책하기 좋아요.',
-      relativeTimeDescription: '5일 전',
-      time: 1715800000,
+      relativePublishTimeDescription: '5일 전',
+      publishTime: '2026-06-10T00:00:00.000Z',
     },
     {
       authorName: 'Tom Baker',
       rating: 3,
       text: 'Basic but clean. Shared kitchen was useful for budget travelers.',
-      relativeTimeDescription: '1개월 전',
-      time: 1712500000,
+      relativePublishTimeDescription: '1개월 전',
+      publishTime: '2026-05-02T00:00:00.000Z',
     },
   ],
   gwangan: [
@@ -225,29 +225,43 @@ const MOCK_REVIEWS = {
       authorName: '정하늘',
       rating: 4,
       text: '광안대교 야경이 보이는 객실이 인상적이었어요.',
-      relativeTimeDescription: '1주 전',
-      time: 1715400000,
+      relativePublishTimeDescription: '1주 전',
+      publishTime: '2026-06-08T00:00:00.000Z',
     },
     {
       authorName: 'Anna Kim',
       rating: 5,
       text: 'Perfect for Gwangalli night views. Beach is right across the street.',
-      relativeTimeDescription: '2주 전',
-      time: 1714700000,
+      relativePublishTimeDescription: '2주 전',
+      publishTime: '2026-05-29T00:00:00.000Z',
     },
   ],
-} as const;
+};
+
+function mockAccommodationDetail(
+  entry: Omit<AccommodationPlaceDetail, 'kind' | 'googleTypes' | 'photos'> & {
+    googleTypes?: string[];
+    photos?: AccommodationPlaceDetail['photos'];
+  },
+): AccommodationPlaceDetail {
+  return {
+    ...entry,
+    kind: 'accommodation',
+    googleTypes: entry.googleTypes ?? ['lodging', 'hotel'],
+    photos: entry.photos ?? [],
+  };
+}
 
 /** Google Places API 연동 전 목업 — internalPlaceId(stay_*) 키 */
 export const ACCOMMODATION_MOCK_DETAILS: Record<string, AccommodationPlaceDetail> = {
-  stay_paradise: {
+  stay_paradise: mockAccommodationDetail({
     internalPlaceId: 'stay_paradise',
     googlePlaceId: 'ChIJmock_paradise_hotel_busan',
     name: '파라다이스 호텔 부산',
     formattedAddress: '부산광역시 해운대구 해운대해변로 296',
     location: { lat: 35.158, lng: 129.165 },
     rating: 4.5,
-    userRatingsTotal: 3842,
+    userRatingCount: 3842,
     openingHours: {
       openNow: true,
       weekdayDescriptions: [
@@ -260,88 +274,85 @@ export const ACCOMMODATION_MOCK_DETAILS: Record<string, AccommodationPlaceDetail
         '일요일: 24시간',
       ],
     },
-    internationalPhoneNumber: '+82-51-742-2121',
-    website: 'https://www.busanparadisehotel.co.kr',
+    phones: { international: '+82-51-742-2121' },
+    websiteUri: 'https://www.busanparadisehotel.co.kr',
     priceLevel: 4,
-    types: ['lodging', 'hotel'],
+    googleTypes: ['lodging', 'hotel'],
     editorialSummary:
       '해운대 해변과 인접한 5성급 리조트 호텔. 오션뷰 객실과 스파·수영장 시설을 갖추고 있습니다.',
-    reviews: [...MOCK_REVIEWS.paradise],
-  },
-  stay_signiel: {
+    reviews: MOCK_REVIEWS.paradise,
+  }),
+  stay_signiel: mockAccommodationDetail({
     internalPlaceId: 'stay_signiel',
     googlePlaceId: 'ChIJmock_signiel_busan',
     name: '시그니엘 부산',
     formattedAddress: '부산광역시 해운대구 마린시티2로 38',
     location: { lat: 35.163, lng: 129.17 },
     rating: 4.8,
-    userRatingsTotal: 2156,
+    userRatingCount: 2156,
     openingHours: {
       openNow: true,
       weekdayDescriptions: ['월요일: 24시간', '화요일: 24시간', '수요일: 24시간', '목요일: 24시간', '금요일: 24시간', '토요일: 24시간', '일요일: 24시간'],
     },
-    internationalPhoneNumber: '+82-51-922-9000',
-    website: 'https://www.signiel.com/busan',
+    phones: { international: '+82-51-922-9000' },
+    websiteUri: 'https://www.signiel.com/busan',
     priceLevel: 4,
-    types: ['lodging', 'hotel'],
     editorialSummary: '마린시티 랜드마크 초고층 호텔. 파노라마 오션뷰와 미슐랭 레스토랑이 특징입니다.',
-    reviews: [...MOCK_REVIEWS.signiel],
-  },
-  stay_lotte: {
+    reviews: MOCK_REVIEWS.signiel,
+  }),
+  stay_lotte: mockAccommodationDetail({
     internalPlaceId: 'stay_lotte',
     googlePlaceId: 'ChIJmock_lotte_hotel_busan',
     name: '롯데 호텔 부산',
     formattedAddress: '부산광역시 부산진구 가야대로 772',
     location: { lat: 35.157, lng: 129.055 },
     rating: 4.4,
-    userRatingsTotal: 4521,
+    userRatingCount: 4521,
     openingHours: {
       openNow: true,
       weekdayDescriptions: ['월요일: 24시간', '화요일: 24시간', '수요일: 24시간', '목요일: 24시간', '금요일: 24시간', '토요일: 24시간', '일요일: 24시간'],
     },
-    internationalPhoneNumber: '+82-51-810-5101',
-    website: 'https://www.lottehotel.com/busan',
+    phones: { international: '+82-51-810-5101' },
+    websiteUri: 'https://www.lottehotel.com/busan',
     priceLevel: 4,
-    types: ['lodging', 'hotel'],
     editorialSummary: '서면 중심가에 위치한 비즈니스·관광 겸용 호텔입니다.',
-    reviews: [...MOCK_REVIEWS.lotte],
-  },
-  stay_nampo_gh: {
+    reviews: MOCK_REVIEWS.lotte,
+  }),
+  stay_nampo_gh: mockAccommodationDetail({
     internalPlaceId: 'stay_nampo_gh',
     googlePlaceId: 'ChIJmock_nampo_guesthouse',
     name: '남포 게스트하우스',
     formattedAddress: '부산광역시 중구 광복로 일대',
     location: { lat: 35.099, lng: 129.034 },
     rating: 4.1,
-    userRatingsTotal: 892,
+    userRatingCount: 892,
     openingHours: {
       openNow: true,
       weekdayDescriptions: ['월요일: 15:00 - 22:00', '화요일: 15:00 - 22:00', '수요일: 15:00 - 22:00', '목요일: 15:00 - 22:00', '금요일: 15:00 - 23:00', '토요일: 15:00 - 23:00', '일요일: 15:00 - 22:00'],
     },
-    internationalPhoneNumber: '+82-10-1234-5678',
+    phones: { international: '+82-10-1234-5678' },
     priceLevel: 1,
-    types: ['lodging', 'guest_house'],
+    googleTypes: ['lodging', 'guest_house'],
     editorialSummary: '남포·BIFF 광장 근처의 아늑한 게스트하우스. 배낭 여행객에게 인기 있습니다.',
-    reviews: [...MOCK_REVIEWS.nampo],
-  },
-  stay_gwangan: {
+    reviews: MOCK_REVIEWS.nampo,
+  }),
+  stay_gwangan: mockAccommodationDetail({
     internalPlaceId: 'stay_gwangan',
     googlePlaceId: 'ChIJmock_gwangan_beach_hotel',
     name: '광안리 비치 호텔',
     formattedAddress: '부산광역시 수영구 광안해변로 219',
     location: { lat: 35.154, lng: 129.118 },
     rating: 4.3,
-    userRatingsTotal: 1678,
+    userRatingCount: 1678,
     openingHours: {
       openNow: true,
       weekdayDescriptions: ['월요일: 24시간', '화요일: 24시간', '수요일: 24시간', '목요일: 24시간', '금요일: 24시간', '토요일: 24시간', '일요일: 24시간'],
     },
-    internationalPhoneNumber: '+82-51-622-8000',
+    phones: { international: '+82-51-622-8000' },
     priceLevel: 3,
-    types: ['lodging', 'hotel'],
     editorialSummary: '광안리 해변과 광안대교 야경을 즐기기 좋은 비치프론트 호텔입니다.',
-    reviews: [...MOCK_REVIEWS.gwangan],
-  },
+    reviews: MOCK_REVIEWS.gwangan,
+  }),
 };
 
 /** route.placeId 또는 wizard accommodation id → mock lookup key */
@@ -378,10 +389,10 @@ export function buildBusanAccommodationListings(): BusanAccommodation[] {
         areaLabel: area.label,
         location: { lat: stay.meta.lat, lng: stay.meta.lng },
         rating: detail?.rating ?? 0,
-        userRatingsTotal: detail?.userRatingsTotal ?? 0,
+        userRatingsTotal: detail?.userRatingCount ?? 0,
         formattedAddress: detail?.formattedAddress ?? '',
-        priceLevel: detail?.priceLevel,
-        stayType: detail?.types[1] ?? 'lodging',
+        priceLevel: detail?.priceLevel as BusanAccommodation['priceLevel'],
+        stayType: detail?.googleTypes[1] ?? detail?.googleTypes[0] ?? 'lodging',
       },
     ];
   });

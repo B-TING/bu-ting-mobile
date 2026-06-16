@@ -3,7 +3,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { NaverMapPlaceholder } from '../../components/plan/map/NaverMapPlaceholder';
+import { RouteMapView } from '../../components/map/RouteMapView';
 import { TravelogueCommentsSection } from '../../components/feed/TravelogueCommentsSection';
 import { ImportPlanModal } from '../../components/feed/modals/ImportPlanModal';
 import { TravelogueCommentModal } from '../../components/feed/modals/TravelogueCommentModal';
@@ -156,7 +156,7 @@ function TravelogueDetailBody({
 
       {mapRoutes.length > 0 ? (
         <View className="border-b border-brand-border bg-brand-surface px-4 py-3">
-          <NaverMapPlaceholder
+          <RouteMapView
             title={copy.mapTitle}
             subtitle={copy.mapSubtitle}
             routes={mapRoutes}

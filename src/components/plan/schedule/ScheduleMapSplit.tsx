@@ -10,7 +10,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { routeFabScrollPadding } from '../fab/RouteOptimizeFab';
-import { NaverMapPlaceholder } from '../map/NaverMapPlaceholder';
+import { RouteMapView } from '../../map/RouteMapView';
 import type { RouteItem } from '../../../types/travelPlan';
 
 const DEFAULT_SCHEDULE_RATIO = 0.38;
@@ -119,7 +119,7 @@ export function ScheduleMapSplit({
   return (
     <View className="flex-1" onLayout={handleContainerLayout}>
       <View className="min-h-0 flex-1 overflow-hidden bg-[#E8F4E8]">
-        <NaverMapPlaceholder
+        <RouteMapView
           title={mapTitle}
           subtitle={mapSubtitle}
           routes={routes}

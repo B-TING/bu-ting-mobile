@@ -1,0 +1,4 @@
+// npm run maps:sync 로 .env 키가 채워집니다.
+enum GoogleMapsApiKey {
+  static let value = ""
+}

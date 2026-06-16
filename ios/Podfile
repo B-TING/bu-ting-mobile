@@ -15,6 +15,9 @@ if linkage != nil
 end
 
 target 'BUTingMobile' do
+  rn_maps_path = File.dirname(`node --print "require.resolve('react-native-maps/package.json')"`)
+  pod 'react-native-maps/Google', :path => rn_maps_path
+
   config = use_native_modules!
 
   use_react_native!(
