@@ -120,16 +120,16 @@ export const QUICK_ACCESS_ITEMS: QuickAccessItem[] = [
   },
 
   {
+    id: 'attractions',
+    icon: '🏛️',
+    labelKo: '관광지',
+    labelEn: 'Attractions',
+  },
+  {
     id: 'festivals',
     icon: '📅',
     labelKo: '축제 캘린더',
     labelEn: 'Festivals',
-  },
-  {
-    id: 'help',
-    icon: '✱',
-    labelKo: '헬프데스크',
-    labelEn: 'Help Desk',
   },
   {
     id: 'funCorner',

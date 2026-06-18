@@ -1,6 +1,8 @@
 import { localizedAreaName } from '../constants/accommodation';
+import { localizedAttractionCategory } from '../constants/attractions';
 import { getScheduleDayColor } from '../constants/scheduleDayColors';
 import type { BusanAccommodation } from '../types/accommodation';
+import type { BusanAttraction } from '../types/attraction';
 import type { KakaoMapOverlay } from '../types/kakaoMapOverlay';
 import type { SubwayLockerStation } from '../types/subwayLocker';
 import type { AppLanguage } from '../types/user';
@@ -109,23 +111,64 @@ export function kakaoOverlaysFromRoutes(
 export function kakaoOverlaysFromStays(
   stays: BusanAccommodation[],
   selectedId: string | null | undefined,
+  bookmarkedIds: readonly string[],
   options: {
     language: AppLanguage;
     areaLabel: (area: string) => string;
   },
 ): KakaoMapOverlay[] {
+  const bookmarkSet = new Set(bookmarkedIds);
+
   return stays.map(stay => {
     const active = stay.id === selectedId;
+    const bookmarked = bookmarkSet.has(stay.id);
+    const pinColor = bookmarked ? '#F59E0B' : '#4285F4';
+
     return {
       kind: 'rating',
       id: stay.id,
       lat: stay.location.lat,
       lng: stay.location.lng,
       rating: stay.rating > 0 ? stay.rating.toFixed(1) : '—',
-      color: active ? '#0077B6' : '#4285F4',
+      color: pinColor,
       active,
+      bookmarked,
       caption: active
         ? `${stay.name} · ${options.areaLabel(localizedAreaName(stay, options.language))}`
+        : undefined,
+    };
+  });
+}
+
+export function kakaoOverlaysFromAttractions(
+  attractions: BusanAttraction[],
+  selectedId: string | null | undefined,
+  bookmarkedIds: readonly string[],
+  options: {
+    language: AppLanguage;
+    categoryLabel: (category: string) => string;
+  },
+): KakaoMapOverlay[] {
+  const bookmarkSet = new Set(bookmarkedIds);
+
+  return attractions.map(attraction => {
+    const active = attraction.id === selectedId;
+    const bookmarked = bookmarkSet.has(attraction.id);
+    const pinColor = bookmarked ? '#F59E0B' : '#4285F4';
+
+    return {
+      kind: 'rating',
+      id: attraction.id,
+      lat: attraction.location.lat,
+      lng: attraction.location.lng,
+      rating: attraction.rating > 0 ? attraction.rating.toFixed(1) : '—',
+      color: pinColor,
+      active,
+      bookmarked,
+      caption: active
+        ? `${attraction.name} · ${options.categoryLabel(
+            localizedAttractionCategory(attraction, options.language),
+          )}`
         : undefined,
     };
   });
@@ -146,7 +189,7 @@ export function kakaoOverlaysFromLockerStations(
   return stations.map(station => {
     const active = station.id === selectedId;
     const bookmarked = bookmarkSet.has(station.id);
-    const pinColor = active ? '#0077B6' : bookmarked ? '#F59E0B' : '#4285F4';
+    const pinColor = bookmarked ? '#F59E0B' : '#4285F4';
 
     return {
       kind: 'locker',

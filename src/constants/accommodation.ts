@@ -31,6 +31,9 @@ export const ACCOMMODATION_COPY: Record<
     closedNow: string;
     priceLevel: (level: number) => string;
     pinA11y: (name: string, rating: number) => string;
+    bookmarkedPinA11y: (name: string, rating: number) => string;
+    bookmark: string;
+    unbookmark: string;
     areaLabel: (area: string) => string;
   }
 > = {
@@ -60,6 +63,9 @@ export const ACCOMMODATION_COPY: Record<
     closedNow: '영업 종료',
     priceLevel: level => '₩'.repeat(Math.min(level, 4)),
     pinA11y: (name, rating) => `${name}, 별점 ${rating.toFixed(1)}`,
+    bookmarkedPinA11y: (name, rating) => `북마크한 ${name}, 별점 ${rating.toFixed(1)}`,
+    bookmark: '북마크',
+    unbookmark: '북마크 해제',
     areaLabel: area => area,
   },
   en: {
@@ -88,6 +94,9 @@ export const ACCOMMODATION_COPY: Record<
     closedNow: 'Closed',
     priceLevel: level => '$'.repeat(Math.min(level, 4)),
     pinA11y: (name, rating) => `${name}, rating ${rating.toFixed(1)}`,
+    bookmarkedPinA11y: (name, rating) => `Bookmarked ${name}, rating ${rating.toFixed(1)}`,
+    bookmark: 'Bookmark',
+    unbookmark: 'Remove bookmark',
     areaLabel: area => area,
   },
   ja: {
@@ -116,6 +125,9 @@ export const ACCOMMODATION_COPY: Record<
     closedNow: '営業終了',
     priceLevel: level => '¥'.repeat(Math.min(level, 4)),
     pinA11y: (name, rating) => `${name}、評価 ${rating.toFixed(1)}`,
+    bookmarkedPinA11y: (name, rating) => `ブックマーク済み ${name}、評価 ${rating.toFixed(1)}`,
+    bookmark: 'ブックマーク',
+    unbookmark: 'ブックマーク解除',
     areaLabel: area => area,
   },
   zh: {
@@ -144,6 +156,9 @@ export const ACCOMMODATION_COPY: Record<
     closedNow: '已打烊',
     priceLevel: level => '¥'.repeat(Math.min(level, 4)),
     pinA11y: (name, rating) => `${name}，评分 ${rating.toFixed(1)}`,
+    bookmarkedPinA11y: (name, rating) => `已收藏 ${name}，评分 ${rating.toFixed(1)}`,
+    bookmark: '收藏',
+    unbookmark: '取消收藏',
     areaLabel: area => area,
   },
 };

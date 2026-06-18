@@ -8,6 +8,7 @@ import { layout } from '../constants/layout';
 import { FestivalCalendarScreen } from '../screens/festival/FestivalCalendarScreen';
 import { FestivalDetailScreen } from '../screens/festival/FestivalDetailScreen';
 import { BusanAccommodationScreen } from '../screens/accommodation/BusanAccommodationScreen';
+import { BusanAttractionScreen } from '../screens/attraction/BusanAttractionScreen';
 import { HelpDeskChatScreen } from '../screens/helpdesk/HelpDeskChatScreen';
 import { LuggageStorageScreen } from '../screens/locker/LuggageStorageScreen';
 import { TravelogueDetailScreen } from '../screens/feed/TravelogueDetailScreen';
@@ -107,6 +108,7 @@ export function RootNavigator() {
         <Stack.Screen name="FestivalDetail" component={FestivalDetailScreen} />
         <Stack.Screen name="LuggageStorage" component={LuggageStorageScreen} />
         <Stack.Screen name="BusanAccommodation" component={BusanAccommodationScreen} />
+        <Stack.Screen name="BusanAttraction" component={BusanAttractionScreen} />
         <Stack.Screen name="HelpDeskChat" component={HelpDeskChatScreen} />
       </Stack.Navigator>
     </NavigationContainer>

@@ -9,6 +9,7 @@ import { KakaoMapShell } from '../map/KakaoMapShell';
 type AccommodationMapViewProps = {
   stays: BusanAccommodation[];
   selectedId?: string | null;
+  bookmarkedIds?: readonly string[];
   language: AppLanguage;
   onSelectStay?: (stay: BusanAccommodation) => void;
   mapTitle: string;
@@ -20,6 +21,7 @@ type AccommodationMapViewProps = {
 export function AccommodationMapView({
   stays,
   selectedId,
+  bookmarkedIds = [],
   language,
   onSelectStay,
   mapTitle,
@@ -33,11 +35,11 @@ export function AccommodationMapView({
 
   const overlays = useMemo(
     () =>
-      kakaoOverlaysFromStays(stays, selectedId, {
+      kakaoOverlaysFromStays(stays, selectedId, bookmarkedIds, {
         language,
         areaLabel,
       }),
-    [stays, selectedId, language, areaLabel],
+    [stays, selectedId, bookmarkedIds, language, areaLabel],
   );
 
   const handleOverlayPress = useCallback(

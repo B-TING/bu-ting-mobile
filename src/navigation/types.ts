@@ -14,6 +14,7 @@ export type RootStackParamList = {
   FestivalDetail: { festivalId: string };
   LuggageStorage: undefined;
   BusanAccommodation: undefined;
+  BusanAttraction: undefined;
   HelpDeskChat: undefined;
 };
 

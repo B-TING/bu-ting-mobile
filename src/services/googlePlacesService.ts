@@ -6,11 +6,16 @@ import {
   resolveAccommodationPlaceId,
 } from '../constants/accommodation';
 import {
+  buildBusanAttractionListings,
+  localizedAttractionName,
+} from '../constants/attractions';
+import {
   ATTRACTION_MOCK_DETAILS,
   getAttractionMockDetail,
   resolveAttractionPlaceId,
 } from '../constants/attractionPlaces';
 import type { BusanAccommodation } from '../types/accommodation';
+import type { BusanAttraction } from '../types/attraction';
 import type {
   AccommodationPlaceDetail,
   AttractionPlaceDetail,
@@ -40,6 +45,16 @@ export async function fetchBusanAccommodations(
   return buildBusanAccommodationListings().map(stay => ({
     ...stay,
     name: localizedAccommodationName(stay, language),
+  }));
+}
+
+export async function fetchBusanAttractions(
+  language: AppLanguage = 'ko',
+): Promise<BusanAttraction[]> {
+  await delay(200);
+  return buildBusanAttractionListings().map(attraction => ({
+    ...attraction,
+    name: localizedAttractionName(attraction, language),
   }));
 }
 

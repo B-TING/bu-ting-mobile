@@ -3,39 +3,39 @@ import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-nati
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AccommodationDetailSheet } from '../../components/accommodation/AccommodationDetailSheet';
-import { AccommodationMapView } from '../../components/accommodation/AccommodationMapView';
+import { AttractionDetailSheet } from '../../components/attraction/AttractionDetailSheet';
+import { AttractionMapView } from '../../components/attraction/AttractionMapView';
 import { BackButton } from '../../components/shared/buttons/BackButton';
-import { ACCOMMODATION_COPY, localizedAreaName } from '../../constants/accommodation';
+import { ATTRACTION_COPY } from '../../constants/attractions';
 import type { RootStackParamList } from '../../navigation/types';
-import { fetchBusanAccommodations } from '../../services/googlePlacesService';
+import { fetchBusanAttractions } from '../../services/googlePlacesService';
 import { useAppStore, usePlaceBookmarkStore } from '../../stores';
-import type { BusanAccommodation } from '../../types/accommodation';
+import type { BusanAttraction } from '../../types/attraction';
 import { sortBookmarkedFirst } from '../../utils/sortBookmarkedFirst';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'BusanAccommodation'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'BusanAttraction'>;
 
-export function BusanAccommodationScreen({ navigation }: Props) {
+export function BusanAttractionScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const language = useAppStore(s => s.language) ?? 'ko';
-  const copy = ACCOMMODATION_COPY[language];
+  const copy = ATTRACTION_COPY[language];
 
-  const bookmarkedAccommodationIds = usePlaceBookmarkStore(s => s.bookmarkedAccommodationIds);
-  const toggleAccommodationBookmark = usePlaceBookmarkStore(s => s.toggleAccommodationBookmark);
-  const isAccommodationBookmarked = usePlaceBookmarkStore(s => s.isAccommodationBookmarked);
+  const bookmarkedAttractionIds = usePlaceBookmarkStore(s => s.bookmarkedAttractionIds);
+  const toggleAttractionBookmark = usePlaceBookmarkStore(s => s.toggleAttractionBookmark);
+  const isAttractionBookmarked = usePlaceBookmarkStore(s => s.isAttractionBookmarked);
 
-  const [stays, setStays] = useState<BusanAccommodation[]>([]);
+  const [attractions, setAttractions] = useState<BusanAttraction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedStay, setSelectedStay] = useState<BusanAccommodation | null>(null);
+  const [selectedAttraction, setSelectedAttraction] = useState<BusanAttraction | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
 
-    fetchBusanAccommodations(language)
+    fetchBusanAttractions(language)
       .then(data => {
         if (!cancelled) {
-          setStays(data);
+          setAttractions(data);
         }
       })
       .finally(() => {
@@ -49,21 +49,13 @@ export function BusanAccommodationScreen({ navigation }: Props) {
     };
   }, [language]);
 
-  const sortedStays = useMemo(
-    () =>
-      sortBookmarkedFirst(stays, bookmarkedAccommodationIds, (a, b) =>
-        a.name.localeCompare(b.name, 'ko'),
-      ),
-    [stays, bookmarkedAccommodationIds],
+  const sortedAttractions = useMemo(
+    () => sortBookmarkedFirst(attractions, bookmarkedAttractionIds, (a, b) => a.name.localeCompare(b.name, 'ko')),
+    [attractions, bookmarkedAttractionIds],
   );
 
-  const areaCount = useMemo(
-    () => new Set(sortedStays.map(stay => stay.areaId)).size,
-    [sortedStays],
-  );
-
-  const handleSelectStay = useCallback((stay: BusanAccommodation) => {
-    setSelectedStay(stay);
+  const handleSelectAttraction = useCallback((attraction: BusanAttraction) => {
+    setSelectedAttraction(attraction);
     setDetailOpen(true);
   }, []);
 
@@ -72,11 +64,11 @@ export function BusanAccommodationScreen({ navigation }: Props) {
   }, []);
 
   const handleToggleBookmark = useCallback(() => {
-    if (!selectedStay) {
+    if (!selectedAttraction) {
       return;
     }
-    toggleAccommodationBookmark(selectedStay.id);
-  }, [selectedStay, toggleAccommodationBookmark]);
+    toggleAttractionBookmark(selectedAttraction.id);
+  }, [selectedAttraction, toggleAttractionBookmark]);
 
   return (
     <View
@@ -97,7 +89,7 @@ export function BusanAccommodationScreen({ navigation }: Props) {
           <ActivityIndicator size="large" color="#0077B6" />
           <Text className="mt-3 text-sm text-brand-muted">{copy.loading}</Text>
         </View>
-      ) : stays.length === 0 ? (
+      ) : attractions.length === 0 ? (
         <View className="flex-1 items-center justify-center px-6">
           <Text className="text-base font-semibold text-brand-text">{copy.empty}</Text>
           <Text className="mt-2 text-center text-sm text-brand-muted">{copy.emptySub}</Text>
@@ -106,22 +98,21 @@ export function BusanAccommodationScreen({ navigation }: Props) {
         <View className="min-h-0 flex-1">
           <View className="border-b border-brand-border bg-brand-surface px-4 py-2">
             <Text className="text-sm font-semibold text-brand-text">
-              {copy.summary(stays.length, areaCount)}
+              {copy.summary(attractions.length)}
             </Text>
             <Text className="mt-0.5 text-[11px] text-brand-muted">{copy.dataHint}</Text>
           </View>
 
           <View className="min-h-0 flex-1">
-            <AccommodationMapView
-              stays={sortedStays}
-              selectedId={selectedStay?.id}
-              bookmarkedIds={bookmarkedAccommodationIds}
+            <AttractionMapView
+              attractions={sortedAttractions}
+              selectedId={selectedAttraction?.id}
+              bookmarkedIds={bookmarkedAttractionIds}
               language={language}
-              onSelectStay={handleSelectStay}
+              onSelectAttraction={handleSelectAttraction}
               mapTitle={copy.mapTitle}
               mapSubtitle={copy.mapSubtitle}
-              pinA11y={copy.pinA11y}
-              areaLabel={copy.areaLabel}
+              categoryLabel={copy.categoryLabel}
             />
           </View>
 
@@ -132,14 +123,14 @@ export function BusanAccommodationScreen({ navigation }: Props) {
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12, gap: 8 }}>
-                {sortedStays.map(stay => {
-                  const bookmarked = isAccommodationBookmarked(stay.id);
-                  const selected = selectedStay?.id === stay.id;
+                {sortedAttractions.map(attraction => {
+                  const bookmarked = isAttractionBookmarked(attraction.id);
+                  const selected = selectedAttraction?.id === attraction.id;
 
                   return (
                     <Pressable
-                      key={stay.id}
-                      onPress={() => handleSelectStay(stay)}
+                      key={attraction.id}
+                      onPress={() => handleSelectAttraction(attraction)}
                       className={`rounded-2xl border px-4 py-3 active:opacity-80 ${
                         selected
                           ? 'border-brand-primary bg-brand-selected'
@@ -149,11 +140,11 @@ export function BusanAccommodationScreen({ navigation }: Props) {
                       }`}>
                       <View className="flex-row items-center gap-1">
                         {bookmarked ? <Text className="text-xs">📌</Text> : null}
-                        <Text className="text-sm font-bold text-brand-text">{stay.name}</Text>
+                        <Text className="text-sm font-bold text-brand-text">{attraction.name}</Text>
                       </View>
                       <Text className="mt-0.5 text-xs text-brand-muted">
-                        {copy.areaLabel(localizedAreaName(stay, language))} ·{' '}
-                        {copy.ratingSummary(stay.rating, stay.userRatingsTotal)}
+                        {copy.categoryLabel(attraction.categoryLabel[language])} ·{' '}
+                        {copy.ratingSummary(attraction.rating, attraction.userRatingsTotal)}
                       </Text>
                     </Pressable>
                   );
@@ -164,12 +155,12 @@ export function BusanAccommodationScreen({ navigation }: Props) {
         </View>
       )}
 
-      <AccommodationDetailSheet
+      <AttractionDetailSheet
         visible={detailOpen}
-        stay={selectedStay}
+        attraction={selectedAttraction}
         language={language}
         copy={copy}
-        bookmarked={selectedStay ? isAccommodationBookmarked(selectedStay.id) : false}
+        bookmarked={selectedAttraction ? isAttractionBookmarked(selectedAttraction.id) : false}
         onToggleBookmark={handleToggleBookmark}
         onClose={handleCloseDetail}
       />

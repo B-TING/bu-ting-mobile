@@ -1,21 +1,24 @@
 import { useEffect, useState } from 'react';
 import { Linking, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 
-import { ACCOMMODATION_COPY, localizedAreaName } from '../../constants/accommodation';
-import { fetchAccommodationDetail, buildGoogleMapsUrl } from '../../services/googlePlacesService';
-import type { BusanAccommodation } from '../../types/accommodation';
-import type { AccommodationPlaceDetail } from '../../types/googlePlaces';
+import {
+  ATTRACTION_COPY,
+  localizedAttractionCategory,
+} from '../../constants/attractions';
+import { fetchAttractionDetail, buildGoogleMapsUrl } from '../../services/googlePlacesService';
+import type { BusanAttraction } from '../../types/attraction';
+import type { AttractionPlaceDetail } from '../../types/googlePlaces';
 import type { AppLanguage } from '../../types/user';
 import { PlaceGoogleDetailBody } from '../places/PlaceGoogleDetailBody';
 import { AppModal, AppModalActions } from '../shared/modals';
 
-type Copy = (typeof ACCOMMODATION_COPY)['ko'];
+type Copy = (typeof ATTRACTION_COPY)['ko'];
 
 const SHEET_HEIGHT_RATIO = 0.62;
 
-type AccommodationDetailSheetProps = {
+type AttractionDetailSheetProps = {
   visible: boolean;
-  stay: BusanAccommodation | null;
+  attraction: BusanAttraction | null;
   language: AppLanguage;
   copy: Copy;
   bookmarked?: boolean;
@@ -23,23 +26,23 @@ type AccommodationDetailSheetProps = {
   onClose: () => void;
 };
 
-export function AccommodationDetailSheet({
+export function AttractionDetailSheet({
   visible,
-  stay,
+  attraction,
   language,
   copy,
   bookmarked = false,
   onToggleBookmark,
   onClose,
-}: AccommodationDetailSheetProps) {
+}: AttractionDetailSheetProps) {
   const { height: screenHeight } = useWindowDimensions();
   const sheetMaxHeight = Math.round(screenHeight * SHEET_HEIGHT_RATIO);
 
-  const [detail, setDetail] = useState<AccommodationPlaceDetail | null>(null);
+  const [detail, setDetail] = useState<AttractionPlaceDetail | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!visible || !stay) {
+    if (!visible || !attraction) {
       setDetail(null);
       return;
     }
@@ -47,7 +50,7 @@ export function AccommodationDetailSheet({
     let cancelled = false;
     setLoading(true);
 
-    fetchAccommodationDetail(stay.internalPlaceId)
+    fetchAttractionDetail(attraction.internalPlaceId)
       .then(result => {
         if (!cancelled) {
           setDetail(result);
@@ -62,9 +65,9 @@ export function AccommodationDetailSheet({
     return () => {
       cancelled = true;
     };
-  }, [visible, stay?.internalPlaceId]);
+  }, [visible, attraction?.internalPlaceId]);
 
-  if (!stay) {
+  if (!attraction) {
     return null;
   }
 
@@ -73,9 +76,9 @@ export function AccommodationDetailSheet({
       Linking.openURL(buildGoogleMapsUrl(detail)).catch(() => {});
       return;
     }
-    const query = encodeURIComponent(stay.name);
+    const query = encodeURIComponent(attraction.name);
     Linking.openURL(
-      `https://www.google.com/maps/search/?api=1&query=${query}&query_place_id=${stay.googlePlaceId}`,
+      `https://www.google.com/maps/search/?api=1&query=${query}&query_place_id=${attraction.googlePlaceId}`,
     ).catch(() => {});
   };
 
@@ -89,8 +92,6 @@ export function AccommodationDetailSheet({
     closedNow: copy.closedNow,
     reviewsTitle: copy.reviewsTitle,
     reviewsSource: copy.reviewsSource,
-    priceLevelLabel: copy.priceLevelLabel,
-    priceLevel: copy.priceLevel,
   };
 
   return (
@@ -118,10 +119,10 @@ export function AccommodationDetailSheet({
         bounces={false}>
         <View className="flex-row items-center justify-between gap-2">
           <View className="min-w-0 flex-1 flex-row items-center gap-2">
-            <Text className="flex-1 text-xl font-bold text-brand-text">{stay.name}</Text>
+            <Text className="flex-1 text-xl font-bold text-brand-text">{attraction.name}</Text>
             <View className="rounded-full bg-brand-selected px-2.5 py-1">
               <Text className="text-[10px] font-semibold text-brand-primary">
-                {copy.areaLabel(localizedAreaName(stay, language))}
+                {copy.categoryLabel(localizedAttractionCategory(attraction, language))}
               </Text>
             </View>
           </View>
@@ -145,15 +146,14 @@ export function AccommodationDetailSheet({
         </View>
 
         <Text className="mt-1 text-sm font-semibold text-brand-primary">
-          {copy.ratingSummary(stay.rating, stay.userRatingsTotal)}
+          {copy.ratingSummary(attraction.rating, attraction.userRatingsTotal)}
         </Text>
 
         <PlaceGoogleDetailBody
           detail={detail}
           loading={loading}
-          fallbackAddress={stay.formattedAddress}
+          fallbackAddress={attraction.formattedAddress}
           copy={googleDetailCopy}
-          showPriceLevel
         />
       </ScrollView>
     </AppModal>

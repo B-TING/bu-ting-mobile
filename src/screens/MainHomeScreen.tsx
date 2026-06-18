@@ -144,6 +144,9 @@ export function MainHomeScreen({ navigation }: Props) {
             if (id === 'hotels') {
               navigation.navigate('BusanAccommodation');
             }
+            if (id === 'attractions') {
+              navigation.navigate('BusanAttraction');
+            }
             if (id === 'help') {
               goToHelpDesk();
             }

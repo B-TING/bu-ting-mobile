@@ -18,6 +18,7 @@ export type KakaoMapRatingMarkerOverlay = {
   rating: string;
   color: string;
   active?: boolean;
+  bookmarked?: boolean;
   caption?: string;
 };
 

@@ -4,6 +4,14 @@ import type { MapCamera } from './mapRegion';
 const KAKAO_MAP_OVERLAY_RUNTIME = `
 window.kakaoMapOverlayRefs = [];
 
+window.kakaoMarkerBackground = function (color, active) {
+  var base = color || '#4285F4';
+  if (active) {
+    return 'linear-gradient(rgba(0,0,0,0.28), rgba(0,0,0,0.28)), ' + base;
+  }
+  return base;
+};
+
 window.clearKakaoMapOverlays = function () {
   (window.kakaoMapOverlayRefs || []).forEach(function (item) {
     item.setMap(null);
@@ -71,7 +79,7 @@ window.renderKakaoMapOverlays = function (overlays) {
       var pill = document.createElement('div');
       pill.style.cssText =
         'min-width:44px;padding:4px 8px;border-radius:999px;background:' +
-        (overlay.color || '#4285F4') +
+        window.kakaoMarkerBackground(overlay.color, overlay.active) +
         ';border:2px solid #fff;display:flex;align-items:center;justify-content:center;gap:2px;box-shadow:0 1px 4px rgba(0,0,0,0.25);';
 
       var star = document.createElement('span');
@@ -110,7 +118,7 @@ window.renderKakaoMapOverlays = function (overlays) {
         content: wrap,
         yAnchor: 1,
         xAnchor: 0.5,
-        zIndex: overlay.active ? 10 : 5,
+        zIndex: overlay.active ? 10 : overlay.bookmarked ? 7 : 5,
       });
       ratingOverlay.setMap(window.kakaoMap);
       window.kakaoMapOverlayRefs.push(ratingOverlay);
@@ -125,7 +133,7 @@ window.renderKakaoMapOverlays = function (overlays) {
       var lockerPill = document.createElement('div');
       lockerPill.style.cssText =
         'min-width:44px;padding:4px 8px;border-radius:999px;background:' +
-        (overlay.color || '#4285F4') +
+        window.kakaoMarkerBackground(overlay.color, overlay.active) +
         ';border:2px solid #fff;display:flex;align-items:center;justify-content:center;gap:3px;box-shadow:0 1px 4px rgba(0,0,0,0.25);';
 
       var lockerIcon = document.createElement('span');
