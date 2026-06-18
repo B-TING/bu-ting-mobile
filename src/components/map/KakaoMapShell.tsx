@@ -1,9 +1,14 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
-import { Pressable, Text, useWindowDimensions, View } from 'react-native';
+import { Platform, Pressable, Text, useWindowDimensions, View } from 'react-native';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 
 import { KAKAO_MAP_JS_KEY } from '../../constants/kakaoMapConfig';
-import { buildKakaoMapHtml, buildKakaoMapMoveScript } from '../../utils/buildKakaoMapHtml';
+import type { KakaoMapOverlay } from '../../types/kakaoMapOverlay';
+import {
+  buildKakaoMapHtml,
+  buildKakaoMapMoveScript,
+  buildKakaoMapOverlaysScript,
+} from '../../utils/buildKakaoMapHtml';
 import { cameraFromPoints, type MapCamera, type MapPoint } from '../../utils/mapRegion';
 
 export type KakaoMapShellSize = 'compact' | 'fullscreen' | 'fill';
@@ -11,11 +16,15 @@ export type KakaoMapShellSize = 'compact' | 'fullscreen' | 'fill';
 type KakaoMapShellProps = {
   points: MapPoint[];
   focusPoint?: MapPoint | null;
+  overlays?: KakaoMapOverlay[];
+  onOverlayPress?: (id: string) => void;
   size?: KakaoMapShellSize;
   onPress?: () => void;
   tapHint?: string;
   footer?: { title: string; subtitle: string };
   emptySubtitle?: string;
+  /** 고정 지도 스케일(km) — Day 선택 포커스 등 */
+  cameraKmSpan?: number;
 };
 
 function pointsSignature(points: MapPoint[]): string {
@@ -30,14 +39,25 @@ function syncMapCamera(webViewRef: RefObject<WebView | null>, camera: MapCamera)
   webViewRef.current?.injectJavaScript(buildKakaoMapMoveScript(camera));
 }
 
+function syncMapOverlays(webViewRef: RefObject<WebView | null>, overlays: KakaoMapOverlay[]) {
+  webViewRef.current?.injectJavaScript(buildKakaoMapOverlaysScript(overlays));
+}
+
+function overlaysSignature(overlays: KakaoMapOverlay[]): string {
+  return JSON.stringify(overlays);
+}
+
 export function KakaoMapShell({
   points,
   focusPoint,
+  overlays = [],
+  onOverlayPress,
   size = 'compact',
   onPress,
   tapHint,
   footer,
   emptySubtitle,
+  cameraKmSpan,
 }: KakaoMapShellProps) {
   const webViewRef = useRef<WebView>(null);
   const mapReadyRef = useRef(false);
@@ -53,11 +73,16 @@ export function KakaoMapShell({
   const regionSyncKey = pointsSignature(points);
 
   const targetCamera = useMemo(
-    () => cameraFromPoints(points, focusPoint ? { focus: focusPoint } : undefined),
-    [regionSyncKey, focusPoint?.lat, focusPoint?.lng],
+    () =>
+      cameraFromPoints(points, {
+        ...(focusPoint ? { focus: focusPoint } : {}),
+        ...(cameraKmSpan != null ? { kmSpan: cameraKmSpan } : {}),
+      }),
+    [regionSyncKey, focusPoint?.lat, focusPoint?.lng, cameraKmSpan],
   );
 
   const cameraKey = cameraSignature(targetCamera);
+  const overlayKey = overlaysSignature(overlays);
 
   if (bootstrapHtmlRef.current === null && KAKAO_MAP_JS_KEY && points.length > 0) {
     bootstrapHtmlRef.current = buildKakaoMapHtml(KAKAO_MAP_JS_KEY, targetCamera);
@@ -87,14 +112,39 @@ export function KakaoMapShell({
     };
   }, [mapReady, cameraKey, regionSyncKey, targetCamera]);
 
+  useEffect(() => {
+    if (!mapReady) {
+      return;
+    }
+
+    syncMapOverlays(webViewRef, overlays);
+
+    const retryTimers = [150, 400].map(delay =>
+      setTimeout(() => syncMapOverlays(webViewRef, overlays), delay),
+    );
+
+    return () => {
+      retryTimers.forEach(clearTimeout);
+    };
+  }, [mapReady, overlayKey, overlays]);
+
   const handleWebViewMessage = (event: WebViewMessageEvent) => {
     try {
-      const payload = JSON.parse(event.nativeEvent.data) as { type?: string; message?: string };
+      const payload = JSON.parse(event.nativeEvent.data) as {
+        type?: string;
+        message?: string;
+        id?: string;
+      };
       if (payload.type === 'ready') {
         mapReadyRef.current = true;
         setMapReady(true);
         setMapError(null);
         syncMapCamera(webViewRef, targetCamera);
+        syncMapOverlays(webViewRef, overlays);
+        return;
+      }
+      if (payload.type === 'overlayPress' && payload.id && onOverlayPress) {
+        onOverlayPress(payload.id);
         return;
       }
       if (payload.type === 'error') {
@@ -150,6 +200,8 @@ export function KakaoMapShell({
           }
           scrollEnabled={interactive}
           bounces={false}
+          overScrollMode="never"
+          nestedScrollEnabled={Platform.OS === 'android'}
           pointerEvents={interactive ? 'auto' : 'none'}
           javaScriptEnabled
           domStorageEnabled

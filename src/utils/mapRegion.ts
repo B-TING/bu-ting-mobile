@@ -24,12 +24,17 @@ const FOCUS_LNG_DELTA = 0.012;
 /** 단일 장소 포커스 시 카카오맵 줌 (3=광역, 5=동네, 8=블록) */
 const FOCUS_ZOOM_LEVEL = 5;
 
+/** 일정 Day 선택 시 지도 스케일 (km) */
+export const SCHEDULE_DAY_FOCUS_KM_SPAN = 4;
+/** 카카오맵 level 7 ≈ 4km, level 8 ≈ 2km (부산 위도 기준) */
+export const SCHEDULE_DAY_FOCUS_ZOOM_LEVEL = 9;
+
 export function toMapCoordinate(point: MapPoint) {
   return { latitude: point.lat, longitude: point.lng };
 }
 
-function latDeltaToZoomLevel(latDelta: number): number {
-  const kmSpan = latDelta * 111;
+/** kmSpan → 카카오맵 level (숫자가 클수록 확대) */
+export function kmSpanToZoomLevel(kmSpan: number): number {
   if (kmSpan >= 100) {
     return 3;
   }
@@ -42,7 +47,7 @@ function latDeltaToZoomLevel(latDelta: number): number {
   if (kmSpan >= 10) {
     return 6;
   }
-  if (kmSpan >= 5) {
+  if (kmSpan >= 4) {
     return 7;
   }
   if (kmSpan >= 2) {
@@ -55,6 +60,10 @@ function latDeltaToZoomLevel(latDelta: number): number {
     return 10;
   }
   return 11;
+}
+
+function latDeltaToZoomLevel(latDelta: number): number {
+  return kmSpanToZoomLevel(latDelta * 111);
 }
 
 export function regionFromPoints(
@@ -99,14 +108,28 @@ export function regionFromPoints(
 
 export function cameraFromPoints(
   points: MapPoint[],
-  options?: { focus?: MapPoint; latDelta?: number; lngDelta?: number },
+  options?: {
+    focus?: MapPoint;
+    latDelta?: number;
+    lngDelta?: number;
+    /** 고정 지도 스케일(km) — bbox 줌 대신 사용 */
+    kmSpan?: number;
+  },
 ): MapCamera {
   const region = regionFromPoints(points, options);
+  let zoomLevel: number;
+  if (options?.kmSpan === SCHEDULE_DAY_FOCUS_KM_SPAN) {
+    zoomLevel = SCHEDULE_DAY_FOCUS_ZOOM_LEVEL;
+  } else if (options?.kmSpan != null) {
+    zoomLevel = kmSpanToZoomLevel(options.kmSpan);
+  } else if (options?.focus) {
+    zoomLevel = FOCUS_ZOOM_LEVEL;
+  } else {
+    zoomLevel = latDeltaToZoomLevel(region.latitudeDelta);
+  }
   return {
     lat: region.latitude,
     lng: region.longitude,
-    zoomLevel: options?.focus
-      ? FOCUS_ZOOM_LEVEL
-      : latDeltaToZoomLevel(region.latitudeDelta),
+    zoomLevel,
   };
 }

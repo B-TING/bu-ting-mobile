@@ -1,4 +1,7 @@
+import { useMemo } from 'react';
+
 import type { RouteItem } from '../../types/travelPlan';
+import { kakaoOverlaysFromRoutes } from '../../utils/kakaoMapOverlayBuilders';
 import { KakaoMapShell } from './KakaoMapShell';
 
 type RouteMapViewProps = {
@@ -27,11 +30,16 @@ export function RouteMapView({
   const focusPoint = highlightItemId
     ? routes.find(route => route.itemId === highlightItemId)?.location
     : undefined;
+  const overlays = useMemo(
+    () => kakaoOverlaysFromRoutes(routes, highlightItemId),
+    [routes, highlightItemId],
+  );
 
   return (
     <KakaoMapShell
       points={points}
       focusPoint={focusPoint}
+      overlays={overlays}
       size={size}
       onPress={onPress}
       tapHint={tapHint}
