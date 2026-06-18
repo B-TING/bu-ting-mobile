@@ -268,7 +268,9 @@ export function PlanDetailScreen({ navigation, route }: Props) {
         active={tab}
         onChange={setTab}
         language={language}
-        horizontalScrollEnabled={!scheduleReorderActive && tab !== 'schedule'}
+        horizontalScrollEnabled={
+          !scheduleReorderActive && tab !== 'schedule' && tab !== 'overview'
+        }
         pages={{
           overview: (
             <PlanOverviewTab
