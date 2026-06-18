@@ -29,6 +29,8 @@ export function buildScheduleMapDays(itinerary: DailyItinerary[]): ScheduleMapDa
   }));
 }
 
-export function collectScheduleMapPoints(days: ScheduleMapDay[]) {
-  return days.flatMap(day => day.routes.map(route => route.location));
+export function collectScheduleMapPoints(days: ScheduleMapDay[], dayNumber?: number) {
+  const visibleDays =
+    dayNumber != null ? days.filter(day => day.dayNumber === dayNumber) : days;
+  return visibleDays.flatMap(day => day.routes.map(route => route.location));
 }

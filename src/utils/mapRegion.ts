@@ -1,24 +1,66 @@
-import type { Region } from 'react-native-maps';
-
 export type MapPoint = {
   lat: number;
   lng: number;
 };
 
+export type MapRegion = {
+  latitude: number;
+  longitude: number;
+  latitudeDelta: number;
+  longitudeDelta: number;
+};
+
+export type MapCamera = {
+  lat: number;
+  lng: number;
+  zoomLevel: number;
+};
+
 const DEFAULT_LAT_DELTA = 0.02;
 const DEFAULT_LNG_DELTA = 0.03;
 
-const FOCUS_LAT_DELTA = 0.024;
-const FOCUS_LNG_DELTA = 0.036;
+const FOCUS_LAT_DELTA = 0.008;
+const FOCUS_LNG_DELTA = 0.012;
+/** 단일 장소 포커스 시 카카오맵 줌 (3=광역, 5=동네, 8=블록) */
+const FOCUS_ZOOM_LEVEL = 5;
 
 export function toMapCoordinate(point: MapPoint) {
   return { latitude: point.lat, longitude: point.lng };
 }
 
+function latDeltaToZoomLevel(latDelta: number): number {
+  const kmSpan = latDelta * 111;
+  if (kmSpan >= 100) {
+    return 3;
+  }
+  if (kmSpan >= 50) {
+    return 4;
+  }
+  if (kmSpan >= 20) {
+    return 5;
+  }
+  if (kmSpan >= 10) {
+    return 6;
+  }
+  if (kmSpan >= 5) {
+    return 7;
+  }
+  if (kmSpan >= 2) {
+    return 8;
+  }
+  if (kmSpan >= 1) {
+    return 9;
+  }
+  if (kmSpan >= 0.5) {
+    return 10;
+  }
+  return 11;
+}
+
 export function regionFromPoints(
   points: MapPoint[],
   options?: { focus?: MapPoint; latDelta?: number; lngDelta?: number },
-): Region {
+): MapRegion {
   if (options?.focus) {
     return {
       latitude: options.focus.lat,
@@ -52,5 +94,19 @@ export function regionFromPoints(
     longitude: (minLng + maxLng) / 2,
     latitudeDelta,
     longitudeDelta,
+  };
+}
+
+export function cameraFromPoints(
+  points: MapPoint[],
+  options?: { focus?: MapPoint; latDelta?: number; lngDelta?: number },
+): MapCamera {
+  const region = regionFromPoints(points, options);
+  return {
+    lat: region.latitude,
+    lng: region.longitude,
+    zoomLevel: options?.focus
+      ? FOCUS_ZOOM_LEVEL
+      : latDeltaToZoomLevel(region.latitudeDelta),
   };
 }

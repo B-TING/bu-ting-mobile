@@ -39,7 +39,7 @@ export const LUGGAGE_STORAGE_COPY: Record<
 > = {
   ko: {
     screenTitle: '짐 보관소',
-    mapTitle: 'Google 지도',
+    mapTitle: '카카오맵',
     mapSubtitle: '지하철역 물품보관함 위치',
     summary: (stations, lockers) => `${stations}개 역 · 보관함 ${lockers}개`,
     loading: '역시설물 정보를 불러오는 중…',
@@ -73,7 +73,7 @@ export const LUGGAGE_STORAGE_COPY: Record<
   },
   en: {
     screenTitle: 'Luggage storage',
-    mapTitle: 'Google Maps',
+    mapTitle: 'Kakao Map',
     mapSubtitle: 'Subway locker locations',
     summary: (stations, lockers) => `${stations} stations · ${lockers} lockers`,
     loading: 'Loading station facilities…',

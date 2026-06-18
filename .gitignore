@@ -39,9 +39,8 @@ local.properties
 .env
 .env.local
 
-# Google Maps SDK keys (npm run maps:sync 로 생성)
-android/app/src/main/res/values/google_maps_api.xml
-ios/BUTingMobile/GoogleMapsApiKey.swift
+# Kakao Map config (npm run kakao:sync 로 생성)
+src/constants/kakaoMapConfig.ts
 
 # node.js
 #

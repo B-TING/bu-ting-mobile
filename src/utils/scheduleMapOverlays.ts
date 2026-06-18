@@ -1,4 +1,7 @@
-import type { LatLng } from 'react-native-maps';
+export type LatLng = {
+  latitude: number;
+  longitude: number;
+};
 
 import { getScheduleDayColor } from '../constants/scheduleDayColors';
 import type { DailyItinerary } from '../types/travelPlan';

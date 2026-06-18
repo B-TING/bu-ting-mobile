@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -99,11 +99,21 @@ export function PlaceDetailModal({
     };
   }, [visible, route?.placeId, route?.type, showGoogleDetail]);
 
-  if (!route) {
+  const mapRoute = useMemo(() => {
+    if (!route) {
+      return null;
+    }
+    if (googleDetail?.location) {
+      return { ...route, location: googleDetail.location };
+    }
+    return route;
+  }, [route, googleDetail?.location]);
+
+  if (!route || !mapRoute) {
     return null;
   }
 
-  const info = route.placeInfo;
+  const info = mapRoute.placeInfo;
   const rating = googleDetail?.rating ?? info?.rating;
   const reviewCount = googleDetail?.userRatingCount ?? info?.reviewCount ?? 0;
   const category =
@@ -148,8 +158,8 @@ export function PlaceDetailModal({
           <RouteMapView
             title={copy.mapPlaceholder}
             subtitle={copy.mapPlaceholderSub}
-            routes={[route]}
-            highlightItemId={route.itemId}
+            routes={[mapRoute]}
+            highlightItemId={mapRoute.itemId}
             size="fill"
             showFooter={false}
           />

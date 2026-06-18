@@ -16,8 +16,8 @@
     "start:tunnel": "node scripts/start-tunnel.cjs",
     "ngrok:auth": "node scripts/ngrok-auth.cjs",
     "places:resolve": "node scripts/resolve-place-id.cjs",
-    "maps:sync": "node scripts/sync-google-maps-key.cjs",
-    "postinstall": "node scripts/sync-google-maps-key.cjs && patch-package",
+    "kakao:sync": "node scripts/sync-kakao-map-key.cjs",
+    "postinstall": "node scripts/sync-kakao-map-key.cjs && patch-package",
     "test": "jest",
     "icons:generate": "node scripts/generate-app-icons.cjs"
   },
@@ -29,9 +29,9 @@
     "nativewind": "^4.2.4",
     "react": "19.2.3",
     "react-native": "0.85.3",
-    "react-native-maps": "^1.27.2",
     "react-native-safe-area-context": "^5.5.2",
     "react-native-screens": "^4.25.2",
+    "react-native-webview": "^13.16.1",
     "zustand": "^5.0.14"
   },
   "devDependencies": {

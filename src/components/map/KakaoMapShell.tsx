@@ -1,0 +1,201 @@
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
+import { Pressable, Text, useWindowDimensions, View } from 'react-native';
+import { WebView, type WebViewMessageEvent } from 'react-native-webview';
+
+import { KAKAO_MAP_JS_KEY } from '../../constants/kakaoMapConfig';
+import { buildKakaoMapHtml, buildKakaoMapMoveScript } from '../../utils/buildKakaoMapHtml';
+import { cameraFromPoints, type MapCamera, type MapPoint } from '../../utils/mapRegion';
+
+export type KakaoMapShellSize = 'compact' | 'fullscreen' | 'fill';
+
+type KakaoMapShellProps = {
+  points: MapPoint[];
+  focusPoint?: MapPoint | null;
+  size?: KakaoMapShellSize;
+  onPress?: () => void;
+  tapHint?: string;
+  footer?: { title: string; subtitle: string };
+  emptySubtitle?: string;
+};
+
+function pointsSignature(points: MapPoint[]): string {
+  return points.map(point => `${point.lat.toFixed(5)},${point.lng.toFixed(5)}`).join('|');
+}
+
+function cameraSignature(camera: MapCamera): string {
+  return `${camera.lat.toFixed(5)},${camera.lng.toFixed(5)},${camera.zoomLevel}`;
+}
+
+function syncMapCamera(webViewRef: RefObject<WebView | null>, camera: MapCamera) {
+  webViewRef.current?.injectJavaScript(buildKakaoMapMoveScript(camera));
+}
+
+export function KakaoMapShell({
+  points,
+  focusPoint,
+  size = 'compact',
+  onPress,
+  tapHint,
+  footer,
+  emptySubtitle,
+}: KakaoMapShellProps) {
+  const webViewRef = useRef<WebView>(null);
+  const mapReadyRef = useRef(false);
+  const bootstrapHtmlRef = useRef<string | null>(null);
+  const [mapReady, setMapReady] = useState(false);
+  const [mapError, setMapError] = useState<string | null>(null);
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+
+  const mapWidth = size === 'fullscreen' ? screenWidth : screenWidth - (size === 'fill' ? 0 : 48);
+  const mapHeight =
+    size === 'fullscreen' ? Math.round(screenHeight * 0.72) : size === 'fill' ? undefined : 160;
+
+  const regionSyncKey = pointsSignature(points);
+
+  const targetCamera = useMemo(
+    () => cameraFromPoints(points, focusPoint ? { focus: focusPoint } : undefined),
+    [regionSyncKey, focusPoint?.lat, focusPoint?.lng],
+  );
+
+  const cameraKey = cameraSignature(targetCamera);
+
+  if (bootstrapHtmlRef.current === null && KAKAO_MAP_JS_KEY && points.length > 0) {
+    bootstrapHtmlRef.current = buildKakaoMapHtml(KAKAO_MAP_JS_KEY, targetCamera);
+  }
+
+  useEffect(() => {
+    if (points.length === 0) {
+      bootstrapHtmlRef.current = null;
+      mapReadyRef.current = false;
+      setMapReady(false);
+    }
+  }, [points.length]);
+
+  useEffect(() => {
+    if (!mapReady) {
+      return;
+    }
+
+    syncMapCamera(webViewRef, targetCamera);
+
+    const retryTimers = [150, 400].map(delay =>
+      setTimeout(() => syncMapCamera(webViewRef, targetCamera), delay),
+    );
+
+    return () => {
+      retryTimers.forEach(clearTimeout);
+    };
+  }, [mapReady, cameraKey, regionSyncKey, targetCamera]);
+
+  const handleWebViewMessage = (event: WebViewMessageEvent) => {
+    try {
+      const payload = JSON.parse(event.nativeEvent.data) as { type?: string; message?: string };
+      if (payload.type === 'ready') {
+        mapReadyRef.current = true;
+        setMapReady(true);
+        setMapError(null);
+        syncMapCamera(webViewRef, targetCamera);
+        return;
+      }
+      if (payload.type === 'error') {
+        setMapError(payload.message ?? '카카오맵을 불러오지 못했습니다.');
+      }
+    } catch {
+      // ignore malformed messages
+    }
+  };
+
+  if (points.length === 0) {
+    return (
+      <View className="items-center justify-center rounded-2xl border border-brand-border bg-[#E8F0F8] p-6">
+        <Text className="text-sm text-brand-muted">{emptySubtitle ?? footer?.subtitle}</Text>
+      </View>
+    );
+  }
+
+  if (!KAKAO_MAP_JS_KEY || !bootstrapHtmlRef.current) {
+    return (
+      <View className="items-center justify-center rounded-2xl border border-brand-border bg-[#E8F0F8] p-6">
+        <Text className="text-center text-sm text-brand-muted">
+          카카오맵 JavaScript 키가 설정되지 않았습니다.{'\n'}.env에 KAKAO_JAVASCRIPT_KEY를 추가한 뒤
+          npm run kakao:sync 를 실행하세요.
+        </Text>
+      </View>
+    );
+  }
+
+  const interactive = size !== 'compact' || !onPress;
+
+  const containerStyle =
+    size === 'fill'
+      ? { flex: 1, width: '100%' as const, minHeight: 200 }
+      : { width: mapWidth, height: mapHeight };
+
+  const mapBody = (
+    <View
+      className={
+        size === 'fullscreen' || size === 'fill'
+          ? 'flex-1 bg-[#E8F0F8]'
+          : 'overflow-hidden rounded-2xl border border-brand-border bg-[#E8F0F8]'
+      }>
+      <View style={containerStyle} className="relative">
+        <WebView
+          ref={webViewRef}
+          originWhitelist={['*']}
+          source={{ html: bootstrapHtmlRef.current }}
+          style={
+            mapHeight != null
+              ? { width: mapWidth, height: mapHeight }
+              : { flex: 1, width: '100%' }
+          }
+          scrollEnabled={interactive}
+          bounces={false}
+          pointerEvents={interactive ? 'auto' : 'none'}
+          javaScriptEnabled
+          domStorageEnabled
+          onMessage={handleWebViewMessage}
+          onLoad={() => setMapError(null)}
+          onError={() => setMapError('WebView 로드 중 오류가 발생했습니다.')}
+        />
+        {!mapReady && !mapError ? (
+          <View
+            pointerEvents="none"
+            className="absolute inset-0 items-center justify-center bg-[#E8F0F8]">
+            <Text className="text-xs text-brand-muted">지도 불러오는 중…</Text>
+          </View>
+        ) : null}
+        {mapError ? (
+          <View className="absolute inset-0 items-center justify-center bg-[#E8F0F8] px-4">
+            <Text className="text-center text-xs text-brand-muted">{mapError}</Text>
+            <Text className="mt-2 text-center text-[10px] text-brand-muted">
+              Kakao Developers → Web 플랫폼 · JavaScript 키 · SDK 도메인(http://localhost) 확인
+            </Text>
+          </View>
+        ) : null}
+        {onPress && tapHint && size === 'compact' ? (
+          <View
+            pointerEvents="none"
+            className="absolute right-2 top-2 rounded-md bg-black/50 px-2 py-1">
+            <Text className="text-[10px] font-semibold text-white">{tapHint}</Text>
+          </View>
+        ) : null}
+      </View>
+      {footer ? (
+        <View className="border-t border-brand-border bg-brand-surface px-3 py-2">
+          <Text className="text-xs font-semibold text-brand-text">{footer.title}</Text>
+          <Text className="text-[11px] text-brand-muted">{footer.subtitle}</Text>
+        </View>
+      ) : null}
+    </View>
+  );
+
+  if (onPress && size === 'compact') {
+    return (
+      <Pressable onPress={onPress} className="active:opacity-90">
+        {mapBody}
+      </Pressable>
+    );
+  }
+
+  return mapBody;
+}
