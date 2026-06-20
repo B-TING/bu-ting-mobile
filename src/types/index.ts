@@ -7,6 +7,13 @@ export type Place = {
 };
 
 export type {
+  ApiEnvelope,
+  AuthUser,
+  OAuthLoginRequest,
+  OAuthLoginResponse,
+  OAuthProvider,
+} from './auth';
+export type {
   AppLanguage,
   AuthState,
   OnboardingProfile,

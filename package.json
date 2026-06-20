@@ -17,7 +17,8 @@
     "ngrok:auth": "node scripts/ngrok-auth.cjs",
     "places:resolve": "node scripts/resolve-place-id.cjs",
     "kakao:sync": "node scripts/sync-kakao-map-key.cjs",
-    "postinstall": "node scripts/sync-kakao-map-key.cjs && patch-package",
+    "api:sync": "node scripts/sync-api-config.cjs",
+    "postinstall": "node scripts/sync-kakao-map-key.cjs && node scripts/sync-api-config.cjs && patch-package",
     "test": "jest",
     "icons:generate": "node scripts/generate-app-icons.cjs"
   },

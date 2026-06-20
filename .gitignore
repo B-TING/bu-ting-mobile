@@ -42,6 +42,9 @@ local.properties
 # Kakao Map config (npm run kakao:sync 로 생성)
 src/constants/kakaoMapConfig.ts
 
+# API base URL (npm run api:sync 로 생성)
+src/constants/apiBaseUrl.ts
+
 # node.js
 #
 node_modules/

@@ -5,6 +5,11 @@ export {
   useAppStore,
 } from './useAppStore';
 export {
+  hydrateAuthStore,
+  selectIsAuthenticated,
+  useAuthStore,
+} from './useAuthStore';
+export {
   emptyWizardAnswers,
   hydrateRoutePlaceInfo,
   selectActivePlan,
