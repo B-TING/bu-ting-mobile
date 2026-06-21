@@ -35,15 +35,23 @@ local.properties
 !debug.keystore
 .kotlin/
 
-# Local env (API keys, ngrok token 등 — 커밋 금지)
+# Local env — API keys, ngrok token 등 (커밋 금지)
 .env
-.env.local
+.env.*
+!.env.example
+!.env.*.example
 
-# Kakao Map config (npm run kakao:sync 로 생성)
+# Kakao Map — npm run kakao:sync 로 .env → 생성
 src/kakaoMap/config.ts
 
-# API base URL (npm run api:sync 로 생성)
+# Legacy Kakao Map config (config.ts 로 이전됨, 미사용)
+src/constants/kakaoMapConfig.ts
+
+# API — npm run api:sync 로 .env → 생성
 src/constants/apiBaseUrl.ts
+
+# OAuth 클라이언트 ID·redirect URI 등 로컬 설정 (apiConfig.ts.example 참고)
+src/constants/apiConfig.ts
 
 # node.js
 #
