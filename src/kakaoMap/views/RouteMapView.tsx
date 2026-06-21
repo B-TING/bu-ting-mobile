@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 
 import type { RouteItem } from '../../types/travelPlan';
-import { kakaoOverlaysFromRoutes } from '../../utils/kakaoMapOverlayBuilders';
-import { KakaoMapShell } from './KakaoMapShell';
+import { KakaoMapShell } from '../core/KakaoMapShell';
+import { kakaoOverlaysFromRoutes } from '../overlays/builders';
 
 type RouteMapViewProps = {
   title: string;

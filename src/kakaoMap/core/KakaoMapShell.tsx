@@ -2,14 +2,14 @@ import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { Platform, Pressable, Text, useWindowDimensions, View } from 'react-native';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 
-import { KAKAO_MAP_JS_KEY } from '../../constants/kakaoMapConfig';
-import type { KakaoMapOverlay } from '../../types/kakaoMapOverlay';
+import { KAKAO_MAP_JS_KEY } from '../config';
+import type { KakaoMapOverlay } from '../overlays/types';
 import {
   buildKakaoMapHtml,
   buildKakaoMapMoveScript,
   buildKakaoMapOverlaysScript,
-} from '../../utils/buildKakaoMapHtml';
-import { cameraFromPoints, type MapCamera, type MapPoint } from '../../utils/mapRegion';
+} from './buildMapHtml';
+import { cameraFromPoints, type MapCamera, type MapPoint } from './camera';
 
 export type KakaoMapShellSize = 'compact' | 'fullscreen' | 'fill';
 

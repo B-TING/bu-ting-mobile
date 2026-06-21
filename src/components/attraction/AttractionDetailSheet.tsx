@@ -5,7 +5,7 @@ import {
   ATTRACTION_COPY,
   localizedAttractionCategory,
 } from '../../constants/attractions';
-import { fetchAttractionDetail, buildGoogleMapsUrl } from '../../services/googlePlacesService';
+import { fetchAttractionDetail, buildGoogleMapsUrl } from '../../kakaoMap';
 import type { BusanAttraction } from '../../types/attraction';
 import type { AttractionPlaceDetail } from '../../types/googlePlaces';
 import type { AppLanguage } from '../../types/user';

@@ -2,8 +2,7 @@ import { useCallback, useMemo } from 'react';
 import { View } from 'react-native';
 
 import type { SubwayLockerStation } from '../../types/subwayLocker';
-import { kakaoOverlaysFromLockerStations } from '../../utils/kakaoMapOverlayBuilders';
-import { KakaoMapShell } from '../map/KakaoMapShell';
+import { KakaoMapShell, kakaoOverlaysFromLockerStations } from '../../kakaoMap';
 
 type LockerMapViewProps = {
   stations: SubwayLockerStation[];

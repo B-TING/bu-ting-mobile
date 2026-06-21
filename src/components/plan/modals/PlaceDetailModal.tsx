@@ -6,12 +6,12 @@ import {
   buildGoogleMapsUrl,
   fetchRoutePlaceDetail,
   shouldFetchGooglePlaceDetail,
-} from '../../../services/googlePlacesService';
+} from '../../../kakaoMap';
 import type { PlaceReview } from '../../../types/travelReview';
 import type { RouteItem } from '../../../types/travelPlan';
 import type { PlaceDetailVO } from '../../../types/googlePlaces';
 import type { AppLanguage } from '../../../types/user';
-import { RouteMapView } from '../../map/RouteMapView';
+import { RouteMapView } from '../../../kakaoMap';
 import { PlaceGoogleDetailBody } from '../../places/PlaceGoogleDetailBody';
 import { StarRating } from '../../shared/rating/StarRating';
 import { AppModal, AppModalActions } from '../../shared/modals';
