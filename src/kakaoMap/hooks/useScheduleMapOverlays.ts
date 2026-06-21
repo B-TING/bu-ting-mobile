@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import type { DailyItinerary } from '../types/travelPlan';
+import type { DailyItinerary } from '../../types/travelPlan';
 import {
   buildScheduleMapOverlays,
   type ScheduleMapLineOverlay,
   type ScheduleMapMarkerOverlay,
-} from '../utils/scheduleMapOverlays';
+} from '../overlays/scheduleOverlays';
 
 /**
  * Polyline·Marker 좌표를 useState로 관리합니다.

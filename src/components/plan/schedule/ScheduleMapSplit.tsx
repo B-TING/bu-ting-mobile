@@ -10,7 +10,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { routeFabScrollPadding } from '../fab/RouteOptimizeFab';
-import { ScheduleMapView } from '../../map/ScheduleMapView';
+import { ScheduleMapView } from '../../../kakaoMap';
 import { usePlanStore } from '../../../stores';
 
 const DEFAULT_SCHEDULE_RATIO = 0.38;

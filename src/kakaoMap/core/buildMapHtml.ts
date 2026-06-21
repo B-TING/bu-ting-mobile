@@ -1,5 +1,5 @@
-import type { KakaoMapOverlay } from '../types/kakaoMapOverlay';
-import type { MapCamera } from './mapRegion';
+import type { KakaoMapOverlay } from '../overlays/types';
+import type { MapCamera } from './camera';
 
 const KAKAO_MAP_OVERLAY_RUNTIME = `
 window.kakaoMapOverlayRefs = [];

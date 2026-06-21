@@ -1,5 +1,5 @@
-import type { DailyItinerary, RouteItem } from '../types/travelPlan';
-import { sortedRoutes } from './planItinerary';
+import type { DailyItinerary, RouteItem } from '../../types/travelPlan';
+import { sortedRoutes } from '../../utils/planItinerary';
 
 export type ScheduleMapDay = {
   dayNumber: number;

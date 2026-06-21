@@ -8,7 +8,7 @@ import { AccommodationMapView } from '../../components/accommodation/Accommodati
 import { BackButton } from '../../components/shared/buttons/BackButton';
 import { ACCOMMODATION_COPY, localizedAreaName } from '../../constants/accommodation';
 import type { RootStackParamList } from '../../navigation/types';
-import { fetchBusanAccommodations } from '../../services/googlePlacesService';
+import { fetchBusanAccommodations } from '../../kakaoMap';
 import { useAppStore, usePlaceBookmarkStore } from '../../stores';
 import type { BusanAccommodation } from '../../types/accommodation';
 import { sortBookmarkedFirst } from '../../utils/sortBookmarkedFirst';

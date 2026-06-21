@@ -3,8 +3,7 @@ import { View } from 'react-native';
 
 import type { BusanAttraction } from '../../types/attraction';
 import type { AppLanguage } from '../../types/user';
-import { kakaoOverlaysFromAttractions } from '../../utils/kakaoMapOverlayBuilders';
-import { KakaoMapShell } from '../map/KakaoMapShell';
+import { KakaoMapShell, kakaoOverlaysFromAttractions } from '../../kakaoMap';
 
 type AttractionMapViewProps = {
   attractions: BusanAttraction[];

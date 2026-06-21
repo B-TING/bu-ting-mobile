@@ -1,14 +1,14 @@
 import { useMemo } from 'react';
 
-import { useScheduleMapOverlays } from '../../hooks/useScheduleMapOverlays';
 import type { DailyItinerary } from '../../types/travelPlan';
-import { kakaoOverlaysFromSchedule } from '../../utils/kakaoMapOverlayBuilders';
+import { KakaoMapShell } from '../core/KakaoMapShell';
+import { SCHEDULE_DAY_FOCUS_KM_SPAN } from '../core/camera';
+import { useScheduleMapOverlays } from '../hooks/useScheduleMapOverlays';
+import { kakaoOverlaysFromSchedule } from '../overlays/builders';
 import {
   buildScheduleMapDays,
   collectScheduleMapPoints,
-} from '../../utils/scheduleMapSnapshot';
-import { SCHEDULE_DAY_FOCUS_KM_SPAN } from '../../utils/mapRegion';
-import { KakaoMapShell } from './KakaoMapShell';
+} from '../overlays/scheduleSnapshot';
 
 type ScheduleMapViewProps = {
   itinerary: DailyItinerary[];

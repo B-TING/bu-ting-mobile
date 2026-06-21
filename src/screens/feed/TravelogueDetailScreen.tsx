@@ -3,7 +3,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { RouteMapView } from '../../components/map/RouteMapView';
+import { RouteMapView } from '../../kakaoMap';
 import { TravelogueCommentsSection } from '../../components/feed/TravelogueCommentsSection';
 import { ImportPlanModal } from '../../components/feed/modals/ImportPlanModal';
 import { TravelogueCommentModal } from '../../components/feed/modals/TravelogueCommentModal';

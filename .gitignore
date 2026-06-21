@@ -40,7 +40,7 @@ local.properties
 .env.local
 
 # Kakao Map config (npm run kakao:sync 로 생성)
-src/constants/kakaoMapConfig.ts
+src/kakaoMap/config.ts
 
 # node.js
 #

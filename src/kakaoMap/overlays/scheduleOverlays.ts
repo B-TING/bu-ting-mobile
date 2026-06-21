@@ -3,10 +3,10 @@ export type LatLng = {
   longitude: number;
 };
 
-import { getScheduleDayColor } from '../constants/scheduleDayColors';
-import type { DailyItinerary } from '../types/travelPlan';
-import { toMapCoordinate } from './mapRegion';
-import { buildScheduleMapDays } from './scheduleMapSnapshot';
+import { getScheduleDayColor } from '../../constants/scheduleDayColors';
+import type { DailyItinerary } from '../../types/travelPlan';
+import { toMapCoordinate } from '../core/camera';
+import { buildScheduleMapDays } from './scheduleSnapshot';
 
 export type ScheduleMapLineOverlay = {
   key: string;

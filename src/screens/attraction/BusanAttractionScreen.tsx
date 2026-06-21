@@ -8,7 +8,7 @@ import { AttractionMapView } from '../../components/attraction/AttractionMapView
 import { BackButton } from '../../components/shared/buttons/BackButton';
 import { ATTRACTION_COPY } from '../../constants/attractions';
 import type { RootStackParamList } from '../../navigation/types';
-import { fetchBusanAttractions } from '../../services/googlePlacesService';
+import { fetchBusanAttractions } from '../../kakaoMap';
 import { useAppStore, usePlaceBookmarkStore } from '../../stores';
 import type { BusanAttraction } from '../../types/attraction';
 import { sortBookmarkedFirst } from '../../utils/sortBookmarkedFirst';

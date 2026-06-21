@@ -3,8 +3,7 @@ import { View } from 'react-native';
 
 import type { BusanAccommodation } from '../../types/accommodation';
 import type { AppLanguage } from '../../types/user';
-import { kakaoOverlaysFromStays } from '../../utils/kakaoMapOverlayBuilders';
-import { KakaoMapShell } from '../map/KakaoMapShell';
+import { KakaoMapShell, kakaoOverlaysFromStays } from '../../kakaoMap';
 
 type AccommodationMapViewProps = {
   stays: BusanAccommodation[];

@@ -1,16 +1,16 @@
-import { localizedAreaName } from '../constants/accommodation';
-import { localizedAttractionCategory } from '../constants/attractions';
-import { getScheduleDayColor } from '../constants/scheduleDayColors';
-import type { BusanAccommodation } from '../types/accommodation';
-import type { BusanAttraction } from '../types/attraction';
-import type { KakaoMapOverlay } from '../types/kakaoMapOverlay';
-import type { SubwayLockerStation } from '../types/subwayLocker';
-import type { AppLanguage } from '../types/user';
-import type { RouteItem } from '../types/travelPlan';
+import { localizedAreaName } from '../../constants/accommodation';
+import { localizedAttractionCategory } from '../../constants/attractions';
+import { getScheduleDayColor } from '../../constants/scheduleDayColors';
+import type { BusanAccommodation } from '../../types/accommodation';
+import type { BusanAttraction } from '../../types/attraction';
+import type { SubwayLockerStation } from '../../types/subwayLocker';
+import type { AppLanguage } from '../../types/user';
+import type { RouteItem } from '../../types/travelPlan';
+import type { KakaoMapOverlay } from './types';
 import type {
   ScheduleMapLineOverlay,
   ScheduleMapMarkerOverlay,
-} from './scheduleMapOverlays';
+} from './scheduleOverlays';
 
 function parseStrokeColor(hex: string): { color: string; opacity: number } {
   if (hex.length === 9 && hex.startsWith('#')) {
