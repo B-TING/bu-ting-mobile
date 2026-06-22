@@ -18,12 +18,16 @@
     "places:resolve": "node scripts/resolve-place-id.cjs",
     "kakao:sync": "node scripts/sync-kakao-map-key.cjs",
     "api:sync": "node scripts/sync-api-config.cjs",
-    "postinstall": "node scripts/sync-kakao-map-key.cjs && node scripts/sync-api-config.cjs && patch-package",
+    "oauth:sync": "node scripts/sync-oauth-config.cjs",
+    "postinstall": "node scripts/sync-kakao-map-key.cjs && node scripts/sync-api-config.cjs && node scripts/sync-oauth-config.cjs && patch-package",
     "test": "jest",
     "icons:generate": "node scripts/generate-app-icons.cjs"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^3.1.1",
+    "@react-native-google-signin/google-signin": "^16.1.2",
+    "@react-native-seoul/kakao-login": "^5.4.2",
+    "@react-native-seoul/naver-login": "^4.2.4",
     "@react-native/new-app-screen": "0.85.3",
     "@react-navigation/native": "^7.2.5",
     "@react-navigation/native-stack": "^7.16.0",

@@ -70,6 +70,6 @@ export const APP_MENU_ITEMS: AppMenuItem[] = [
     id: 'my',
     labelKo: '마이페이지',
     labelEn: 'My page',
-    target: { kind: 'placeholder', titleKo: '마이페이지', titleEn: 'My page' },
+    target: { kind: 'screen', route: 'MyPage' },
   },
 ];

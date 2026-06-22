@@ -1,8 +1,9 @@
 import { useCallback, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { PrimaryButton } from '../../components/shared/buttons/PrimaryButton';
+import { BrandLogo } from '../../components/shared/brand/BrandLogo';
 import { FeatureHighlightCard } from '../../components/shared/cards/FeatureHighlightCard';
 import { OptionCard } from '../../components/shared/cards/OptionCard';
 import { OnboardingStepLayout } from '../../components/shared/layout/OnboardingStepLayout';
@@ -73,6 +74,7 @@ export function OnboardingScreen({ navigation }: Props) {
 
   const copy = SETUP_COPY[language];
   const stepConfig = ONBOARDING_FLOW[step];
+  const isWelcomeStep = stepConfig.kind === 'welcome';
   const isFeatureStep = stepConfig.kind === 'feature';
 
   const persistAndNavigate = useCallback(
@@ -86,7 +88,7 @@ export function OnboardingScreen({ navigation }: Props) {
       };
       profile.aiPromptContext = buildUserPromptContext(profile);
       completeOnboardingStore(profile);
-      navigation.replace('PlanWizard');
+      navigation.replace('Login');
     },
     [language, navigation, completeOnboardingStore],
   );
@@ -116,6 +118,10 @@ export function OnboardingScreen({ navigation }: Props) {
   };
 
   const onSkipStep = () => {
+    if (stepConfig.kind === 'welcome') {
+      goNext();
+      return;
+    }
     if (stepConfig.kind === 'question') {
       const qIndex = questionIndexForStep(step);
       if (qIndex !== null && qIndex >= 0) {
@@ -144,7 +150,7 @@ export function OnboardingScreen({ navigation }: Props) {
   };
 
   const canProceed = (): boolean => {
-    if (isFeatureStep) {
+    if (isWelcomeStep || isFeatureStep) {
       return true;
     }
     switch (stepConfig.id) {
@@ -284,12 +290,16 @@ export function OnboardingScreen({ navigation }: Props) {
       : null;
 
   const title =
-    stepConfig.kind === 'question'
+    stepConfig.kind === 'welcome'
+      ? copy.welcomeTitle
+      : stepConfig.kind === 'question'
       ? stepConfig.title[language]
       : (featureContent?.title[language] ?? '');
 
   const subtitle =
-    stepConfig.kind === 'question'
+    stepConfig.kind === 'welcome'
+      ? copy.welcomeSubtitle
+      : stepConfig.kind === 'question'
       ? stepConfig.subtitle[language]
       : (featureContent?.subtitle[language] ?? '');
 
@@ -331,7 +341,20 @@ export function OnboardingScreen({ navigation }: Props) {
         />
       }>
       <View className="flex-1">
-        {isFeatureStep ? renderFeatureHighlights() : renderOptions()}
+        {isWelcomeStep ? (
+          <View className="flex-1 items-center justify-center">
+            <BrandLogo height={48} style={{ marginBottom: 24 }} />
+            <Text className="text-center text-base leading-6 text-brand-muted">
+              {language === 'ko'
+                ? '건너뛰기를 눌러 바로 시작할 수도 있어요.'
+                : 'You can skip anytime to get started faster.'}
+            </Text>
+          </View>
+        ) : isFeatureStep ? (
+          renderFeatureHighlights()
+        ) : (
+          renderOptions()
+        )}
       </View>
     </OnboardingStepLayout>
   );

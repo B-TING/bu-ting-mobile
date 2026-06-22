@@ -26,7 +26,7 @@ export function LanguageSelectionScreen({ navigation }: Props) {
       return;
     }
     setLanguage(selected);
-    navigation.replace('Login');
+    navigation.replace('Onboarding');
   };
 
   return (

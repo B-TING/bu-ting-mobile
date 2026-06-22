@@ -33,6 +33,7 @@ local.properties
 .cxx/
 *.keystore
 !debug.keystore
+android/gradle.properties
 .kotlin/
 
 # Local env — API keys, ngrok token 등 (커밋 금지)
@@ -49,6 +50,10 @@ src/constants/kakaoMapConfig.ts
 
 # API — npm run api:sync 로 .env → 생성
 src/constants/apiBaseUrl.ts
+
+# OAuth — npm run oauth:sync 로 .env → 생성
+src/constants/oauthConfig.ts
+android/app/src/main/res/values/oauth_strings.xml
 
 # OAuth 클라이언트 ID·redirect URI 등 로컬 설정 (apiConfig.ts.example 참고)
 src/constants/apiConfig.ts

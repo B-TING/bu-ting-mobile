@@ -6,6 +6,7 @@ export {
 } from './useAppStore';
 export {
   hydrateAuthStore,
+  selectAuthUser,
   selectIsAuthenticated,
   useAuthStore,
 } from './useAuthStore';

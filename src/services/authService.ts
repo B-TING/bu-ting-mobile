@@ -1,21 +1,12 @@
-import {
-  API_BASE_URL,
-  AUTH_ENDPOINTS,
-  OAUTH_AUTHORIZE_URL,
-  OAUTH_CLIENT_CONFIG,
-} from '../constants/apiConfig';
+import { API_BASE_URL, AUTH_ENDPOINTS } from '../constants/apiConfig';
 import type {
   ApiEnvelope,
+  ApiErrorResponse,
   OAuthLoginRequest,
   OAuthLoginResponse,
   OAuthProvider,
 } from '../types/auth';
-import { generateCodeChallenge, generateCodeVerifier } from '../utils/pkce';
-import {
-  clearOAuthSession,
-  loadOAuthSession,
-  saveOAuthSession,
-} from '../utils/oauthSession';
+import { logAuth } from '../utils/authLogger';
 
 export class AuthServiceError extends Error {
   status?: number;
@@ -27,86 +18,38 @@ export class AuthServiceError extends Error {
   }
 }
 
-/** PKCE code_verifier 생성 후 provider 로그인 URL을 만듭니다. */
-export async function startOAuthLogin(provider: OAuthProvider): Promise<string> {
-  const config = OAUTH_CLIENT_CONFIG[provider];
-  if (!config.clientId || !config.redirectUri) {
-    throw new AuthServiceError(
-      `OAuth client config is missing for provider: ${provider}`,
-    );
+export function buildOAuthLoginRequest(
+  provider: OAuthProvider,
+  providerToken: string,
+  options?: { redirectUri?: string; codeVerifier?: string },
+): OAuthLoginRequest {
+  const request: OAuthLoginRequest = { provider, providerToken };
+
+  if (options?.redirectUri) {
+    request.redirectUri = options.redirectUri;
+  }
+  if (options?.codeVerifier) {
+    request.codeVerifier = options.codeVerifier;
   }
 
-  const codeVerifier = generateCodeVerifier();
-  const codeChallenge = await generateCodeChallenge(codeVerifier);
-  const state =
-    provider === 'naver' ? generateCodeVerifier().slice(0, 32) : null;
-
-  await saveOAuthSession({ codeVerifier, state });
-
-  const params = new URLSearchParams({
-    client_id: config.clientId,
-    redirect_uri: config.redirectUri,
-    response_type: 'code',
-    scope: config.scope,
-    code_challenge: codeChallenge,
-    code_challenge_method: 'S256',
-  });
-
-  if (state) {
-    params.set('state', state);
-  }
-
-  return `${OAUTH_AUTHORIZE_URL[provider]}?${params.toString()}`;
-}
-
-export type CompleteOAuthLoginParams = {
-  provider: OAuthProvider;
-  code: string;
-  state?: string | null;
-  redirectUri: string;
-};
-
-/**
- * 콜백에서 받은 authorization code를 백엔드로 보내
- * 우리 서비스 opaque accessToken을 발급받습니다.
- */
-export async function completeOAuthLogin(
-  params: CompleteOAuthLoginParams,
-): Promise<OAuthLoginResponse> {
-  const session = await loadOAuthSession();
-  if (!session?.codeVerifier) {
-    throw new AuthServiceError('OAuth session expired. Please sign in again.');
-  }
-
-  if (params.provider === 'naver') {
-    if (!params.state || session.state !== params.state) {
-      throw new AuthServiceError('Invalid OAuth state.');
-    }
-  }
-
-  const providerToken =
-    params.provider === 'naver'
-      ? `code=${params.code}&state=${params.state}`
-      : params.code;
-
-  const request: OAuthLoginRequest = {
-    provider: params.provider,
-    providerToken,
-    redirectUri: params.redirectUri,
-    codeVerifier: session.codeVerifier,
-  };
-
-  try {
-    return await loginWithOAuth(request);
-  } finally {
-    await clearOAuthSession();
-  }
+  return request;
 }
 
 export async function loginWithOAuth(
   request: OAuthLoginRequest,
 ): Promise<OAuthLoginResponse> {
   const url = `${API_BASE_URL}${AUTH_ENDPOINTS.oauthLogin}`;
+  logAuth('api.request', 'OAuth login request', {
+    detail: {
+      provider: request.provider,
+      url,
+      providerToken: request.providerToken,
+      tokenKind: request.redirectUri ? 'authorization_code' : 'access_token',
+      hasRedirectUri: Boolean(request.redirectUri),
+      hasCodeVerifier: Boolean(request.codeVerifier),
+    },
+  });
+
   const res = await fetch(url, {
     method: 'POST',
     headers: {
@@ -117,19 +60,35 @@ export async function loginWithOAuth(
 
   const body = (await res.json().catch(() => null)) as
     | ApiEnvelope<OAuthLoginResponse>
-    | { message?: string }
+    | ApiErrorResponse
     | null;
 
   if (!res.ok) {
     const message =
       (body && 'message' in body && body.message) ||
       `OAuth login failed (${res.status})`;
+    logAuth('api.error', message, {
+      level: 'error',
+      detail: { status: res.status, provider: request.provider, body },
+    });
     throw new AuthServiceError(message, res.status);
   }
 
   if (!body || !('data' in body) || !body.data?.accessToken) {
+    logAuth('api.error', 'Invalid OAuth login response.', { level: 'error' });
     throw new AuthServiceError('Invalid OAuth login response.');
   }
+
+  logAuth('api.success', 'OAuth login succeeded', {
+    detail: {
+      provider: body.data.provider,
+      userId: body.data.userId,
+      email: body.data.email,
+      nickname: body.data.nickname,
+      accessToken: body.data.accessToken,
+      expiresIn: body.data.expiresIn,
+    },
+  });
 
   return body.data;
 }
