@@ -21,40 +21,36 @@ export class AuthServiceError extends Error {
 export function buildOAuthLoginRequest(
   provider: OAuthProvider,
   providerToken: string,
-  options?: { redirectUri?: string; codeVerifier?: string },
 ): OAuthLoginRequest {
-  const request: OAuthLoginRequest = { provider, providerToken };
-
-  if (options?.redirectUri) {
-    request.redirectUri = options.redirectUri;
-  }
-  if (options?.codeVerifier) {
-    request.codeVerifier = options.codeVerifier;
-  }
-
-  return request;
+  return { provider, providerToken };
 }
 
 export async function loginWithOAuth(
   request: OAuthLoginRequest,
+  options?: { storedAccessToken?: string | null },
 ): Promise<OAuthLoginResponse> {
   const url = `${API_BASE_URL}${AUTH_ENDPOINTS.oauthLogin}`;
+  const storedAccessToken = options?.storedAccessToken ?? null;
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  if (storedAccessToken) {
+    headers.Authorization = `Bearer ${storedAccessToken}`;
+  }
+
   logAuth('api.request', 'OAuth login request', {
     detail: {
       provider: request.provider,
       url,
       providerToken: request.providerToken,
-      tokenKind: request.redirectUri ? 'authorization_code' : 'access_token',
-      hasRedirectUri: Boolean(request.redirectUri),
-      hasCodeVerifier: Boolean(request.codeVerifier),
+      hasStoredAccessToken: Boolean(storedAccessToken),
     },
   });
 
   const res = await fetch(url, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers,
     body: JSON.stringify(request),
   });
 

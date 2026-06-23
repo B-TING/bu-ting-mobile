@@ -6,6 +6,8 @@ import type { AuthUser, OAuthProvider } from '../types/auth';
 
 type AuthStoreState = {
   accessToken: string | null;
+  /** Unix ms. `expiresIn`(초) 기준으로 로그인 시 저장합니다. */
+  accessTokenExpiresAt: number | null;
   user: AuthUser | null;
   rememberMe: boolean;
   provider: OAuthProvider | null;
@@ -14,6 +16,7 @@ type AuthStoreState = {
   setHasHydrated: (value: boolean) => void;
   setSession: (payload: {
     accessToken: string;
+    expiresIn: number;
     user: AuthUser;
     rememberMe: boolean;
     provider: OAuthProvider;
@@ -25,6 +28,7 @@ type AuthStoreState = {
 
 const initialState = {
   accessToken: null as string | null,
+  accessTokenExpiresAt: null as number | null,
   user: null as AuthUser | null,
   rememberMe: false,
   provider: null as OAuthProvider | null,
@@ -39,6 +43,7 @@ export const useAuthStore = create<AuthStoreState>()(
       setHasHydrated: value => set({ _hasHydrated: value }),
       setSession: ({
         accessToken,
+        expiresIn,
         user,
         rememberMe,
         provider,
@@ -46,6 +51,7 @@ export const useAuthStore = create<AuthStoreState>()(
       }) =>
         set({
           accessToken,
+          accessTokenExpiresAt: Date.now() + expiresIn * 1000,
           user,
           rememberMe,
           provider,
@@ -60,6 +66,9 @@ export const useAuthStore = create<AuthStoreState>()(
       partialize: state => ({
         rememberMe: state.rememberMe,
         accessToken: state.rememberMe ? state.accessToken : null,
+        accessTokenExpiresAt: state.rememberMe
+          ? state.accessTokenExpiresAt
+          : null,
         user: state.rememberMe ? state.user : null,
         provider: state.rememberMe ? state.provider : null,
         providerToken: state.rememberMe ? state.providerToken : null,
@@ -75,7 +84,23 @@ export const useAuthStore = create<AuthStoreState>()(
 );
 
 export function selectIsAuthenticated(state: AuthStoreState): boolean {
-  return Boolean(state.accessToken && state.user);
+  return Boolean(selectReusableAccessToken(state) && state.user);
+}
+
+/** 만료 전이면 로컬에 저장된 opaque access token을 반환합니다. */
+export function selectReusableAccessToken(state: AuthStoreState): string | null {
+  if (!state.accessToken) {
+    return null;
+  }
+
+  if (
+    state.accessTokenExpiresAt !== null &&
+    Date.now() >= state.accessTokenExpiresAt
+  ) {
+    return null;
+  }
+
+  return state.accessToken;
 }
 
 export function selectAuthUser(state: AuthStoreState): AuthUser | null {
