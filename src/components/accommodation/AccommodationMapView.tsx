@@ -1,14 +1,14 @@
-import { Text, View } from 'react-native';
+import { useCallback, useMemo } from 'react';
+import { View } from 'react-native';
 
-import { localizedAreaName } from '../../constants/accommodation';
 import type { BusanAccommodation } from '../../types/accommodation';
 import type { AppLanguage } from '../../types/user';
-import { GoogleMapShell } from '../map/GoogleMapShell';
-import { MapPinMarker } from '../map/MapPinMarker';
+import { KakaoMapShell, kakaoOverlaysFromStays } from '../../kakaoMap';
 
 type AccommodationMapViewProps = {
   stays: BusanAccommodation[];
   selectedId?: string | null;
+  bookmarkedIds?: readonly string[];
   language: AppLanguage;
   onSelectStay?: (stay: BusanAccommodation) => void;
   mapTitle: string;
@@ -20,11 +20,11 @@ type AccommodationMapViewProps = {
 export function AccommodationMapView({
   stays,
   selectedId,
+  bookmarkedIds = [],
   language,
   onSelectStay,
   mapTitle,
   mapSubtitle,
-  pinA11y,
   areaLabel,
 }: AccommodationMapViewProps) {
   const points = stays.map(stay => stay.location);
@@ -32,33 +32,36 @@ export function AccommodationMapView({
     ? stays.find(stay => stay.id === selectedId)?.location
     : undefined;
 
+  const overlays = useMemo(
+    () =>
+      kakaoOverlaysFromStays(stays, selectedId, bookmarkedIds, {
+        language,
+        areaLabel,
+      }),
+    [stays, selectedId, bookmarkedIds, language, areaLabel],
+  );
+
+  const handleOverlayPress = useCallback(
+    (id: string) => {
+      const stay = stays.find(item => item.id === id);
+      if (stay) {
+        onSelectStay?.(stay);
+      }
+    },
+    [onSelectStay, stays],
+  );
+
   return (
     <View className="flex-1">
-      <GoogleMapShell
+      <KakaoMapShell
         points={points}
         focusPoint={focusPoint}
+        overlays={overlays}
+        onOverlayPress={onSelectStay ? handleOverlayPress : undefined}
         size="fill"
         emptySubtitle={mapSubtitle}
-        footer={{ title: mapTitle, subtitle: mapSubtitle }}>
-        {stays.map(stay => {
-          const active = stay.id === selectedId;
-          const ratingLabel = stay.rating > 0 ? stay.rating.toFixed(1) : '—';
-
-          return (
-            <MapPinMarker
-              key={stay.id}
-              point={stay.location}
-              active={active}
-              color={active ? '#0077B6' : '#4285F4'}
-              onPress={() => onSelectStay?.(stay)}
-              accessibilityLabel={pinA11y(stay.name, stay.rating)}
-              caption={`${stay.name} · ${areaLabel(localizedAreaName(stay, language))}`}>
-              <Text className="text-[10px]">🏨</Text>
-              <Text className="text-[11px] font-bold text-white">★{ratingLabel}</Text>
-            </MapPinMarker>
-          );
-        })}
-      </GoogleMapShell>
+        footer={{ title: mapTitle, subtitle: mapSubtitle }}
+      />
     </View>
   );
 }

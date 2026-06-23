@@ -27,30 +27,31 @@ export function ScheduleOverviewSection({
   const upcoming = getNearestUpcomingStop(plan);
 
   return (
-    <Pressable
-      onPress={onPress}
-      className="mb-3 overflow-hidden rounded-xl border border-brand-border bg-brand-surface active:opacity-90">
-      <View className="flex-row items-center justify-between border-b border-brand-border px-3 py-2">
-        <Text className="text-sm font-bold text-brand-text">{copy.dailyHighlights}</Text>
-        <Text className="text-[10px] font-semibold text-brand-primary">{copy.viewTab}</Text>
-      </View>
-
-      {upcoming ? (
-        <View className="mx-3 mt-2.5 rounded-lg bg-brand-primary/10 px-3 py-2.5">
-          <Text className="text-[10px] font-bold uppercase tracking-wide text-brand-primary">
-            {copy.nextScheduleTitle}
-          </Text>
-          <Text className="mt-0.5 text-sm font-bold text-brand-text" numberOfLines={1}>
-            {upcoming.route.placeName}
-          </Text>
-          <Text className="mt-0.5 text-[10px] text-brand-muted">
-            {copy.dayLabel(upcoming.day.dayNumber)} · {formatWeekdayDate(upcoming.day.date, language)}
-          </Text>
+    <View className="mb-3 overflow-hidden rounded-xl border border-brand-border bg-brand-surface">
+      <Pressable onPress={onPress} className="active:opacity-90">
+        <View className="flex-row items-center justify-between border-b border-brand-border px-3 py-2">
+          <Text className="text-sm font-bold text-brand-text">{copy.dailyHighlights}</Text>
+          <Text className="text-[10px] font-semibold text-brand-primary">{copy.viewTab}</Text>
         </View>
-      ) : null}
+
+        {upcoming ? (
+          <View className="mx-3 mt-2.5 rounded-lg bg-brand-primary/10 px-3 py-2.5">
+            <Text className="text-[10px] font-bold uppercase tracking-wide text-brand-primary">
+              {copy.nextScheduleTitle}
+            </Text>
+            <Text className="mt-0.5 text-sm font-bold text-brand-text" numberOfLines={1}>
+              {upcoming.route.placeName}
+            </Text>
+            <Text className="mt-0.5 text-[10px] text-brand-muted">
+              {copy.dayLabel(upcoming.day.dayNumber)} · {formatWeekdayDate(upcoming.day.date, language)}
+            </Text>
+          </View>
+        ) : null}
+      </Pressable>
 
       <ScrollView
         horizontal
+        nestedScrollEnabled
         showsHorizontalScrollIndicator={false}
         className="mt-2.5"
         contentContainerStyle={{ gap: 8, paddingHorizontal: 12, paddingBottom: 12 }}>
@@ -82,6 +83,6 @@ export function ScheduleOverviewSection({
           );
         })}
       </ScrollView>
-    </Pressable>
+    </View>
   );
 }

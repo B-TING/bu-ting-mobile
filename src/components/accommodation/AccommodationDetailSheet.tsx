@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Linking, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 
 import { ACCOMMODATION_COPY, localizedAreaName } from '../../constants/accommodation';
-import { fetchAccommodationDetail, buildGoogleMapsUrl } from '../../services/googlePlacesService';
+import { fetchAccommodationDetail, buildGoogleMapsUrl } from '../../kakaoMap';
 import type { BusanAccommodation } from '../../types/accommodation';
 import type { AccommodationPlaceDetail } from '../../types/googlePlaces';
 import type { AppLanguage } from '../../types/user';
@@ -18,6 +18,8 @@ type AccommodationDetailSheetProps = {
   stay: BusanAccommodation | null;
   language: AppLanguage;
   copy: Copy;
+  bookmarked?: boolean;
+  onToggleBookmark?: () => void;
   onClose: () => void;
 };
 
@@ -26,6 +28,8 @@ export function AccommodationDetailSheet({
   stay,
   language,
   copy,
+  bookmarked = false,
+  onToggleBookmark,
   onClose,
 }: AccommodationDetailSheetProps) {
   const { height: screenHeight } = useWindowDimensions();
@@ -112,13 +116,32 @@ export function AccommodationDetailSheet({
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 8 }}
         showsVerticalScrollIndicator={false}
         bounces={false}>
-        <View className="flex-row items-center gap-2">
-          <Text className="flex-1 text-xl font-bold text-brand-text">{stay.name}</Text>
-          <View className="rounded-full bg-brand-selected px-2.5 py-1">
-            <Text className="text-[10px] font-semibold text-brand-primary">
-              {copy.areaLabel(localizedAreaName(stay, language))}
-            </Text>
+        <View className="flex-row items-center justify-between gap-2">
+          <View className="min-w-0 flex-1 flex-row items-center gap-2">
+            <Text className="flex-1 text-xl font-bold text-brand-text">{stay.name}</Text>
+            <View className="rounded-full bg-brand-selected px-2.5 py-1">
+              <Text className="text-[10px] font-semibold text-brand-primary">
+                {copy.areaLabel(localizedAreaName(stay, language))}
+              </Text>
+            </View>
           </View>
+          {onToggleBookmark ? (
+            <Pressable
+              onPress={onToggleBookmark}
+              accessibilityRole="button"
+              accessibilityLabel={bookmarked ? copy.unbookmark : copy.bookmark}
+              className={`flex-row items-center gap-1 rounded-full px-3 py-2 active:opacity-80 ${
+                bookmarked ? 'bg-amber-100' : 'bg-brand-selected'
+              }`}>
+              <Text className="text-sm">{bookmarked ? '📌' : '☆'}</Text>
+              <Text
+                className={`text-xs font-bold ${
+                  bookmarked ? 'text-amber-700' : 'text-brand-primary'
+                }`}>
+                {bookmarked ? copy.unbookmark : copy.bookmark}
+              </Text>
+            </Pressable>
+          ) : null}
         </View>
 
         <Text className="mt-1 text-sm font-semibold text-brand-primary">

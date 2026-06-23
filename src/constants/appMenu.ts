@@ -37,6 +37,12 @@ export const APP_MENU_ITEMS: AppMenuItem[] = [
     target: { kind: 'screen', route: 'BusanAccommodation' },
   },
   {
+    id: 'attraction',
+    labelKo: '부산 관광지',
+    labelEn: 'Busan attractions',
+    target: { kind: 'screen', route: 'BusanAttraction' },
+  },
+  {
     id: 'community',
     labelKo: '커뮤니티',
     labelEn: 'Community',
@@ -64,6 +70,6 @@ export const APP_MENU_ITEMS: AppMenuItem[] = [
     id: 'my',
     labelKo: '마이페이지',
     labelEn: 'My page',
-    target: { kind: 'placeholder', titleKo: '마이페이지', titleEn: 'My page' },
+    target: { kind: 'screen', route: 'MyPage' },
   },
 ];

@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FestivalCommentsModal } from '../../components/festival/FestivalCommentsModal';
 import { FestivalDetailHero } from '../../components/festival/FestivalDetailHero';
-import { RouteMapView } from '../../components/map/RouteMapView';
+import { RouteMapView } from '../../kakaoMap';
 import { BackButton } from '../../components/shared/buttons/BackButton';
 import {
   FESTIVAL_CALENDAR_COPY,

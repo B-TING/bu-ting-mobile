@@ -131,26 +131,25 @@ npm run places:resolve -- "해동용궁사" 35.1885 129.2233
 
 > Find Place·Place Details 호출은 **백엔드**에서 수행하고, 모바일 앱에는 `place_id`와 캐시된 상세만 내려주는 구성을 권장합니다. Node 스크립트(`scripts/resolve-place-id.cjs`)는 배치 매핑·로컬 검증용입니다.
 
-#### Google Maps (앱 내 지도)
+#### Kakao Map (앱 내 지도)
 
-숙소·짐 보관소·여행 일정 등 **모든 지도**는 `react-native-maps` + Google Maps SDK를 사용합니다.
+숙소·짐 보관소·여행 일정 등 **모든 지도**는 `react-native-webview` + 카카오맵 JavaScript SDK로 표시합니다. Google Places API는 장소 검색·상세 조회용으로 그대로 유지합니다.
+
+> `@react-native-kakao/map` 네이티브 SDK는 Android ViewManager가 npm 패키지에 포함되지 않아 RN 0.85에서 사용할 수 없습니다.
 
 ```bash
-# 1) .env 에 Maps SDK 키 (없으면 GOOGLE_PLACES_API_KEY 사용)
-GOOGLE_MAPS_API_KEY=발급키
+# 1) .env 에 카카오 JavaScript 키
+KAKAO_JAVASCRIPT_KEY=발급키
 
-# 2) 네이티브 설정 동기화 (npm install / npm run android 시 자동)
-npm run maps:sync
+# 2) JS 설정 동기화 (npm install / npm run android 시 자동)
+npm run kakao:sync
 ```
 
 | 변수 | 설명 |
 |------|------|
-| `GOOGLE_MAPS_API_KEY` | [Maps SDK for Android / iOS](https://console.cloud.google.com/google/maps-apis) 키 |
-| `GOOGLE_PLACES_API_KEY` | `GOOGLE_MAPS_API_KEY` 미설정 시 fallback |
+| `KAKAO_JAVASCRIPT_KEY` | [Kakao Developers](https://developers.kakao.com/console/app) → 앱 키 → **JavaScript 키** |
 
-Cloud Console에서 **Maps SDK for Android**와 **Maps SDK for iOS** API를 활성화하세요. 키 제한은 앱 패키지명·SHA-1(Android) / Bundle ID(iOS)로 설정하는 것을 권장합니다.
-
-iOS 빌드 시 `cd ios && pod install` 후 실행합니다.
+카카오 콘솔에서 **Web** 플랫폼을 활성화하고 **JavaScript 키**를 사용하세요. WebView 앱은 사이트 도메인에 `http://localhost` 를 추가해 두면 키 제한 오류를 줄일 수 있습니다.
 
 ### 3. 앱 실행
 

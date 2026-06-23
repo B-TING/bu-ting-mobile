@@ -94,6 +94,7 @@ export function PlanDetailScreen({ navigation, route }: Props) {
   const [budgetModalOpen, setBudgetModalOpen] = useState(false);
 
   const scheduleRef = useRef<PlanScheduleTabHandle>(null);
+  const openRebootPendingRef = useRef(route.params?.openReboot === true);
 
   const enrichedPlan = useMemo(() => {
     if (!plan) {
@@ -196,14 +197,30 @@ export function PlanDetailScreen({ navigation, route }: Props) {
   );
 
   useEffect(() => {
-    if (route.params?.openReboot && enrichedPlan) {
-      setTab('schedule');
-      const timer = setTimeout(() => {
-        scheduleRef.current?.handleRebootFabPress();
-      }, 400);
-      return () => clearTimeout(timer);
+    openRebootPendingRef.current = route.params?.openReboot === true;
+  }, [route.params?.openReboot]);
+
+  useEffect(() => {
+    if (!openRebootPendingRef.current || !enrichedPlan) {
+      return;
     }
-  }, [route.params?.openReboot, enrichedPlan]);
+
+    openRebootPendingRef.current = false;
+    setTab('schedule');
+    navigation.setParams({ openReboot: undefined });
+
+    const timer = setTimeout(() => {
+      scheduleRef.current?.handleRebootFabPress();
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [enrichedPlan, navigation]);
+
+  useEffect(() => {
+    if (scheduleModal.kind === 'pick' && !pickRoute) {
+      closeScheduleModal();
+    }
+  }, [scheduleModal.kind, pickRoute, closeScheduleModal]);
 
   useEffect(() => {
     if (!enrichedPlan) {
@@ -251,7 +268,9 @@ export function PlanDetailScreen({ navigation, route }: Props) {
         active={tab}
         onChange={setTab}
         language={language}
-        horizontalScrollEnabled={!scheduleReorderActive}
+        horizontalScrollEnabled={
+          !scheduleReorderActive && tab !== 'schedule' && tab !== 'overview'
+        }
         pages={{
           overview: (
             <PlanOverviewTab

@@ -1,0 +1,21 @@
+# Project-wide Gradle settings.
+# 이 파일을 gradle.properties 로 복사한 뒤 릴리스 키스토어 값을 채우세요.
+# (gradle.properties 는 git에 올라가지 않습니다)
+
+org.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=512m
+
+android.useAndroidX=true
+
+# Windows에서 x86 CMake 빌드가 자주 실패함. 실기기·ARM 에뮬레이터용만 기본 빌드.
+# x86/x86_64 AVD는 `npm run android:avd` 가 x86_64 로 Gradle ABI 를 덮어씁니다.
+reactNativeArchitectures=arm64-v8a,armeabi-v7a
+
+newArchEnabled=true
+hermesEnabled=true
+edgeToEdgeEnabled=false
+
+# --- Release signing (android/app/buting.keystore) ---
+MYAPP_RELEASE_STORE_FILE=buting.keystore
+MYAPP_RELEASE_KEY_ALIAS=your-key-alias
+MYAPP_RELEASE_STORE_PASSWORD=
+MYAPP_RELEASE_KEY_PASSWORD=

@@ -31,6 +31,9 @@ export const ACCOMMODATION_COPY: Record<
     closedNow: string;
     priceLevel: (level: number) => string;
     pinA11y: (name: string, rating: number) => string;
+    bookmarkedPinA11y: (name: string, rating: number) => string;
+    bookmark: string;
+    unbookmark: string;
     areaLabel: (area: string) => string;
   }
 > = {
@@ -43,7 +46,7 @@ export const ACCOMMODATION_COPY: Record<
     emptySub: '다른 지역을 확인해 보세요',
     summary: (count, areaCount) => `${areaCount}개 권역 · 숙소 ${count}곳`,
     dataHint: '평점·리뷰는 Google Maps API 연동 예정',
-    mapTitle: 'Google 지도',
+    mapTitle: '카카오맵',
     mapSubtitle: '부산 주요 숙소 위치',
     selectHint: '지도에서 숙소를 선택하면 평점·리뷰를 볼 수 있어요',
     close: '닫기',
@@ -60,6 +63,9 @@ export const ACCOMMODATION_COPY: Record<
     closedNow: '영업 종료',
     priceLevel: level => '₩'.repeat(Math.min(level, 4)),
     pinA11y: (name, rating) => `${name}, 별점 ${rating.toFixed(1)}`,
+    bookmarkedPinA11y: (name, rating) => `북마크한 ${name}, 별점 ${rating.toFixed(1)}`,
+    bookmark: '북마크',
+    unbookmark: '북마크 해제',
     areaLabel: area => area,
   },
   en: {
@@ -71,7 +77,7 @@ export const ACCOMMODATION_COPY: Record<
     emptySub: 'Try another area',
     summary: (count, areaCount) => `${areaCount} areas · ${count} stays`,
     dataHint: 'Ratings and reviews via Google Maps API (planned)',
-    mapTitle: 'Google Maps',
+    mapTitle: 'Kakao Map',
     mapSubtitle: 'Major stays in Busan',
     selectHint: 'Select a stay on the map to see ratings and reviews',
     close: 'Close',
@@ -88,6 +94,9 @@ export const ACCOMMODATION_COPY: Record<
     closedNow: 'Closed',
     priceLevel: level => '$'.repeat(Math.min(level, 4)),
     pinA11y: (name, rating) => `${name}, rating ${rating.toFixed(1)}`,
+    bookmarkedPinA11y: (name, rating) => `Bookmarked ${name}, rating ${rating.toFixed(1)}`,
+    bookmark: 'Bookmark',
+    unbookmark: 'Remove bookmark',
     areaLabel: area => area,
   },
   ja: {
@@ -116,6 +125,9 @@ export const ACCOMMODATION_COPY: Record<
     closedNow: '営業終了',
     priceLevel: level => '¥'.repeat(Math.min(level, 4)),
     pinA11y: (name, rating) => `${name}、評価 ${rating.toFixed(1)}`,
+    bookmarkedPinA11y: (name, rating) => `ブックマーク済み ${name}、評価 ${rating.toFixed(1)}`,
+    bookmark: 'ブックマーク',
+    unbookmark: 'ブックマーク解除',
     areaLabel: area => area,
   },
   zh: {
@@ -144,6 +156,9 @@ export const ACCOMMODATION_COPY: Record<
     closedNow: '已打烊',
     priceLevel: level => '¥'.repeat(Math.min(level, 4)),
     pinA11y: (name, rating) => `${name}，评分 ${rating.toFixed(1)}`,
+    bookmarkedPinA11y: (name, rating) => `已收藏 ${name}，评分 ${rating.toFixed(1)}`,
+    bookmark: '收藏',
+    unbookmark: '取消收藏',
     areaLabel: area => area,
   },
 };

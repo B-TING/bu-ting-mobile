@@ -2,9 +2,7 @@ import UIKit
 import React
 import React_RCTAppDelegate
 import ReactAppDependencyProvider
-#if canImport(GoogleMaps)
-import GoogleMaps
-#endif
+import NaverThirdPartyLogin
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -17,12 +15,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
-#if canImport(GoogleMaps)
-    if !GoogleMapsApiKey.value.isEmpty {
-      GMSServices.provideAPIKey(GoogleMapsApiKey.value)
-    }
-#endif
-
     let delegate = ReactNativeDelegate()
     let factory = RCTReactNativeFactory(delegate: delegate)
     delegate.dependencyProvider = RCTAppDependencyProvider()
@@ -39,6 +31,21 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     )
 
     return true
+  }
+
+  func application(
+    _ app: UIApplication,
+    open url: URL,
+    options: [UIApplication.OpenURLOptionsKey: Any] = [:]
+  ) -> Bool {
+    if url.scheme == "butingnaverlogin" {
+      return NaverThirdPartyLoginConnection.getSharedInstance().application(
+        app,
+        open: url,
+        options: options
+      )
+    }
+    return false
   }
 }
 

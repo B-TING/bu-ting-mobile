@@ -10,8 +10,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { routeFabScrollPadding } from '../fab/RouteOptimizeFab';
-import { RouteMapView } from '../../map/RouteMapView';
-import type { RouteItem } from '../../../types/travelPlan';
+import { ScheduleMapView } from '../../../kakaoMap';
+import { usePlanStore } from '../../../stores';
 
 const DEFAULT_SCHEDULE_RATIO = 0.38;
 const MAX_SCHEDULE_RATIO = 1.0;
@@ -20,7 +20,8 @@ const SNAP_CLOSE_THRESHOLD = 72;
 const HANDLE_HEIGHT = 32;
 
 type ScheduleMapSplitProps = {
-  routes: RouteItem[];
+  planId: string;
+  selectedDayNumber: number;
   mapTitle: string;
   mapSubtitle: string;
   dragLabel: string;
@@ -57,7 +58,8 @@ function snapScheduleHeight(height: number, containerHeight: number): number {
 }
 
 export function ScheduleMapSplit({
-  routes,
+  planId,
+  selectedDayNumber,
   mapTitle,
   mapSubtitle,
   dragLabel,
@@ -69,6 +71,13 @@ export function ScheduleMapSplit({
   const scheduleHeightRef = useRef(0);
   const dragStartHeightRef = useRef(0);
   const containerHeightRef = useRef(0);
+
+  const itinerary = usePlanStore(
+    useCallback(
+      state => state.plans.find(plan => plan.planId === planId)?.itinerary ?? [],
+      [planId],
+    ),
+  );
 
   const applyScheduleHeight = useCallback((height: number) => {
     const max = Math.min(
@@ -119,11 +128,11 @@ export function ScheduleMapSplit({
   return (
     <View className="flex-1" onLayout={handleContainerLayout}>
       <View className="min-h-0 flex-1 overflow-hidden bg-[#E8F4E8]">
-        <RouteMapView
-          title={mapTitle}
-          subtitle={mapSubtitle}
-          routes={routes}
-          size="fill"
+        <ScheduleMapView
+          itinerary={itinerary}
+          selectedDayNumber={selectedDayNumber}
+          mapTitle={mapTitle}
+          mapSubtitle={mapSubtitle}
         />
       </View>
 

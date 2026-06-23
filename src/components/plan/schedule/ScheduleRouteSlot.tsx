@@ -10,6 +10,8 @@ export type RebootPhase = 'idle' | 'choose';
 type ScheduleRouteSlotProps = {
   route: RouteItem;
   displayIndex: number;
+  dayColor?: string;
+  dayColorLight?: string;
   phase: RebootPhase;
   copy: {
     markVisited: string;
@@ -46,6 +48,8 @@ const DURATION_IN = 260;
 export function ScheduleRouteSlot({
   route,
   displayIndex,
+  dayColor,
+  dayColorLight,
   phase,
   copy,
   onPress,
@@ -143,6 +147,8 @@ export function ScheduleRouteSlot({
           <RouteItemCard
             route={route}
             displayIndex={displayIndex}
+            dayColor={dayColor}
+            dayColorLight={dayColorLight}
             onPress={onPress}
             onEditPress={onEdit}
             indexSelected={indexSelected}

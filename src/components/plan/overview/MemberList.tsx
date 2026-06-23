@@ -42,6 +42,7 @@ export function MemberList({
 
       <ScrollView
         horizontal
+        nestedScrollEnabled
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ gap: 8, paddingRight: 4 }}>
         {members.map((m, i) => (

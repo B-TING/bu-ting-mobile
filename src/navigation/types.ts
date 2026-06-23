@@ -3,6 +3,7 @@ export type RootStackParamList = {
   Login: undefined;
   Onboarding: undefined;
   MainHome: undefined;
+  MyPage: undefined;
   PlanWizard: undefined;
   PlanCandidates: undefined;
   /** planId 생략 시 진행 중(active) 플랜 사용 */
@@ -14,6 +15,7 @@ export type RootStackParamList = {
   FestivalDetail: { festivalId: string };
   LuggageStorage: undefined;
   BusanAccommodation: undefined;
+  BusanAttraction: undefined;
   HelpDeskChat: undefined;
 };
 

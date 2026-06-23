@@ -8,9 +8,10 @@ import { AccommodationMapView } from '../../components/accommodation/Accommodati
 import { BackButton } from '../../components/shared/buttons/BackButton';
 import { ACCOMMODATION_COPY, localizedAreaName } from '../../constants/accommodation';
 import type { RootStackParamList } from '../../navigation/types';
-import { fetchBusanAccommodations } from '../../services/googlePlacesService';
-import { useAppStore } from '../../stores';
+import { fetchBusanAccommodations } from '../../kakaoMap';
+import { useAppStore, usePlaceBookmarkStore } from '../../stores';
 import type { BusanAccommodation } from '../../types/accommodation';
+import { sortBookmarkedFirst } from '../../utils/sortBookmarkedFirst';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BusanAccommodation'>;
 
@@ -18,6 +19,10 @@ export function BusanAccommodationScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const language = useAppStore(s => s.language) ?? 'ko';
   const copy = ACCOMMODATION_COPY[language];
+
+  const bookmarkedAccommodationIds = usePlaceBookmarkStore(s => s.bookmarkedAccommodationIds);
+  const toggleAccommodationBookmark = usePlaceBookmarkStore(s => s.toggleAccommodationBookmark);
+  const isAccommodationBookmarked = usePlaceBookmarkStore(s => s.isAccommodationBookmarked);
 
   const [stays, setStays] = useState<BusanAccommodation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,9 +49,17 @@ export function BusanAccommodationScreen({ navigation }: Props) {
     };
   }, [language]);
 
+  const sortedStays = useMemo(
+    () =>
+      sortBookmarkedFirst(stays, bookmarkedAccommodationIds, (a, b) =>
+        a.name.localeCompare(b.name, 'ko'),
+      ),
+    [stays, bookmarkedAccommodationIds],
+  );
+
   const areaCount = useMemo(
-    () => new Set(stays.map(stay => stay.areaId)).size,
-    [stays],
+    () => new Set(sortedStays.map(stay => stay.areaId)).size,
+    [sortedStays],
   );
 
   const handleSelectStay = useCallback((stay: BusanAccommodation) => {
@@ -57,6 +70,13 @@ export function BusanAccommodationScreen({ navigation }: Props) {
   const handleCloseDetail = useCallback(() => {
     setDetailOpen(false);
   }, []);
+
+  const handleToggleBookmark = useCallback(() => {
+    if (!selectedStay) {
+      return;
+    }
+    toggleAccommodationBookmark(selectedStay.id);
+  }, [selectedStay, toggleAccommodationBookmark]);
 
   return (
     <View
@@ -93,8 +113,9 @@ export function BusanAccommodationScreen({ navigation }: Props) {
 
           <View className="min-h-0 flex-1">
             <AccommodationMapView
-              stays={stays}
+              stays={sortedStays}
               selectedId={selectedStay?.id}
+              bookmarkedIds={bookmarkedAccommodationIds}
               language={language}
               onSelectStay={handleSelectStay}
               mapTitle={copy.mapTitle}
@@ -111,22 +132,32 @@ export function BusanAccommodationScreen({ navigation }: Props) {
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12, gap: 8 }}>
-                {stays.map(stay => (
-                  <Pressable
-                    key={stay.id}
-                    onPress={() => handleSelectStay(stay)}
-                    className={`rounded-2xl border px-4 py-3 active:opacity-80 ${
-                      selectedStay?.id === stay.id
-                        ? 'border-brand-primary bg-brand-selected'
-                        : 'border-brand-border bg-brand-background'
-                    }`}>
-                    <Text className="text-sm font-bold text-brand-text">{stay.name}</Text>
-                    <Text className="mt-0.5 text-xs text-brand-muted">
-                      {copy.areaLabel(localizedAreaName(stay, language))} ·{' '}
-                      {copy.ratingSummary(stay.rating, stay.userRatingsTotal)}
-                    </Text>
-                  </Pressable>
-                ))}
+                {sortedStays.map(stay => {
+                  const bookmarked = isAccommodationBookmarked(stay.id);
+                  const selected = selectedStay?.id === stay.id;
+
+                  return (
+                    <Pressable
+                      key={stay.id}
+                      onPress={() => handleSelectStay(stay)}
+                      className={`rounded-2xl border px-4 py-3 active:opacity-80 ${
+                        selected
+                          ? 'border-brand-primary bg-brand-selected'
+                          : bookmarked
+                            ? 'border-amber-300 bg-amber-50'
+                            : 'border-brand-border bg-brand-background'
+                      }`}>
+                      <View className="flex-row items-center gap-1">
+                        {bookmarked ? <Text className="text-xs">📌</Text> : null}
+                        <Text className="text-sm font-bold text-brand-text">{stay.name}</Text>
+                      </View>
+                      <Text className="mt-0.5 text-xs text-brand-muted">
+                        {copy.areaLabel(localizedAreaName(stay, language))} ·{' '}
+                        {copy.ratingSummary(stay.rating, stay.userRatingsTotal)}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
               </ScrollView>
             </View>
           ) : null}
@@ -138,6 +169,8 @@ export function BusanAccommodationScreen({ navigation }: Props) {
         stay={selectedStay}
         language={language}
         copy={copy}
+        bookmarked={selectedStay ? isAccommodationBookmarked(selectedStay.id) : false}
+        onToggleBookmark={handleToggleBookmark}
         onClose={handleCloseDetail}
       />
     </View>

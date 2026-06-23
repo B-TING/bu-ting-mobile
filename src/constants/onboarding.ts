@@ -119,16 +119,20 @@ export const ONBOARDING_STEPS: OnboardingStepConfig[] = [
 ];
 
 export type OnboardingFlowStep =
+  | { kind: 'welcome' }
   | ({ kind: 'question' } & OnboardingStepConfig)
   | { kind: 'feature'; forQuestion: OnboardingStepId };
 
-/** 질문 → 기능 설명 → 질문 → … 순서 */
-export const ONBOARDING_FLOW: OnboardingFlowStep[] = ONBOARDING_STEPS.flatMap(
+/** 환영 → 질문 → 기능 설명 → … 순서 */
+export const ONBOARDING_FLOW: OnboardingFlowStep[] = [
+  { kind: 'welcome' },
+  ...ONBOARDING_STEPS.flatMap(
   step => [
     { kind: 'question' as const, ...step },
     { kind: 'feature' as const, forQuestion: step.id },
   ],
-);
+  ),
+];
 
 export const ONBOARDING_STEP_COUNT = ONBOARDING_FLOW.length;
 
@@ -640,6 +644,8 @@ export const SETUP_COPY: Record<
     languageTitle: string;
     languageSubtitle: string;
     continue: string;
+    welcomeTitle: string;
+    welcomeSubtitle: string;
     loginTitle: string;
     loginSubtitle: string;
     email: string;
@@ -659,6 +665,8 @@ export const SETUP_COPY: Record<
     languageTitle: '언어를 선택해 주세요',
     languageSubtitle: '앱 안내와 관광 정보 언어에 사용됩니다',
     continue: '계속',
+    welcomeTitle: '환영합니다!',
+    welcomeSubtitle: '부팅과 함께 나만의 부산 여행을 준비해 보세요. 몇 가지 질문으로 맞춤 안내를 도와드릴게요.',
     loginTitle: '로그인',
     loginSubtitle: '일정 동기화와 Route Feed를 위해 로그인하세요',
     email: '이메일',
@@ -678,6 +686,8 @@ export const SETUP_COPY: Record<
     languageTitle: 'Choose your language',
     languageSubtitle: 'Used for app UI and tourism content',
     continue: 'Continue',
+    welcomeTitle: 'Welcome!',
+    welcomeSubtitle: 'Plan your Busan trip with Bu-Ting. A few quick questions help us personalize your experience.',
     loginTitle: 'Sign in',
     loginSubtitle: 'Sync itineraries and share on Route Feed',
     email: 'Email',
@@ -697,6 +707,8 @@ export const SETUP_COPY: Record<
     languageTitle: '言語を選択',
     languageSubtitle: 'アプリと観光情報の表示言語に使用',
     continue: '続ける',
+    welcomeTitle: 'ようこそ！',
+    welcomeSubtitle: 'BU-TINGで釜山旅行を始めましょう。いくつかの質問であなたに合った案内をします。',
     loginTitle: 'ログイン',
     loginSubtitle: '行程の同期とRoute Feedのために',
     email: 'メール',
@@ -716,6 +728,8 @@ export const SETUP_COPY: Record<
     languageTitle: '选择语言',
     languageSubtitle: '用于应用界面与旅游信息',
     continue: '继续',
+    welcomeTitle: '欢迎！',
+    welcomeSubtitle: '与 BU-TING 一起规划釜山之旅。回答几个问题，我们将为您提供个性化指引。',
     loginTitle: '登录',
     loginSubtitle: '同步行程并分享至 Route Feed',
     email: '邮箱',

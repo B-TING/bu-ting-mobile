@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 import type { SetupPhase } from '../navigation/types';
+import { selectIsAuthenticated, useAuthStore } from './useAuthStore';
 import type {
   AppLanguage,
   AuthState,
@@ -25,9 +26,11 @@ type AppState = {
   language: AppLanguage | null;
   auth: AuthState;
   onboarding: OnboardingProfile | null;
+  hideUserIdOnMyPage: boolean;
   _hasHydrated: boolean;
   setHasHydrated: (value: boolean) => void;
   setLanguage: (language: AppLanguage) => void;
+  setHideUserIdOnMyPage: (hide: boolean) => void;
   login: (payload: { userId: string; displayName: string }) => void;
   completeOnboarding: (profile: OnboardingProfile) => void;
   resetSetup: () => void;
@@ -39,9 +42,11 @@ export const useAppStore = create<AppState>()(
       language: null,
       auth: initialAuth,
       onboarding: null,
+      hideUserIdOnMyPage: false,
       _hasHydrated: false,
       setHasHydrated: value => set({ _hasHydrated: value }),
       setLanguage: language => set({ language }),
+      setHideUserIdOnMyPage: hideUserIdOnMyPage => set({ hideUserIdOnMyPage }),
       login: ({ userId, displayName }) =>
         set({
           auth: { isLoggedIn: true, userId, displayName },
@@ -61,6 +66,7 @@ export const useAppStore = create<AppState>()(
         language: state.language,
         auth: state.auth,
         onboarding: state.onboarding,
+        hideUserIdOnMyPage: state.hideUserIdOnMyPage,
       }),
       onRehydrateStorage: () => (_state, error) => {
         if (error) {
@@ -76,11 +82,11 @@ export function selectSetupPhase(state: AppState): SetupPhase {
   if (!state.language) {
     return 'language';
   }
-  if (!state.auth.isLoggedIn) {
-    return 'login';
-  }
   if (!state.onboarding) {
     return 'onboarding';
+  }
+  if (!selectIsAuthenticated(useAuthStore.getState())) {
+    return 'login';
   }
   return 'main';
 }

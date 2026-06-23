@@ -83,6 +83,7 @@ export function MainHomeScreen({ navigation }: Props) {
         navigation.navigate('TravelogueFeed');
         break;
       case 'my':
+        navigation.navigate('MyPage');
         break;
       default:
         break;
@@ -91,7 +92,10 @@ export function MainHomeScreen({ navigation }: Props) {
 
   return (
     <View className="flex-1 bg-brand-background" style={layout.screen}>
-      <AppBar onMenuPress={() => setMenuOpen(true)} />
+      <AppBar
+        onMenuPress={() => setMenuOpen(true)}
+        onProfilePress={() => navigation.navigate('MyPage')}
+      />
 
       <AppMenuDrawer
         visible={menuOpen}
@@ -143,6 +147,9 @@ export function MainHomeScreen({ navigation }: Props) {
             }
             if (id === 'hotels') {
               navigation.navigate('BusanAccommodation');
+            }
+            if (id === 'attractions') {
+              navigation.navigate('BusanAttraction');
             }
             if (id === 'help') {
               goToHelpDesk();

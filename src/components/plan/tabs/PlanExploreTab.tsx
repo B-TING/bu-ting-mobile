@@ -1,6 +1,6 @@
 import { Text, View } from 'react-native';
 
-import { RouteMapView } from '../../map/RouteMapView';
+import { RouteMapView } from '../../../kakaoMap';
 import type { PLAN_DETAIL_COPY } from '../../../constants/planDetail';
 import type { AppLanguage } from '../../../types/user';
 import type { RouteItem } from '../../../types/travelPlan';

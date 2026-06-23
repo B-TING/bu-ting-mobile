@@ -7,7 +7,7 @@ const {
   projectRoot,
 } = require('./lib/dev-android.cjs');
 
-spawnSync('node', ['scripts/sync-google-maps-key.cjs'], {
+spawnSync('node', ['scripts/sync-kakao-map-key.cjs'], {
   cwd: projectRoot,
   stdio: 'inherit',
   shell: true,
