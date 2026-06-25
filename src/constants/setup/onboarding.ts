@@ -4,6 +4,7 @@ import type {
   CompanionType,
   LuggageLevel,
   OnboardingAnswers,
+  OnboardingProfile,
   SchedulePace,
   TravelStyle,
   VisitPurpose,
@@ -641,6 +642,130 @@ export const FAMILIARITY_OPTIONS: Option<BusanFamiliarity>[] = [
     },
   },
 ];
+
+export type OnboardingPreferenceRow = {
+  id: OnboardingStepId;
+  label: string;
+  value: string;
+};
+
+export type OnboardingPreferenceLabels = Record<OnboardingStepId, string> & {
+  notSet: string;
+  skipped: string;
+};
+
+const ONBOARDING_QUESTION_INDEX: Record<OnboardingStepId, number> = {
+  travelStyle: 0,
+  schedulePace: 1,
+  companions: 2,
+  luggage: 3,
+  purposes: 4,
+  busanFamiliarity: 5,
+};
+
+function pickOptionLabel<T extends string>(
+  options: Option<T>[],
+  value: T | null,
+  language: AppLanguage,
+): string | null {
+  if (!value) {
+    return null;
+  }
+  return options.find(option => option.value === value)?.label[language] ?? null;
+}
+
+function resolvePreferenceValue(
+  profile: OnboardingProfile,
+  questionIndex: number,
+  answered: string | null,
+  labels: Pick<OnboardingPreferenceLabels, 'notSet' | 'skipped'>,
+): string {
+  if (answered) {
+    return answered;
+  }
+  if (profile.skippedSteps.includes(questionIndex)) {
+    return labels.skipped;
+  }
+  return labels.notSet;
+}
+
+/** 마이페이지 등에서 온보딩 응답을 항목별로 표시 */
+export function summarizeOnboardingPreferences(
+  profile: OnboardingProfile | null,
+  language: AppLanguage,
+  labels: OnboardingPreferenceLabels,
+): OnboardingPreferenceRow[] | null {
+  if (!profile || profile.skippedAll) {
+    return null;
+  }
+
+  const purposeLabels = profile.purposes
+    .map(purpose => pickOptionLabel(PURPOSE_OPTIONS, purpose, language))
+    .filter((label): label is string => Boolean(label));
+
+  return [
+    {
+      id: 'travelStyle',
+      label: labels.travelStyle,
+      value: resolvePreferenceValue(
+        profile,
+        ONBOARDING_QUESTION_INDEX.travelStyle,
+        pickOptionLabel(TRAVEL_STYLE_OPTIONS, profile.travelStyle, language),
+        labels,
+      ),
+    },
+    {
+      id: 'schedulePace',
+      label: labels.schedulePace,
+      value: resolvePreferenceValue(
+        profile,
+        ONBOARDING_QUESTION_INDEX.schedulePace,
+        pickOptionLabel(SCHEDULE_PACE_OPTIONS, profile.schedulePace, language),
+        labels,
+      ),
+    },
+    {
+      id: 'companions',
+      label: labels.companions,
+      value: resolvePreferenceValue(
+        profile,
+        ONBOARDING_QUESTION_INDEX.companions,
+        pickOptionLabel(COMPANION_OPTIONS, profile.companions, language),
+        labels,
+      ),
+    },
+    {
+      id: 'luggage',
+      label: labels.luggage,
+      value: resolvePreferenceValue(
+        profile,
+        ONBOARDING_QUESTION_INDEX.luggage,
+        pickOptionLabel(LUGGAGE_OPTIONS, profile.luggage, language),
+        labels,
+      ),
+    },
+    {
+      id: 'purposes',
+      label: labels.purposes,
+      value: resolvePreferenceValue(
+        profile,
+        ONBOARDING_QUESTION_INDEX.purposes,
+        purposeLabels.length > 0 ? purposeLabels.join(', ') : null,
+        labels,
+      ),
+    },
+    {
+      id: 'busanFamiliarity',
+      label: labels.busanFamiliarity,
+      value: resolvePreferenceValue(
+        profile,
+        ONBOARDING_QUESTION_INDEX.busanFamiliarity,
+        pickOptionLabel(FAMILIARITY_OPTIONS, profile.busanFamiliarity, language),
+        labels,
+      ),
+    },
+  ];
+}
 
 export const SETUP_COPY: Record<
   AppLanguage,
