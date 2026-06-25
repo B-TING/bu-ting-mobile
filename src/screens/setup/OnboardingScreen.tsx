@@ -190,6 +190,9 @@ export function OnboardingScreen({ navigation, route }: Props) {
     if (isWelcomeStep || isFeatureStep) {
       return true;
     }
+    if (stepConfig.kind !== 'question') {
+      return false;
+    }
     switch (stepConfig.id) {
       case 'travelStyle':
         return answers.travelStyle !== null;
@@ -221,7 +224,7 @@ export function OnboardingScreen({ navigation, route }: Props) {
   };
 
   const renderOptions = () => {
-    if (stepConfig.kind === 'feature') {
+    if (stepConfig.kind !== 'question') {
       return null;
     }
     switch (stepConfig.id) {
