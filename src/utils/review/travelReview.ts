@@ -5,9 +5,9 @@ import type {
   TravelogueDaySnapshot,
   TravelogueRouteSnapshot,
   TravelogueSocial,
-} from '../types/travelReview';
-import type { RouteItem, TravelPlan } from '../types/travelPlan';
-import { sortedRoutes } from './planItinerary';
+} from '../../types/travelReview';
+import type { RouteItem, TravelPlan } from '../../types/travelPlan';
+import { sortedRoutes } from '../plan/planItinerary';
 
 export function averageRating(reviews: PlaceReview[]): number {
   if (reviews.length === 0) {

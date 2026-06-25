@@ -1,5 +1,5 @@
-import type { LockerFeeGroup, LockerSize, SubwayLockerStation } from '../types/subwayLocker';
-import type { LUGGAGE_STORAGE_COPY } from '../constants/luggageStorage';
+import type { LockerFeeGroup, LockerSize, SubwayLockerStation } from '../../types/subwayLocker';
+import type { LUGGAGE_STORAGE_COPY } from '../../constants/luggageStorage';
 
 type Copy = (typeof LUGGAGE_STORAGE_COPY)['ko'];
 

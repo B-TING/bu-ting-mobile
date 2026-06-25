@@ -1,4 +1,4 @@
-import type { TravelLeg, TravelLegMode } from '../types/travelPlan';
+import type { TravelLeg, TravelLegMode } from '../../types/travelPlan';
 
 export function haversineKm(
   lat1: number,

@@ -1,4 +1,4 @@
-import type { SubwayLockerStation } from '../types/subwayLocker';
+import type { SubwayLockerStation } from '../../types/subwayLocker';
 
 export function sortLockerStations(
   stations: SubwayLockerStation[],

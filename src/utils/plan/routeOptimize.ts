@@ -1,5 +1,5 @@
-import type { RouteItem } from '../types/travelPlan';
-import { haversineKm } from './geo';
+import type { RouteItem } from '../../types/travelPlan';
+import { haversineKm } from '../geo/geo';
 import { sortedRoutes } from './planItinerary';
 
 /** 탐욕적 최근접 이웃으로 당일 경로 순서 최적화 */

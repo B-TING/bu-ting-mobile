@@ -1,4 +1,4 @@
-import type { RouteItem } from '../types/travelPlan';
+import type { RouteItem } from '../../types/travelPlan';
 
 export function sortedRoutes(routes: RouteItem[]): RouteItem[] {
   return [...routes].sort((a, b) => a.sequence - b.sequence);

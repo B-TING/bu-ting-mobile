@@ -1,5 +1,5 @@
-import type { RouteItem } from '../types/travelPlan';
-import { haversineKm } from './geo';
+import type { RouteItem } from '../../types/travelPlan';
+import { haversineKm } from '../geo/geo';
 
 /** 방문 진행을 바탕으로 한 현재 위치 추정 (GPS 연동 전) */
 export function estimateUserLocation(routes: RouteItem[]): { lat: number; lng: number } {

@@ -1,4 +1,4 @@
-import type { PlaceInfo } from '../types/travelPlan';
+import type { PlaceInfo } from '../../types/travelPlan';
 import type {
   GoogleLatLng,
   GoogleLocalizedText,
@@ -13,8 +13,8 @@ import type {
   PlaceOpeningHoursVO,
   PlacePhotoVO,
   PlaceReviewVO,
-} from '../types/googlePlaces';
-import { PLACE_KIND_TO_ROUTE_TYPE } from '../types/googlePlaces';
+} from '../../types/googlePlaces';
+import { PLACE_KIND_TO_ROUTE_TYPE } from '../../types/googlePlaces';
 
 function localizedText(value?: GoogleLocalizedText): string | undefined {
   return value?.text?.trim() || undefined;

@@ -1,6 +1,6 @@
-import type { DailyItinerary, RouteItem } from '../types/travelPlan';
+import type { DailyItinerary, RouteItem } from '../../types/travelPlan';
 import { estimateTravelLeg } from './geo';
-import { sortedRoutes } from './planItinerary';
+import { sortedRoutes } from '../plan/planItinerary';
 
 const DEFAULT_DWELL_MINUTES = 60;
 

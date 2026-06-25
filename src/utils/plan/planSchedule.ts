@@ -1,4 +1,4 @@
-import type { DailyItinerary, RouteItem, TravelPlan } from '../types/travelPlan';
+import type { DailyItinerary, RouteItem, TravelPlan } from '../../types/travelPlan';
 
 export type UpcomingStop = {
   day: DailyItinerary;
