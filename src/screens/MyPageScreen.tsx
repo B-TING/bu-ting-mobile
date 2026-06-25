@@ -168,6 +168,15 @@ export function MyPageScreen({ navigation }: Props) {
           />
         </View>
 
+        <View className="mb-5 rounded-2xl border border-brand-border bg-brand-surface p-5">
+          <Text className="mb-1 text-lg font-bold text-brand-text">{copy.preferences}</Text>
+          <Text className="mb-4 text-sm leading-5 text-brand-muted">{copy.preferencesDesc}</Text>
+          <PrimaryButton
+            label={copy.editPreferences}
+            onPress={() => navigation.navigate('Onboarding', { mode: 'edit' })}
+          />
+        </View>
+
         {isAuthenticated ? (
           <PrimaryButton label={copy.logout} onPress={handleLogout} />
         ) : (

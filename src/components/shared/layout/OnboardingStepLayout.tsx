@@ -3,24 +3,25 @@ import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { layout } from '../../../constants/common/layout';
-import { ONBOARDING_STEP_COUNT } from '../../../constants/setup/onboarding';
 import { SkipButton } from '../buttons/SkipButton';
 
 type OnboardingStepLayoutProps = {
   stepIndex: number;
+  stepTotal: number;
   stepLabel: string;
   title: string;
   subtitle: string;
   skipLabel: string;
-  skipAllLabel: string;
+  skipAllLabel?: string;
   onSkipStep: () => void;
-  onSkipAll: () => void;
+  onSkipAll?: () => void;
   children: ReactNode;
   footer: ReactNode;
 };
 
 export function OnboardingStepLayout({
   stepIndex,
+  stepTotal,
   stepLabel,
   title,
   subtitle,
@@ -32,7 +33,7 @@ export function OnboardingStepLayout({
   footer,
 }: OnboardingStepLayoutProps) {
   const insets = useSafeAreaInsets();
-  const progress = (stepIndex + 1) / ONBOARDING_STEP_COUNT;
+  const progress = (stepIndex + 1) / stepTotal;
 
   return (
     <View
@@ -52,11 +53,14 @@ export function OnboardingStepLayout({
 
       <Pressable
         onPress={onSkipAll}
+        disabled={!onSkipAll}
         className="mb-2 self-center py-2 active:opacity-80"
         hitSlop={8}>
-        <Text className="text-sm font-semibold text-brand-primary underline">
-          {skipAllLabel}
-        </Text>
+        {onSkipAll && skipAllLabel ? (
+          <Text className="text-sm font-semibold text-brand-primary underline">
+            {skipAllLabel}
+          </Text>
+        ) : null}
       </Pressable>
 
       <View className="flex-1 pt-4">

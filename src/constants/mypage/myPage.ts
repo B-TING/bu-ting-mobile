@@ -19,6 +19,9 @@ export const MY_PAGE_COPY: Record<
     logoutConfirm: string;
     logoutCancel: string;
     loginAgain: string;
+    preferences: string;
+    preferencesDesc: string;
+    editPreferences: string;
     providers: Record<'google' | 'kakao' | 'naver', string>;
   }
 > = {
@@ -39,6 +42,9 @@ export const MY_PAGE_COPY: Record<
     logoutConfirm: '로그아웃 하시겠습니까?',
     logoutCancel: '취소',
     loginAgain: '다시 로그인',
+    preferences: '여행 취향',
+    preferencesDesc: 'AI 추천과 일정 생성에 반영되는 설문 응답입니다.',
+    editPreferences: '취향 다시 설정',
     providers: { google: 'Google', kakao: '카카오', naver: '네이버' },
   },
   en: {
@@ -58,6 +64,9 @@ export const MY_PAGE_COPY: Record<
     logoutConfirm: 'Sign out now?',
     logoutCancel: 'Cancel',
     loginAgain: 'Sign in again',
+    preferences: 'Travel preferences',
+    preferencesDesc: 'Used for AI recommendations and itinerary generation.',
+    editPreferences: 'Update preferences',
     providers: { google: 'Google', kakao: 'Kakao', naver: 'Naver' },
   },
   ja: {
@@ -77,6 +86,9 @@ export const MY_PAGE_COPY: Record<
     logoutConfirm: 'ログアウトしますか？',
     logoutCancel: 'キャンセル',
     loginAgain: '再ログイン',
+    preferences: '旅行の好み',
+    preferencesDesc: 'AIおすすめと行程作成に反映されます。',
+    editPreferences: '好みを再設定',
     providers: { google: 'Google', kakao: 'Kakao', naver: 'Naver' },
   },
   zh: {
@@ -96,6 +108,9 @@ export const MY_PAGE_COPY: Record<
     logoutConfirm: '确定要退出登录吗？',
     logoutCancel: '取消',
     loginAgain: '重新登录',
+    preferences: '旅行偏好',
+    preferencesDesc: '用于 AI 推荐与行程生成。',
+    editPreferences: '重新设置偏好',
     providers: { google: 'Google', kakao: 'Kakao', naver: 'Naver' },
   },
 };

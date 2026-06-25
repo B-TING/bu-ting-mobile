@@ -123,6 +123,10 @@ export type OnboardingFlowStep =
   | ({ kind: 'question' } & OnboardingStepConfig)
   | { kind: 'feature'; forQuestion: OnboardingStepId };
 
+export const ONBOARDING_QUESTION_FLOW: OnboardingFlowStep[] = ONBOARDING_STEPS.map(
+  step => ({ kind: 'question' as const, ...step }),
+);
+
 /** 환영 → 질문 → 기능 설명 → … 순서 */
 export const ONBOARDING_FLOW: OnboardingFlowStep[] = [
   { kind: 'welcome' },
@@ -655,6 +659,8 @@ export const SETUP_COPY: Record<
     skipAll: string;
     next: string;
     finish: string;
+    save: string;
+    cancelEdit: string;
     stepOf: (current: number, total: number) => string;
     thankYouTitle: string;
     thankYouPrivacy: string;
@@ -676,6 +682,8 @@ export const SETUP_COPY: Record<
     skipAll: '온보딩 전체 건너뛰기',
     next: '다음',
     finish: '시작하기',
+    save: '저장',
+    cancelEdit: '취소',
     stepOf: (c, t) => `${c} / ${t}`,
     thankYouTitle: '설문에 응하여 주셔서 감사합니다!',
     thankYouPrivacy:
@@ -697,6 +705,8 @@ export const SETUP_COPY: Record<
     skipAll: 'Skip all onboarding',
     next: 'Next',
     finish: 'Get started',
+    save: 'Save',
+    cancelEdit: 'Cancel',
     stepOf: (c, t) => `${c} / ${t}`,
     thankYouTitle: 'Thank you for completing the survey!',
     thankYouPrivacy:
@@ -718,6 +728,8 @@ export const SETUP_COPY: Record<
     skipAll: 'オンボーディングをすべてスキップ',
     next: '次へ',
     finish: 'はじめる',
+    save: '保存',
+    cancelEdit: 'キャンセル',
     stepOf: (c, t) => `${c} / ${t}`,
     thankYouTitle: 'アンケートへのご協力ありがとうございます！',
     thankYouPrivacy:
@@ -739,6 +751,8 @@ export const SETUP_COPY: Record<
     skipAll: '跳过全部引导',
     next: '下一步',
     finish: '开始',
+    save: '保存',
+    cancelEdit: '取消',
     stepOf: (c, t) => `${c} / ${t}`,
     thankYouTitle: '感谢您完成问卷！',
     thankYouPrivacy: '您的回答将用于向您提供所需的信息。',
