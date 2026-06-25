@@ -1,6 +1,6 @@
 import { Pressable, Text, View } from 'react-native';
 
-import type { HelpDeskIntent, SuggestedQuestion } from '../../constants/helpDesk';
+import type { HelpDeskIntent, SuggestedQuestion } from '../../constants/helpdesk/helpDesk';
 import type { AppLanguage } from '../../types/user';
 
 type SuggestedQuestionsProps = {

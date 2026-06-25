@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { StarRating } from '../../shared/rating/StarRating';
-import { catalogThumbnail } from '../../../constants/placeCatalog';
+import { catalogThumbnail } from '../../../constants/places/placeCatalog';
 import type { RouteItem } from '../../../types/travelPlan';
 
 type RouteItemCardProps = {

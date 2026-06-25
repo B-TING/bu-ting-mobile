@@ -1,0 +1,38 @@
+import type { OAuthProvider } from '../../types/auth';
+
+export { API_BASE_URL } from './apiBaseUrl';
+
+export const AUTH_ENDPOINTS = {
+  oauthLogin: '/api/v1/auth/oauth/login',
+} as const;
+
+export type OAuthClientConfig = {
+  clientId: string;
+  redirectUri: string;
+  scope: string;
+};
+
+/** Provider authorize URL에 쓸 클라이언트 설정 (비밀키 제외) */
+export const OAUTH_CLIENT_CONFIG: Record<OAuthProvider, OAuthClientConfig> = {
+  google: {
+    clientId: '',
+    redirectUri: '',
+    scope: 'openid email profile',
+  },
+  kakao: {
+    clientId: '',
+    redirectUri: '',
+    scope: 'account_email profile_nickname',
+  },
+  naver: {
+    clientId: '',
+    redirectUri: '',
+    scope: 'email name nickname',
+  },
+};
+
+export const OAUTH_AUTHORIZE_URL: Record<OAuthProvider, string> = {
+  google: 'https://accounts.google.com/o/oauth2/v2/auth',
+  kakao: 'https://kauth.kakao.com/oauth/authorize',
+  naver: 'https://nid.naver.com/oauth2.0/authorize',
+};

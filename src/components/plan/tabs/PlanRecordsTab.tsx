@@ -4,7 +4,7 @@ import { Pressable, Text, View } from 'react-native';
 import { PlaceReviewCard } from '../../review/cards/PlaceReviewCard';
 import { PlaceReviewFormModal } from '../../review/modals/PlaceReviewFormModal';
 import { TravelogueComposeModal } from '../../review/modals/TravelogueComposeModal';
-import { TRAVEL_REVIEW_COPY } from '../../../constants/travelReview';
+import { TRAVEL_REVIEW_COPY } from '../../../constants/review/travelReview';
 import { EMPTY_REVIEWS, useTravelogueStore } from '../../../stores/useTravelogueStore';
 import type { AppLanguage } from '../../../types/user';
 import type { RouteItem, TravelPlan } from '../../../types/travelPlan';
@@ -14,8 +14,8 @@ import {
   getReviewForRoute,
   isTraveloguePublic,
   reviewProgress,
-} from '../../../utils/travelReview';
-import { computeTripTotalMinutes, formatDurationMinutes } from '../../../utils/tripDuration';
+} from '../../../utils/review/travelReview';
+import { computeTripTotalMinutes, formatDurationMinutes } from '../../../utils/geo/tripDuration';
 
 type PlanRecordsTabProps = {
   plan: TravelPlan;

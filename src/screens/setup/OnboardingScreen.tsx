@@ -20,10 +20,10 @@ import {
   SCHEDULE_PACE_OPTIONS,
   SETUP_COPY,
   TRAVEL_STYLE_OPTIONS,
-} from '../../constants/onboarding';
-import type { OnboardingStepId } from '../../constants/onboarding';
+} from '../../constants/setup/onboarding';
+import type { OnboardingStepId } from '../../constants/setup/onboarding';
 import type { RootStackParamList } from '../../navigation/types';
-import { buildUserPromptContext } from '../../services/promptBuilder';
+import { buildUserPromptContext } from '../../services/setup/promptBuilder';
 import { useAppStore } from '../../stores';
 import type {
   BusanFamiliarity,

@@ -4,9 +4,9 @@ import {
   getGoogleLoginLabel,
   GOOGLE_BUTTON,
   OAUTH_BUTTON_HEIGHT,
-} from '../../constants/oauthButtonStyle';
+} from '../../constants/auth/oauthButtonStyle';
 import type { AppLanguage } from '../../types/user';
-import { cn } from '../../utils/cn';
+import { cn } from '../../utils/common/cn';
 import { GoogleGIcon } from './icons/GoogleGIcon';
 
 type Props = {

@@ -1,5 +1,5 @@
 import type { LockerFeeGroup, LockerSize, SubwayLockerStation } from '../../types/subwayLocker';
-import type { LUGGAGE_STORAGE_COPY } from '../../constants/luggageStorage';
+import type { LUGGAGE_STORAGE_COPY } from '../../constants/locker/luggageStorage';
 
 type Copy = (typeof LUGGAGE_STORAGE_COPY)['ko'];
 
@@ -45,7 +45,7 @@ export function formatLockerFeeLine(
   copy: Copy,
 ): string {
   const sizeLabel = lockerSizeLabel(size, copy);
-  const unitSuffix = unit === '3시간당' ? copy.feePer3Hours : '';
+  const unitSuffix = unit === '3???' ? copy.feePer3Hours : '';
   return `${sizeLabel} ${amount.toLocaleString()}${copy.feeCurrency}${unitSuffix}`;
 }
 
@@ -83,6 +83,6 @@ export function formatLockerPrice(
   if (amount == null) {
     return '-';
   }
-  const unitSuffix = unit === '3시간당' ? copy.feePer3Hours : '';
+  const unitSuffix = unit === '3???' ? copy.feePer3Hours : '';
   return `${amount.toLocaleString()}${copy.feeCurrency}${unitSuffix}`;
 }

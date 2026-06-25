@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
-import { catalogThumbnail } from '../../../constants/placeCatalog';
+import { catalogThumbnail } from '../../../constants/places/placeCatalog';
 import { TransportModePicker } from '../schedule/TransportModePicker';
 import type { AppLanguage } from '../../../types/user';
 import type { TravelLegMode } from '../../../types/travelPlan';
@@ -11,8 +11,8 @@ import {
   listBrowseRebootPlaces,
   searchRebootPlaces,
   type RebootPlaceCandidate,
-} from '../../../utils/rebootPlaces';
-import { cn } from '../../../utils/cn';
+} from '../../../utils/places/rebootPlaces';
+import { cn } from '../../../utils/common/cn';
 import { AppModal, AppModalPrimaryFooter } from '../../shared/modals';
 
 export type PlacePickModalCopy = {

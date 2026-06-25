@@ -1,9 +1,9 @@
 import { Pressable, Text, View } from 'react-native';
 
-import type { TRAVEL_REVIEW_COPY } from '../../constants/travelReview';
+import type { TRAVEL_REVIEW_COPY } from '../../constants/review/travelReview';
 import type { TravelogueSocial } from '../../types/travelReview';
 import type { AppLanguage } from '../../types/user';
-import { getHelpfulCount, isHelpfulByUser } from '../../utils/travelReview';
+import { getHelpfulCount, isHelpfulByUser } from '../../utils/review/travelReview';
 
 type Copy = (typeof TRAVEL_REVIEW_COPY)[AppLanguage];
 

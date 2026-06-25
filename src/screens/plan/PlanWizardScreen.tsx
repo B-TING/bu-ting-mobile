@@ -25,9 +25,9 @@ import {
   PLAN_WIZARD_COPY,
   PLAN_WIZARD_STEP_COUNT,
   PLAN_WIZARD_STEPS,
-} from '../../constants/planWizard';
+} from '../../constants/plan/planWizard';
 import type { RootStackParamList } from '../../navigation/types';
-import { requestAutoPlan, requestPlanCandidates } from '../../services/planAiService';
+import { requestAutoPlan, requestPlanCandidates } from '../../services/plan/planAiService';
 import { useAppStore, usePlanStore, emptyWizardAnswers } from '../../stores';
 import type { CompanionGroupType } from '../../types/planWizard';
 

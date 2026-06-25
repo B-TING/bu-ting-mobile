@@ -3,7 +3,7 @@ export type LatLng = {
   longitude: number;
 };
 
-import { getScheduleDayColor } from '../../constants/scheduleDayColors';
+import { getScheduleDayColor } from '../../constants/plan/scheduleDayColors';
 import type { DailyItinerary } from '../../types/travelPlan';
 import { toMapCoordinate } from '../core/camera';
 import { buildScheduleMapDays } from './scheduleSnapshot';
@@ -35,7 +35,7 @@ function withAlpha(hex: string, alpha: number): string {
   return `#${normalized}${value}`;
 }
 
-/** null/undefined 좌표 제거 — Polyline 크래시 방지 */
+/** null/undefined 좌표 ?�거 ??Polyline ?�래??방�? */
 export function filterValidCoordinates(coordinates: LatLng[]): LatLng[] {
   return coordinates.filter(
     coord =>

@@ -1,6 +1,6 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { PLAN_DETAIL_TABS, type PlanDetailTab } from '../../../constants/planDetail';
+import { PLAN_DETAIL_TABS, type PlanDetailTab } from '../../../constants/plan/planDetail';
 import type { AppLanguage } from '../../../types/user';
 
 const TAB_BAR_HEIGHT = 44;

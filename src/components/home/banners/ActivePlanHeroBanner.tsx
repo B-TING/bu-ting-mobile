@@ -6,10 +6,10 @@ import {
   View,
 } from 'react-native';
 
-import { calcTripDday } from '../../../constants/mainHome';
-import { dayCountBetween } from '../../../constants/planWizard';
-import { formatWeekdayDate } from '../../../utils/geo';
-import type { UpcomingStop } from '../../../utils/planSchedule';
+import { calcTripDday } from '../../../constants/home/mainHome';
+import { dayCountBetween } from '../../../constants/plan/planWizard';
+import { formatWeekdayDate } from '../../../utils/geo/geo';
+import type { UpcomingStop } from '../../../utils/plan/planSchedule';
 import type { TravelPlan } from '../../../types/travelPlan';
 import type { AppLanguage } from '../../../types/user';
 

@@ -4,8 +4,8 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '../../components/shared/buttons/PrimaryButton';
-import { PLAN_WIZARD_COPY, dayCountBetween } from '../../constants/planWizard';
-import { layout } from '../../constants/layout';
+import { PLAN_WIZARD_COPY, dayCountBetween } from '../../constants/plan/planWizard';
+import { layout } from '../../constants/common/layout';
 import type { RootStackParamList } from '../../navigation/types';
 import { useAppStore, usePlanStore } from '../../stores';
 

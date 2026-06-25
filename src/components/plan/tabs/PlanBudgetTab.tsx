@@ -6,7 +6,7 @@ import {
   memberNickname,
   splitSummary,
 } from '../modals/BudgetEntryModal';
-import type { PLAN_DETAIL_COPY } from '../../../constants/planDetail';
+import type { PLAN_DETAIL_COPY } from '../../../constants/plan/planDetail';
 import type { AppLanguage } from '../../../types/user';
 import type { BudgetEntry, PlanMember } from '../../../types/travelPlan';
 

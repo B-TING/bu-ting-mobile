@@ -14,8 +14,8 @@ import { DayChips } from '../schedule/DayChips';
 import { ScheduleMapSplit } from '../schedule/ScheduleMapSplit';
 import { TravelLegRow } from '../schedule/TravelLegRow';
 import { ScheduleRouteSlot, type RebootPhase } from '../schedule/ScheduleRouteSlot';
-import type { PLAN_DETAIL_COPY } from '../../../constants/planDetail';
-import { getScheduleDayColor } from '../../../constants/scheduleDayColors';
+import type { PLAN_DETAIL_COPY } from '../../../constants/plan/planDetail';
+import { getScheduleDayColor } from '../../../constants/plan/scheduleDayColors';
 import { usePlanStore } from '../../../stores';
 import type { AppLanguage } from '../../../types/user';
 import type { PlaceReview } from '../../../types/travelReview';
@@ -23,11 +23,11 @@ import type { RouteItem, TravelLegMode, TravelPlan } from '../../../types/travel
 import {
   estimateUserLocation,
   findNearestScheduleRoute,
-} from '../../../utils/scheduleRoute';
-import { sortedRoutes } from '../../../utils/planItinerary';
-import { estimateTravelLeg } from '../../../utils/geo';
-import { computeDayTotalMinutes, formatDurationMinutes } from '../../../utils/tripDuration';
-import { getReviewForRoute } from '../../../utils/travelReview';
+} from '../../../utils/plan/scheduleRoute';
+import { sortedRoutes } from '../../../utils/plan/planItinerary';
+import { estimateTravelLeg } from '../../../utils/geo/geo';
+import { computeDayTotalMinutes, formatDurationMinutes } from '../../../utils/geo/tripDuration';
+import { getReviewForRoute } from '../../../utils/review/travelReview';
 
 type Copy = (typeof PLAN_DETAIL_COPY)[AppLanguage];
 

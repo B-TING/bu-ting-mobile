@@ -1,6 +1,6 @@
 import type { DailyItinerary } from '../../types/travelPlan';
 import { buildScheduleMapDays } from '../../kakaoMap/overlays/scheduleSnapshot';
-import { fetchKakaoDayRoutePath } from '../../services/kakaoDirectionsService';
+import { fetchKakaoDayRoutePath } from '../../services/map/kakaoDirectionsService';
 import { sortedRoutes } from './planItinerary';
 
 export type ScheduleDayRoutePath = {

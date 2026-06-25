@@ -4,7 +4,7 @@ import { Linking, Pressable, ScrollView, Text, useWindowDimensions, View } from 
 import {
   ATTRACTION_COPY,
   localizedAttractionCategory,
-} from '../../constants/attractions';
+} from '../../constants/places/attractions';
 import { fetchAttractionDetail, buildGoogleMapsUrl } from '../../kakaoMap';
 import type { BusanAttraction } from '../../types/attraction';
 import type { AttractionPlaceDetail } from '../../types/googlePlaces';

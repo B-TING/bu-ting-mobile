@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
-import type { TRAVEL_REVIEW_COPY } from '../../../constants/travelReview';
+import type { TRAVEL_REVIEW_COPY } from '../../../constants/review/travelReview';
 import type { AppLanguage } from '../../../types/user';
 import type { PlaceReview } from '../../../types/travelReview';
 import {
   averageRating,
   buildDefaultOverallReview,
   buildDefaultTravelogueTitle,
-} from '../../../utils/travelReview';
+} from '../../../utils/review/travelReview';
 import { StarRating } from '../../shared/rating/StarRating';
 import { AppModal, AppModalActions } from '../../shared/modals';
 

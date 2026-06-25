@@ -1,5 +1,5 @@
-import { BUSAN_ATTRACTIONS } from '../../constants/planWizard';
-import { enrichPlaceInfo } from '../../constants/placeCatalog';
+import { BUSAN_ATTRACTIONS } from '../../constants/plan/planWizard';
+import { enrichPlaceInfo } from '../../constants/places/placeCatalog';
 import type { RouteItem, RouteItemType } from '../../types/travelPlan';
 import type { AppLanguage } from '../../types/user';
 import { createId } from '../common/id';
@@ -143,7 +143,7 @@ export function candidateToRouteItem(
 
 export function formatDistanceKm(km: number, language: AppLanguage): string {
   if (km < 0.1) {
-    return language === 'ko' ? '근처' : language === 'ja' ? '近く' : language === 'zh' ? '附近' : 'Nearby';
+    return language === 'ko' ? '근처' : language === 'ja' ? '近く' : language === 'zh' ? '?�近' : 'Nearby';
   }
   const rounded = Math.round(km * 10) / 10;
   if (language === 'ko') {

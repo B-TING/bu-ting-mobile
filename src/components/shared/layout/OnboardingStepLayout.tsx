@@ -2,8 +2,8 @@ import { ReactNode } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { layout } from '../../../constants/layout';
-import { ONBOARDING_STEP_COUNT } from '../../../constants/onboarding';
+import { layout } from '../../../constants/common/layout';
+import { ONBOARDING_STEP_COUNT } from '../../../constants/setup/onboarding';
 import { SkipButton } from '../buttons/SkipButton';
 
 type OnboardingStepLayoutProps = {

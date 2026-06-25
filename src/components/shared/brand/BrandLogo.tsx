@@ -1,6 +1,6 @@
 import { Image, type ImageStyle, type StyleProp } from 'react-native';
 
-import { BRAND_LOGO } from '../../../constants/brandAssets';
+import { BRAND_LOGO } from '../../../constants/common/brandAssets';
 
 type BrandLogoProps = {
   height?: number;

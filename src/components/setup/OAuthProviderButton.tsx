@@ -1,8 +1,8 @@
 import { Pressable, Text, View } from 'react-native';
 
-import { ENABLED_OAUTH_PROVIDERS } from '../../constants/oauthProviders';
+import { ENABLED_OAUTH_PROVIDERS } from '../../constants/auth/oauthProviders';
 import type { OAuthProvider } from '../../types/auth';
-import { cn } from '../../utils/cn';
+import { cn } from '../../utils/common/cn';
 import { GoogleSignInButton } from './GoogleSignInButton';
 import { KakaoSignInButton } from './KakaoSignInButton';
 

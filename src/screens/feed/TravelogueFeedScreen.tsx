@@ -8,12 +8,12 @@ import { ImportPlanModal } from '../../components/feed/modals/ImportPlanModal';
 import { TravelogueCommentModal } from '../../components/feed/modals/TravelogueCommentModal';
 import { useTravelogueSocialActions } from '../../components/feed/useTravelogueSocialActions';
 import { BackButton } from '../../components/shared/buttons/BackButton';
-import { TRAVEL_REVIEW_COPY } from '../../constants/travelReview';
+import { TRAVEL_REVIEW_COPY } from '../../constants/review/travelReview';
 import type { RootStackParamList } from '../../navigation/types';
 import { useAppStore, useTravelogueStore } from '../../stores';
 import type { Travelogue } from '../../types/travelReview';
 import type { AppLanguage } from '../../types/user';
-import { isTraveloguePublic } from '../../utils/travelReview';
+import { isTraveloguePublic } from '../../utils/review/travelReview';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'TravelogueFeed'>;
 

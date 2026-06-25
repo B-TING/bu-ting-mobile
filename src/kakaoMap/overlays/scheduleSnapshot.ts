@@ -1,5 +1,5 @@
 import type { DailyItinerary, RouteItem } from '../../types/travelPlan';
-import { sortedRoutes } from '../../utils/planItinerary';
+import { sortedRoutes } from '../../utils/plan/planItinerary';
 
 export type ScheduleMapDay = {
   dayNumber: number;
@@ -15,7 +15,7 @@ export function buildScheduleDayRevisionKey(day: ScheduleMapDay): string {
     .join(';');
 }
 
-/** 일정 변경 시 지도 오버레이 remount·region 갱신용 */
+/** ?�정 변�???지???�버?�이 remount·region 갱신??*/
 export function buildScheduleMapRevisionKey(itinerary: DailyItinerary[]): string {
   return itinerary
     .map(day => `${day.dayNumber}=[${buildScheduleDayRevisionKey({ dayNumber: day.dayNumber, routes: day.routes })}]`)

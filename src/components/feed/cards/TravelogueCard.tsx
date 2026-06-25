@@ -1,7 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 
 import type { Travelogue } from '../../../types/travelReview';
-import { travelogueThumbnailEmoji } from '../../../utils/travelReview';
+import { travelogueThumbnailEmoji } from '../../../utils/review/travelReview';
 import { StarRating } from '../../shared/rating/StarRating';
 
 type TravelogueCardProps = {

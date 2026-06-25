@@ -1,6 +1,6 @@
 import { Pressable, Text, View } from 'react-native';
 
-import type { PLAN_DETAIL_COPY } from '../../../constants/planDetail';
+import type { PLAN_DETAIL_COPY } from '../../../constants/plan/planDetail';
 import type { AppLanguage } from '../../../types/user';
 import type { BudgetEntry } from '../../../types/travelPlan';
 
