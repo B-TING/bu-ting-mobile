@@ -3,27 +3,32 @@ import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { layout } from '../../../constants/common/layout';
-import { ONBOARDING_STEP_COUNT } from '../../../constants/setup/onboarding';
 import { SkipButton } from '../buttons/SkipButton';
 
 type OnboardingStepLayoutProps = {
   stepIndex: number;
+  stepTotal: number;
   stepLabel: string;
   title: string;
   subtitle: string;
+  backLabel?: string;
+  onBack?: () => void;
   skipLabel: string;
-  skipAllLabel: string;
+  skipAllLabel?: string;
   onSkipStep: () => void;
-  onSkipAll: () => void;
+  onSkipAll?: () => void;
   children: ReactNode;
   footer: ReactNode;
 };
 
 export function OnboardingStepLayout({
   stepIndex,
+  stepTotal,
   stepLabel,
   title,
   subtitle,
+  backLabel,
+  onBack,
   skipLabel,
   skipAllLabel,
   onSkipStep,
@@ -32,13 +37,20 @@ export function OnboardingStepLayout({
   footer,
 }: OnboardingStepLayoutProps) {
   const insets = useSafeAreaInsets();
-  const progress = (stepIndex + 1) / ONBOARDING_STEP_COUNT;
+  const progress = (stepIndex + 1) / stepTotal;
 
   return (
     <View
       className="flex-1 bg-brand-background px-6"
       style={[layout.screenPad24, { paddingTop: insets.top + 8 }]}>
       <View className="mb-3 flex-row items-center justify-between">
+        {onBack && backLabel ? (
+          <Pressable onPress={onBack} hitSlop={8} className="min-w-[52px] active:opacity-80">
+            <Text className="text-sm font-semibold text-brand-primary">{backLabel}</Text>
+          </Pressable>
+        ) : (
+          <View className="min-w-[52px]" />
+        )}
         <Text className="text-sm font-semibold text-brand-muted">{stepLabel}</Text>
         <SkipButton label={skipLabel} onPress={onSkipStep} />
       </View>
@@ -52,11 +64,14 @@ export function OnboardingStepLayout({
 
       <Pressable
         onPress={onSkipAll}
+        disabled={!onSkipAll}
         className="mb-2 self-center py-2 active:opacity-80"
         hitSlop={8}>
-        <Text className="text-sm font-semibold text-brand-primary underline">
-          {skipAllLabel}
-        </Text>
+        {onSkipAll && skipAllLabel ? (
+          <Text className="text-sm font-semibold text-brand-primary underline">
+            {skipAllLabel}
+          </Text>
+        ) : null}
       </Pressable>
 
       <View className="flex-1 pt-4">

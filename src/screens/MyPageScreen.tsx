@@ -9,8 +9,9 @@ import { AppMenuDrawer } from '../components/shared/navigation/AppMenuDrawer';
 import { Navbar, type NavbarTab } from '../components/shared/navigation/Navbar';
 import { useAppAlert } from '../components/shared/modals';
 import { MY_PAGE_COPY } from '../constants/mypage/myPage';
+import { summarizeOnboardingPreferences } from '../constants/setup/onboarding';
 import { layout } from '../constants/common/layout';
-import { selectActivePlan, useAppStore, useAuthStore, usePlanStore } from '../stores';
+import { selectActivePlan, selectOnboardingForUser, useAppStore, useAuthStore, usePlanStore } from '../stores';
 import { selectAuthUser, selectIsAuthenticated } from '../stores/useAuthStore';
 import type { RootStackParamList } from '../navigation/types';
 import { logoutSession } from '../services/auth/authSession';
@@ -62,12 +63,13 @@ export function MyPageScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const { alert } = useAppAlert();
   const language = useAppStore(s => s.language) ?? 'ko';
+  const user = useAuthStore(selectAuthUser);
+  const onboarding = useAppStore(selectOnboardingForUser(user?.userId));
   const hideUserIdOnMyPage = useAppStore(s => s.hideUserIdOnMyPage);
   const setHideUserIdOnMyPage = useAppStore(s => s.setHideUserIdOnMyPage);
   const copy = MY_PAGE_COPY[language];
   const activePlan = usePlanStore(selectActivePlan);
   const isAuthenticated = useAuthStore(selectIsAuthenticated);
-  const user = useAuthStore(selectAuthUser);
   const rememberMe = useAuthStore(s => s.rememberMe);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -114,6 +116,21 @@ export function MyPageScreen({ navigation }: Props) {
   };
 
   const providerLabel = user ? copy.providers[user.provider] : '—';
+  const preferenceRows = summarizeOnboardingPreferences(onboarding, language, {
+    travelStyle: copy.preferenceFields.travelStyle,
+    schedulePace: copy.preferenceFields.schedulePace,
+    companions: copy.preferenceFields.companions,
+    luggage: copy.preferenceFields.luggage,
+    purposes: copy.preferenceFields.purposes,
+    busanFamiliarity: copy.preferenceFields.busanFamiliarity,
+    notSet: copy.preferenceFields.notSet,
+    skipped: copy.preferenceFields.skipped,
+  });
+  const preferencesMessage = !onboarding
+    ? copy.preferencesEmpty
+    : onboarding.skippedAll
+      ? copy.preferencesSkippedAll
+      : null;
 
   return (
     <View className="flex-1 bg-brand-background" style={layout.screen}>
@@ -165,6 +182,24 @@ export function MyPageScreen({ navigation }: Props) {
             label={copy.hideUserId}
             checked={hideUserIdOnMyPage}
             onPress={() => setHideUserIdOnMyPage(!hideUserIdOnMyPage)}
+          />
+        </View>
+
+        <View className="mb-5 rounded-2xl border border-brand-border bg-brand-surface p-5">
+          <Text className="mb-1 text-lg font-bold text-brand-text">{copy.preferences}</Text>
+          <Text className="mb-4 text-sm leading-5 text-brand-muted">{copy.preferencesDesc}</Text>
+          {preferenceRows ? (
+            <View className="mb-4">
+              {preferenceRows.map(row => (
+                <InfoRow key={row.id} label={row.label} value={row.value} />
+              ))}
+            </View>
+          ) : (
+            <Text className="mb-4 text-base text-brand-muted">{preferencesMessage}</Text>
+          )}
+          <PrimaryButton
+            label={copy.editPreferences}
+            onPress={() => navigation.navigate('Onboarding', { mode: 'edit' })}
           />
         </View>
 

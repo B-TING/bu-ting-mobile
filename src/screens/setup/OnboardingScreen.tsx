@@ -1,5 +1,6 @@
-import { useCallback, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { BackHandler, ScrollView, Text, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { PrimaryButton } from '../../components/shared/buttons/PrimaryButton';
@@ -8,6 +9,7 @@ import { FeatureHighlightCard } from '../../components/shared/cards/FeatureHighl
 import { OptionCard } from '../../components/shared/cards/OptionCard';
 import { OnboardingStepLayout } from '../../components/shared/layout/OnboardingStepLayout';
 import { OnboardingThankYouView } from '../../components/shared/layout/OnboardingThankYouView';
+import { useAppAlert } from '../../components/shared/modals';
 import {
   COMPANION_OPTIONS,
   FAMILIARITY_OPTIONS,
@@ -15,16 +17,18 @@ import {
   LUGGAGE_OPTIONS,
   ONBOARDING_FLOW,
   ONBOARDING_QUESTION_COUNT,
-  ONBOARDING_STEP_COUNT,
+  ONBOARDING_QUESTION_FLOW,
   PURPOSE_OPTIONS,
   SCHEDULE_PACE_OPTIONS,
   SETUP_COPY,
   TRAVEL_STYLE_OPTIONS,
 } from '../../constants/setup/onboarding';
-import type { OnboardingStepId } from '../../constants/setup/onboarding';
+import type { OnboardingFlowStep, OnboardingStepId } from '../../constants/setup/onboarding';
 import type { RootStackParamList } from '../../navigation/types';
 import { buildUserPromptContext } from '../../services/setup/promptBuilder';
-import { useAppStore } from '../../stores';
+import { persistTravelSurveyForUser } from '../../services/setup/travelSurveySync';
+import { selectOnboardingForUser, useAppStore } from '../../stores';
+import { selectIsAuthenticated, useAuthStore } from '../../stores/useAuthStore';
 import type {
   BusanFamiliarity,
   OnboardingAnswers,
@@ -55,30 +59,65 @@ const emptyAnswers = (): OnboardingAnswers => ({
   skippedAll: false,
 });
 
-function questionIndexForStep(flowStep: number): number | null {
-  const config = ONBOARDING_FLOW[flowStep];
-  if (config.kind === 'question') {
+function profileToAnswers(profile: OnboardingProfile): OnboardingAnswers {
+  return {
+    travelStyle: profile.travelStyle,
+    schedulePace: profile.schedulePace,
+    companions: profile.companions,
+    luggage: profile.luggage,
+    purposes: [...profile.purposes],
+    busanFamiliarity: profile.busanFamiliarity,
+    skippedSteps: [...profile.skippedSteps],
+    skippedAll: profile.skippedAll,
+  };
+}
+
+function questionIndexForStep(
+  flowSteps: OnboardingFlowStep[],
+  flowStep: number,
+): number | null {
+  const config = flowSteps[flowStep];
+  if (config?.kind === 'question') {
     return QUESTION_ORDER.indexOf(config.id);
   }
   return null;
 }
 
-export function OnboardingScreen({ navigation }: Props) {
+export function OnboardingScreen({ navigation, route }: Props) {
+  const mode = route.params?.mode ?? 'setup';
+  const isEditMode = mode === 'edit';
+  const isAccountMode = mode === 'account';
+  const isQuestionOnlyFlow = isEditMode || isAccountMode;
+  const { alert } = useAppAlert();
   const language = useAppStore(state => state.language) ?? 'en';
+  const isAuthenticated = useAuthStore(selectIsAuthenticated);
+  const userId = useAuthStore(state => state.user?.userId ?? null);
+  const accessToken = useAuthStore(state => state.accessToken);
+  const savedOnboarding = useAppStore(
+    isQuestionOnlyFlow ? selectOnboardingForUser(userId) : state => state.onboarding,
+  );
   const completeOnboardingStore = useAppStore(state => state.completeOnboarding);
+
+  const flowSteps = isQuestionOnlyFlow ? ONBOARDING_QUESTION_FLOW : ONBOARDING_FLOW;
+  const stepCount = flowSteps.length;
+
   const [step, setStep] = useState(0);
-  const [answers, setAnswers] = useState<OnboardingAnswers>(emptyAnswers);
+  const [answers, setAnswers] = useState<OnboardingAnswers>(() =>
+    isEditMode && savedOnboarding
+      ? profileToAnswers(savedOnboarding)
+      : emptyAnswers(),
+  );
   const [pendingComplete, setPendingComplete] = useState<OnboardingAnswers | null>(
     null,
   );
 
   const copy = SETUP_COPY[language];
-  const stepConfig = ONBOARDING_FLOW[step];
+  const stepConfig = flowSteps[step];
   const isWelcomeStep = stepConfig.kind === 'welcome';
   const isFeatureStep = stepConfig.kind === 'feature';
 
-  const persistAndNavigate = useCallback(
-    (finalAnswers: OnboardingAnswers) => {
+  const persistProfile = useCallback(
+    async (finalAnswers: OnboardingAnswers) => {
       const completedAt = new Date().toISOString();
       const profile: OnboardingProfile = {
         ...finalAnswers,
@@ -87,17 +126,60 @@ export function OnboardingScreen({ navigation }: Props) {
         aiPromptContext: '',
       };
       profile.aiPromptContext = buildUserPromptContext(profile);
-      completeOnboardingStore(profile);
+
+      const copy = SETUP_COPY[language];
+
+      if (isAuthenticated && userId && accessToken) {
+        try {
+          const synced = await persistTravelSurveyForUser(
+            profile,
+            userId,
+            accessToken,
+          );
+          completeOnboardingStore(synced, { userId });
+        } catch (error) {
+          console.warn('[Bu-Ting] travel survey save failed', error);
+          alert({
+            title: copy.travelSurveySaveError,
+          });
+          return;
+        }
+      } else {
+        completeOnboardingStore(profile, { userId: null });
+      }
+
+      if (isEditMode) {
+        navigation.goBack();
+        return;
+      }
+      if (isAccountMode) {
+        navigation.replace('MainHome');
+        return;
+      }
       navigation.replace('Login');
     },
-    [language, navigation, completeOnboardingStore],
+    [
+      language,
+      navigation,
+      completeOnboardingStore,
+      isEditMode,
+      isAccountMode,
+      isAuthenticated,
+      userId,
+      accessToken,
+      alert,
+    ],
   );
 
   const showThankYouThenComplete = useCallback(
     (finalAnswers: OnboardingAnswers) => {
+      if (isQuestionOnlyFlow) {
+        void persistProfile(finalAnswers);
+        return;
+      }
       setPendingComplete(finalAnswers);
     },
-    [],
+    [isQuestionOnlyFlow, persistProfile],
   );
 
   const markQuestionSkipped = (questionIndex: number) => {
@@ -110,12 +192,46 @@ export function OnboardingScreen({ navigation }: Props) {
   };
 
   const goNext = () => {
-    if (step < ONBOARDING_STEP_COUNT - 1) {
+    if (step < stepCount - 1) {
       setStep(s => s + 1);
       return;
     }
     showThankYouThenComplete(answers);
   };
+
+  const goPrevious = useCallback(() => {
+    if (pendingComplete) {
+      setPendingComplete(null);
+      setStep(stepCount - 1);
+      return;
+    }
+    if (step > 0) {
+      setStep(current => current - 1);
+      return;
+    }
+    if (isEditMode || isAccountMode) {
+      navigation.goBack();
+      return;
+    }
+    navigation.navigate('LanguageSelection');
+  }, [
+    isAccountMode,
+    isEditMode,
+    navigation,
+    pendingComplete,
+    step,
+    stepCount,
+  ]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+        goPrevious();
+        return true;
+      });
+      return () => subscription.remove();
+    }, [goPrevious]),
+  );
 
   const onSkipStep = () => {
     if (stepConfig.kind === 'welcome') {
@@ -123,12 +239,13 @@ export function OnboardingScreen({ navigation }: Props) {
       return;
     }
     if (stepConfig.kind === 'question') {
-      const qIndex = questionIndexForStep(step);
+      const qIndex = questionIndexForStep(flowSteps, step);
       if (qIndex !== null && qIndex >= 0) {
         markQuestionSkipped(qIndex);
       }
-      const nextStep = step + 2;
-      if (nextStep >= ONBOARDING_STEP_COUNT) {
+      const skipDelta = isEditMode ? 1 : 2;
+      const nextStep = step + skipDelta;
+      if (nextStep >= stepCount) {
         showThankYouThenComplete(answers);
         return;
       }
@@ -139,19 +256,31 @@ export function OnboardingScreen({ navigation }: Props) {
   };
 
   const onSkipAll = () => {
+    if (isEditMode) {
+      navigation.goBack();
+      return;
+    }
+    if (isAccountMode) {
+      void persistProfile({
+        ...answers,
+        skippedAll: true,
+        skippedSteps: Array.from({ length: ONBOARDING_QUESTION_COUNT }, (_, i) => i),
+      });
+      return;
+    }
     showThankYouThenComplete({
       ...answers,
       skippedAll: true,
-      skippedSteps: Array.from(
-        { length: ONBOARDING_QUESTION_COUNT },
-        (_, i) => i,
-      ),
+      skippedSteps: Array.from({ length: ONBOARDING_QUESTION_COUNT }, (_, i) => i),
     });
   };
 
   const canProceed = (): boolean => {
     if (isWelcomeStep || isFeatureStep) {
       return true;
+    }
+    if (stepConfig.kind !== 'question') {
+      return false;
     }
     switch (stepConfig.id) {
       case 'travelStyle':
@@ -184,7 +313,7 @@ export function OnboardingScreen({ navigation }: Props) {
   };
 
   const renderOptions = () => {
-    if (stepConfig.kind === 'feature') {
+    if (stepConfig.kind !== 'question') {
       return null;
     }
     switch (stepConfig.id) {
@@ -265,6 +394,11 @@ export function OnboardingScreen({ navigation }: Props) {
     }
   };
 
+  const featureContent =
+    stepConfig.kind === 'feature'
+      ? getFeatureStepContent(stepConfig.forQuestion, answers)
+      : null;
+
   const renderFeatureHighlights = () => {
     if (!featureContent) {
       return null;
@@ -284,33 +418,38 @@ export function OnboardingScreen({ navigation }: Props) {
     );
   };
 
-  const featureContent =
-    stepConfig.kind === 'feature'
-      ? getFeatureStepContent(stepConfig.forQuestion, answers)
-      : null;
+  const title = useMemo(() => {
+    if (stepConfig.kind === 'welcome') {
+      return copy.welcomeTitle;
+    }
+    if (stepConfig.kind === 'question') {
+      return stepConfig.title[language];
+    }
+    return featureContent?.title[language] ?? '';
+  }, [copy.welcomeTitle, featureContent, language, stepConfig]);
 
-  const title =
-    stepConfig.kind === 'welcome'
-      ? copy.welcomeTitle
-      : stepConfig.kind === 'question'
-      ? stepConfig.title[language]
-      : (featureContent?.title[language] ?? '');
-
-  const subtitle =
-    stepConfig.kind === 'welcome'
-      ? copy.welcomeSubtitle
-      : stepConfig.kind === 'question'
-      ? stepConfig.subtitle[language]
-      : (featureContent?.subtitle[language] ?? '');
+  const subtitle = useMemo(() => {
+    if (stepConfig.kind === 'welcome') {
+      return copy.welcomeSubtitle;
+    }
+    if (stepConfig.kind === 'question') {
+      return stepConfig.subtitle[language];
+    }
+    return featureContent?.subtitle[language] ?? '';
+  }, [copy.welcomeSubtitle, featureContent, language, stepConfig]);
 
   const footerLabel =
-    step === ONBOARDING_STEP_COUNT - 1 ? copy.finish : copy.next;
+    step === stepCount - 1
+      ? isEditMode
+        ? copy.save
+        : copy.finish
+      : copy.next;
 
   const handleThankYouComplete = useCallback(() => {
     if (pendingComplete) {
-      persistAndNavigate(pendingComplete);
+      void persistProfile(pendingComplete);
     }
-  }, [pendingComplete, persistAndNavigate]);
+  }, [pendingComplete, persistProfile]);
 
   if (pendingComplete) {
     return (
@@ -318,6 +457,8 @@ export function OnboardingScreen({ navigation }: Props) {
         title={copy.thankYouTitle}
         privacy={copy.thankYouPrivacy}
         waitLabel={copy.thankYouWait}
+        backLabel={copy.back}
+        onBack={goPrevious}
         onComplete={handleThankYouComplete}
       />
     );
@@ -326,11 +467,14 @@ export function OnboardingScreen({ navigation }: Props) {
   return (
     <OnboardingStepLayout
       stepIndex={step}
-      stepLabel={copy.stepOf(step + 1, ONBOARDING_STEP_COUNT)}
+      stepTotal={stepCount}
+      stepLabel={copy.stepOf(step + 1, stepCount)}
       title={title}
       subtitle={subtitle}
+      backLabel={copy.back}
+      onBack={goPrevious}
       skipLabel={copy.skip}
-      skipAllLabel={copy.skipAll}
+      skipAllLabel={isEditMode ? copy.cancelEdit : copy.skipAll}
       onSkipStep={onSkipStep}
       onSkipAll={onSkipAll}
       footer={
