@@ -783,6 +783,7 @@ export const SETUP_COPY: Record<
     skip: string;
     skipAll: string;
     next: string;
+    back: string;
     finish: string;
     save: string;
     cancelEdit: string;
@@ -790,6 +791,11 @@ export const SETUP_COPY: Record<
     thankYouTitle: string;
     thankYouPrivacy: string;
     thankYouWait: string;
+    travelSurveyPromptTitle: string;
+    travelSurveyPromptMessage: string;
+    travelSurveyPromptStart: string;
+    travelSurveyPromptLater: string;
+    travelSurveySaveError: string;
   }
 > = {
   ko: {
@@ -806,6 +812,7 @@ export const SETUP_COPY: Record<
     skip: '건너뛰기',
     skipAll: '온보딩 전체 건너뛰기',
     next: '다음',
+    back: '이전',
     finish: '시작하기',
     save: '저장',
     cancelEdit: '취소',
@@ -814,6 +821,12 @@ export const SETUP_COPY: Record<
     thankYouPrivacy:
       '응답 정보는 사용자에게 필요한 정보를 제공하는 데 이용됩니다.',
     thankYouWait: '잠시만 기다려 주세요…',
+    travelSurveyPromptTitle: '여행 취향을 설정할까요?',
+    travelSurveyPromptMessage:
+      '이 계정에는 저장된 여행 취향이 없습니다. 맞춤 안내를 위해 설문을 진행할까요?',
+    travelSurveyPromptStart: '설문 시작',
+    travelSurveyPromptLater: '나중에',
+    travelSurveySaveError: '취향 저장에 실패했습니다. 다시 시도해 주세요.',
   },
   en: {
     languageTitle: 'Choose your language',
@@ -829,6 +842,7 @@ export const SETUP_COPY: Record<
     skip: 'Skip',
     skipAll: 'Skip all onboarding',
     next: 'Next',
+    back: 'Back',
     finish: 'Get started',
     save: 'Save',
     cancelEdit: 'Cancel',
@@ -837,6 +851,12 @@ export const SETUP_COPY: Record<
     thankYouPrivacy:
       'Your responses are used to provide information tailored to your needs.',
     thankYouWait: 'Just a moment…',
+    travelSurveyPromptTitle: 'Set up your travel preferences?',
+    travelSurveyPromptMessage:
+      'This account has no saved travel preferences. Would you like to take a short survey for personalized guidance?',
+    travelSurveyPromptStart: 'Start survey',
+    travelSurveyPromptLater: 'Later',
+    travelSurveySaveError: 'Could not save your preferences. Please try again.',
   },
   ja: {
     languageTitle: '言語を選択',
@@ -852,6 +872,7 @@ export const SETUP_COPY: Record<
     skip: 'スキップ',
     skipAll: 'オンボーディングをすべてスキップ',
     next: '次へ',
+    back: '戻る',
     finish: 'はじめる',
     save: '保存',
     cancelEdit: 'キャンセル',
@@ -860,6 +881,12 @@ export const SETUP_COPY: Record<
     thankYouPrivacy:
       'ご回答は、お客様に必要な情報を提供するために利用されます。',
     thankYouWait: '少々お待ちください…',
+    travelSurveyPromptTitle: '旅行の好みを設定しますか？',
+    travelSurveyPromptMessage:
+      'このアカウントには保存された旅行の好みがありません。パーソナライズのためアンケートを行いますか？',
+    travelSurveyPromptStart: 'アンケート開始',
+    travelSurveyPromptLater: 'あとで',
+    travelSurveySaveError: '好みの保存に失敗しました。もう一度お試しください。',
   },
   zh: {
     languageTitle: '选择语言',
@@ -875,6 +902,7 @@ export const SETUP_COPY: Record<
     skip: '跳过',
     skipAll: '跳过全部引导',
     next: '下一步',
+    back: '上一步',
     finish: '开始',
     save: '保存',
     cancelEdit: '取消',
@@ -882,5 +910,11 @@ export const SETUP_COPY: Record<
     thankYouTitle: '感谢您完成问卷！',
     thankYouPrivacy: '您的回答将用于向您提供所需的信息。',
     thankYouWait: '请稍候…',
+    travelSurveyPromptTitle: '要设置旅行偏好吗？',
+    travelSurveyPromptMessage:
+      '此账户尚未保存旅行偏好。是否进行简短问卷以获得个性化指引？',
+    travelSurveyPromptStart: '开始问卷',
+    travelSurveyPromptLater: '稍后',
+    travelSurveySaveError: '偏好保存失败，请重试。',
   },
 };

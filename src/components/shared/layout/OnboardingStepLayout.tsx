@@ -11,6 +11,8 @@ type OnboardingStepLayoutProps = {
   stepLabel: string;
   title: string;
   subtitle: string;
+  backLabel?: string;
+  onBack?: () => void;
   skipLabel: string;
   skipAllLabel?: string;
   onSkipStep: () => void;
@@ -25,6 +27,8 @@ export function OnboardingStepLayout({
   stepLabel,
   title,
   subtitle,
+  backLabel,
+  onBack,
   skipLabel,
   skipAllLabel,
   onSkipStep,
@@ -40,6 +44,13 @@ export function OnboardingStepLayout({
       className="flex-1 bg-brand-background px-6"
       style={[layout.screenPad24, { paddingTop: insets.top + 8 }]}>
       <View className="mb-3 flex-row items-center justify-between">
+        {onBack && backLabel ? (
+          <Pressable onPress={onBack} hitSlop={8} className="min-w-[52px] active:opacity-80">
+            <Text className="text-sm font-semibold text-brand-primary">{backLabel}</Text>
+          </Pressable>
+        ) : (
+          <View className="min-w-[52px]" />
+        )}
         <Text className="text-sm font-semibold text-brand-muted">{stepLabel}</Text>
         <SkipButton label={skipLabel} onPress={onSkipStep} />
       </View>

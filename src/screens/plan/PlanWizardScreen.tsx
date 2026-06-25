@@ -28,7 +28,8 @@ import {
 } from '../../constants/plan/planWizard';
 import type { RootStackParamList } from '../../navigation/types';
 import { requestAutoPlan, requestPlanCandidates } from '../../services/plan/planAiService';
-import { useAppStore, usePlanStore, emptyWizardAnswers } from '../../stores';
+import { selectOnboardingForUser, useAppStore, useAuthStore, usePlanStore, emptyWizardAnswers } from '../../stores';
+import { selectAuthUser } from '../../stores/useAuthStore';
 import type { CompanionGroupType } from '../../types/planWizard';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PlanWizard'>;
@@ -46,7 +47,8 @@ function defaultDates() {
 
 export function PlanWizardScreen({ navigation }: Props) {
   const language = useAppStore(s => s.language) ?? 'ko';
-  const onboarding = useAppStore(s => s.onboarding);
+  const user = useAuthStore(selectAuthUser);
+  const onboarding = useAppStore(selectOnboardingForUser(user?.userId));
   const addPlan = usePlanStore(s => s.addPlan);
   const confirmPlan = usePlanStore(s => s.confirmPlan);
   const setPlanCandidates = usePlanStore(s => s.setPlanCandidates);

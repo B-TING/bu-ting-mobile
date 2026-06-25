@@ -11,7 +11,7 @@ import { useAppAlert } from '../components/shared/modals';
 import { MY_PAGE_COPY } from '../constants/mypage/myPage';
 import { summarizeOnboardingPreferences } from '../constants/setup/onboarding';
 import { layout } from '../constants/common/layout';
-import { selectActivePlan, useAppStore, useAuthStore, usePlanStore } from '../stores';
+import { selectActivePlan, selectOnboardingForUser, useAppStore, useAuthStore, usePlanStore } from '../stores';
 import { selectAuthUser, selectIsAuthenticated } from '../stores/useAuthStore';
 import type { RootStackParamList } from '../navigation/types';
 import { logoutSession } from '../services/auth/authSession';
@@ -63,13 +63,13 @@ export function MyPageScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const { alert } = useAppAlert();
   const language = useAppStore(s => s.language) ?? 'ko';
-  const onboarding = useAppStore(s => s.onboarding);
+  const user = useAuthStore(selectAuthUser);
+  const onboarding = useAppStore(selectOnboardingForUser(user?.userId));
   const hideUserIdOnMyPage = useAppStore(s => s.hideUserIdOnMyPage);
   const setHideUserIdOnMyPage = useAppStore(s => s.setHideUserIdOnMyPage);
   const copy = MY_PAGE_COPY[language];
   const activePlan = usePlanStore(selectActivePlan);
   const isAuthenticated = useAuthStore(selectIsAuthenticated);
-  const user = useAuthStore(selectAuthUser);
   const rememberMe = useAuthStore(s => s.rememberMe);
   const [menuOpen, setMenuOpen] = useState(false);
 

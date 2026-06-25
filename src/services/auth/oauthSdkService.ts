@@ -10,7 +10,7 @@ import NaverLogin from '@react-native-seoul/naver-login';
 import { OAUTH_CONFIG } from '../../constants/auth/oauthConfig';
 import { NAVER_OAUTH_ENABLED } from '../../constants/auth/oauthProviders';
 import type { OAuthProvider } from '../../types/auth';
-import { logAuth } from '../../utils/authLogger';
+import { logAuth } from '../../utils/auth/authLogger';
 
 export class OAuthSdkError extends Error {
   constructor(message: string) {
@@ -129,7 +129,7 @@ async function signInWithKakao(): Promise<ProviderTokenResult> {
     if (!profile.email) {
       logAuth(
         'sdk.kakao.profile.no-email',
-        'Kakao email consent missing — backend signup may fail (enable email scope in Kakao console)',
+        'Kakao email consent missing ? backend signup may fail (enable email scope in Kakao console)',
         { level: 'warn' },
       );
     }
@@ -143,8 +143,8 @@ async function signInWithKakao(): Promise<ProviderTokenResult> {
     );
   }
 
-  // OpenAPI/카카오 REST API: 백엔드 검증은 access_token 기준 (/v2/user/me, /v1/user/access_token_info).
-  // id_token은 OIDC 전용이며 Kakao providerToken으로 전달하지 않음.
+  // OpenAPI/??? REST API: ??? ??? access_token ?? (/v2/user/me, /v1/user/access_token_info).
+  // id_token? OIDC ???? Kakao providerToken?? ???? ??.
   return { provider: 'kakao', providerToken: token.accessToken };
 }
 
@@ -227,7 +227,7 @@ export async function signInWithProvider(
   }
 }
 
-/** SDK에 남아 있는 세션으로 provider token을 갱신합니다. */
+/** SDK? ?? ?? ???? provider token? ?????. */
 export async function refreshProviderToken(
   provider: OAuthProvider,
 ): Promise<ProviderTokenResult | null> {

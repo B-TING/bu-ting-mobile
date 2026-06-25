@@ -6,7 +6,7 @@ import type {
   OAuthLoginResponse,
   OAuthProvider,
 } from '../../types/auth';
-import { logAuth } from '../../utils/authLogger';
+import { logAuth } from '../../utils/auth/authLogger';
 
 export class AuthServiceError extends Error {
   status?: number;

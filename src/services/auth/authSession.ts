@@ -4,6 +4,10 @@ import { logout as kakaoLogout } from '@react-native-seoul/kakao-login';
 import { NAVER_OAUTH_ENABLED } from '../../constants/auth/oauthProviders';
 import { buildOAuthLoginRequest, loginWithOAuth } from './authService';
 import { refreshProviderToken } from './oauthSdkService';
+import {
+  syncTravelSurveyAfterLogin,
+  type TravelSurveyLoginSyncResult,
+} from '../setup/travelSurveySync';
 import { useAppStore } from '../../stores/useAppStore';
 import {
   hydrateAuthStore,
@@ -11,7 +15,27 @@ import {
   useAuthStore,
 } from '../../stores/useAuthStore';
 import type { AuthUser, OAuthLoginResponse, OAuthProvider } from '../../types/auth';
-import { logAuth } from '../../utils/authLogger';
+import { logAuth } from '../../utils/auth/authLogger';
+
+export type CompleteProviderLoginResult = {
+  response: OAuthLoginResponse;
+  needsOnboardingPrompt: boolean;
+};
+
+async function syncTravelSurveyForCurrentSession(): Promise<TravelSurveyLoginSyncResult> {
+  const { accessToken, user } = useAuthStore.getState();
+  if (!accessToken || !user?.userId) {
+    return { needsOnboardingPrompt: false };
+  }
+  return syncTravelSurveyAfterLogin(user.userId, accessToken);
+}
+
+function applyTravelSurveySyncResult(result: TravelSurveyLoginSyncResult): boolean {
+  if (result.needsOnboardingPrompt) {
+    useAppStore.getState().setPendingTravelSurveyPrompt(true);
+  }
+  return result.needsOnboardingPrompt;
+}
 
 export type ApplyAuthSessionOptions = {
   rememberMe: boolean;
@@ -63,7 +87,7 @@ export async function completeProviderLogin(
   provider: OAuthProvider,
   providerToken: string,
   rememberMe: boolean,
-): Promise<OAuthLoginResponse> {
+): Promise<CompleteProviderLoginResult> {
   logAuth('login.start', 'Provider login flow started', {
     detail: { provider, rememberMe, providerToken },
   });
@@ -74,11 +98,14 @@ export async function completeProviderLogin(
 
   applyAuthSession(response, { rememberMe, provider, providerToken });
 
+  const syncResult = await syncTravelSurveyForCurrentSession();
+  const needsOnboardingPrompt = applyTravelSurveySyncResult(syncResult);
+
   logAuth('login.complete', 'Provider login flow completed', {
-    detail: { provider, userId: response.userId },
+    detail: { provider, userId: response.userId, needsOnboardingPrompt },
   });
 
-  return response;
+  return { response, needsOnboardingPrompt };
 }
 
 async function tryBackendLogin(
@@ -130,15 +157,17 @@ export async function logoutSession(): Promise<void> {
       userId: null,
       displayName: null,
     },
+    onboarding: current.guestOnboarding ?? null,
+    pendingTravelSurveyPrompt: false,
   }));
 
   logAuth('logout.complete', 'Logout completed');
 }
 
 /**
- * 앱 시작 시 자동 로그인을 시도합니다.
- * 1) 저장된 providerToken으로 백엔드 검증
- * 2) 실패 시 SDK 세션으로 토큰 갱신 후 재시도
+ * ? ?? ? ?? ???? ?????.
+ * 1) ??? providerToken?? ??? ??
+ * 2) ?? ? SDK ???? ?? ?? ? ???
  */
 export async function bootstrapAuth(): Promise<void> {
   logAuth('bootstrap.start', 'Auth bootstrap started');
@@ -195,7 +224,7 @@ export async function bootstrapAuth(): Promise<void> {
     }
   }
 
-  logAuth('bootstrap.fail', 'Auto login failed — session cleared', { level: 'warn' });
+  logAuth('bootstrap.fail', 'Auto login failed ? session cleared', { level: 'warn' });
   useAuthStore.getState().clearSession();
   useAppStore.setState(current => ({
     ...current,
