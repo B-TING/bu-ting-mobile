@@ -1,6 +1,6 @@
-import { localizedAreaName } from '../../constants/accommodation';
-import { localizedAttractionCategory } from '../../constants/attractions';
-import { getScheduleDayColor } from '../../constants/scheduleDayColors';
+import { localizedAreaName } from '../../constants/places/accommodation';
+import { localizedAttractionCategory } from '../../constants/places/attractions';
+import { getScheduleDayColor } from '../../constants/plan/scheduleDayColors';
 import type { BusanAccommodation } from '../../types/accommodation';
 import type { BusanAttraction } from '../../types/attraction';
 import type { SubwayLockerStation } from '../../types/subwayLocker';

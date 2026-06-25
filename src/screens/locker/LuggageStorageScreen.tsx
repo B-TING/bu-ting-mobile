@@ -6,12 +6,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LockerMapView } from '../../components/locker/LockerMapView';
 import { SubwayLockerDetailSheet } from '../../components/locker/SubwayLockerDetailSheet';
 import { BackButton } from '../../components/shared/buttons/BackButton';
-import { LUGGAGE_STORAGE_COPY } from '../../constants/luggageStorage';
+import { LUGGAGE_STORAGE_COPY } from '../../constants/locker/luggageStorage';
 import type { RootStackParamList } from '../../navigation/types';
-import { fetchSubwayLockerStations } from '../../services/subwayLockerService';
+import { fetchSubwayLockerStations } from '../../services/locker/subwayLockerService';
 import { useAppStore, useLockerBookmarkStore } from '../../stores';
 import type { SubwayLockerStation } from '../../types/subwayLocker';
-import { sortLockerStations } from '../../utils/subwayLockerSort';
+import { sortLockerStations } from '../../utils/locker/subwayLockerSort';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LuggageStorage'>;
 

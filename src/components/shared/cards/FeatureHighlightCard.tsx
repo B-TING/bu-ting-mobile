@@ -1,6 +1,6 @@
 import { Text, View } from 'react-native';
 
-import { cn } from '../../../utils/cn';
+import { cn } from '../../../utils/common/cn';
 
 type FeatureHighlightCardProps = {
   emoji: string;

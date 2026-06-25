@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
-import { REVIEW_TAG_PRESETS, type TRAVEL_REVIEW_COPY } from '../../../constants/travelReview';
+import { REVIEW_TAG_PRESETS, type TRAVEL_REVIEW_COPY } from '../../../constants/review/travelReview';
 import type { AppLanguage } from '../../../types/user';
 import type { PlaceReview, ReviewMedia } from '../../../types/travelReview';
 import type { RouteItem } from '../../../types/travelPlan';
-import { createId } from '../../../utils/id';
+import { createId } from '../../../utils/common/id';
 import { StarRating } from '../../shared/rating/StarRating';
 import { AppModal, AppModalActions } from '../../shared/modals';
 

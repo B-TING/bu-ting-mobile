@@ -11,20 +11,20 @@ import { HomeActionFabs, FAB_GAP, FAB_SIZE } from '../components/helpdesk/HomeAc
 import { AppBar } from '../components/shared/navigation/AppBar';
 import { AppMenuDrawer } from '../components/shared/navigation/AppMenuDrawer';
 import { Navbar, type NavbarTab } from '../components/shared/navigation/Navbar';
-import { HELP_DESK_COPY } from '../constants/helpDesk';
+import { HELP_DESK_COPY } from '../constants/helpdesk/helpDesk';
 import {
   MAIN_HOME_COPY,
   MOCK_EVENTS,
   MOCK_SPECIAL_OFFER,
   MOCK_TRAVELOGUE,
   QUICK_ACCESS_ITEMS,
-} from '../constants/mainHome';
+} from '../constants/home/mainHome';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { layout } from '../constants/layout';
+import { layout } from '../constants/common/layout';
 import type { RootStackParamList } from '../navigation/types';
 import { selectActivePlan, useAppStore, usePlanStore, useTravelogueStore } from '../stores';
-import { isTraveloguePublic } from '../utils/travelReview';
-import { getNearestUpcomingStop } from '../utils/planSchedule';
+import { isTraveloguePublic } from '../utils/review/travelReview';
+import { getNearestUpcomingStop } from '../utils/plan/planSchedule';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MainHome'>;
 

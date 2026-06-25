@@ -4,9 +4,9 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AppErrorBoundary } from './src/components/shared/layout/AppErrorBoundary';
 import { AppAlertProvider } from './src/components/shared/modals';
-import { layout } from './src/constants/layout';
+import { layout } from './src/constants/common/layout';
 import { RootNavigator } from './src/navigation/RootNavigator';
-import { initOAuthSdks } from './src/services/oauthSdkService';
+import { initOAuthSdks } from './src/services/auth/oauthSdkService';
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';

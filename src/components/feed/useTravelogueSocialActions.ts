@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 
 import type { ImportPlanModalPhase, ImportPlanModalProps } from './modals/ImportPlanModal';
-import type { TRAVEL_REVIEW_COPY } from '../../constants/travelReview';
+import type { TRAVEL_REVIEW_COPY } from '../../constants/review/travelReview';
 import type { RootStackParamList } from '../../navigation/types';
 import {
   selectActivePlan,

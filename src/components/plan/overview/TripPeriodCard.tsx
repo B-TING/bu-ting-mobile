@@ -1,8 +1,8 @@
 import { Text, View } from 'react-native';
 
-import { dayCountBetween } from '../../../constants/planWizard';
+import { dayCountBetween } from '../../../constants/plan/planWizard';
 import type { AppLanguage } from '../../../types/user';
-import { formatWeekdayDate } from '../../../utils/geo';
+import { formatWeekdayDate } from '../../../utils/geo/geo';
 
 type TripPeriodCardProps = {
   startDate: string;

@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 
 import type { ReviewMedia, Travelogue } from '../../types/travelReview';
-import { travelogueThumbnailEmoji } from '../../utils/travelReview';
+import { travelogueThumbnailEmoji } from '../../utils/review/travelReview';
 
 type TravelogueImageCarouselProps = {
   travelogue: Travelogue;

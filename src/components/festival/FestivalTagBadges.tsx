@@ -5,9 +5,9 @@ import {
   getFestivalStatus,
   type BusanFestival,
   type FestivalStatus,
-} from '../../constants/festivalCalendar';
+} from '../../constants/festival/festivalCalendar';
 import type { AppLanguage } from '../../types/user';
-import { cn } from '../../utils/cn';
+import { cn } from '../../utils/common/cn';
 
 type FestivalTagBadgesProps = {
   festival: BusanFestival;

@@ -3,7 +3,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '../components/shared/buttons/BackButton';
-import { layout } from '../constants/layout';
+import { layout } from '../constants/common/layout';
 import type { RootStackParamList } from '../navigation/types';
 import { useAppStore } from '../stores';
 

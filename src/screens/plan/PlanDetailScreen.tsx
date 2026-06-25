@@ -18,8 +18,8 @@ import {
 } from '../../components/plan/tabs/PlanScheduleTab';
 import { PlanTabPager } from '../../components/plan/tabs/PlanTabPager';
 import { PlaceReviewFormModal } from '../../components/review/modals/PlaceReviewFormModal';
-import { PLAN_DETAIL_COPY, type PlanDetailTab } from '../../constants/planDetail';
-import { TRAVEL_REVIEW_COPY } from '../../constants/travelReview';
+import { PLAN_DETAIL_COPY, type PlanDetailTab } from '../../constants/plan/planDetail';
+import { TRAVEL_REVIEW_COPY } from '../../constants/review/travelReview';
 import type { RootStackParamList } from '../../navigation/types';
 import {
   EMPTY_REVIEWS,
@@ -29,12 +29,12 @@ import {
   useTravelogueStore,
 } from '../../stores';
 import type { BudgetEntry, RouteItem, TravelLegMode } from '../../types/travelPlan';
-import { sortedRoutes } from '../../utils/planItinerary';
+import { sortedRoutes } from '../../utils/plan/planItinerary';
 import {
   candidateToRouteItem,
   type RebootPlaceCandidate,
-} from '../../utils/rebootPlaces';
-import { getReviewForRoute, reviewProgress } from '../../utils/travelReview';
+} from '../../utils/places/rebootPlaces';
+import { getReviewForRoute, reviewProgress } from '../../utils/review/travelReview';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PlanDetail'>;
 

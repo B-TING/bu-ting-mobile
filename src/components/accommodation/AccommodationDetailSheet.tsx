@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Linking, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 
-import { ACCOMMODATION_COPY, localizedAreaName } from '../../constants/accommodation';
+import { ACCOMMODATION_COPY, localizedAreaName } from '../../constants/places/accommodation';
 import { fetchAccommodationDetail, buildGoogleMapsUrl } from '../../kakaoMap';
 import type { BusanAccommodation } from '../../types/accommodation';
 import type { AccommodationPlaceDetail } from '../../types/googlePlaces';

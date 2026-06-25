@@ -5,13 +5,13 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { PrimaryButton } from '../../components/shared/buttons/PrimaryButton';
 import { BrandLogo } from '../../components/shared/brand/BrandLogo';
-import { layout } from '../../constants/layout';
-import { LANGUAGE_OPTIONS } from '../../constants/languages';
-import { SETUP_COPY } from '../../constants/onboarding';
+import { layout } from '../../constants/common/layout';
+import { LANGUAGE_OPTIONS } from '../../constants/setup/languages';
+import { SETUP_COPY } from '../../constants/setup/onboarding';
 import type { RootStackParamList } from '../../navigation/types';
 import { useAppStore } from '../../stores';
 import type { AppLanguage } from '../../types/user';
-import { cn } from '../../utils/cn';
+import { cn } from '../../utils/common/cn';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LanguageSelection'>;
 

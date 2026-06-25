@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 import type { PlaceReview, Travelogue, TravelogueComment, TravelogueSocial } from '../types/travelReview';
-import { createId } from '../utils/id';
+import { createId } from '../utils/common/id';
 
 export const EMPTY_REVIEWS: PlaceReview[] = [];
 export const EMPTY_SOCIAL: TravelogueSocial = { helpfulUserIds: [], comments: [] };

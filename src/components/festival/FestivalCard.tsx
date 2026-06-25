@@ -7,7 +7,7 @@ import {
   festivalSummary,
   festivalTitle,
   type BusanFestival,
-} from '../../constants/festivalCalendar';
+} from '../../constants/festival/festivalCalendar';
 import type { AppLanguage } from '../../types/user';
 import { FestivalTagBadges } from './FestivalTagBadges';
 

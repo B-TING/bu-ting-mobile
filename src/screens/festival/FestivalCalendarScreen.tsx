@@ -11,7 +11,7 @@ import {
   festivalsInMonth,
   parseIsoDate,
   todayIso,
-} from '../../constants/festivalCalendar';
+} from '../../constants/festival/festivalCalendar';
 import type { RootStackParamList } from '../../navigation/types';
 import { useAppStore } from '../../stores';
 

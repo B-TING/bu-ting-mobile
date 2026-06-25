@@ -1,6 +1,6 @@
 import { Text, TextInput, View } from 'react-native';
 
-import type { FESTIVAL_CALENDAR_COPY } from '../../constants/festivalCalendar';
+import type { FESTIVAL_CALENDAR_COPY } from '../../constants/festival/festivalCalendar';
 
 type Copy = (typeof FESTIVAL_CALENDAR_COPY)['ko'];
 

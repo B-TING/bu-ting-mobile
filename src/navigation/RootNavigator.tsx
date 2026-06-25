@@ -4,7 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { BrandIcon } from '../components/shared/brand/BrandIcon';
-import { layout } from '../constants/layout';
+import { layout } from '../constants/common/layout';
 import { useSetupPhase } from '../hooks/useSetupPhase';
 import { FestivalCalendarScreen } from '../screens/festival/FestivalCalendarScreen';
 import { FestivalDetailScreen } from '../screens/festival/FestivalDetailScreen';
@@ -23,7 +23,7 @@ import { PlanWizardScreen } from '../screens/plan/PlanWizardScreen';
 import { LanguageSelectionScreen } from '../screens/setup/LanguageSelectionScreen';
 import { LoginScreen } from '../screens/setup/LoginScreen';
 import { OnboardingScreen } from '../screens/setup/OnboardingScreen';
-import { bootstrapAuth } from '../services/authSession';
+import { bootstrapAuth } from '../services/auth/authSession';
 import {
   hydrateAppStore,
   useAppStore,

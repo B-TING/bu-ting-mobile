@@ -1,6 +1,6 @@
 import { ScrollView, useWindowDimensions } from 'react-native';
 
-import type { FESTIVAL_CALENDAR_COPY } from '../../constants/festivalCalendar';
+import type { FESTIVAL_CALENDAR_COPY } from '../../constants/festival/festivalCalendar';
 import { AppModal, AppModalActions } from '../shared/modals';
 import { FestivalCommentsPlaceholder } from './FestivalCommentsPlaceholder';
 

@@ -1,7 +1,10 @@
-import { ENABLED_OAUTH_PROVIDERS } from '../../constants/oauthProviders';
-import type { OAuthProvider } from '../../types/auth';
-import { cn } from '../../utils/cn';
 import { Pressable, Text, View } from 'react-native';
+
+import { ENABLED_OAUTH_PROVIDERS } from '../../constants/auth/oauthProviders';
+import type { OAuthProvider } from '../../types/auth';
+import { cn } from '../../utils/common/cn';
+import { GoogleSignInButton } from './GoogleSignInButton';
+import { KakaoSignInButton } from './KakaoSignInButton';
 
 type ProviderMeta = {
   label: Record<'ko' | 'en', string>;
@@ -11,12 +14,12 @@ type ProviderMeta = {
 
 const PROVIDER_META: Record<OAuthProvider, ProviderMeta> = {
   google: {
-    label: { ko: 'Google로 계속하기', en: 'Continue with Google' },
+    label: { ko: 'Google 계정으로 로그인', en: 'Sign in with Google' },
     backgroundClass: 'bg-white border-brand-border',
     textClass: 'text-brand-text',
   },
   kakao: {
-    label: { ko: '카카오로 계속하기', en: 'Continue with Kakao' },
+    label: { ko: '카카오 로그인', en: 'Login with Kakao' },
     backgroundClass: 'bg-[#FEE500] border-[#FEE500]',
     textClass: 'text-[#191919]',
   },
@@ -42,6 +45,26 @@ export function OAuthProviderButton({
 }: Props) {
   const meta = PROVIDER_META[provider];
   const label = language === 'ko' ? meta.label.ko : meta.label.en;
+
+  if (provider === 'google') {
+    return (
+      <GoogleSignInButton
+        language={language}
+        disabled={disabled}
+        onPress={() => onPress(provider)}
+      />
+    );
+  }
+
+  if (provider === 'kakao') {
+    return (
+      <KakaoSignInButton
+        language={language}
+        disabled={disabled}
+        onPress={() => onPress(provider)}
+      />
+    );
+  }
 
   return (
     <Pressable

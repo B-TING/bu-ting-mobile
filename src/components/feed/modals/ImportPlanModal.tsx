@@ -1,6 +1,6 @@
 import { Text, View } from 'react-native';
 
-import type { TRAVEL_REVIEW_COPY } from '../../../constants/travelReview';
+import type { TRAVEL_REVIEW_COPY } from '../../../constants/review/travelReview';
 import type { Travelogue } from '../../../types/travelReview';
 import type { TravelPlan } from '../../../types/travelPlan';
 import type { AppLanguage } from '../../../types/user';

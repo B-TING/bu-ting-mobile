@@ -8,13 +8,13 @@ import { AppBar } from '../components/shared/navigation/AppBar';
 import { AppMenuDrawer } from '../components/shared/navigation/AppMenuDrawer';
 import { Navbar, type NavbarTab } from '../components/shared/navigation/Navbar';
 import { useAppAlert } from '../components/shared/modals';
-import { MY_PAGE_COPY } from '../constants/myPage';
-import { layout } from '../constants/layout';
+import { MY_PAGE_COPY } from '../constants/mypage/myPage';
+import { layout } from '../constants/common/layout';
 import { selectActivePlan, useAppStore, useAuthStore, usePlanStore } from '../stores';
 import { selectAuthUser, selectIsAuthenticated } from '../stores/useAuthStore';
 import type { RootStackParamList } from '../navigation/types';
-import { logoutSession } from '../services/authSession';
-import { cn } from '../utils/cn';
+import { logoutSession } from '../services/auth/authSession';
+import { cn } from '../utils/common/cn';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MyPage'>;
 

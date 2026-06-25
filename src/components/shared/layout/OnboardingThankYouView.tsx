@@ -2,8 +2,8 @@ import { useEffect } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ONBOARDING_COMPLETE_DELAY_MS } from '../../../constants/onboarding';
-import { layout } from '../../../constants/layout';
+import { ONBOARDING_COMPLETE_DELAY_MS } from '../../../constants/setup/onboarding';
+import { layout } from '../../../constants/common/layout';
 
 type OnboardingThankYouViewProps = {
   title: string;

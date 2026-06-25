@@ -1,7 +1,7 @@
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
-import { getScheduleDayColor } from '../../../constants/scheduleDayColors';
-import { formatWeekdayDate } from '../../../utils/geo';
+import { getScheduleDayColor } from '../../../constants/plan/scheduleDayColors';
+import { formatWeekdayDate } from '../../../utils/geo/geo';
 import type { DailyItinerary } from '../../../types/travelPlan';
 import type { AppLanguage } from '../../../types/user';
 

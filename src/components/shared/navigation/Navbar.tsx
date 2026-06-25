@@ -1,7 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { cn } from '../../../utils/cn';
+import { cn } from '../../../utils/common/cn';
 
 export type NavbarTab = 'home' | 'route' | 'feed' | 'my';
 

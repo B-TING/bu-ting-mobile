@@ -1,7 +1,7 @@
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
-import type { MockEvent } from '../../../constants/mainHome';
-import { cn } from '../../../utils/cn';
+import type { MockEvent } from '../../../constants/home/mainHome';
+import { cn } from '../../../utils/common/cn';
 
 type EventsSectionMockProps = {
   title: string;
