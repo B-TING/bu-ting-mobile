@@ -172,6 +172,9 @@ export function MainHomeScreen({ navigation }: Props) {
             if (id === 'attractions') {
               navigation.navigate('BusanAttraction');
             }
+            if (id === 'eventZone') {
+              navigation.navigate('EventZone');
+            }
             if (id === 'help') {
               goToHelpDesk();
             }

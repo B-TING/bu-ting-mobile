@@ -17,6 +17,8 @@ export type RootStackParamList = {
   BusanAccommodation: undefined;
   BusanAttraction: undefined;
   HelpDeskChat: undefined;
+  EventZone: undefined;
+  EventZoneChat: { roomId: string };
 };
 
 export type SetupPhase = 'language' | 'login' | 'onboarding' | 'main';
