@@ -1,6 +1,6 @@
 import { Pressable, Text, View } from 'react-native';
 
-import type { QuickAccessItem } from '../../../constants/mainHome';
+import type { QuickAccessItem } from '../../../constants/home/mainHome';
 
 type QuickAccessRowProps = {
   items: QuickAccessItem[];

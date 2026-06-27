@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
-import type { PLAN_DETAIL_COPY } from '../../../constants/planDetail';
+import type { PLAN_DETAIL_COPY } from '../../../constants/plan/planDetail';
 import type { AppLanguage } from '../../../types/user';
 import type { BudgetCategory, BudgetEntry, PlanMember } from '../../../types/travelPlan';
-import { cn } from '../../../utils/cn';
+import { cn } from '../../../utils/common/cn';
 import { AppModal, AppModalPrimaryFooter, useAppAlert } from '../../shared/modals';
 
 type Copy = (typeof PLAN_DETAIL_COPY)[AppLanguage];

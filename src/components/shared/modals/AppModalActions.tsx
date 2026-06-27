@@ -1,6 +1,6 @@
 import { Pressable, Text, View } from 'react-native';
 
-import { cn } from '../../../utils/cn';
+import { cn } from '../../../utils/common/cn';
 
 export type AppModalAction = {
   label: string;

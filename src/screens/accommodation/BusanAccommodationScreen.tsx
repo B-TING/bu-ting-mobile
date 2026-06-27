@@ -6,12 +6,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AccommodationDetailSheet } from '../../components/accommodation/AccommodationDetailSheet';
 import { AccommodationMapView } from '../../components/accommodation/AccommodationMapView';
 import { BackButton } from '../../components/shared/buttons/BackButton';
-import { ACCOMMODATION_COPY, localizedAreaName } from '../../constants/accommodation';
+import { ACCOMMODATION_COPY, localizedAreaName } from '../../constants/places/accommodation';
 import type { RootStackParamList } from '../../navigation/types';
 import { fetchBusanAccommodations } from '../../kakaoMap';
 import { useAppStore, usePlaceBookmarkStore } from '../../stores';
 import type { BusanAccommodation } from '../../types/accommodation';
-import { sortBookmarkedFirst } from '../../utils/sortBookmarkedFirst';
+import { sortBookmarkedFirst } from '../../utils/bookmark/sortBookmarkedFirst';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BusanAccommodation'>;
 

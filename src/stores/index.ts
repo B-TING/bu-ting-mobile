@@ -1,6 +1,7 @@
 export {
   hydrateAppStore,
   migrateLegacyStorage,
+  selectOnboardingForUser,
   selectSetupPhase,
   useAppStore,
 } from './useAppStore';

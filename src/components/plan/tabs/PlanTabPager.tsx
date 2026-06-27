@@ -7,7 +7,7 @@ import {
   View,
 } from 'react-native';
 
-import { PLAN_DETAIL_TABS, type PlanDetailTab } from '../../../constants/planDetail';
+import { PLAN_DETAIL_TABS, type PlanDetailTab } from '../../../constants/plan/planDetail';
 import type { AppLanguage } from '../../../types/user';
 import { PlanTabBar } from './PlanTabBar';
 

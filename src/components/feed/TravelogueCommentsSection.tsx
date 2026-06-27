@@ -1,8 +1,8 @@
 import { Pressable, Text, View } from 'react-native';
 
-import type { TRAVEL_REVIEW_COPY } from '../../constants/travelReview';
+import type { TRAVEL_REVIEW_COPY } from '../../constants/review/travelReview';
 import type { TravelogueComment } from '../../types/travelReview';
-import { authorInitial } from '../../utils/travelReview';
+import { authorInitial } from '../../utils/review/travelReview';
 
 type Copy = (typeof TRAVEL_REVIEW_COPY)['ko'];
 

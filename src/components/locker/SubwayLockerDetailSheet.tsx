@@ -1,6 +1,6 @@
 import { Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 
-import type { LUGGAGE_STORAGE_COPY } from '../../constants/luggageStorage';
+import type { LUGGAGE_STORAGE_COPY } from '../../constants/locker/luggageStorage';
 import type { SubwayLockerStation } from '../../types/subwayLocker';
 import { AppModal, AppModalActions } from '../shared/modals';
 import { LockerInventoryTable } from './LockerInventoryTable';

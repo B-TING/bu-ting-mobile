@@ -1,7 +1,7 @@
 export type RootStackParamList = {
   LanguageSelection: undefined;
   Login: undefined;
-  Onboarding: undefined;
+  Onboarding: { mode?: 'setup' | 'edit' | 'account' } | undefined;
   MainHome: undefined;
   MyPage: undefined;
   PlanWizard: undefined;

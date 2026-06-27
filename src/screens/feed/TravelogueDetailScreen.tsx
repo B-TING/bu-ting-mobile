@@ -12,7 +12,7 @@ import { TravelogueSocialBar } from '../../components/feed/TravelogueSocialBar';
 import { useTravelogueSocialActions } from '../../components/feed/useTravelogueSocialActions';
 import { BackButton } from '../../components/shared/buttons/BackButton';
 import { StarRating } from '../../components/shared/rating/StarRating';
-import { TRAVEL_REVIEW_COPY } from '../../constants/travelReview';
+import { TRAVEL_REVIEW_COPY } from '../../constants/review/travelReview';
 import type { RootStackParamList } from '../../navigation/types';
 import { selectPlanById, useAppStore, usePlanStore, useTravelogueStore } from '../../stores';
 import type { PlaceReview, Travelogue } from '../../types/travelReview';
@@ -24,9 +24,9 @@ import {
   snapshotToRouteItems,
   collectTravelogueImages,
   authorInitial,
-} from '../../utils/travelReview';
-import { computeTripTotalMinutes, formatDurationMinutes } from '../../utils/tripDuration';
-import { formatWeekdayDate } from '../../utils/geo';
+} from '../../utils/review/travelReview';
+import { computeTripTotalMinutes, formatDurationMinutes } from '../../utils/geo/tripDuration';
+import { formatWeekdayDate } from '../../utils/geo/geo';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'TravelogueDetail'>;
 type Copy = (typeof TRAVEL_REVIEW_COPY)[AppLanguage];

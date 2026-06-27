@@ -25,16 +25,36 @@ const initialAuth: AuthState = {
 type AppState = {
   language: AppLanguage | null;
   auth: AuthState;
+  /** 초기 설정 플로우·UI용 활성 프로필 */
   onboarding: OnboardingProfile | null;
+  /** 회원가입 전 게스트 설문 */
+  guestOnboarding: OnboardingProfile | null;
+  /** 계정별 로컬 캐시 (ownerUserId 포함) */
+  onboardingByUserId: Record<string, OnboardingProfile>;
+  pendingTravelSurveyPrompt: boolean;
   hideUserIdOnMyPage: boolean;
   _hasHydrated: boolean;
   setHasHydrated: (value: boolean) => void;
   setLanguage: (language: AppLanguage) => void;
   setHideUserIdOnMyPage: (hide: boolean) => void;
+  setPendingTravelSurveyPrompt: (value: boolean) => void;
   login: (payload: { userId: string; displayName: string }) => void;
-  completeOnboarding: (profile: OnboardingProfile) => void;
+  completeOnboarding: (
+    profile: OnboardingProfile,
+    options?: { userId?: string | null },
+  ) => void;
+  saveUserOnboarding: (userId: string, profile: OnboardingProfile) => void;
+  setActiveOnboarding: (userId: string) => void;
+  clearGuestOnboarding: () => void;
   resetSetup: () => void;
 };
+
+function withOwner(
+  profile: OnboardingProfile,
+  userId: string | null,
+): OnboardingProfile {
+  return { ...profile, ownerUserId: userId };
+}
 
 export const useAppStore = create<AppState>()(
   persist(
@@ -42,21 +62,61 @@ export const useAppStore = create<AppState>()(
       language: null,
       auth: initialAuth,
       onboarding: null,
+      guestOnboarding: null,
+      onboardingByUserId: {},
+      pendingTravelSurveyPrompt: false,
       hideUserIdOnMyPage: false,
       _hasHydrated: false,
       setHasHydrated: value => set({ _hasHydrated: value }),
       setLanguage: language => set({ language }),
       setHideUserIdOnMyPage: hideUserIdOnMyPage => set({ hideUserIdOnMyPage }),
+      setPendingTravelSurveyPrompt: pendingTravelSurveyPrompt =>
+        set({ pendingTravelSurveyPrompt }),
       login: ({ userId, displayName }) =>
         set({
           auth: { isLoggedIn: true, userId, displayName },
         }),
-      completeOnboarding: onboarding => set({ onboarding }),
+      completeOnboarding: (profile, options) => {
+        const userId = options?.userId ?? null;
+        const record = withOwner(profile, userId);
+        if (userId) {
+          set(state => ({
+            onboardingByUserId: {
+              ...state.onboardingByUserId,
+              [userId]: record,
+            },
+            onboarding: record,
+          }));
+          return;
+        }
+        set({
+          guestOnboarding: record,
+          onboarding: record,
+        });
+      },
+      saveUserOnboarding: (userId, profile) => {
+        const record = withOwner(profile, userId);
+        set(state => ({
+          onboardingByUserId: {
+            ...state.onboardingByUserId,
+            [userId]: record,
+          },
+          onboarding: record,
+        }));
+      },
+      setActiveOnboarding: userId =>
+        set(state => ({
+          onboarding: state.onboardingByUserId[userId] ?? null,
+        })),
+      clearGuestOnboarding: () => set({ guestOnboarding: null }),
       resetSetup: () =>
         set({
           language: null,
           auth: initialAuth,
           onboarding: null,
+          guestOnboarding: null,
+          onboardingByUserId: {},
+          pendingTravelSurveyPrompt: false,
         }),
     }),
     {
@@ -66,17 +126,42 @@ export const useAppStore = create<AppState>()(
         language: state.language,
         auth: state.auth,
         onboarding: state.onboarding,
+        guestOnboarding: state.guestOnboarding,
+        onboardingByUserId: state.onboardingByUserId,
+        pendingTravelSurveyPrompt: state.pendingTravelSurveyPrompt,
         hideUserIdOnMyPage: state.hideUserIdOnMyPage,
       }),
-      onRehydrateStorage: () => (_state, error) => {
+      onRehydrateStorage: () => (state, error) => {
         if (error) {
           console.warn('[Bu-Ting] persist rehydrate error', error);
+        }
+        if (state?.onboarding && !state.guestOnboarding) {
+          const ownerId = state.onboarding.ownerUserId ?? null;
+          if (ownerId) {
+            if (!state.onboardingByUserId[ownerId]) {
+              state.onboardingByUserId = {
+                ...state.onboardingByUserId,
+                [ownerId]: state.onboarding,
+              };
+            }
+          } else if (!state.guestOnboarding) {
+            state.guestOnboarding = state.onboarding;
+          }
         }
         useAppStore.getState().setHasHydrated(true);
       },
     },
   ),
 );
+
+export function selectOnboardingForUser(userId: string | null | undefined) {
+  return (state: AppState): OnboardingProfile | null => {
+    if (userId) {
+      return state.onboardingByUserId[userId] ?? null;
+    }
+    return state.guestOnboarding ?? state.onboarding;
+  };
+}
 
 export function selectSetupPhase(state: AppState): SetupPhase {
   if (!state.language) {
@@ -123,7 +208,9 @@ export async function migrateLegacyStorage(): Promise<void> {
 
   if (onboardingRaw) {
     try {
-      patch.onboarding = JSON.parse(onboardingRaw) as OnboardingProfile;
+      const onboarding = JSON.parse(onboardingRaw) as OnboardingProfile;
+      patch.onboarding = onboarding;
+      patch.guestOnboarding = onboarding;
     } catch {
       /* ignore */
     }

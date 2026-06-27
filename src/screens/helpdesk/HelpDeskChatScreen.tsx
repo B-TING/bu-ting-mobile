@@ -23,14 +23,14 @@ import {
   HELP_DESK_COPY,
   SUGGESTED_QUESTIONS,
   type HelpDeskIntent,
-} from '../../constants/helpDesk';
+} from '../../constants/helpdesk/helpDesk';
 import type { RootStackParamList } from '../../navigation/types';
 import {
   matchHelpDeskIntent,
   requestHelpDeskReply,
-} from '../../services/helpDeskAiService';
+} from '../../services/helpdesk/helpDeskAiService';
 import { selectActivePlan, useAppStore, usePlanStore } from '../../stores';
-import { getNearestUpcomingStop } from '../../utils/planSchedule';
+import { getNearestUpcomingStop } from '../../utils/plan/planSchedule';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'HelpDeskChat'>;
 

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
@@ -11,20 +11,22 @@ import { HomeActionFabs, FAB_GAP, FAB_SIZE } from '../components/helpdesk/HomeAc
 import { AppBar } from '../components/shared/navigation/AppBar';
 import { AppMenuDrawer } from '../components/shared/navigation/AppMenuDrawer';
 import { Navbar, type NavbarTab } from '../components/shared/navigation/Navbar';
-import { HELP_DESK_COPY } from '../constants/helpDesk';
+import { useAppAlert } from '../components/shared/modals';
+import { HELP_DESK_COPY } from '../constants/helpdesk/helpDesk';
 import {
   MAIN_HOME_COPY,
   MOCK_EVENTS,
   MOCK_SPECIAL_OFFER,
   MOCK_TRAVELOGUE,
   QUICK_ACCESS_ITEMS,
-} from '../constants/mainHome';
+} from '../constants/home/mainHome';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { layout } from '../constants/layout';
+import { layout } from '../constants/common/layout';
 import type { RootStackParamList } from '../navigation/types';
+import { showTravelSurveyOnboardingPrompt } from '../services/setup/travelSurveyOnboardingPrompt';
 import { selectActivePlan, useAppStore, usePlanStore, useTravelogueStore } from '../stores';
-import { isTraveloguePublic } from '../utils/travelReview';
-import { getNearestUpcomingStop } from '../utils/planSchedule';
+import { isTraveloguePublic } from '../utils/review/travelReview';
+import { getNearestUpcomingStop } from '../utils/plan/planSchedule';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MainHome'>;
 
@@ -32,7 +34,12 @@ const NAVBAR_HEIGHT = 72;
 
 export function MainHomeScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
+  const { alert } = useAppAlert();
   const language = useAppStore(s => s.language) ?? 'ko';
+  const pendingTravelSurveyPrompt = useAppStore(s => s.pendingTravelSurveyPrompt);
+  const setPendingTravelSurveyPrompt = useAppStore(
+    s => s.setPendingTravelSurveyPrompt,
+  );
   const copy = MAIN_HOME_COPY[language];
   const helpCopy = HELP_DESK_COPY[language];
   const activePlan = usePlanStore(selectActivePlan);
@@ -43,6 +50,20 @@ export function MainHomeScreen({ navigation }: Props) {
   );
   const [activeTab, setActiveTab] = useState<NavbarTab>('home');
   const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (!pendingTravelSurveyPrompt) {
+      return;
+    }
+    setPendingTravelSurveyPrompt(false);
+    showTravelSurveyOnboardingPrompt(alert, navigation, language);
+  }, [
+    alert,
+    language,
+    navigation,
+    pendingTravelSurveyPrompt,
+    setPendingTravelSurveyPrompt,
+  ]);
 
   const upcomingStop = useMemo(
     () => (activePlan ? getNearestUpcomingStop(activePlan) : null),

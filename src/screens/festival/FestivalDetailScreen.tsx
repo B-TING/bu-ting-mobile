@@ -11,7 +11,7 @@ import {
   FESTIVAL_CALENDAR_COPY,
   festivalToRouteItem,
   getFestivalById,
-} from '../../constants/festivalCalendar';
+} from '../../constants/festival/festivalCalendar';
 import type { RootStackParamList } from '../../navigation/types';
 import { useAppStore } from '../../stores';
 

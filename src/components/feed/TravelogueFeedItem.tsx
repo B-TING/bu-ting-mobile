@@ -1,12 +1,12 @@
 import { Pressable, Text, View } from 'react-native';
 
-import type { TRAVEL_REVIEW_COPY } from '../../constants/travelReview';
+import type { TRAVEL_REVIEW_COPY } from '../../constants/review/travelReview';
 import type { Travelogue, TravelogueSocial } from '../../types/travelReview';
 import type { AppLanguage } from '../../types/user';
 import {
   collectTravelogueImages,
   authorInitial,
-} from '../../utils/travelReview';
+} from '../../utils/review/travelReview';
 import { StarRating } from '../shared/rating/StarRating';
 import { TravelogueCommentsSection } from './TravelogueCommentsSection';
 import { TravelogueImageCarousel } from './TravelogueImageCarousel';

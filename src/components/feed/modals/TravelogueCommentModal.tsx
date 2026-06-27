@@ -5,9 +5,9 @@ import {
   AppModal,
   AppModalActions,
 } from '../../shared/modals';
-import type { TRAVEL_REVIEW_COPY } from '../../../constants/travelReview';
+import type { TRAVEL_REVIEW_COPY } from '../../../constants/review/travelReview';
 import type { AppLanguage } from '../../../types/user';
-import { authorInitial } from '../../../utils/travelReview';
+import { authorInitial } from '../../../utils/review/travelReview';
 
 type Copy = (typeof TRAVEL_REVIEW_COPY)[AppLanguage];
 

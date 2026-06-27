@@ -2,13 +2,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import { enrichPlaceInfo } from '../constants/placeCatalog';
+import { enrichPlaceInfo } from '../constants/places/placeCatalog';
 import type { PlanWizardAnswers } from '../types/planWizard';
 import type { BudgetEntry, RouteItem, TravelLegMode, TravelPlan } from '../types/travelPlan';
 import type { Travelogue } from '../types/travelReview';
-import { createId } from '../utils/id';
-import { buildPlanFromTravelogue } from '../utils/travelReview';
-import { optimizeRouteOrder } from '../utils/routeOptimize';
+import { createId } from '../utils/common/id';
+import { buildPlanFromTravelogue } from '../utils/review/travelReview';
+import { optimizeRouteOrder } from '../utils/plan/routeOptimize';
 
 type PlanState = {
   plans: TravelPlan[];
