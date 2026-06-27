@@ -409,6 +409,8 @@ export const EVENT_ZONE_COPY: Record<
     planningBadge: string;
     locationFallbackHint: string;
     enterChat: string;
+    emptyChatRooms: string;
+    selectZoneTitle: string;
   }
 > = {
   ko: {
@@ -424,6 +426,8 @@ export const EVENT_ZONE_COPY: Record<
     planningBadge: '기획 중',
     locationFallbackHint: '현재 위치 기준 (GPS 연동 예정)',
     enterChat: '입장하기',
+    emptyChatRooms: '이 구역에 열린 채팅방이 없어요',
+    selectZoneTitle: '구역 선택하기',
   },
   en: {
     screenTitle: 'Event Zone',
@@ -438,6 +442,8 @@ export const EVENT_ZONE_COPY: Record<
     planningBadge: 'In planning',
     locationFallbackHint: 'Based on current location (GPS coming soon)',
     enterChat: 'Join',
+    emptyChatRooms: 'No open chat rooms in this zone',
+    selectZoneTitle: 'Select zone',
   },
   ja: {
     screenTitle: 'イベントゾーン',
@@ -452,6 +458,8 @@ export const EVENT_ZONE_COPY: Record<
     planningBadge: '企画中',
     locationFallbackHint: '現在地基準（GPS連携予定）',
     enterChat: '入室',
+    emptyChatRooms: 'このエリアに開いているチャットはありません',
+    selectZoneTitle: 'エリアを選択',
   },
   zh: {
     screenTitle: '活动区域',
@@ -466,6 +474,8 @@ export const EVENT_ZONE_COPY: Record<
     planningBadge: '策划中',
     locationFallbackHint: '基于当前位置（GPS 接入待定）',
     enterChat: '进入',
+    emptyChatRooms: '该区域暂无开放的聊天室',
+    selectZoneTitle: '选择区域',
   },
 };
 
@@ -543,7 +553,7 @@ export function chatRoomTitle(
   room: EventZoneChatRoom,
   language: AppLanguage,
 ): string {
-  return language === 'ko' ? room.titleKo : room.titleEn;
+  return eventZoneName(EVENT_ZONE_BY_ID[room.zoneId], language);
 }
 
 export function chatRoomTopic(
@@ -565,4 +575,16 @@ export function chatMessagesForRoom(roomId: string): EventZoneChatMessage[] {
 
 export function chatRoomsForZone(zoneId: EventZoneId): EventZoneChatRoom[] {
   return MOCK_ZONE_CHAT_ROOMS.filter(room => room.zoneId === zoneId);
+}
+
+export function allZoneChatRooms(): EventZoneChatRoom[] {
+  return EVENT_ZONES.map(
+    zone => MOCK_ZONE_CHAT_ROOMS.find(room => room.zoneId === zone.id)!,
+  ).filter(Boolean);
+}
+
+export function getChatRoomByZoneId(
+  zoneId: EventZoneId,
+): EventZoneChatRoom | undefined {
+  return MOCK_ZONE_CHAT_ROOMS.find(room => room.zoneId === zoneId);
 }

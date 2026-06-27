@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, Text, View } from 'react-native';
+import { Animated, Easing, Text, View } from 'react-native';
 import Svg, { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
 
 import {
@@ -9,7 +9,7 @@ import {
 } from '../../constants/eventZone/busanMapPaths';
 import { EVENT_ZONES, landmarkName } from '../../constants/eventZone/eventZone';
 import type { AppLanguage } from '../../types/user';
-import type { EventZoneId } from '../../types/eventZone';
+import type { EventZoneChatRoom, EventZoneId } from '../../types/eventZone';
 import { resolveLandmarkMapPoint } from '../../utils/eventZone/landmarkMapPoint';
 import {
   focusRectToViewBox,
@@ -17,14 +17,24 @@ import {
   resolveMapFocusRect,
   type MapFocusRect,
 } from '../../utils/eventZone/zoneMapFocus';
+import { EventZoneZoneSelectList } from './EventZoneSections';
 
 const FOCUS_ANIMATION_MS = 480;
 
 type BusanZoneMapProps = {
   selectedZoneId: EventZoneId | null;
-  currentZoneId: EventZoneId | null;
+  currentZoneId: EventZoneId;
   language: AppLanguage;
   onZonePress: (zoneId: EventZoneId) => void;
+  zoneRooms: EventZoneChatRoom[];
+  onEnterChat: () => void;
+  zoneSelectCopy: {
+    selectZoneTitle: string;
+    liveBadge: string;
+    memberCountLabel: (n: number) => string;
+    enterLabel: string;
+    currentZoneLabel: string;
+  };
 };
 
 function zoneFill(
@@ -64,22 +74,27 @@ export function BusanZoneMap({
   currentZoneId,
   language,
   onZonePress,
+  zoneRooms,
+  onEnterChat,
+  zoneSelectCopy,
 }: BusanZoneMapProps) {
-  const activeZoneId = selectedZoneId ?? currentZoneId;
-  const activeZone = EVENT_ZONES.find(zone => zone.id === activeZoneId) ?? null;
   const focusProgress = useRef(new Animated.Value(1)).current;
   const currentFocusRef = useRef<MapFocusRect>(resolveMapFocusRect(null));
   const [viewBox, setViewBox] = useState(focusRectToViewBox(resolveMapFocusRect(null)));
 
   const landmarkPoints = useMemo(() => {
-    if (!activeZone) {
-      return [];
-    }
-    return activeZone.landmarks.map(landmark => ({
-      landmark,
-      point: resolveLandmarkMapPoint(landmark),
-    }));
-  }, [activeZone]);
+    const zones =
+      selectedZoneId != null
+        ? EVENT_ZONES.filter(zone => zone.id === selectedZoneId)
+        : EVENT_ZONES;
+
+    return zones.flatMap(zone =>
+      zone.landmarks.map(landmark => ({
+        landmark,
+        point: resolveLandmarkMapPoint(landmark),
+      })),
+    );
+  }, [selectedZoneId]);
 
   useEffect(() => {
     const from = currentFocusRef.current;
@@ -189,25 +204,19 @@ export function BusanZoneMap({
         </Svg>
       </View>
 
-      <View className="border-t border-brand-border bg-brand-surface px-3 py-2">
-        <View className="flex-row flex-wrap gap-2">
-          {EVENT_ZONES.map(zone => {
-            const active = selectedZoneId === zone.id || currentZoneId === zone.id;
-            return (
-              <Pressable
-                key={zone.id}
-                accessibilityRole="button"
-                onPress={() => onZonePress(zone.id)}
-                className={`rounded-full px-2.5 py-1 ${active ? 'bg-brand-primary' : 'bg-brand-background'}`}>
-                <Text
-                  className={`text-[11px] ${active ? 'font-bold text-white' : 'font-medium text-brand-text'}`}>
-                  {language === 'ko' ? zone.nameKo : zone.nameEn}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      </View>
+      <EventZoneZoneSelectList
+        rooms={zoneRooms}
+        language={language}
+        title={zoneSelectCopy.selectZoneTitle}
+        liveBadge={zoneSelectCopy.liveBadge}
+        memberCountLabel={zoneSelectCopy.memberCountLabel}
+        enterLabel={zoneSelectCopy.enterLabel}
+        currentZoneLabel={zoneSelectCopy.currentZoneLabel}
+        selectedZoneId={selectedZoneId}
+        currentZoneId={currentZoneId}
+        onSelectZone={onZonePress}
+        onEnterChat={onEnterChat}
+      />
     </View>
   );
 }
