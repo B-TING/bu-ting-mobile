@@ -79,7 +79,9 @@ export function EventZoneScreen({ navigation }: Props) {
           selectedZoneId={selectedZoneId}
           currentZoneId={currentZoneId}
           language={language}
-          onZonePress={setSelectedZoneId}
+          onZonePress={zoneId => {
+            setSelectedZoneId(prev => (prev === zoneId ? null : zoneId));
+          }}
         />
 
         {activeZone ? (

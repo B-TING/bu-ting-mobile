@@ -11,13 +11,23 @@ export type EventZoneCoordinate = {
   lng: number;
 };
 
+export type EventZoneMapPoint = {
+  /** assets/map/busan.svg viewBox 기준 x */
+  x: number;
+  /** assets/map/busan.svg viewBox 기준 y */
+  y: number;
+};
+
 export type EventZoneLandmark = {
   id: string;
   nameKo: string;
   nameEn: string;
   nameJa: string;
   nameZh: string;
+  /** GPS·구역 판별용 실제 좌표 */
   location: EventZoneCoordinate;
+  /** busan.svg 위 마커 위치 (800×754) */
+  mapPoint: EventZoneMapPoint;
   emoji: string;
 };
 
@@ -33,7 +43,6 @@ export type EventZoneDefinition = {
   summaryZh: string;
   baseColor: string;
   highlightColor: string;
-  svgPath: string;
   landmarks: EventZoneLandmark[];
   /** 위치 기반 구역 판별용 경계 상자 */
   bounds: {

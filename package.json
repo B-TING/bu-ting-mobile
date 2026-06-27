@@ -17,6 +17,7 @@
     "ngrok:auth": "node scripts/ngrok-auth.cjs",
     "places:resolve": "node scripts/resolve-place-id.cjs",
     "kakao:sync": "node scripts/sync-kakao-map-key.cjs",
+    "map:sync": "node scripts/extract-busan-map-paths.cjs",
     "api:sync": "node scripts/sync-api-config.cjs",
     "oauth:sync": "node scripts/sync-oauth-config.cjs",
     "postinstall": "node scripts/sync-kakao-map-key.cjs && node scripts/sync-api-config.cjs && node scripts/sync-oauth-config.cjs && patch-package",

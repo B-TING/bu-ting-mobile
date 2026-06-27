@@ -7,14 +7,14 @@ import type {
   EventZoneLandmark,
 } from '../../types/eventZone';
 
-export const BUSAN_MAP_VIEWBOX = { width: 360, height: 480 } as const;
-
 export const BUSAN_MAP_BOUNDS = {
   minLat: 35.04,
   maxLat: 35.3,
   minLng: 128.92,
   maxLng: 129.24,
 } as const;
+
+export { BUSAN_SVG_VIEWBOX as BUSAN_MAP_VIEWBOX } from './busanMapPaths';
 
 export const EVENT_ZONES: EventZoneDefinition[] = [
   {
@@ -29,7 +29,6 @@ export const EVENT_ZONES: EventZoneDefinition[] = [
     summaryZh: '东部海岸与 Centum 一带活动',
     baseColor: '#38BDF8',
     highlightColor: '#0EA5E9',
-    svgPath: 'M 228 24 L 356 48 L 348 132 L 268 156 L 232 108 Z',
     bounds: { minLat: 35.19, maxLat: 35.32, minLng: 129.12, maxLng: 129.26 },
     landmarks: [
       {
@@ -40,6 +39,7 @@ export const EVENT_ZONES: EventZoneDefinition[] = [
         nameZh: '海云台海水浴场',
         emoji: '🏖️',
         location: { lat: 35.1587, lng: 129.1604 },
+        mapPoint: { x: 560, y: 400 },
       },
       {
         id: 'haedong-yonggungsa',
@@ -49,6 +49,7 @@ export const EVENT_ZONES: EventZoneDefinition[] = [
         nameZh: '海东龙宫寺',
         emoji: '🛕',
         location: { lat: 35.1885, lng: 129.223 },
+        mapPoint: { x: 638, y: 350 },
       },
       {
         id: 'centum-city',
@@ -58,6 +59,7 @@ export const EVENT_ZONES: EventZoneDefinition[] = [
         nameZh: 'Centum City',
         emoji: '🏬',
         location: { lat: 35.1694, lng: 129.1314 },
+        mapPoint: { x: 518, y: 370 },
       },
     ],
   },
@@ -73,7 +75,6 @@ export const EVENT_ZONES: EventZoneDefinition[] = [
     summaryZh: '广安里·民乐·五六岛海岸区域',
     baseColor: '#A78BFA',
     highlightColor: '#8B5CF6',
-    svgPath: 'M 248 156 L 352 136 L 356 268 L 248 252 L 214 228 Z',
     bounds: { minLat: 35.11, maxLat: 35.19, minLng: 129.1, maxLng: 129.18 },
     landmarks: [
       {
@@ -84,6 +85,7 @@ export const EVENT_ZONES: EventZoneDefinition[] = [
         nameZh: '广安里海水浴场',
         emoji: '🌉',
         location: { lat: 35.1532, lng: 129.1186 },
+        mapPoint: { x: 500, y: 420 },
       },
       {
         id: 'millak-park',
@@ -93,6 +95,7 @@ export const EVENT_ZONES: EventZoneDefinition[] = [
         nameZh: '民乐水边公园',
         emoji: '🌊',
         location: { lat: 35.155, lng: 129.127 },
+        mapPoint: { x: 530, y: 420 },
       },
       {
         id: 'oryukdo-skywalk',
@@ -102,6 +105,7 @@ export const EVENT_ZONES: EventZoneDefinition[] = [
         nameZh: '五六岛天空步道',
         emoji: '🚶',
         location: { lat: 35.0945, lng: 129.124 },
+        mapPoint: { x: 508, y: 532 },
       },
     ],
   },
@@ -117,17 +121,17 @@ export const EVENT_ZONES: EventZoneDefinition[] = [
     summaryZh: '田浦·西面·社稷·梵鱼寺区域',
     baseColor: '#FBBF24',
     highlightColor: '#F59E0B',
-    svgPath: 'M 132 72 L 228 56 L 244 168 L 188 188 L 128 168 Z',
     bounds: { minLat: 35.14, maxLat: 35.22, minLng: 129.03, maxLng: 129.1 },
     landmarks: [
       {
-        id: 'jeonpo-seomyeon',
-        nameKo: '전포·서면',
-        nameEn: 'Jeonpo · Seomyeon',
-        nameJa: '田浦·西面',
-        nameZh: '田浦·西面',
+        id: 'SeomyeonJeonpo',
+        nameKo: '서면 젊음의거리, 전포 카페거리',
+        nameEn: 'Seomyeon Young Street, Jeonpo Cafe Street',
+        nameJa: '西面 若者の街, 田浦 カフェ街',
+        nameZh: '西面 年轻人街区, 田浦 咖啡街区',
         emoji: '☕',
         location: { lat: 35.1578, lng: 129.0595 },
+        mapPoint: { x: 398, y: 408 },
       },
       {
         id: 'sajik-stadium',
@@ -137,6 +141,7 @@ export const EVENT_ZONES: EventZoneDefinition[] = [
         nameZh: '社稷球场',
         emoji: '⚾',
         location: { lat: 35.194, lng: 129.061 },
+        mapPoint: { x: 442, y: 328 },
       },
       {
         id: 'beomeosa',
@@ -146,6 +151,7 @@ export const EVENT_ZONES: EventZoneDefinition[] = [
         nameZh: '梵鱼寺',
         emoji: '⛩️',
         location: { lat: 35.259, lng: 129.082 },
+        mapPoint: { x: 462, y: 268 },
       },
     ],
   },
@@ -161,7 +167,6 @@ export const EVENT_ZONES: EventZoneDefinition[] = [
     summaryZh: '札嘎其·国际市场·龙头山市中心',
     baseColor: '#FB7185',
     highlightColor: '#F43F5E',
-    svgPath: 'M 118 188 L 206 172 L 214 252 L 176 304 L 112 284 Z',
     bounds: { minLat: 35.09, maxLat: 35.13, minLng: 129.01, maxLng: 129.06 },
     landmarks: [
       {
@@ -172,6 +177,7 @@ export const EVENT_ZONES: EventZoneDefinition[] = [
         nameZh: '札嘎其市场',
         emoji: '🐟',
         location: { lat: 35.0966, lng: 129.0308 },
+        mapPoint: { x: 402, y: 502 },
       },
       {
         id: 'gukje-market',
@@ -181,6 +187,7 @@ export const EVENT_ZONES: EventZoneDefinition[] = [
         nameZh: '国际市场',
         emoji: '🏮',
         location: { lat: 35.102, lng: 129.026 },
+        mapPoint: { x: 378, y: 486 },
       },
       {
         id: 'yongdusan-park',
@@ -190,6 +197,7 @@ export const EVENT_ZONES: EventZoneDefinition[] = [
         nameZh: '龙头山公园',
         emoji: '🗼',
         location: { lat: 35.099, lng: 129.032 },
+        mapPoint: { x: 408, y: 478 },
       },
     ],
   },
@@ -205,7 +213,6 @@ export const EVENT_ZONES: EventZoneDefinition[] = [
     summaryZh: '白浪·太宗台南端区域',
     baseColor: '#34D399',
     highlightColor: '#10B981',
-    svgPath: 'M 132 304 L 224 292 L 244 372 L 176 452 L 96 396 Z',
     bounds: { minLat: 35.04, maxLat: 35.09, minLng: 129.03, maxLng: 129.1 },
     landmarks: [
       {
@@ -216,6 +223,7 @@ export const EVENT_ZONES: EventZoneDefinition[] = [
         nameZh: '白浪文化村',
         emoji: '🏘️',
         location: { lat: 35.077, lng: 129.045 },
+        mapPoint: { x: 430, y: 518 },
       },
       {
         id: 'taejongdae',
@@ -225,6 +233,7 @@ export const EVENT_ZONES: EventZoneDefinition[] = [
         nameZh: '太宗台',
         emoji: '🌅',
         location: { lat: 35.051, lng: 129.086 },
+        mapPoint: { x: 448, y: 585 },
       },
     ],
   },
@@ -240,7 +249,6 @@ export const EVENT_ZONES: EventZoneDefinition[] = [
     summaryZh: '甘川·多大浦·金海机场西部',
     baseColor: '#818CF8',
     highlightColor: '#6366F1',
-    svgPath: 'M 8 108 L 118 92 L 128 196 L 96 284 L 36 352 L 4 312 Z',
     bounds: { minLat: 35.04, maxLat: 35.2, minLng: 128.92, maxLng: 129.02 },
     landmarks: [
       {
@@ -251,6 +259,7 @@ export const EVENT_ZONES: EventZoneDefinition[] = [
         nameZh: '甘川文化村',
         emoji: '🎨',
         location: { lat: 35.097, lng: 128.968 },
+        mapPoint: { x: 342, y: 502 },
       },
       {
         id: 'dadaepo-beach',
@@ -260,6 +269,7 @@ export const EVENT_ZONES: EventZoneDefinition[] = [
         nameZh: '多大浦海水浴场',
         emoji: '🌤️',
         location: { lat: 35.051, lng: 128.966 },
+        mapPoint: { x: 318, y: 548 },
       },
       {
         id: 'gimhae-airport',
@@ -269,6 +279,7 @@ export const EVENT_ZONES: EventZoneDefinition[] = [
         nameZh: '金海国际机场',
         emoji: '✈️',
         location: { lat: 35.179, lng: 128.938 },
+        mapPoint: { x: 287, y: 490 },
       },
     ],
   },
