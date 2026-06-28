@@ -7,7 +7,7 @@ import {
   BUSAN_SVG_VIEWBOX,
   EVENT_ZONE_DISTRICT_IDS,
 } from '../../constants/eventZone/busanMapPaths';
-import { EVENT_ZONES, landmarkName } from '../../constants/eventZone/eventZone';
+import { EVENT_ZONES, EVENT_ZONE_BY_ID, landmarkName } from '../../constants/eventZone/eventZone';
 import type { AppLanguage } from '../../types/user';
 import type { EventZoneId } from '../../types/eventZone';
 import { resolveLandmarkMapPoint } from '../../utils/eventZone/landmarkMapPoint';
@@ -44,12 +44,60 @@ function zoneStroke(
   currentZoneId: EventZoneId | null,
 ): { color: string; width: number } {
   if (selectedZoneId === zoneId) {
-    return { color: '#0F172A', width: 3.5 };
+    return { color: '#0F172A', width: 1.5 };
   }
   if (currentZoneId === zoneId) {
     return { color: '#EAB308', width: 2.5 };
   }
   return { color: '#FFFFFF', width: 2 };
+}
+
+const MAP_SHADOW = { dx: 5, dy: 7, opacity: 0.2 } as const;
+
+const SELECTED_ZONE_GLOW = [
+  { strokeWidth: 12, opacity: 0.22 },
+  { strokeWidth: 7, opacity: 0.38 },
+] as const;
+
+type LandmarkNamePillProps = {
+  x: number;
+  y: number;
+  label: string;
+};
+
+function LandmarkNamePill({ x, y, label }: LandmarkNamePillProps) {
+  const text = label.slice(0, 10);
+  const pillWidth = text.length * 6 + 15;
+  const pillHeight = 14;
+  const pillX = x - pillWidth / 2;
+  const pillY = y + 12;
+
+  return (
+    <>
+      <Rect
+        x={pillX}
+        y={pillY}
+        width={pillWidth}
+        height={pillHeight}
+        rx={7}
+        ry={7}
+        fill="#FFFFFF"
+        fillOpacity={0.94}
+        stroke="#0F172A"
+        strokeWidth={1}
+        strokeOpacity={0.2}
+      />
+      <SvgText
+        x={x}
+        y={y + 22}
+        fontSize={9}
+        fontWeight="600"
+        textAnchor="middle"
+        fill="#0F172A">
+        {text}
+      </SvgText>
+    </>
+  );
 }
 
 export function BusanZoneMap({
@@ -90,10 +138,35 @@ export function BusanZoneMap({
           fill="#EAEAEA"
         />
 
+        <G
+          transform={`translate(${MAP_SHADOW.dx}, ${MAP_SHADOW.dy})`}
+          opacity={MAP_SHADOW.opacity}
+          pointerEvents="none">
+          {EVENT_ZONES.flatMap(zone =>
+            EVENT_ZONE_DISTRICT_IDS[zone.id].map(districtId => {
+              const district = BUSAN_DISTRICT_BY_ID[districtId];
+              if (!district) {
+                return null;
+              }
+              return (
+                <Path
+                  key={`shadow-${zone.id}-${districtId}`}
+                  d={district.d}
+                  fill="#0F172A"
+                  stroke="none"
+                />
+              );
+            }),
+          )}
+        </G>
+
         {EVENT_ZONES.map(zone =>
           EVENT_ZONE_DISTRICT_IDS[zone.id].map(districtId => {
             const district = BUSAN_DISTRICT_BY_ID[districtId];
             if (!district) {
+              return null;
+            }
+            if (selectedZoneId === zone.id) {
               return null;
             }
             const stroke = zoneStroke(zone.id, selectedZoneId, currentZoneId);
@@ -111,34 +184,65 @@ export function BusanZoneMap({
           }),
         )}
 
+        {selectedZoneId
+          ? EVENT_ZONE_DISTRICT_IDS[selectedZoneId].flatMap(districtId => {
+              const district = BUSAN_DISTRICT_BY_ID[districtId];
+              const zone = EVENT_ZONE_BY_ID[selectedZoneId];
+              if (!district || !zone) {
+                return [];
+              }
+              const glowLayers = SELECTED_ZONE_GLOW.map(({ strokeWidth, opacity }, index) => (
+                <Path
+                  key={`glow-${districtId}-${index}`}
+                  d={district.d}
+                  fill="none"
+                  stroke={zone.baseColor}
+                  strokeWidth={strokeWidth}
+                  strokeOpacity={opacity}
+                  strokeLinejoin="round"
+                  pointerEvents="none"
+                />
+              ));
+              const stroke = zoneStroke(zone.id, selectedZoneId, currentZoneId);
+              return [
+                ...glowLayers,
+                <Path
+                  key={`selected-${districtId}`}
+                  d={district.d}
+                  fill={zoneFill(zone.id, zone.baseColor, selectedZoneId, currentZoneId)}
+                  stroke={stroke.color}
+                  strokeWidth={stroke.width}
+                  strokeLinejoin="round"
+                  onPress={() => onZonePress(zone.id)}
+                />,
+              ];
+            })
+          : null}
+
         {landmarkPoints.map(({ landmark, point }) => (
           <G key={landmark.id}>
             <Circle
               cx={point.x}
               cy={point.y}
-              r={selectedZoneId ? 18 : 14}
+              r={selectedZoneId ? 10 : 14}
               fill="#FFFFFF"
               stroke="#0F172A"
-              strokeWidth={2}
+              strokeWidth={selectedZoneId ? 1.5 : 2}
             />
             <SvgText
               x={point.x}
-              y={point.y + 5}
-              fontSize={selectedZoneId ? 16 : 13}
+              y={point.y + (selectedZoneId ? 3.5 : 5)}
+              fontSize={selectedZoneId ? 10 : 13}
               textAnchor="middle"
               fill="#0F172A">
               {landmark.emoji}
             </SvgText>
             {selectedZoneId ? (
-              <SvgText
+              <LandmarkNamePill
                 x={point.x}
-                y={point.y + 30}
-                fontSize={11}
-                fontWeight="600"
-                textAnchor="middle"
-                fill="#0F172A">
-                {landmarkName(landmark, language).slice(0, 12)}
-              </SvgText>
+                y={point.y}
+                label={landmarkName(landmark, language)}
+              />
             ) : null}
           </G>
         ))}
