@@ -1,8 +1,4 @@
-import {
-  BUSAN_DISTRICT_LABEL_CENTERS,
-  BUSAN_SVG_VIEWBOX,
-  EVENT_ZONE_DISTRICT_IDS,
-} from '../../constants/eventZone/busanMapPaths';
+import { BUSAN_SVG_VIEWBOX } from '../../constants/eventZone/busanMapPaths';
 import { EVENT_ZONE_BY_ID } from '../../constants/eventZone/eventZone';
 import type { EventZoneId } from '../../types/eventZone';
 
@@ -20,69 +16,100 @@ export const FULL_MAP_FOCUS: MapFocusRect = {
   height: BUSAN_SVG_VIEWBOX.height,
 };
 
+/** 랜드마크 무게중심이 화면 좌상단(헤더 아래)에 오도록 하는 앵커 */
+const LANDMARK_SCREEN_ANCHOR_X = 0.30;
+const LANDMARK_SCREEN_ANCHOR_Y = 0.27;
+
+const MIN_FOCUS_ZOOM_WIDTH = 260;
+const MIN_FOCUS_ZOOM_HEIGHT = 240;
+
 export function focusRectToViewBox(rect: MapFocusRect): string {
   return `${rect.x} ${rect.y} ${rect.width} ${rect.height}`;
 }
 
-export function getZoneFocusRect(zoneId: EventZoneId): MapFocusRect {
+export function getLandmarkCentroid(zoneId: EventZoneId): { x: number; y: number } {
   const zone = EVENT_ZONE_BY_ID[zoneId];
-  const points: { x: number; y: number }[] = [];
+  const points = zone.landmarks.map(landmark => landmark.mapPoint);
 
-  for (const districtId of EVENT_ZONE_DISTRICT_IDS[zoneId]) {
-    const center = BUSAN_DISTRICT_LABEL_CENTERS[districtId];
-    if (center) {
-      points.push(center);
-    }
+  if (points.length === 0) {
+    return {
+      x: BUSAN_SVG_VIEWBOX.width / 2,
+      y: BUSAN_SVG_VIEWBOX.height / 2,
+    };
   }
 
-  for (const landmark of zone.landmarks) {
-    points.push(landmark.mapPoint);
+  return {
+    x: points.reduce((sum, point) => sum + point.x, 0) / points.length,
+    y: points.reduce((sum, point) => sum + point.y, 0) / points.length,
+  };
+}
+
+export function getZoneFocusRect(
+  zoneId: EventZoneId,
+  options?: { layoutForPanel?: boolean },
+): MapFocusRect {
+  const zone = EVENT_ZONE_BY_ID[zoneId];
+  const landmarkPoints = zone.landmarks.map(landmark => landmark.mapPoint);
+
+  if (landmarkPoints.length === 0) {
+    return FULL_MAP_FOCUS;
   }
 
-  let minX = Math.min(...points.map(point => point.x));
-  let maxX = Math.max(...points.map(point => point.x));
-  let minY = Math.min(...points.map(point => point.y));
-  let maxY = Math.max(...points.map(point => point.y));
+  const centroid = getLandmarkCentroid(zoneId);
+
+  let minX = Math.min(...landmarkPoints.map(point => point.x));
+  let maxX = Math.max(...landmarkPoints.map(point => point.x));
+  let minY = Math.min(...landmarkPoints.map(point => point.y));
+  let maxY = Math.max(...landmarkPoints.map(point => point.y));
 
   const spanX = maxX - minX;
   const spanY = maxY - minY;
-  const padX = Math.max(56, spanX * 0.28);
-  const padY = Math.max(56, spanY * 0.28);
+  const padX = Math.max(80, spanX * 0.65);
+  const padY = Math.max(80, spanY * 0.65);
 
-  minX -= padX;
-  maxX += padX;
-  minY -= padY;
-  maxY += padY;
+  let width = Math.max(MIN_FOCUS_ZOOM_WIDTH, maxX - minX + padX * 2);
+  let height = Math.max(MIN_FOCUS_ZOOM_HEIGHT, maxY - minY + padY * 2);
 
-  let width = maxX - minX;
-  let height = maxY - minY;
+  let x: number;
+  let y: number;
 
-  const minWidth = 240;
-  const minHeight = 220;
-  if (width < minWidth) {
-    const extra = (minWidth - width) / 2;
-    minX -= extra;
-    width = minWidth;
-  }
-  if (height < minHeight) {
-    const extra = (minHeight - height) / 2;
-    minY -= extra;
-    height = minHeight;
+  if (options?.layoutForPanel) {
+    x = centroid.x - LANDMARK_SCREEN_ANCHOR_X * width;
+    y = centroid.y - LANDMARK_SCREEN_ANCHOR_Y * height;
+  } else {
+    x = centroid.x - width / 2;
+    y = centroid.y - height / 2;
   }
 
-  minX = Math.max(0, minX);
-  minY = Math.max(0, minY);
-  width = Math.min(BUSAN_SVG_VIEWBOX.width - minX, width);
-  height = Math.min(BUSAN_SVG_VIEWBOX.height - minY, height);
-
-  return { x: minX, y: minY, width, height };
+  return clampFocusRect({ x, y, width, height });
 }
 
-export function resolveMapFocusRect(selectedZoneId: EventZoneId | null): MapFocusRect {
+const MIN_FOCUS_WIDTH = 120;
+const MIN_FOCUS_HEIGHT = 110;
+
+export function clampFocusRect(rect: MapFocusRect): MapFocusRect {
+  let { x, y, width, height } = rect;
+
+  width = Math.max(MIN_FOCUS_WIDTH, Math.min(BUSAN_SVG_VIEWBOX.width, width));
+  height = Math.max(MIN_FOCUS_HEIGHT, Math.min(BUSAN_SVG_VIEWBOX.height, height));
+
+  x = Math.max(0, Math.min(BUSAN_SVG_VIEWBOX.width - width, x));
+  y = Math.max(0, Math.min(BUSAN_SVG_VIEWBOX.height - height, y));
+
+  return { x, y, width, height };
+}
+
+export function resolveMapFocusRect(
+  selectedZoneId: EventZoneId | null,
+  options?: { layoutForPanel?: boolean },
+): MapFocusRect {
   if (!selectedZoneId) {
     return FULL_MAP_FOCUS;
   }
-  return getZoneFocusRect(selectedZoneId);
+
+  return getZoneFocusRect(selectedZoneId, {
+    layoutForPanel: options?.layoutForPanel,
+  });
 }
 
 export function interpolateFocusRect(

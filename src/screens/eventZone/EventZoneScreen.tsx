@@ -1,18 +1,17 @@
 import { useMemo, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BusanZoneMap } from '../../components/eventZone/BusanZoneMap';
 import {
-  EventZoneCurrentZoneBadge,
-  EventZoneLandmarkStrip,
+  EventZoneMapBadge,
+  EventZoneZoneDetailPanel,
 } from '../../components/eventZone/EventZoneSections';
 import { BackButton } from '../../components/shared/buttons/BackButton';
 import {
   EVENT_ZONE_BY_ID,
   EVENT_ZONE_COPY,
-  allZoneChatRooms,
   getChatRoomByZoneId,
 } from '../../constants/eventZone/eventZone';
 import { useCurrentEventZone } from '../../hooks/useCurrentEventZone';
@@ -29,80 +28,97 @@ export function EventZoneScreen({ navigation }: Props) {
   const { zoneId: currentZoneId, usedFallback } = useCurrentEventZone();
   const [selectedZoneId, setSelectedZoneId] = useState<EventZoneId | null>(null);
 
-  const activeZoneId = selectedZoneId ?? currentZoneId;
-  const activeZone = EVENT_ZONE_BY_ID[activeZoneId];
-  const zoneRooms = useMemo(() => allZoneChatRooms(), []);
+  const currentZone = EVENT_ZONE_BY_ID[currentZoneId];
+  const selectedZone = selectedZoneId ? EVENT_ZONE_BY_ID[selectedZoneId] : null;
+  const currentZoneRoom = useMemo(
+    () => getChatRoomByZoneId(currentZoneId),
+    [currentZoneId],
+  );
+  const selectedZoneRoom = useMemo(
+    () => (selectedZoneId ? getChatRoomByZoneId(selectedZoneId) : undefined),
+    [selectedZoneId],
+  );
+
+  const handleEnterChat = (zoneId: EventZoneId) => {
+    const room = getChatRoomByZoneId(zoneId);
+    if (room) {
+      navigation.navigate('EventZoneChat', { roomId: room.id });
+    }
+  };
 
   return (
-    <View
-      className="flex-1 bg-brand-background"
-      style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
-      <View className="border-b border-brand-border bg-brand-surface px-4 py-3">
-        <View className="flex-row items-center">
-          <BackButton
-            accessibilityLabel={language === 'ko' ? '뒤로' : 'Back'}
-            onPress={() => navigation.goBack()}
-          />
-          <View className="ml-3 flex-1">
-            <View className="flex-row items-center gap-2">
-              <Text className="text-lg font-bold text-brand-text">{copy.screenTitle}</Text>
-              <View className="rounded-full bg-violet-100 px-2 py-0.5">
-                <Text className="text-[10px] font-semibold text-violet-700">
-                  {copy.planningBadge}
-                </Text>
-              </View>
-            </View>
-            <Text className="text-xs text-brand-muted">{copy.mapHint}</Text>
+    <View className="flex-1 bg-[#EAEAEA]">
+      <BusanZoneMap
+        selectedZoneId={selectedZoneId}
+        currentZoneId={currentZoneId}
+        language={language}
+        onZonePress={zoneId => setSelectedZoneId(zoneId)}
+      />
+
+      <View
+        className="absolute left-0 right-0 flex-row items-start justify-between px-3"
+        style={{ top: insets.top + 8 }}
+        pointerEvents="box-none">
+        <View className="flex-row items-start gap-2">
+          <View className="rounded-full border border-brand-border bg-white shadow-sm">
+            <BackButton
+              accessibilityLabel={language === 'ko' ? '뒤로' : 'Back'}
+              onPress={() => navigation.goBack()}
+            />
           </View>
+
+          {!selectedZone ? (
+            <EventZoneMapBadge
+              zone={currentZone}
+              room={currentZoneRoom}
+              language={language}
+              currentZoneLabel={copy.currentZoneLabel}
+              memberCountLabel={copy.chatMemberCount}
+              fallbackHint={usedFallback ? copy.locationFallbackHint : undefined}
+            />
+          ) : null}
         </View>
-        <View className="mt-2 pl-11">
-          <EventZoneCurrentZoneBadge
-            zone={EVENT_ZONE_BY_ID[currentZoneId]}
-            language={language}
-            label={copy.currentZoneLabel}
-            fallbackHint={usedFallback ? copy.locationFallbackHint : undefined}
-          />
+
+        <View className="rounded-full bg-violet-100 px-2.5 py-1 shadow-sm">
+          <Text className="text-[10px] font-semibold text-violet-700">
+            {copy.planningBadge}
+          </Text>
         </View>
       </View>
 
-      <ScrollView
-        className="flex-1"
-        contentContainerClassName="gap-4 p-4 pb-8"
-        showsVerticalScrollIndicator={false}>
-        {activeZone ? (
-          <EventZoneLandmarkStrip
-            zone={activeZone}
-            language={language}
-            title={copy.landmarksTitle}
+      {selectedZone ? (
+        <View className="absolute inset-0" pointerEvents="box-none">
+          <Pressable
+            className="absolute inset-0"
+            accessibilityRole="button"
+            accessibilityLabel={copy.closePanel}
+            onPress={() => setSelectedZoneId(null)}
           />
-        ) : null}
-
-        <BusanZoneMap
-          selectedZoneId={selectedZoneId}
-          currentZoneId={currentZoneId}
-          language={language}
-          zoneRooms={zoneRooms}
-          onEnterChat={() => {
-            if (!selectedZoneId) {
-              return;
-            }
-            const room = getChatRoomByZoneId(selectedZoneId);
-            if (room) {
-              navigation.navigate('EventZoneChat', { roomId: room.id });
-            }
-          }}
-          zoneSelectCopy={{
-            selectZoneTitle: copy.selectZoneTitle,
-            liveBadge: copy.chatLiveBadge,
-            memberCountLabel: copy.chatMemberCount,
-            enterLabel: copy.enterChat,
-            currentZoneLabel: copy.currentZoneLabel,
-          }}
-          onZonePress={zoneId => {
-            setSelectedZoneId(prev => (prev === zoneId ? null : zoneId));
-          }}
-        />
-      </ScrollView>
+          <View
+            className="absolute right-3"
+            style={{ bottom: insets.bottom + 16 }}
+            pointerEvents="auto">
+            <EventZoneZoneDetailPanel
+              zone={selectedZone}
+              room={selectedZoneRoom}
+              language={language}
+              landmarksTitle={copy.landmarksTitle}
+              liveBadge={copy.chatLiveBadge}
+              memberCountLabel={copy.chatMemberCount}
+              enterLabel={copy.enterChat}
+              closeLabel={copy.closePanel}
+              currentZoneLabel={copy.currentZoneLabel}
+              isCurrentZone={selectedZoneId === currentZoneId}
+              onClose={() => setSelectedZoneId(null)}
+              onEnterChat={() => {
+                if (selectedZoneId) {
+                  handleEnterChat(selectedZoneId);
+                }
+              }}
+            />
+          </View>
+        </View>
+      ) : null}
     </View>
   );
 }

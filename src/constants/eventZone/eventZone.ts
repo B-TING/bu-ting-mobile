@@ -411,6 +411,7 @@ export const EVENT_ZONE_COPY: Record<
     enterChat: string;
     emptyChatRooms: string;
     selectZoneTitle: string;
+    closePanel: string;
   }
 > = {
   ko: {
@@ -428,6 +429,7 @@ export const EVENT_ZONE_COPY: Record<
     enterChat: '입장하기',
     emptyChatRooms: '이 구역에 열린 채팅방이 없어요',
     selectZoneTitle: '구역 선택하기',
+    closePanel: '닫기',
   },
   en: {
     screenTitle: 'Event Zone',
@@ -444,6 +446,7 @@ export const EVENT_ZONE_COPY: Record<
     enterChat: 'Join',
     emptyChatRooms: 'No open chat rooms in this zone',
     selectZoneTitle: 'Select zone',
+    closePanel: 'Close',
   },
   ja: {
     screenTitle: 'イベントゾーン',
@@ -460,6 +463,7 @@ export const EVENT_ZONE_COPY: Record<
     enterChat: '入室',
     emptyChatRooms: 'このエリアに開いているチャットはありません',
     selectZoneTitle: 'エリアを選択',
+    closePanel: '閉じる',
   },
   zh: {
     screenTitle: '活动区域',
@@ -476,6 +480,7 @@ export const EVENT_ZONE_COPY: Record<
     enterChat: '进入',
     emptyChatRooms: '该区域暂无开放的聊天室',
     selectZoneTitle: '选择区域',
+    closePanel: '关闭',
   },
 };
 
