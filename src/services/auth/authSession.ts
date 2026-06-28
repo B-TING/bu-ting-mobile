@@ -60,6 +60,7 @@ export function applyAuthSession(
 
   useAuthStore.getState().setSession({
     accessToken: response.accessToken,
+    expiresIn: response.expiresIn,
     user,
     rememberMe: options.rememberMe,
     provider: options.provider,

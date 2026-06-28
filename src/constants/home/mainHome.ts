@@ -132,10 +132,10 @@ export const QUICK_ACCESS_ITEMS: QuickAccessItem[] = [
     labelEn: 'Festivals',
   },
   {
-    id: 'funCorner',
-    icon: '🎉',
-    labelKo: '재미 코너',
-    labelEn: 'Fun Corner',
+    id: 'eventZone',
+    icon: '🗺️',
+    labelKo: '이벤트 존',
+    labelEn: 'Event Zone',
   },
   {
     id: 'luggage',

@@ -11,6 +11,8 @@ import { FestivalDetailScreen } from '../screens/festival/FestivalDetailScreen';
 import { BusanAccommodationScreen } from '../screens/accommodation/BusanAccommodationScreen';
 import { BusanAttractionScreen } from '../screens/attraction/BusanAttractionScreen';
 import { HelpDeskChatScreen } from '../screens/helpdesk/HelpDeskChatScreen';
+import { EventZoneScreen } from '../screens/eventZone/EventZoneScreen';
+import { EventZoneChatScreen } from '../screens/eventZone/EventZoneChatScreen';
 import { LuggageStorageScreen } from '../screens/locker/LuggageStorageScreen';
 import { TravelogueDetailScreen } from '../screens/feed/TravelogueDetailScreen';
 import { TravelogueFeedScreen } from '../screens/feed/TravelogueFeedScreen';
@@ -116,6 +118,8 @@ export function RootNavigator() {
         <Stack.Screen name="BusanAccommodation" component={BusanAccommodationScreen} />
         <Stack.Screen name="BusanAttraction" component={BusanAttractionScreen} />
         <Stack.Screen name="HelpDeskChat" component={HelpDeskChatScreen} />
+        <Stack.Screen name="EventZone" component={EventZoneScreen} />
+        <Stack.Screen name="EventZoneChat" component={EventZoneChatScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

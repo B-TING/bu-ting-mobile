@@ -26,7 +26,6 @@ function sanitizeDetail(detail: unknown): string | undefined {
 
   for (const [key, value] of Object.entries(record)) {
     if (
-      key === 'providerToken' ||
       key === 'accessToken' ||
       key === 'idToken' ||
       key === 'refreshToken'

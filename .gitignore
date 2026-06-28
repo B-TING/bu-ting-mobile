@@ -96,3 +96,6 @@ yarn-error.log
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# 지도 파일 (저작권 문제 확인 후 추가)
+assets/map/busan.svg
