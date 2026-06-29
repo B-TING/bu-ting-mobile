@@ -45,8 +45,21 @@ export type KakaoMapPolylineOverlay = {
   zIndex?: number;
 };
 
+export type KakaoMapPolygonOverlay = {
+  kind: 'polygon';
+  id: string;
+  paths: { lat: number; lng: number }[][];
+  fillColor: string;
+  fillOpacity?: number;
+  strokeColor: string;
+  strokeOpacity?: number;
+  strokeWeight?: number;
+  zIndex?: number;
+};
+
 export type KakaoMapOverlay =
   | KakaoMapNumberedMarkerOverlay
   | KakaoMapRatingMarkerOverlay
   | KakaoMapLockerMarkerOverlay
-  | KakaoMapPolylineOverlay;
+  | KakaoMapPolylineOverlay
+  | KakaoMapPolygonOverlay;

@@ -34,6 +34,7 @@ export type {
   KakaoMapRatingMarkerOverlay,
   KakaoMapLockerMarkerOverlay,
   KakaoMapPolylineOverlay,
+  KakaoMapPolygonOverlay,
 } from './overlays/types';
 export {
   kakaoOverlaysFromSchedule,
@@ -42,6 +43,7 @@ export {
   kakaoOverlaysFromAttractions,
   kakaoOverlaysFromLockerStations,
 } from './overlays/builders';
+export { kakaoOverlaysFromEventZones } from './overlays/zoneOverlays';
 export {
   buildScheduleMapOverlays,
   filterValidCoordinates,
