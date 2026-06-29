@@ -5,6 +5,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ActivePlanHeroBanner } from '../components/home/banners/ActivePlanHeroBanner';
 import { HeroBanner } from '../components/home/banners/HeroBanner';
 import { EventsSectionMock } from '../components/home/sections/EventsSectionMock';
+import { HomeEventZoneSection } from '../components/home/sections/HomeEventZoneSection';
 import { QuickAccessRow } from '../components/home/sections/QuickAccessRow';
 import { TraveloguePreviewMock } from '../components/home/sections/TraveloguePreviewMock';
 import { HomeActionFabs, FAB_GAP, FAB_SIZE } from '../components/helpdesk/HomeActionFabs';
@@ -27,6 +28,8 @@ import { showTravelSurveyOnboardingPrompt } from '../services/setup/travelSurvey
 import { selectActivePlan, useAppStore, usePlanStore, useTravelogueStore } from '../stores';
 import { isTraveloguePublic } from '../utils/review/travelReview';
 import { getNearestUpcomingStop } from '../utils/plan/planSchedule';
+import { getChatRoomByZoneId } from '../constants/eventZone/eventZone';
+import type { EventZoneId } from '../types/eventZone';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MainHome'>;
 
@@ -90,6 +93,17 @@ export function MainHomeScreen({ navigation }: Props) {
 
   const goToHelpDesk = () => {
     navigation.navigate('HelpDeskChat');
+  };
+
+  const goToEventZone = () => {
+    navigation.navigate('EventZone');
+  };
+
+  const goToEventZoneChat = (zoneId: EventZoneId) => {
+    const room = getChatRoomByZoneId(zoneId);
+    if (room) {
+      navigation.navigate('EventZoneChat', { roomId: room.id });
+    }
   };
 
   const handleNavbarPress = (tab: NavbarTab) => {
@@ -179,6 +193,12 @@ export function MainHomeScreen({ navigation }: Props) {
               goToHelpDesk();
             }
           }}
+        />
+
+        <HomeEventZoneSection
+          language={language}
+          onMapPress={goToEventZone}
+          onEnterChat={goToEventZoneChat}
         />
 
         <EventsSectionMock

@@ -111,6 +111,41 @@ export const MAIN_HOME_COPY: Record<
   },
 };
 
+export const HOME_EVENT_ZONE_COPY: Record<
+  AppLanguage,
+  {
+    sectionTitle: string;
+    landmarksTitle: string;
+    outsideBusanHint: string;
+    mapA11y: string;
+  }
+> = {
+  ko: {
+    sectionTitle: '이벤트 존',
+    landmarksTitle: '유명 관광지',
+    outsideBusanHint: '부산 외 지역 · 구역 미리보기',
+    mapA11y: '이벤트 존 지도 보기',
+  },
+  en: {
+    sectionTitle: 'Event zone',
+    landmarksTitle: 'Popular spots',
+    outsideBusanHint: 'Outside Busan · zone preview',
+    mapA11y: 'View event zone map',
+  },
+  ja: {
+    sectionTitle: 'イベントゾーン',
+    landmarksTitle: '人気スポット',
+    outsideBusanHint: '釜山外 · エリアプレビュー',
+    mapA11y: 'イベントゾーンマップを見る',
+  },
+  zh: {
+    sectionTitle: '活动区域',
+    landmarksTitle: '热门景点',
+    outsideBusanHint: '釜山以外 · 区域预览',
+    mapA11y: '查看活动区域地图',
+  },
+};
+
 export const QUICK_ACCESS_ITEMS: QuickAccessItem[] = [
   {
     id: 'hotels',
