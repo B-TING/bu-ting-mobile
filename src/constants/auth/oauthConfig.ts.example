@@ -2,7 +2,11 @@
 export const OAUTH_CONFIG = {
   googleWebClientId: '',
   googleIosClientId: '',
+  googleAndroidClientIdDebug: '',
+  googleAndroidClientIdRelease: '',
+  androidAppPackageId: 'com.butingmobile',
   kakaoNativeAppKey: '',
+  kakaoRestApiKey: '',
   naverClientId: '',
   naverClientSecret: '',
   naverAppName: '부팅',

@@ -45,7 +45,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         options: options
       )
     }
-    return false
+
+    NotificationCenter.default.post(
+      name: Notification.Name("RCTOpenURLNotification"),
+      object: nil,
+      userInfo: ["url": url.absoluteString]
+    )
+    return true
   }
 }
 

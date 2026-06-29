@@ -9,8 +9,50 @@ const { loadProjectEnv } = require('./lib/load-env.cjs');
 
 const projectRoot = path.join(__dirname, '..');
 
+const androidManifestPath = path.join(
+  projectRoot,
+  'android',
+  'app',
+  'src',
+  'main',
+  'AndroidManifest.xml',
+);
+const androidManifestExamplePath = path.join(
+  projectRoot,
+  'android',
+  'app',
+  'src',
+  'main',
+  'AndroidManifest.xml.example',
+);
+
+function ensureAndroidManifest() {
+  if (fs.existsSync(androidManifestPath)) {
+    return;
+  }
+  if (!fs.existsSync(androidManifestExamplePath)) {
+    throw new Error(
+      '[Bu-Ting] AndroidManifest.xml not found — copy AndroidManifest.xml.example locally.',
+    );
+  }
+  fs.copyFileSync(androidManifestExamplePath, androidManifestPath);
+  console.log('[Bu-Ting] Created AndroidManifest.xml from AndroidManifest.xml.example');
+}
+
 function envOrEmpty(key) {
   return process.env[key]?.trim() ?? '';
+}
+
+function reversedGoogleClientIdScheme(clientId) {
+  const trimmed = clientId.trim();
+  const match = trimmed.match(/^([\w-]+)\.apps\.googleusercontent\.com$/);
+  if (match) {
+    return `com.googleusercontent.apps.${match[1]}`;
+  }
+  if (trimmed.startsWith('com.googleusercontent.apps.')) {
+    return trimmed;
+  }
+  return null;
 }
 
 function writeOAuthConfig(keys) {
@@ -20,7 +62,11 @@ function writeOAuthConfig(keys) {
 export const OAUTH_CONFIG = {
   googleWebClientId: "${esc(keys.googleWebClientId)}",
   googleIosClientId: "${esc(keys.googleIosClientId)}",
+  googleAndroidClientIdDebug: "${esc(keys.googleAndroidClientIdDebug)}",
+  googleAndroidClientIdRelease: "${esc(keys.googleAndroidClientIdRelease)}",
+  androidAppPackageId: "${esc(keys.androidAppPackageId)}",
   kakaoNativeAppKey: "${esc(keys.kakaoNativeAppKey)}",
+  kakaoRestApiKey: "${esc(keys.kakaoRestApiKey)}",
   naverClientId: "${esc(keys.naverClientId)}",
   naverClientSecret: "${esc(keys.naverClientSecret)}",
   naverAppName: "${esc(keys.naverAppName)}",
@@ -55,7 +101,77 @@ function upsertStringXml(name, value) {
   fs.writeFileSync(stringsPath, content, 'utf8');
 }
 
-function patchAndroidManifest(kakaoNativeAppKey) {
+function patchAndroidOAuthRedirect(keys) {
+  const manifestPath = path.join(
+    projectRoot,
+    'android',
+    'app',
+    'src',
+    'main',
+    'AndroidManifest.xml',
+  );
+  let manifest = fs.readFileSync(manifestPath, 'utf8');
+  const intentFilters = [];
+
+  const googleClientIds = [
+    keys.googleAndroidClientIdDebug,
+    keys.googleAndroidClientIdRelease,
+    keys.googleIosClientId,
+  ].filter(Boolean);
+
+  const googleSchemes = [
+    ...new Set(
+      googleClientIds
+        .map(id => reversedGoogleClientIdScheme(id))
+        .filter(Boolean),
+    ),
+  ];
+
+  for (const googleScheme of googleSchemes) {
+    intentFilters.push(`
+        <intent-filter>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="${googleScheme}" android:path="/oauth2redirect" />
+        </intent-filter>`);
+  }
+
+  const kakaoKey = keys.kakaoNativeAppKey;
+  if (kakaoKey) {
+    intentFilters.push(`
+        <intent-filter>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="kakao${kakaoKey}" android:host="oauth" />
+        </intent-filter>`);
+  }
+
+  const oauthBlock =
+    intentFilters.length > 0
+      ? `<!-- OAuth PKCE redirect -->${intentFilters.join('')}`
+      : '';
+
+  const oauthRegex = /<!-- OAuth PKCE redirect -->[\s\S]*?(?=\n      <\/activity>)/;
+
+  if (oauthBlock) {
+    if (manifest.includes('<!-- OAuth PKCE redirect -->')) {
+      manifest = manifest.replace(oauthRegex, oauthBlock.trim());
+    } else {
+      manifest = manifest.replace(
+        /(<activity\s+[^>]*android:name="\.MainActivity"[\s\S]*?<intent-filter>[\s\S]*?<\/intent-filter>)/,
+        `$1${oauthBlock}`,
+      );
+    }
+  } else if (manifest.includes('<!-- OAuth PKCE redirect -->')) {
+    manifest = manifest.replace(oauthRegex, '');
+  }
+
+  fs.writeFileSync(manifestPath, manifest, 'utf8');
+}
+
+function patchAndroidManifest(kakaoNativeAppKey, keys) {
   const manifestPath = path.join(
     projectRoot,
     'android',
@@ -94,6 +210,16 @@ function patchAndroidManifest(kakaoNativeAppKey) {
   }
 
   fs.writeFileSync(manifestPath, manifest, 'utf8');
+
+  if (
+    keys.googleAndroidClientIdDebug ||
+    keys.googleAndroidClientIdRelease ||
+    keys.googleIosClientId ||
+    keys.kakaoRestApiKey ||
+    keys.kakaoNativeAppKey
+  ) {
+    patchAndroidOAuthRedirect(keys);
+  }
 }
 
 function patchIosInfoPlist(keys, naverOauthEnabled) {
@@ -101,6 +227,36 @@ function patchIosInfoPlist(keys, naverOauthEnabled) {
   let plist = fs.readFileSync(plistPath, 'utf8');
   const kakaoKey = keys.kakaoNativeAppKey;
   const naverScheme = keys.naverUrlScheme || 'butingnaverlogin';
+  const oauthSchemes = [];
+  for (const clientId of [
+    keys.googleAndroidClientIdDebug,
+    keys.googleAndroidClientIdRelease,
+    keys.googleIosClientId,
+  ]) {
+    const reversedScheme = clientId ? reversedGoogleClientIdScheme(clientId) : null;
+    if (reversedScheme && !oauthSchemes.includes(reversedScheme)) {
+      oauthSchemes.push(reversedScheme);
+    }
+  }
+
+  const oauthUrlBlock =
+    oauthSchemes.length > 0
+      ? oauthSchemes
+          .map(
+            scheme => `
+	<dict>
+		<key>CFBundleTypeRole</key>
+		<string>Editor</string>
+		<key>CFBundleURLName</key>
+		<string>oauth-${scheme}</string>
+		<key>CFBundleURLSchemes</key>
+		<array>
+			<string>${scheme}</string>
+		</array>
+	</dict>`,
+          )
+          .join('')
+      : '';
 
   const kakaoUrlBlock = kakaoKey
     ? `
@@ -129,7 +285,7 @@ function patchIosInfoPlist(keys, naverOauthEnabled) {
     : '';
 
   const urlTypesBlock = `<key>CFBundleURLTypes</key>
-<array>${kakaoUrlBlock}${naverUrlBlock}
+<array>${kakaoUrlBlock}${oauthUrlBlock}${naverUrlBlock}
 </array>`;
 
   if (plist.includes('<key>CFBundleURLTypes</key>')) {
@@ -187,14 +343,22 @@ ${queries.map(q => `\t\t<string>${q}</string>`).join('\n')}
 
 function main() {
   loadProjectEnv({ root: projectRoot });
+  ensureAndroidManifest();
 
   const naverOauthEnabled = process.env.NAVER_OAUTH_ENABLED === 'true';
 
   const keys = {
     googleWebClientId: envOrEmpty('GOOGLE_OAUTH_WEB_CLIENT_ID'),
     googleIosClientId: envOrEmpty('GOOGLE_OAUTH_IOS_CLIENT_ID'),
+    googleAndroidClientIdDebug: envOrEmpty('GOOGLE_OAUTH_ANDROID_CLIENT_ID_FOR_DEBUG'),
+    googleAndroidClientIdRelease: envOrEmpty('GOOGLE_OAUTH_ANDROID_CLIENT_ID_FOR_RELEASE'),
+    androidAppPackageId: envOrEmpty('ANDROID_APP_PACKAGE_ID') || 'com.butingmobile',
     kakaoNativeAppKey:
       envOrEmpty('KAKAO_NATIVE_APP_KEY') || envOrEmpty('KAKAO_JAVASCRIPT_KEY'),
+    kakaoRestApiKey:
+      envOrEmpty('KAKAO_REST_API_KEY') ||
+      envOrEmpty('KAKAO_NATIVE_APP_KEY') ||
+      envOrEmpty('KAKAO_JAVASCRIPT_KEY'),
     naverClientId: envOrEmpty('NAVER_CLIENT_ID'),
     naverClientSecret: envOrEmpty('NAVER_CLIENT_SECRET'),
     naverAppName: envOrEmpty('NAVER_APP_NAME') || '부팅',
@@ -204,13 +368,24 @@ function main() {
   const configPath = writeOAuthConfig(keys);
   console.log(`[Bu-Ting] OAuth config synced → ${path.relative(projectRoot, configPath)}`);
 
+  const shouldPatchNative =
+    keys.googleWebClientId || keys.kakaoRestApiKey || keys.kakaoNativeAppKey;
+
   if (keys.kakaoNativeAppKey) {
     upsertStringXml('kakao_app_key', keys.kakaoNativeAppKey);
-    patchAndroidManifest(keys.kakaoNativeAppKey);
-    patchIosInfoPlist(keys, naverOauthEnabled);
+    patchAndroidManifest(keys.kakaoNativeAppKey, keys);
     console.log('[Bu-Ting] Kakao native keys synced to Android/iOS');
-  } else {
-    console.warn('[Bu-Ting] KAKAO_NATIVE_APP_KEY not set — Kakao login native config skipped.');
+  } else if (shouldPatchNative) {
+    patchAndroidOAuthRedirect(keys);
+  }
+
+  if (shouldPatchNative || naverOauthEnabled) {
+    patchIosInfoPlist(keys, naverOauthEnabled);
+    console.log('[Bu-Ting] OAuth URL schemes synced to iOS');
+  }
+
+  if (!keys.kakaoNativeAppKey && !keys.kakaoRestApiKey) {
+    console.warn('[Bu-Ting] KAKAO_REST_API_KEY not set — Kakao OAuth disabled.');
   }
 
   if (!naverOauthEnabled) {

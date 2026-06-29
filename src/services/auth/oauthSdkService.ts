@@ -1,9 +1,7 @@
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import {
-  getAccessToken as getKakaoAccessToken,
-  getProfile as getKakaoProfile,
   login as kakaoLogin,
-  loginWithKakaoAccount,
+  logout as kakaoLogout,
 } from '@react-native-seoul/kakao-login';
 import NaverLogin from '@react-native-seoul/naver-login';
 
@@ -25,6 +23,10 @@ export type ProviderTokenResult = {
 };
 
 let initialized = false;
+
+function isGoogleOAuthConfigured(): boolean {
+  return Boolean(OAUTH_CONFIG.googleWebClientId.trim());
+}
 
 export function initOAuthSdks(): void {
   if (initialized) {
@@ -56,8 +58,8 @@ export function initOAuthSdks(): void {
   initialized = true;
   logAuth('sdk.init', 'OAuth SDKs initialized', {
     detail: {
-      google: Boolean(OAUTH_CONFIG.googleWebClientId),
-      kakao: Boolean(OAUTH_CONFIG.kakaoNativeAppKey),
+      google: isGoogleOAuthConfigured(),
+      kakao: Boolean(OAUTH_CONFIG.kakaoRestApiKey || OAUTH_CONFIG.kakaoNativeAppKey),
       naver:
         NAVER_OAUTH_ENABLED &&
         Boolean(OAUTH_CONFIG.naverClientId && OAUTH_CONFIG.naverClientSecret),
@@ -66,10 +68,10 @@ export function initOAuthSdks(): void {
 }
 
 function assertProviderConfigured(provider: OAuthProvider): void {
-  if (provider === 'google' && !OAUTH_CONFIG.googleWebClientId) {
+  if (provider === 'google' && !isGoogleOAuthConfigured()) {
     throw new OAuthSdkError('Google OAuth is not configured.');
   }
-  if (provider === 'kakao' && !OAUTH_CONFIG.kakaoNativeAppKey) {
+  if (provider === 'kakao' && !OAUTH_CONFIG.kakaoRestApiKey && !OAUTH_CONFIG.kakaoNativeAppKey) {
     throw new OAuthSdkError('Kakao OAuth is not configured.');
   }
   if (provider === 'naver') {
@@ -85,67 +87,29 @@ function assertProviderConfigured(provider: OAuthProvider): void {
 async function signInWithGoogle(): Promise<ProviderTokenResult> {
   await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
   const response = await GoogleSignin.signIn();
-  if (response.type !== 'success' || !response.data.idToken) {
+  if (response.type === 'cancelled') {
     throw new OAuthSdkError('Google sign-in was cancelled.');
   }
-  return { provider: 'google', providerToken: response.data.idToken };
-}
 
-async function signInWithKakao(): Promise<ProviderTokenResult> {
-  let token: {
-    accessToken?: string;
-    idToken?: string;
-    refreshToken?: string;
-  };
-
-  try {
-    token = await kakaoLogin();
-  } catch (talkError) {
-    logAuth('sdk.kakao.talk.fail', 'KakaoTalk login failed, trying account login', {
-      level: 'warn',
-      detail: talkError,
-    });
-    token = await loginWithKakaoAccount();
-  }
-
-  if (!token.accessToken) {
-    throw new OAuthSdkError('Kakao sign-in failed: no access token.');
-  }
-
-  logAuth('sdk.kakao.token', 'Kakao OAuth token shape', {
-    detail: {
-      nativeAppKeyPrefix: OAUTH_CONFIG.kakaoNativeAppKey.slice(0, 8),
-      hasAccessToken: Boolean(token.accessToken),
-      hasIdToken: Boolean(token.idToken),
-      hasRefreshToken: Boolean(token.refreshToken),
-    },
-  });
-
-  try {
-    const profile = await getKakaoProfile();
-    logAuth('sdk.kakao.profile', 'Kakao profile verified locally', {
-      detail: { id: profile.id, hasEmail: Boolean(profile.email) },
-    });
-    if (!profile.email) {
-      logAuth(
-        'sdk.kakao.profile.no-email',
-        'Kakao email consent missing ? backend signup may fail (enable email scope in Kakao console)',
-        { level: 'warn' },
-      );
-    }
-  } catch (profileError) {
-    logAuth('sdk.kakao.profile.fail', 'Kakao profile fetch failed', {
-      level: 'error',
-      detail: profileError,
-    });
+  const idToken = response.data.idToken;
+  if (!idToken) {
     throw new OAuthSdkError(
-      'Kakao login succeeded but the token is invalid. Check native app key, package name, and key hash in Kakao Developers.',
+      'Google ID token is not available. Check GOOGLE_OAUTH_WEB_CLIENT_ID.',
     );
   }
 
-  // OpenAPI/??? REST API: ??? ??? access_token ?? (/v2/user/me, /v1/user/access_token_info).
-  // id_token? OIDC ???? Kakao providerToken?? ???? ??.
-  return { provider: 'kakao', providerToken: token.accessToken };
+  return { provider: 'google', providerToken: idToken };
+}
+
+async function signInWithKakao(): Promise<ProviderTokenResult> {
+  const token = await kakaoLogin();
+  if (!token.idToken) {
+    throw new OAuthSdkError(
+      'Kakao ID token is not available. Enable OpenID Connect in Kakao app settings.',
+    );
+  }
+
+  return { provider: 'kakao', providerToken: token.idToken };
 }
 
 async function signInWithNaver(): Promise<ProviderTokenResult> {
@@ -180,18 +144,6 @@ async function refreshGoogleToken(): Promise<ProviderTokenResult | null> {
   return null;
 }
 
-async function refreshKakaoToken(): Promise<ProviderTokenResult | null> {
-  try {
-    const tokenInfo = await getKakaoAccessToken();
-    if (tokenInfo.accessToken) {
-      return { provider: 'kakao', providerToken: tokenInfo.accessToken };
-    }
-  } catch {
-    return null;
-  }
-  return null;
-}
-
 export async function signInWithProvider(
   provider: OAuthProvider,
 ): Promise<ProviderTokenResult> {
@@ -214,8 +166,11 @@ export async function signInWithProvider(
       default:
         throw new OAuthSdkError(`Unsupported provider: ${provider satisfies never}`);
     }
-    logAuth('sdk.signIn.success', `${provider} token received`, {
-      detail: { provider, providerToken: result.providerToken },
+    logAuth('sdk.signIn.success', `${provider} id token received`, {
+      detail: {
+        provider,
+        providerToken: result.providerToken,
+      },
     });
     return result;
   } catch (error) {
@@ -227,7 +182,7 @@ export async function signInWithProvider(
   }
 }
 
-/** SDK? ?? ?? ???? provider token? ?????. */
+/** SDK에 남아 있는 세션으로 provider token을 재발급합니다. */
 export async function refreshProviderToken(
   provider: OAuthProvider,
 ): Promise<ProviderTokenResult | null> {
@@ -235,30 +190,39 @@ export async function refreshProviderToken(
   assertProviderConfigured(provider);
   logAuth('sdk.refresh.start', `${provider} silent refresh started`);
 
-  let result: ProviderTokenResult | null = null;
-  switch (provider) {
-    case 'google':
-      result = await refreshGoogleToken();
-      break;
-    case 'kakao':
-      result = await refreshKakaoToken();
-      break;
-    case 'naver':
-      result = null;
-      break;
-    default:
-      result = null;
+  if (provider === 'google') {
+    const result = await refreshGoogleToken();
+    if (result) {
+      logAuth('sdk.refresh.success', `${provider} token refreshed`, {
+        detail: { provider, providerToken: result.providerToken },
+      });
+    } else {
+      logAuth('sdk.refresh.empty', `${provider} silent refresh unavailable`, {
+        level: 'warn',
+      });
+    }
+    return result;
   }
 
-  if (result) {
-    logAuth('sdk.refresh.success', `${provider} token refreshed`, {
-      detail: { provider, providerToken: result.providerToken },
-    });
-  } else {
-    logAuth('sdk.refresh.empty', `${provider} silent refresh unavailable`, {
-      level: 'warn',
-    });
-  }
+  logAuth('sdk.refresh.empty', `${provider} silent refresh unavailable`, {
+    level: 'warn',
+  });
+  return null;
+}
 
-  return result;
+export async function signOutProvider(provider: OAuthProvider | null): Promise<void> {
+  if (provider === 'google') {
+    try {
+      await GoogleSignin.signOut();
+    } catch {
+      /* ignore */
+    }
+  }
+  if (provider === 'kakao') {
+    try {
+      await kakaoLogout();
+    } catch {
+      /* ignore */
+    }
+  }
 }
