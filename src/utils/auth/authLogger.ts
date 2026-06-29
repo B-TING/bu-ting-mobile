@@ -28,7 +28,10 @@ function sanitizeDetail(detail: unknown): string | undefined {
     if (
       key === 'accessToken' ||
       key === 'idToken' ||
-      key === 'refreshToken'
+      key === 'refreshToken' ||
+      key === 'providerToken' ||
+      key === 'codeVerifier' ||
+      key === 'idToken'
     ) {
       safe[key] = maskToken(typeof value === 'string' ? value : undefined);
       continue;

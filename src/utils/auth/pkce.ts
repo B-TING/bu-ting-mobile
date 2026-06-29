@@ -1,16 +1,14 @@
-type WebCrypto = {
-  getRandomValues: (array: Uint8Array) => Uint8Array;
-  subtle: {
-    digest: (algorithm: string, data: BufferSource) => Promise<ArrayBuffer>;
-  };
-};
+import { sha256 } from '@noble/hashes/sha2.js';
 
-function getWebCrypto(): WebCrypto {
-  const crypto = (globalThis as { crypto?: WebCrypto }).crypto;
-  if (!crypto?.getRandomValues || !crypto.subtle?.digest) {
-    throw new Error('Web Crypto API is not available');
+function getRandomValues(bytes: Uint8Array): Uint8Array {
+  const crypto = (globalThis as { crypto?: { getRandomValues: (array: Uint8Array) => Uint8Array } })
+    .crypto;
+  if (!crypto?.getRandomValues) {
+    throw new Error(
+      'Secure random is not available. Ensure react-native-get-random-values is imported in index.js.',
+    );
   }
-  return crypto;
+  return crypto.getRandomValues(bytes);
 }
 
 function toBase64Url(bytes: Uint8Array): string {
@@ -33,14 +31,11 @@ function toBase64Url(bytes: Uint8Array): string {
 /** RFC 7636 — 43~128자 URL-safe 랜덤 문자열 */
 export function generateCodeVerifier(): string {
   const bytes = new Uint8Array(32);
-  getWebCrypto().getRandomValues(bytes);
+  getRandomValues(bytes);
   return toBase64Url(bytes);
 }
 
-export async function generateCodeChallenge(
-  codeVerifier: string,
-): Promise<string> {
+export async function generateCodeChallenge(codeVerifier: string): Promise<string> {
   const bytes = Uint8Array.from(codeVerifier, char => char.charCodeAt(0));
-  const digest = await getWebCrypto().subtle.digest('SHA-256', bytes);
-  return toBase64Url(new Uint8Array(digest));
+  return toBase64Url(sha256(bytes));
 }

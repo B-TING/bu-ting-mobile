@@ -9,7 +9,7 @@ export type AuthUser = {
 
 export type OAuthLoginRequest = {
   provider: OAuthProvider;
-  /** Google: id_token. Kakao/Naver: access_token (네이티브 SDK) */
+  /** Google/Kakao: id_token. Naver: access_token (네이티브 SDK) */
   providerToken: string;
 };
 

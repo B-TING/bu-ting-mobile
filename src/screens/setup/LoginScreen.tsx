@@ -40,13 +40,28 @@ export function LoginScreen({ navigation }: Props) {
       setErrorMessage(null);
       setLoadingProvider(provider);
       try {
-        const { providerToken } = await signInWithProvider(provider);
-        await completeProviderLogin(provider, providerToken, rememberMe);
+        const result = await signInWithProvider(provider);
+        await completeProviderLogin(provider, result.providerToken, rememberMe);
         navigation.replace('MainHome');
       } catch (error) {
         if (error instanceof OAuthSdkError && error.message.includes('cancelled')) {
           logAuth('login.cancelled', `${provider} sign-in cancelled by user`, {
             level: 'warn',
+          });
+          return;
+        }
+        if (
+          error instanceof OAuthSdkError &&
+          /rate limit/i.test(error.message)
+        ) {
+          setErrorMessage(
+            language === 'ko'
+              ? '카카오 로그인 요청이 너무 많습니다. 5~10분 후 다시 시도해 주세요.'
+              : 'Too many Kakao sign-in attempts. Please try again in 5–10 minutes.',
+          );
+          logAuth('login.error', `${provider} login rate limited`, {
+            level: 'warn',
+            detail: error,
           });
           return;
         }

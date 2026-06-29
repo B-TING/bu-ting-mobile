@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { DEFAULT_USER_LOCATION } from '../constants/eventZone/eventZone';
+import { DEFAULT_USER_LOCATION_BUSAN } from '../constants/eventZone/eventZone';
 import type { EventZoneCoordinate, EventZoneId } from '../types/eventZone';
 import { resolveEventZoneFromCoordinate } from '../utils/eventZone/zoneResolver';
 
@@ -38,9 +38,8 @@ function readDeviceLocation(): Promise<EventZoneCoordinate | null> {
 }
 
 export function useCurrentEventZone() {
-  const [location, setLocation] = useState<EventZoneCoordinate>(DEFAULT_USER_LOCATION);
+  const [location, setLocation] = useState<EventZoneCoordinate>(DEFAULT_USER_LOCATION_BUSAN);
   const [usedFallback, setUsedFallback] = useState(true);
-
   useEffect(() => {
     let cancelled = false;
 

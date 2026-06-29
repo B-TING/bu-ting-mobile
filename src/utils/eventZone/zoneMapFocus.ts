@@ -20,8 +20,8 @@ export const FULL_MAP_FOCUS: MapFocusRect = {
 const LANDMARK_SCREEN_ANCHOR_X = 0.30;
 const LANDMARK_SCREEN_ANCHOR_Y = 0.27;
 
-const MIN_FOCUS_ZOOM_WIDTH = 260;
-const MIN_FOCUS_ZOOM_HEIGHT = 240;
+const MIN_FOCUS_ZOOM_WIDTH = 220;
+const MIN_FOCUS_ZOOM_HEIGHT = 220;
 
 export function focusRectToViewBox(rect: MapFocusRect): string {
   return `${rect.x} ${rect.y} ${rect.width} ${rect.height}`;
@@ -67,8 +67,8 @@ export function getZoneFocusRect(
   const padX = Math.max(80, spanX * 0.65);
   const padY = Math.max(80, spanY * 0.65);
 
-  let width = Math.max(MIN_FOCUS_ZOOM_WIDTH, maxX - minX + padX * 2);
-  let height = Math.max(MIN_FOCUS_ZOOM_HEIGHT, maxY - minY + padY * 2);
+  let width = Math.max(MIN_FOCUS_ZOOM_WIDTH, maxX - minX + padX * 3);
+  let height = Math.max(MIN_FOCUS_ZOOM_HEIGHT, maxY - minY + padY * 3);
 
   let x: number;
   let y: number;
@@ -84,8 +84,8 @@ export function getZoneFocusRect(
   return clampFocusRect({ x, y, width, height });
 }
 
-const MIN_FOCUS_WIDTH = 120;
-const MIN_FOCUS_HEIGHT = 110;
+const MIN_FOCUS_WIDTH = 100;
+const MIN_FOCUS_HEIGHT = 100;
 
 export function clampFocusRect(rect: MapFocusRect): MapFocusRect {
   let { x, y, width, height } = rect;
@@ -109,6 +109,24 @@ export function resolveMapFocusRect(
 
   return getZoneFocusRect(selectedZoneId, {
     layoutForPanel: options?.layoutForPanel,
+  });
+}
+
+export function getHomeWidgetZoneFocusRect(zoneId: EventZoneId): MapFocusRect {
+  const base = getZoneFocusRect(zoneId);
+  const centroid = getLandmarkCentroid(zoneId);
+  /** 구역을 왼쪽에 두고 우측 채팅 오버레이 공간 확보 */
+  const HOME_WIDGET_ANCHOR_X = 0.1;
+  const HOME_WIDGET_ANCHOR_Y = 0.6;
+  const shrink = 1.0;
+  const width = Math.max(MIN_FOCUS_WIDTH, base.width * shrink);
+  const height = Math.max(MIN_FOCUS_HEIGHT, base.height * shrink);
+
+  return clampFocusRect({
+    x: centroid.x - HOME_WIDGET_ANCHOR_X * width,
+    y: centroid.y - HOME_WIDGET_ANCHOR_Y * height,
+    width,
+    height,
   });
 }
 

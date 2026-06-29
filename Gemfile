@@ -5,9 +5,11 @@ ruby ">= 2.6.10"
 
 # Exclude problematic versions of cocoapods and activesupport that causes build failures.
 gem 'cocoapods', '>= 1.13', '!= 1.15.0', '!= 1.15.1'
-gem 'activesupport', '>= 6.1.7.5', '!= 7.1.0'
+# CVE-2026-33169/33170/33176 (ReDoS, XSS, number helpers DoS) → 7.2.3.1+
+gem 'activesupport', '>= 7.2.3.1', '!= 7.1.0'
 gem 'xcodeproj', '< 1.26.0'
-gem 'concurrent-ruby', '< 1.3.4'
+# CVE-2026-54904/54905/54906 (NaN livelock, ReadWriteLock) → 1.3.7+
+gem 'concurrent-ruby', '>= 1.3.7'
 
 # Ruby 3.4.0 has removed some libraries from the standard library.
 gem 'bigdecimal'

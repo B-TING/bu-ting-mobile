@@ -294,7 +294,8 @@ export const EVENT_ZONE_BY_ID: Record<EventZoneId, EventZoneDefinition> = EVENT_
 );
 
 /** GPS 미연동 시 부산역 인근 기본 좌표 */
-export const DEFAULT_USER_LOCATION = { lat: 35.1152, lng: 129.0422 };
+export const DEFAULT_USER_LOCATION_SEOUL = { lat: 37.5665, lng: 126.9780 };
+export const DEFAULT_USER_LOCATION_BUSAN = { lat: 35.1152, lng: 129.0422 };
 
 export const MOCK_ZONE_CHAT_ROOMS: EventZoneChatRoom[] = [
   {

@@ -35,6 +35,8 @@ local.properties
 !debug.keystore
 android/gradle.properties
 .kotlin/
+ios/BUTingMobile/Info.plist
+android/app/src/main/AndroidManifest.xml
 
 # Local env — API keys, ngrok token 등 (커밋 금지)
 .env
