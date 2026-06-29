@@ -19,6 +19,7 @@
     "kakao:sync": "node scripts/sync-kakao-map-key.cjs",
     "map:sync": "node scripts/extract-busan-map-paths.cjs",
     "api:sync": "node scripts/sync-api-config.cjs",
+    "zone-boundaries:sync": "node scripts/build-busan-district-boundaries.cjs",
     "oauth:sync": "node scripts/sync-oauth-config.cjs",
     "postinstall": "node scripts/sync-kakao-map-key.cjs && node scripts/sync-api-config.cjs && node scripts/sync-oauth-config.cjs && patch-package",
     "test": "jest",
@@ -63,6 +64,7 @@
     "jest": "^29.6.3",
     "patch-package": "^8.0.1",
     "prettier": "2.8.8",
+    "proj4": "^2.20.9",
     "react-test-renderer": "19.2.3",
     "tailwindcss": "^3.4.19",
     "typescript": "^5.8.3"

@@ -12,6 +12,7 @@ type ScheduleRouteSlotProps = {
   displayIndex: number;
   dayColor?: string;
   dayColorLight?: string;
+  zoneColor?: string;
   phase: RebootPhase;
   copy: {
     markVisited: string;
@@ -50,6 +51,7 @@ export function ScheduleRouteSlot({
   displayIndex,
   dayColor,
   dayColorLight,
+  zoneColor,
   phase,
   copy,
   onPress,
@@ -149,6 +151,7 @@ export function ScheduleRouteSlot({
             displayIndex={displayIndex}
             dayColor={dayColor}
             dayColorLight={dayColorLight}
+            zoneColor={zoneColor}
             onPress={onPress}
             onEditPress={onEdit}
             indexSelected={indexSelected}

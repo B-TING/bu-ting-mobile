@@ -26,6 +26,39 @@ window.renderKakaoMapOverlays = function (overlays) {
   }
 
   overlays.forEach(function (overlay) {
+    if (overlay.kind === 'polygon' && overlay.paths && overlay.paths.length > 0) {
+      var polygonPath = overlay.paths
+        .map(function (ring) {
+          return ring
+            .map(function (point) {
+              return new kakao.maps.LatLng(point.lat, point.lng);
+            })
+            .filter(function (latLng) {
+              return latLng;
+            });
+        })
+        .filter(function (ring) {
+          return ring.length >= 3;
+        });
+
+      if (polygonPath.length === 0) {
+        return;
+      }
+
+      var polygon = new kakao.maps.Polygon({
+        path: polygonPath.length === 1 ? polygonPath[0] : polygonPath,
+        strokeWeight: overlay.strokeWeight != null ? overlay.strokeWeight : 3,
+        strokeColor: overlay.strokeColor || '#FFFFFF',
+        strokeOpacity: overlay.strokeOpacity != null ? overlay.strokeOpacity : 1,
+        fillColor: overlay.fillColor || '#38BDF8',
+        fillOpacity: overlay.fillOpacity != null ? overlay.fillOpacity : 0.3,
+        zIndex: overlay.zIndex != null ? overlay.zIndex : 0,
+      });
+      polygon.setMap(window.kakaoMap);
+      window.kakaoMapOverlayRefs.push(polygon);
+      return;
+    }
+
     if (overlay.kind === 'polyline' && overlay.path && overlay.path.length >= 2) {
       var path = overlay.path.map(function (point) {
         return new kakao.maps.LatLng(point.lat, point.lng);

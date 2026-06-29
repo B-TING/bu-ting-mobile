@@ -2,8 +2,11 @@ import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { Platform, Pressable, Text, useWindowDimensions, View } from 'react-native';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 
+import { EventZoneLayerToggle } from '../../components/kakaoMap/EventZoneLayerToggle';
+import { useAppStore } from '../../stores';
 import { KAKAO_MAP_JS_KEY } from '../config';
 import type { KakaoMapOverlay } from '../overlays/types';
+import { kakaoOverlaysFromEventZones } from '../overlays/zoneOverlays';
 import {
   buildKakaoMapHtml,
   buildKakaoMapMoveScript,
@@ -25,6 +28,8 @@ type KakaoMapShellProps = {
   emptySubtitle?: string;
   /** 고정 지도 스케일(km) — Day 선택 포커스 등 */
   cameraKmSpan?: number;
+  /** 6개 행사 구역 색상·구분선 토글 (기본 꺼짐) */
+  eventZoneToggle?: boolean;
 };
 
 function pointsSignature(points: MapPoint[]): string {
@@ -58,13 +63,24 @@ export function KakaoMapShell({
   footer,
   emptySubtitle,
   cameraKmSpan,
+  eventZoneToggle = true,
 }: KakaoMapShellProps) {
   const webViewRef = useRef<WebView>(null);
   const mapReadyRef = useRef(false);
   const bootstrapHtmlRef = useRef<string | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
+  const [eventZonesVisible, setEventZonesVisible] = useState(false);
+  const language = useAppStore(state => state.language) ?? 'ko';
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+
+  const zoneOverlays = useMemo(() => kakaoOverlaysFromEventZones(), []);
+  const mergedOverlays = useMemo(() => {
+    if (!eventZoneToggle || !eventZonesVisible) {
+      return overlays;
+    }
+    return [...zoneOverlays, ...overlays];
+  }, [eventZoneToggle, eventZonesVisible, overlays, zoneOverlays]);
 
   const mapWidth = size === 'fullscreen' ? screenWidth : screenWidth - (size === 'fill' ? 0 : 48);
   const mapHeight =
@@ -82,7 +98,7 @@ export function KakaoMapShell({
   );
 
   const cameraKey = cameraSignature(targetCamera);
-  const overlayKey = overlaysSignature(overlays);
+  const overlayKey = overlaysSignature(mergedOverlays);
 
   if (bootstrapHtmlRef.current === null && KAKAO_MAP_JS_KEY && points.length > 0) {
     bootstrapHtmlRef.current = buildKakaoMapHtml(KAKAO_MAP_JS_KEY, targetCamera);
@@ -117,16 +133,16 @@ export function KakaoMapShell({
       return;
     }
 
-    syncMapOverlays(webViewRef, overlays);
+    syncMapOverlays(webViewRef, mergedOverlays);
 
     const retryTimers = [150, 400].map(delay =>
-      setTimeout(() => syncMapOverlays(webViewRef, overlays), delay),
+      setTimeout(() => syncMapOverlays(webViewRef, mergedOverlays), delay),
     );
 
     return () => {
       retryTimers.forEach(clearTimeout);
     };
-  }, [mapReady, overlayKey, overlays]);
+  }, [mapReady, overlayKey, mergedOverlays]);
 
   const handleWebViewMessage = (event: WebViewMessageEvent) => {
     try {
@@ -140,7 +156,7 @@ export function KakaoMapShell({
         setMapReady(true);
         setMapError(null);
         syncMapCamera(webViewRef, targetCamera);
-        syncMapOverlays(webViewRef, overlays);
+        syncMapOverlays(webViewRef, mergedOverlays);
         return;
       }
       if (payload.type === 'overlayPress' && payload.id && onOverlayPress) {
@@ -229,6 +245,15 @@ export function KakaoMapShell({
             pointerEvents="none"
             className="absolute right-2 top-2 rounded-md bg-black/50 px-2 py-1">
             <Text className="text-[10px] font-semibold text-white">{tapHint}</Text>
+          </View>
+        ) : null}
+        {eventZoneToggle ? (
+          <View className="absolute left-2 top-2 z-10">
+            <EventZoneLayerToggle
+              language={language}
+              visible={eventZonesVisible}
+              onToggle={() => setEventZonesVisible(current => !current)}
+            />
           </View>
         ) : null}
       </View>

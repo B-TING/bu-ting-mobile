@@ -14,6 +14,16 @@ export const BUSAN_MAP_BOUNDS = {
   maxLng: 129.24,
 } as const;
 
+/**
+ * 카카오맵 행사 구역 폴리곤 미세 위치 보정.
+ * 동남쪽(오른쪽·아래)으로 옮기려면 lat을 줄이고 lng를 늘리세요.
+ * 대략 0.0001° ≈ 11m (위도), 부산 기준 경도 0.0001° ≈ 9m
+ */
+export const KAKAO_ZONE_POLYGON_OFFSET = {
+  lat: -0.003,
+  lng: 0.002,
+} as const;
+
 export { BUSAN_SVG_VIEWBOX as BUSAN_MAP_VIEWBOX } from './busanMapPaths';
 
 export const EVENT_ZONES: EventZoneDefinition[] = [
@@ -292,6 +302,16 @@ export const EVENT_ZONE_BY_ID: Record<EventZoneId, EventZoneDefinition> = EVENT_
   },
   {} as Record<EventZoneId, EventZoneDefinition>,
 );
+
+export const EVENT_ZONE_MAP_LAYER_COPY: Record<
+  AppLanguage,
+  { showZones: string; hideZones: string }
+> = {
+  ko: { showZones: '구역 표시', hideZones: '구역 숨기기' },
+  en: { showZones: 'Show zones', hideZones: 'Hide zones' },
+  ja: { showZones: '区域表示', hideZones: '区域非表示' },
+  zh: { showZones: '显示区域', hideZones: '隐藏区域' },
+};
 
 /** GPS 미연동 시 부산역 인근 기본 좌표 */
 export const DEFAULT_USER_LOCATION_SEOUL = { lat: 37.5665, lng: 126.9780 };
