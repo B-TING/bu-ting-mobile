@@ -117,6 +117,7 @@ export const PLAN_DETAIL_COPY: Record<
     budgetSave: string;
     budgetCancel: string;
     dayDuration: (m: string) => string;
+    dayZoneCount: (n: number) => string;
   }
 > = {
   ko: {
@@ -226,6 +227,7 @@ export const PLAN_DETAIL_COPY: Record<
     budgetSave: '저장',
     budgetCancel: '취소',
     dayDuration: m => `예상 소요 ${m}`,
+    dayZoneCount: n => `방문 영역 ${n}곳`,
   },
   en: {
     routeOptimize: 'Optimize route',
@@ -335,6 +337,7 @@ export const PLAN_DETAIL_COPY: Record<
     budgetSave: 'Save',
     budgetCancel: 'Cancel',
     dayDuration: m => `Est. ${m}`,
+    dayZoneCount: n => `${n} zone${n === 1 ? '' : 's'}`,
   },
   ja: {
     routeOptimize: 'ルート最適化',
@@ -444,6 +447,7 @@ export const PLAN_DETAIL_COPY: Record<
     budgetSave: '保存',
     budgetCancel: 'キャンセル',
     dayDuration: m => `所要約 ${m}`,
+    dayZoneCount: n => `訪問エリア ${n}箇所`,
   },
   zh: {
     routeOptimize: '优化路线',
@@ -552,5 +556,6 @@ export const PLAN_DETAIL_COPY: Record<
     budgetSave: '保存',
     budgetCancel: '取消',
     dayDuration: m => `预计 ${m}`,
+    dayZoneCount: n => `访问 ${n} 个区域`,
   },
 };

@@ -9,6 +9,7 @@ type RouteItemCardProps = {
   displayIndex: number;
   dayColor?: string;
   dayColorLight?: string;
+  zoneColor?: string;
   onPress: () => void;
   onEditPress: () => void;
   onIndexPress?: () => void;
@@ -29,6 +30,7 @@ export function RouteItemCard({
   displayIndex,
   dayColor = '#0077B6',
   dayColorLight = '#E8F6FC',
+  zoneColor,
   onPress,
   onEditPress,
   onIndexPress,
@@ -45,6 +47,7 @@ export function RouteItemCard({
 }: RouteItemCardProps) {
   const info = route.placeInfo;
   const thumb = catalogThumbnail(route.placeId);
+  const leftBorderColor = zoneColor ?? dayColor;
 
   return (
     <View
@@ -52,7 +55,7 @@ export function RouteItemCard({
       style={
         indexSelected
           ? { borderColor: dayColor, borderWidth: 2, backgroundColor: dayColorLight }
-          : { borderColor: '#E2E8F0', borderLeftWidth: 4, borderLeftColor: dayColor }
+          : { borderColor: '#E2E8F0', borderLeftWidth: 4, borderLeftColor: leftBorderColor }
       }>
       <Pressable
         onPress={onIndexPress}
