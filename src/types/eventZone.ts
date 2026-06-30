@@ -57,12 +57,9 @@ export type EventZoneDefinition = {
 export type EventZoneChatRoom = {
   id: string;
   zoneId: EventZoneId;
-  titleKo: string;
-  titleEn: string;
   topicKo: string;
   topicEn: string;
   memberCount: number;
-  isLive: boolean;
 };
 
 export type EventZoneChatMessage = {

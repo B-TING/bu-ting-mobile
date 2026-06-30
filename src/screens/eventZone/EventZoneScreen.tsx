@@ -103,7 +103,6 @@ export function EventZoneScreen({ navigation }: Props) {
               room={selectedZoneRoom}
               language={language}
               landmarksTitle={copy.landmarksTitle}
-              liveBadge={copy.chatLiveBadge}
               memberCountLabel={copy.chatMemberCount}
               enterLabel={copy.enterChat}
               closeLabel={copy.closePanel}
