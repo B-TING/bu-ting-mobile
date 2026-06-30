@@ -6,6 +6,18 @@ export const MY_PAGE_COPY: Record<
     title: string;
     profile: string;
     nickname: string;
+    changeNickname: string;
+    changeNicknameTitle: string;
+    changeNicknamePlaceholder: string;
+    changeNicknameSave: string;
+    changeNicknameCancel: string;
+    changeNicknameSuccess: string;
+    changeNicknameError: string;
+    changeNicknameEmpty: string;
+    deleteAccount: string;
+    deleteAccountConfirm: string;
+    deleteAccountCancel: string;
+    deleteAccountError: string;
     email: string;
     provider: string;
     userId: string;
@@ -41,6 +53,18 @@ export const MY_PAGE_COPY: Record<
     title: '마이페이지',
     profile: '내 계정',
     nickname: '닉네임',
+    changeNickname: '닉네임 변경',
+    changeNicknameTitle: '닉네임 변경',
+    changeNicknamePlaceholder: '새 닉네임',
+    changeNicknameSave: '저장',
+    changeNicknameCancel: '취소',
+    changeNicknameSuccess: '닉네임이 변경되었습니다.',
+    changeNicknameError: '닉네임 변경에 실패했습니다.',
+    changeNicknameEmpty: '닉네임을 입력해 주세요.',
+    deleteAccount: '계정 탈퇴',
+    deleteAccountConfirm: '정말 탈퇴하시겠습니까? 계정과 로그인 정보가 삭제되며 복구할 수 없습니다.',
+    deleteAccountCancel: '취소',
+    deleteAccountError: '계정 탈퇴에 실패했습니다.',
     email: '이메일',
     provider: '로그인 방식',
     userId: '사용자 ID',
@@ -75,6 +99,19 @@ export const MY_PAGE_COPY: Record<
     title: 'My page',
     profile: 'Account',
     nickname: 'Nickname',
+    changeNickname: 'Edit nickname',
+    changeNicknameTitle: 'Edit nickname',
+    changeNicknamePlaceholder: 'New nickname',
+    changeNicknameSave: 'Save',
+    changeNicknameCancel: 'Cancel',
+    changeNicknameSuccess: 'Nickname updated.',
+    changeNicknameError: 'Could not update nickname.',
+    changeNicknameEmpty: 'Please enter a nickname.',
+    deleteAccount: 'Delete account',
+    deleteAccountConfirm:
+      'Delete your account permanently? Your sign-in and profile data will be removed and cannot be restored.',
+    deleteAccountCancel: 'Cancel',
+    deleteAccountError: 'Could not delete account.',
     email: 'Email',
     provider: 'Sign-in method',
     userId: 'User ID',
@@ -109,6 +146,19 @@ export const MY_PAGE_COPY: Record<
     title: 'マイページ',
     profile: 'アカウント',
     nickname: 'ニックネーム',
+    changeNickname: '変更',
+    changeNicknameTitle: 'ニックネーム変更',
+    changeNicknamePlaceholder: '新しいニックネーム',
+    changeNicknameSave: '保存',
+    changeNicknameCancel: 'キャンセル',
+    changeNicknameSuccess: 'ニックネームを変更しました。',
+    changeNicknameError: 'ニックネームの変更に失敗しました。',
+    changeNicknameEmpty: 'ニックネームを入力してください。',
+    deleteAccount: 'アカウント削除',
+    deleteAccountConfirm:
+      '本当に退会しますか？アカウントとログイン情報は削除され、復元できません。',
+    deleteAccountCancel: 'キャンセル',
+    deleteAccountError: 'アカウント削除に失敗しました。',
     email: 'メール',
     provider: 'ログイン方法',
     userId: 'ユーザーID',
@@ -143,6 +193,18 @@ export const MY_PAGE_COPY: Record<
     title: '我的',
     profile: '账户',
     nickname: '昵称',
+    changeNickname: '修改昵称',
+    changeNicknameTitle: '修改昵称',
+    changeNicknamePlaceholder: '新昵称',
+    changeNicknameSave: '保存',
+    changeNicknameCancel: '取消',
+    changeNicknameSuccess: '昵称已更新。',
+    changeNicknameError: '昵称更新失败。',
+    changeNicknameEmpty: '请输入昵称。',
+    deleteAccount: '注销账户',
+    deleteAccountConfirm: '确定要注销吗？账户与登录信息将被删除且无法恢复。',
+    deleteAccountCancel: '取消',
+    deleteAccountError: '账户注销失败。',
     email: '邮箱',
     provider: '登录方式',
     userId: '用户 ID',

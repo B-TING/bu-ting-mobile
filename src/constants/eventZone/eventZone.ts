@@ -437,7 +437,7 @@ export const EVENT_ZONE_COPY: Record<
 > = {
   ko: {
     screenTitle: '이벤트 존',
-    currentZoneLabel: '내 구역',
+    currentZoneLabel: '현재 부산에 있습니다!',
     mapHint: '구역을 눌러 하이라이트하고 랜드마크를 확인하세요',
     landmarksTitle: '주요 관광지',
     chatRoomsTitle: '구역 채팅방',
@@ -454,7 +454,7 @@ export const EVENT_ZONE_COPY: Record<
   },
   en: {
     screenTitle: 'Event Zone',
-    currentZoneLabel: 'My zone',
+    currentZoneLabel: 'You are currently in Busan!',
     mapHint: 'Tap a zone to highlight it and view landmarks',
     landmarksTitle: 'Landmarks',
     chatRoomsTitle: 'Zone chat rooms',
@@ -471,7 +471,7 @@ export const EVENT_ZONE_COPY: Record<
   },
   ja: {
     screenTitle: 'イベントゾーン',
-    currentZoneLabel: '所属エリア',
+    currentZoneLabel: '現在、バウシンにいます！',
     mapHint: 'エリアをタップしてランドマークを表示',
     landmarksTitle: '主要観光地',
     chatRoomsTitle: 'エリアチャット',
@@ -488,7 +488,7 @@ export const EVENT_ZONE_COPY: Record<
   },
   zh: {
     screenTitle: '活动区域',
-    currentZoneLabel: '我的区域',
+    currentZoneLabel: '您现在在釜山！',
     mapHint: '点击区域高亮并查看地标',
     landmarksTitle: '主要景点',
     chatRoomsTitle: '区域聊天室',

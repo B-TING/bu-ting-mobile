@@ -42,6 +42,10 @@ export const TRAVEL_SURVEY_ENDPOINTS = {
   profile: '/api/v1/travel-surveys',
 } as const;
 
+export const USER_ENDPOINTS = {
+  me: '/api/v1/users/me',
+} as const;
+
 export type OAuthClientConfig = {
   clientId: string;
   redirectUri: string;
