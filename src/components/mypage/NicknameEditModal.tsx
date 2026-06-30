@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Text, TextInput, View } from 'react-native';
+import { TextInput, View } from 'react-native';
 
 import { cn } from '../../utils/common/cn';
 import { AppModal, AppModalPrimaryFooter } from '../shared/modals';

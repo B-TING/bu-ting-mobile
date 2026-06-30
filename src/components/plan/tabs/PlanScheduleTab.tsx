@@ -186,7 +186,7 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
       } else {
         setOrderedIds([]);
       }
-    }, [selectedDay, routeIdSetKey]);
+    }, [selectedDay, routeIdSetKey, day]);
 
     const clearReboot = () => {
       setReboot(null);

@@ -97,7 +97,7 @@ export function PlaceDetailModal({
     return () => {
       cancelled = true;
     };
-  }, [visible, route?.placeId, route?.type, showGoogleDetail]);
+  }, [visible, route, showGoogleDetail]);
 
   const mapRoute = useMemo(() => {
     if (!route) {

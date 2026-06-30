@@ -94,7 +94,7 @@ export function KakaoMapShell({
         ...(focusPoint ? { focus: focusPoint } : {}),
         ...(cameraKmSpan != null ? { kmSpan: cameraKmSpan } : {}),
       }),
-    [regionSyncKey, focusPoint?.lat, focusPoint?.lng, cameraKmSpan],
+    [points, focusPoint, cameraKmSpan],
   );
 
   const cameraKey = cameraSignature(targetCamera);
