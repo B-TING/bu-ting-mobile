@@ -1,8 +1,6 @@
-import { useEffect, useState } from 'react';
-import { Linking, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import { Linking, Pressable, Text, useWindowDimensions, View } from 'react-native';
 
 import { PLACE_SEARCH_COPY } from '../../constants/places/placeSearch';
-import { fetchPlaceDetail } from '../../services/places/placesApiService';
 import { buildGoogleMapsUrl } from '../../kakaoMap';
 import type { BusanPlace } from '../../types/placeSearch';
 import type { PlaceDetailVO } from '../../types/googlePlaces';
@@ -17,6 +15,7 @@ const SHEET_HEIGHT_RATIO = 0.62;
 type PlaceDetailSheetProps = {
   visible: boolean;
   place: BusanPlace | null;
+  detail: PlaceDetailVO | null;
   language: AppLanguage;
   copy: Copy;
   bookmarked?: boolean;
@@ -27,7 +26,7 @@ type PlaceDetailSheetProps = {
 export function PlaceDetailSheet({
   visible,
   place,
-  language,
+  detail,
   copy,
   bookmarked = false,
   onToggleBookmark,
@@ -36,51 +35,13 @@ export function PlaceDetailSheet({
   const { height: screenHeight } = useWindowDimensions();
   const sheetMaxHeight = Math.round(screenHeight * SHEET_HEIGHT_RATIO);
 
-  const [detail, setDetail] = useState<PlaceDetailVO | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (!visible || !place) {
-      setDetail(null);
-      return;
-    }
-
-    let cancelled = false;
-    setLoading(true);
-
-    const googleSearchText = [place.name, place.address].filter(Boolean).join(' ');
-
-    fetchPlaceDetail({
-      contentId: place.contentId,
-      contentTypeId: place.contentTypeId,
-      googleSearchText,
-    })
-      .then(result => {
-        if (!cancelled) {
-          setDetail(result);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setDetail(null);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [visible, place]);
-
-  if (!place) {
+  if (!place || !visible) {
     return null;
   }
 
   const categoryLabel = copy.categoryLabels[place.contentTypeId];
+  const rating = detail?.rating ?? place.rating;
+  const reviewCount = detail?.userRatingCount ?? place.userRatingsTotal;
 
   const openGoogleMaps = () => {
     if (detail) {
@@ -105,6 +66,10 @@ export function PlaceDetailSheet({
     reviewsSource: copy.reviewsSource,
     priceLevelLabel: copy.priceLevelLabel,
     priceLevel: copy.priceLevel,
+    detailSectionInfo: copy.detailSectionInfo,
+    detailSectionFacility: copy.detailSectionFacility,
+    detailSectionReviews: copy.detailSectionReviews,
+    detailSectionEmpty: copy.detailSectionEmpty,
   };
 
   return (
@@ -113,61 +78,58 @@ export function PlaceDetailSheet({
       onClose={onClose}
       maxHeight={sheetMaxHeight}
       closeAccessibilityLabel={copy.close}
+      
       footer={
-        <View className="mt-2 px-5">
-          <Pressable
-            onPress={openGoogleMaps}
-            className="mb-2 items-center rounded-2xl border border-brand-primary bg-brand-selected py-3 active:opacity-90">
-            <Text className="text-[15px] font-bold text-brand-primary">{copy.openInGoogleMaps}</Text>
-          </Pressable>
+        <View className="mt-1 px-5 pb-5">
           <AppModalActions
             actions={[{ label: copy.close, onPress: onClose, variant: 'primary' }]}
           />
         </View>
       }>
-      <ScrollView
-        style={{ flexGrow: 0 }}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 8 }}
-        showsVerticalScrollIndicator={false}
-        bounces={false}>
-        <View className="flex-row items-center justify-between gap-2">
-          <View className="min-w-0 flex-1 flex-row items-center gap-2">
-            <Text className="flex-1 text-xl font-bold text-brand-text">{place.name}</Text>
+      
+        <View className="flex-row items-start justify-between gap-3 px-5">
+          <Text className="min-w-0 flex-1 pr-2 text-xl font-bold text-brand-text">{place.name}</Text>
+          <View className="shrink-0 items-end gap-2">
             <View className="rounded-full bg-brand-selected px-2.5 py-1">
               <Text className="text-[10px] font-semibold text-brand-primary">{categoryLabel}</Text>
             </View>
-          </View>
-          {onToggleBookmark ? (
-            <Pressable
-              onPress={onToggleBookmark}
-              accessibilityRole="button"
-              accessibilityLabel={bookmarked ? copy.unbookmark : copy.bookmark}
-              className={`flex-row items-center gap-1 rounded-full px-3 py-2 active:opacity-80 ${
-                bookmarked ? 'bg-amber-100' : 'bg-brand-selected'
-              }`}>
-              <Text className="text-sm">{bookmarked ? '📌' : '☆'}</Text>
-              <Text
-                className={`text-xs font-bold ${
-                  bookmarked ? 'text-amber-700' : 'text-brand-primary'
+            {onToggleBookmark ? (
+              <Pressable
+                onPress={onToggleBookmark}
+                accessibilityRole="button"
+                accessibilityLabel={bookmarked ? copy.unbookmark : copy.bookmark}
+                className={`flex-row items-center gap-1 rounded-full px-3 py-2 active:opacity-80 ${
+                  bookmarked ? 'bg-amber-100' : 'bg-brand-selected'
                 }`}>
-                {bookmarked ? copy.unbookmark : copy.bookmark}
-              </Text>
-            </Pressable>
-          ) : null}
+                <Text className="text-sm">{bookmarked ? '📌' : '☆'}</Text>
+                <Text
+                  className={`text-xs font-bold ${
+                    bookmarked ? 'text-amber-700' : 'text-brand-primary'
+                  }`}>
+                  {bookmarked ? copy.unbookmark : copy.bookmark}
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
         </View>
 
-        <Text className="mt-1 text-sm font-semibold text-brand-primary">
-          {copy.ratingSummary(place.rating, place.userRatingsTotal)}
+        <Text className="mt-2 text-sm font-semibold text-brand-primary px-5">
+          {copy.ratingSummary(rating, reviewCount)}
         </Text>
 
+        <Pressable
+          onPress={openGoogleMaps}
+          accessibilityRole="button"
+          className="mx-5 mt-3 items-center rounded-2xl border border-brand-primary bg-brand-selected py-3 active:opacity-90">
+          <Text className="text-[15px] font-bold text-brand-primary">{copy.openInGoogleMaps}</Text>
+        </Pressable>
         <PlaceGoogleDetailBody
           detail={detail}
-          loading={loading}
+          loading={false}
           fallbackAddress={place.address}
           copy={googleDetailCopy}
           showPriceLevel={place.contentTypeId === '32'}
         />
-      </ScrollView>
     </AppModal>
   );
 }

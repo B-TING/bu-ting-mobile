@@ -150,7 +150,7 @@ export function kakaoOverlaysFromPlaces(
   selectedId: string | null | undefined,
   bookmarkedIds: readonly string[],
   options?: {
-    captionSuffix?: (place: { name: string }) => string | undefined;
+    captionSuffix?: (place: { id: string; name: string }) => string | undefined;
   },
 ): KakaoMapOverlay[] {
   const bookmarkSet = new Set(bookmarkedIds);

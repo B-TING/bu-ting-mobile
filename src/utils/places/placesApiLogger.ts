@@ -19,6 +19,33 @@ function sanitizeDetail(detail: unknown): string | undefined {
   }
 }
 
+function pickPlaceList(data: Record<string, unknown>): unknown[] | null {
+  if (Array.isArray(data.places)) {
+    return data.places;
+  }
+  if (Array.isArray(data.items)) {
+    return data.items;
+  }
+  if (Array.isArray(data.content)) {
+    return data.content;
+  }
+  return null;
+}
+
+function summarizePlaceItem(item: unknown): Record<string, unknown> | undefined {
+  if (!item || typeof item !== 'object') {
+    return undefined;
+  }
+  const record = item as Record<string, unknown>;
+  return {
+    contentId: record.contentId,
+    contentTypeId: record.contentTypeId,
+    title: record.title,
+    latitude: record.latitude ?? record.lat ?? record.mapy,
+    longitude: record.longitude ?? record.lng ?? record.mapx,
+  };
+}
+
 function summarizeResponseBody(body: unknown): Record<string, unknown> | undefined {
   if (!body || typeof body !== 'object') {
     return body == null ? undefined : { raw: body };
@@ -30,11 +57,7 @@ function summarizeResponseBody(body: unknown): Record<string, unknown> | undefin
       ? (record.data as Record<string, unknown>)
       : record;
 
-  const items = Array.isArray(data.items)
-    ? data.items
-    : Array.isArray(data.content)
-      ? data.content
-      : null;
+  const items = pickPlaceList(data);
 
   if (items) {
     return {
@@ -42,20 +65,30 @@ function summarizeResponseBody(body: unknown): Record<string, unknown> | undefin
       page: data.page,
       size: data.size,
       totalCount: data.totalCount ?? data.total,
-      sampleContentId:
-        items[0] && typeof items[0] === 'object' && 'contentId' in (items[0] as object)
-          ? (items[0] as { contentId?: string }).contentId
-          : undefined,
+      sample: summarizePlaceItem(items[0]),
     };
   }
 
   if ('contentId' in data) {
+    const googlePlace =
+      data.googlePlace && typeof data.googlePlace === 'object'
+        ? (data.googlePlace as Record<string, unknown>)
+        : null;
     return {
       contentId: data.contentId,
       contentTypeId: data.contentTypeId,
       title: data.title,
       hasDetails: Boolean(data.details),
-      reviewCount: data.reviewCount ?? data.userRatingCount,
+      hasGooglePlace: Boolean(googlePlace),
+      googleRating: googlePlace?.rating,
+      googleReviewCount: googlePlace?.reviewCount,
+      googlePriceLevel: googlePlace?.priceLevel,
+      googleReviewSampleCount: Array.isArray(googlePlace?.reviews)
+        ? googlePlace.reviews.length
+        : undefined,
+      googleHoursCount: Array.isArray(googlePlace?.openingHours)
+        ? googlePlace.openingHours.length
+        : undefined,
     };
   }
 
@@ -71,7 +104,17 @@ function summarizeResponseBody(body: unknown): Record<string, unknown> | undefin
   return { keys: Object.keys(data) };
 }
 
-/** Metro 터미널(`npm start`)에 `[Bu-Ting Places]` 로그를 출력합니다. */
+function emitPlacesApiLog(level: PlacesApiLogLevel, line: string): void {
+  // Android logcat는 console.log(info)를 잘 안 보여줄 수 있어 warn/error 위주로 출력합니다.
+  // Metro(`npm start`)·`npx react-native log-android`·Flipper 모두에서 `[Bu-Ting Places]`로 검색하세요.
+  if (level === 'error') {
+    console.error(line);
+    return;
+  }
+  console.warn(line);
+}
+
+/** `[Bu-Ting Places]` — Metro 터미널 또는 `npx react-native log-android`에서 확인 */
 export function logPlacesApi(
   step: string,
   message: string,
@@ -81,17 +124,11 @@ export function logPlacesApi(
   },
 ): void {
   const level = options?.level ?? 'info';
-  const prefix = `[Bu-Ting Places] ${step}`;
   const detail = sanitizeDetail(options?.detail);
-  const payload = detail ? `${message} | ${detail}` : message;
-
-  if (level === 'error') {
-    console.error(prefix, payload);
-  } else if (level === 'warn') {
-    console.warn(prefix, payload);
-  } else {
-    console.log(prefix, payload);
-  }
+  const line = detail
+    ? `[Bu-Ting Places] ${step} ${message} | ${detail}`
+    : `[Bu-Ting Places] ${step} ${message}`;
+  emitPlacesApiLog(level, line);
 }
 
 export function logPlacesApiRequest(

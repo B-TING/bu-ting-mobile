@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 
 import { KakaoMapShell, kakaoOverlaysFromPlaces } from '../../kakaoMap';
@@ -11,6 +11,7 @@ type PlaceMapViewProps = {
   selectedId?: string | null;
   bookmarkedIds?: readonly string[];
   onSelectPlace?: (place: BusanPlace) => void;
+  onMapCenterChange?: (center: EventZoneCoordinate) => void;
   mapTitle: string;
   mapSubtitle: string;
   captionSuffix?: (place: BusanPlace) => string | undefined;
@@ -22,23 +23,30 @@ export function PlaceMapView({
   selectedId,
   bookmarkedIds = [],
   onSelectPlace,
+  onMapCenterChange,
   mapTitle,
   mapSubtitle,
   captionSuffix,
 }: PlaceMapViewProps) {
-  const points = useMemo(() => {
-    if (places.length > 0) {
-      return places.map(place => place.location);
-    }
-    if (mapCenter) {
-      return [mapCenter];
-    }
-    return [];
-  }, [places, mapCenter]);
+  const placePoints = useMemo(() => places.map(place => place.location), [places]);
+  const points = placePoints.length > 0 ? placePoints : mapCenter ? [mapCenter] : [];
 
-  const focusPoint = selectedId
-    ? places.find(place => place.id === selectedId)?.location
-    : mapCenter;
+  const [selectionFocusId, setSelectionFocusId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!selectedId) {
+      setSelectionFocusId(null);
+      return;
+    }
+
+    setSelectionFocusId(selectedId);
+    const timer = setTimeout(() => setSelectionFocusId(null), 600);
+    return () => clearTimeout(timer);
+  }, [selectedId]);
+
+  const focusPoint = selectionFocusId
+    ? places.find(place => place.id === selectionFocusId)?.location
+    : undefined;
 
   const overlays = useMemo(
     () =>
@@ -68,8 +76,10 @@ export function PlaceMapView({
       <KakaoMapShell
         points={points}
         focusPoint={focusPoint}
+        fitPointsToCamera={false}
         overlays={overlays}
         onOverlayPress={onSelectPlace ? handleOverlayPress : undefined}
+        onCenterChange={onMapCenterChange}
         size="fill"
         emptySubtitle={mapSubtitle}
         footer={{ title: mapTitle, subtitle: mapSubtitle }}

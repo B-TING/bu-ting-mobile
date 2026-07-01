@@ -48,6 +48,8 @@ export const USER_ENDPOINTS = {
 
 export const PLACES_ENDPOINTS = {
   search: '/api/v1/places',
+  location: '/api/v1/places/location',
+  festivals: '/api/v1/places/festivals',
   detail: (contentId: string) => \`/api/v1/places/\${contentId}/detail\`,
 } as const;
 

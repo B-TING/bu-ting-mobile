@@ -21,6 +21,7 @@ type KakaoMapShellProps = {
   focusPoint?: MapPoint | null;
   overlays?: KakaoMapOverlay[];
   onOverlayPress?: (id: string) => void;
+  onCenterChange?: (center: MapPoint) => void;
   size?: KakaoMapShellSize;
   onPress?: () => void;
   tapHint?: string;
@@ -28,6 +29,8 @@ type KakaoMapShellProps = {
   emptySubtitle?: string;
   /** 고정 지도 스케일(km) — Day 선택 포커스 등 */
   cameraKmSpan?: number;
+  /** false면 마커 목록 변경 시 전체 bbox로 줌 재조정하지 않음 */
+  fitPointsToCamera?: boolean;
   /** 6개 행사 구역 색상·구분선 토글 (기본 꺼짐) */
   eventZoneToggle?: boolean;
 };
@@ -57,12 +60,14 @@ export function KakaoMapShell({
   focusPoint,
   overlays = [],
   onOverlayPress,
+  onCenterChange,
   size = 'compact',
   onPress,
   tapHint,
   footer,
   emptySubtitle,
   cameraKmSpan,
+  fitPointsToCamera = true,
   eventZoneToggle = true,
 }: KakaoMapShellProps) {
   const webViewRef = useRef<WebView>(null);
@@ -88,20 +93,31 @@ export function KakaoMapShell({
 
   const regionSyncKey = pointsSignature(points);
 
-  const targetCamera = useMemo(
-    () =>
-      cameraFromPoints(points, {
-        ...(focusPoint ? { focus: focusPoint } : {}),
+  const targetCamera = useMemo<MapCamera | null>(() => {
+    if (focusPoint) {
+      return cameraFromPoints(points, {
+        focus: focusPoint,
         ...(cameraKmSpan != null ? { kmSpan: cameraKmSpan } : {}),
-      }),
-    [points, focusPoint, cameraKmSpan],
-  );
+      });
+    }
+    if (!fitPointsToCamera) {
+      return null;
+    }
+    return cameraFromPoints(points, {
+      ...(cameraKmSpan != null ? { kmSpan: cameraKmSpan } : {}),
+    });
+  }, [points, focusPoint, cameraKmSpan, fitPointsToCamera]);
 
-  const cameraKey = cameraSignature(targetCamera);
+  const cameraKey = targetCamera ? cameraSignature(targetCamera) : null;
   const overlayKey = overlaysSignature(mergedOverlays);
 
   if (bootstrapHtmlRef.current === null && KAKAO_MAP_JS_KEY && points.length > 0) {
-    bootstrapHtmlRef.current = buildKakaoMapHtml(KAKAO_MAP_JS_KEY, targetCamera);
+    const bootstrapCamera =
+      targetCamera ??
+      cameraFromPoints(points, {
+        ...(cameraKmSpan != null ? { kmSpan: cameraKmSpan } : {}),
+      });
+    bootstrapHtmlRef.current = buildKakaoMapHtml(KAKAO_MAP_JS_KEY, bootstrapCamera);
   }
 
   useEffect(() => {
@@ -113,7 +129,7 @@ export function KakaoMapShell({
   }, [points.length]);
 
   useEffect(() => {
-    if (!mapReady) {
+    if (!mapReady || !targetCamera) {
       return;
     }
 
@@ -126,7 +142,7 @@ export function KakaoMapShell({
     return () => {
       retryTimers.forEach(clearTimeout);
     };
-  }, [mapReady, cameraKey, regionSyncKey, targetCamera]);
+  }, [mapReady, cameraKey, fitPointsToCamera ? regionSyncKey : null]);
 
   useEffect(() => {
     if (!mapReady) {
@@ -150,17 +166,30 @@ export function KakaoMapShell({
         type?: string;
         message?: string;
         id?: string;
+        lat?: number;
+        lng?: number;
       };
       if (payload.type === 'ready') {
         mapReadyRef.current = true;
         setMapReady(true);
         setMapError(null);
-        syncMapCamera(webViewRef, targetCamera);
+        if (targetCamera) {
+          syncMapCamera(webViewRef, targetCamera);
+        }
         syncMapOverlays(webViewRef, mergedOverlays);
         return;
       }
       if (payload.type === 'overlayPress' && payload.id && onOverlayPress) {
         onOverlayPress(payload.id);
+        return;
+      }
+      if (
+        payload.type === 'centerChange' &&
+        onCenterChange &&
+        Number.isFinite(payload.lat) &&
+        Number.isFinite(payload.lng)
+      ) {
+        onCenterChange({ lat: payload.lat as number, lng: payload.lng as number });
         return;
       }
       if (payload.type === 'error') {

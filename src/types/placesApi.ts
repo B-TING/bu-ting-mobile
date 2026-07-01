@@ -13,12 +13,14 @@ export const PLACE_CONTENT_TYPE = {
 export type PlaceContentTypeId =
   | typeof PLACE_CONTENT_TYPE.attraction
   | typeof PLACE_CONTENT_TYPE.accommodation
-  | typeof PLACE_CONTENT_TYPE.restaurant;
+  | typeof PLACE_CONTENT_TYPE.restaurant
+  | typeof PLACE_CONTENT_TYPE.festival;
 
 export const PLACE_MAP_SEARCH_TYPES: PlaceContentTypeId[] = [
   PLACE_CONTENT_TYPE.attraction,
   PLACE_CONTENT_TYPE.accommodation,
   PLACE_CONTENT_TYPE.restaurant,
+  PLACE_CONTENT_TYPE.festival,
 ];
 
 export type TourApiDistrictCode =
@@ -47,11 +49,16 @@ export type PlaceSearchItemDto = {
   address?: string;
   lat?: number;
   lng?: number;
+  latitude?: number;
+  longitude?: number;
   mapx?: number | string;
   mapy?: number | string;
   imageUrl?: string;
+  thumbnailUrl?: string;
   firstImage?: string;
   districtName?: string;
+  districtCode?: string;
+  regionCode?: string;
   rating?: number;
   reviewCount?: number;
   userRatingCount?: number;
@@ -60,6 +67,7 @@ export type PlaceSearchItemDto = {
 export type PlaceSearchResponseDto = {
   items?: PlaceSearchItemDto[];
   content?: PlaceSearchItemDto[];
+  places?: PlaceSearchItemDto[];
   page?: number;
   size?: number;
   totalCount?: number;
@@ -79,24 +87,36 @@ export type PlaceDetailOpeningHoursDto = {
   weekdayDescriptions?: string[];
 };
 
+export type PlaceGooglePlaceDto = {
+  placeId?: string;
+  rating?: number;
+  reviewCount?: number;
+  priceLevel?: string | number;
+  openingHours?: string[];
+  reviews?: PlaceDetailReviewDto[];
+};
+
 /** GET /api/v1/places/{contentId}/detail */
 export type PlaceDetailResponseDto = {
   contentId: string;
   contentTypeId: string;
-  title: string;
+  title?: string;
   address?: string;
   lat?: number;
   lng?: number;
+  latitude?: number;
+  longitude?: number;
   mapx?: number | string;
   mapy?: number | string;
   details?: Record<string, string>;
+  googlePlace?: PlaceGooglePlaceDto | null;
   rating?: number;
   reviewCount?: number;
   userRatingCount?: number;
-  priceLevel?: number;
+  priceLevel?: number | string;
   googlePlaceId?: string;
   phone?: string;
   phones?: string[];
-  openingHours?: PlaceDetailOpeningHoursDto;
+  openingHours?: PlaceDetailOpeningHoursDto | string[];
   reviews?: PlaceDetailReviewDto[];
 };

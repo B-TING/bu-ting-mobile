@@ -3,10 +3,77 @@ import type { BusanPlace } from '../../types/placeSearch';
 import type {
   PlaceContentTypeId,
   PlaceDetailResponseDto,
+  PlaceDetailReviewDto,
   PlaceSearchItemDto,
   PlaceSearchResponseDto,
 } from '../../types/placesApi';
 import { PLACE_CONTENT_TYPE } from '../../types/placesApi';
+import { parsePriceLevel } from './googlePlacesMapper';
+import { formatTourismInfoRows } from './tourismDetailFormatter';
+
+function resolvePriceLevel(value?: string | number): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    return parsePriceLevel(value);
+  }
+  return undefined;
+}
+
+function resolveOpeningHours(
+  detail: PlaceDetailResponseDto,
+): PlaceDetailVO['openingHours'] {
+  const googleHours = detail.googlePlace?.openingHours;
+  if (googleHours?.length) {
+    return { weekdayDescriptions: googleHours };
+  }
+
+  if (Array.isArray(detail.openingHours) && detail.openingHours.length > 0) {
+    return { weekdayDescriptions: detail.openingHours };
+  }
+
+  if (
+    detail.openingHours &&
+    typeof detail.openingHours === 'object' &&
+    !Array.isArray(detail.openingHours) &&
+    detail.openingHours.weekdayDescriptions?.length
+  ) {
+    return {
+      openNow: detail.openingHours.openNow,
+      weekdayDescriptions: detail.openingHours.weekdayDescriptions,
+    };
+  }
+
+  return undefined;
+}
+
+function resolveReviews(
+  detail: PlaceDetailResponseDto,
+): PlaceDetailReviewDto[] {
+  if (detail.googlePlace?.reviews?.length) {
+    return detail.googlePlace.reviews;
+  }
+  return detail.reviews ?? [];
+}
+
+function resolvePhone(detail: PlaceDetailResponseDto): string | undefined {
+  if (detail.phone) {
+    return detail.phone;
+  }
+  if (detail.phones?.length) {
+    return detail.phones[0];
+  }
+  const lodgingInfo = detail.details?.infocenterlodging?.trim();
+  if (lodgingInfo && lodgingInfo !== '0') {
+    return lodgingInfo;
+  }
+  const infoCenter = detail.details?.infocenter?.trim();
+  if (infoCenter && infoCenter !== '0') {
+    return infoCenter;
+  }
+  return undefined;
+}
 
 function parseCoord(value: number | string | undefined): number | null {
   if (value == null || value === '') {
@@ -25,11 +92,13 @@ function parseCoord(value: number | string | undefined): number | null {
 function resolveLatLng(item: {
   lat?: number;
   lng?: number;
+  latitude?: number;
+  longitude?: number;
   mapx?: number | string;
   mapy?: number | string;
 }): { lat: number; lng: number } | null {
-  const lat = parseCoord(item.lat ?? item.mapy);
-  const lng = parseCoord(item.lng ?? item.mapx);
+  const lat = parseCoord(item.lat ?? item.latitude ?? item.mapy);
+  const lng = parseCoord(item.lng ?? item.longitude ?? item.mapx);
   if (lat == null || lng == null) {
     return null;
   }
@@ -44,6 +113,8 @@ function contentTypeToKind(contentTypeId: string): PlaceKind {
       return 'restaurant';
     case PLACE_CONTENT_TYPE.attraction:
       return 'attraction';
+    case PLACE_CONTENT_TYPE.festival:
+      return 'other';
     default:
       return 'other';
   }
@@ -53,7 +124,8 @@ function asContentTypeId(value: string): PlaceContentTypeId {
   if (
     value === PLACE_CONTENT_TYPE.attraction ||
     value === PLACE_CONTENT_TYPE.accommodation ||
-    value === PLACE_CONTENT_TYPE.restaurant
+    value === PLACE_CONTENT_TYPE.restaurant ||
+    value === PLACE_CONTENT_TYPE.festival
   ) {
     return value;
   }
@@ -79,7 +151,7 @@ export function mapPlaceSearchItemToBusanPlace(item: PlaceSearchItemDto): BusanP
     rating: item.rating ?? 0,
     userRatingsTotal: reviewCount,
     districtName: item.districtName,
-    imageUrl: item.imageUrl ?? item.firstImage,
+    imageUrl: item.imageUrl ?? item.thumbnailUrl ?? item.firstImage,
   };
 }
 
@@ -89,54 +161,62 @@ export function extractPlaceSearchItems(
   if (Array.isArray(response)) {
     return response;
   }
-  return response.items ?? response.content ?? [];
+  return response.places ?? response.items ?? response.content ?? [];
 }
 
-export function mapPlaceDetailToPlaceDetailVO(detail: PlaceDetailResponseDto): PlaceDetailVO {
+export function enrichBusanPlaceFromDetail(
+  place: BusanPlace,
+  detail: PlaceDetailVO | null | undefined,
+): BusanPlace {
+  if (!detail) {
+    return place;
+  }
+  return {
+    ...place,
+    rating: detail.rating ?? place.rating,
+    userRatingsTotal: detail.userRatingCount ?? place.userRatingsTotal,
+    address: detail.formattedAddress || place.address,
+  };
+}
+
+export function mapPlaceDetailToPlaceDetailVO(
+  detail: PlaceDetailResponseDto,
+  fallback?: { name?: string; address?: string },
+): PlaceDetailVO {
   const location = resolveLatLng(detail) ?? { lat: 35.1796, lng: 129.0756 };
-  const phones = detail.phones?.length
-    ? detail.phones
-    : detail.phone
-      ? [detail.phone]
-      : [];
+  const google = detail.googlePlace;
+  const phone = resolvePhone(detail);
+  const openingHours = resolveOpeningHours(detail);
+  const reviews = resolveReviews(detail);
+  const tourismInfoRows = formatTourismInfoRows(detail.details, detail.contentTypeId);
 
   return {
-    googlePlaceId: detail.googlePlaceId ?? detail.contentId,
+    googlePlaceId: google?.placeId ?? detail.googlePlaceId ?? detail.contentId,
     internalPlaceId: detail.contentId,
-    name: detail.title,
+    name: detail.title ?? fallback?.name ?? '',
     kind: contentTypeToKind(detail.contentTypeId),
     googleTypes: [],
-    formattedAddress: detail.address ?? '',
+    formattedAddress: detail.address ?? fallback?.address ?? '',
     location,
-    rating: detail.rating,
-    userRatingCount: detail.reviewCount ?? detail.userRatingCount,
-    phones: phones.length
+    rating: google?.rating ?? detail.rating,
+    userRatingCount: google?.reviewCount ?? detail.reviewCount ?? detail.userRatingCount,
+    phones: phone
       ? {
-          national: phones[0],
-          international: phones[0],
+          national: phone,
+          international: phone,
         }
       : undefined,
-    openingHours: detail.openingHours?.weekdayDescriptions?.length
-      ? {
-          openNow: detail.openingHours.openNow,
-          weekdayDescriptions: detail.openingHours.weekdayDescriptions,
-        }
-      : undefined,
-    editorialSummary: detail.details
-      ? Object.entries(detail.details)
-          .map(([key, value]) => `${key}: ${value}`)
-          .join('\n')
-      : undefined,
-    reviews:
-      detail.reviews?.map((review, index) => ({
-        reviewId: `${detail.contentId}-${index}`,
-        authorName: review.authorName ?? 'Guest',
-        rating: review.rating ?? 0,
-        text: review.text ?? '',
-        relativePublishTimeDescription: review.relativePublishTimeDescription,
-        publishTime: review.publishTime,
-      })) ?? [],
+    openingHours,
+    tourismInfoRows: tourismInfoRows.length > 0 ? tourismInfoRows : undefined,
+    reviews: reviews.map((review, index) => ({
+      reviewId: `${detail.contentId}-${index}`,
+      authorName: review.authorName ?? 'Guest',
+      rating: review.rating ?? 0,
+      text: review.text ?? '',
+      relativePublishTimeDescription: review.relativePublishTimeDescription,
+      publishTime: review.publishTime,
+    })),
     photos: [],
-    priceLevel: detail.priceLevel,
+    priceLevel: resolvePriceLevel(google?.priceLevel ?? detail.priceLevel),
   };
 }

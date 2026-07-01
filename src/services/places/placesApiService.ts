@@ -5,7 +5,6 @@ import type {
   PlaceContentTypeId,
   PlaceDetailResponseDto,
   PlaceSearchResponseDto,
-  TourApiDistrictCode,
 } from '../../types/placesApi';
 import {
   extractPlaceSearchItems,
@@ -13,6 +12,7 @@ import {
   mapPlaceSearchItemToBusanPlace,
 } from '../../utils/places/placesApiMapper';
 import {
+  logPlacesApi,
   logPlacesApiError,
   logPlacesApiRequest,
   logPlacesApiResponse,
@@ -33,17 +33,22 @@ export class PlacesApiServiceError extends Error {
   }
 }
 
-type SearchPlacesParams = {
+type SearchPlacesByLocationParams = {
+  mapX: number;
+  mapY: number;
+  radius: number;
   contentTypeId: PlaceContentTypeId;
-  districtCode: TourApiDistrictCode;
   page?: number;
   size?: number;
+  arrange?: 'A' | 'C' | 'D' | 'E' | 'O' | 'Q' | 'R' | 'S';
 };
 
 type FetchPlaceDetailParams = {
   contentId: string;
   contentTypeId: PlaceContentTypeId;
   googleSearchText?: string;
+  fallbackName?: string;
+  fallbackAddress?: string;
 };
 
 function unwrapData<T>(body: ApiEnvelope<T> | T | null): T | null {
@@ -65,14 +70,17 @@ function parseErrorMessage(res: Response, body: unknown): string {
   return `Places request failed (${res.status})`;
 }
 
-function buildSearchUrl(params: SearchPlacesParams): string {
+function buildLocationSearchUrl(params: SearchPlacesByLocationParams): string {
   const query = new URLSearchParams({
+    mapX: String(params.mapX),
+    mapY: String(params.mapY),
+    radius: String(params.radius),
     contentTypeId: params.contentTypeId,
-    districtCode: params.districtCode,
     page: String(params.page ?? 1),
     size: String(params.size ?? 20),
+    arrange: params.arrange ?? 'E',
   });
-  return `${API_BASE_URL}${PLACES_ENDPOINTS.search}?${query.toString()}`;
+  return `${API_BASE_URL}${PLACES_ENDPOINTS.location}?${query.toString()}`;
 }
 
 function buildDetailUrl(contentId: string, params: Omit<FetchPlaceDetailParams, 'contentId'>): string {
@@ -85,14 +93,11 @@ function buildDetailUrl(contentId: string, params: Omit<FetchPlaceDetailParams, 
   return `${API_BASE_URL}${PLACES_ENDPOINTS.detail(contentId)}?${query.toString()}`;
 }
 
-export async function searchPlaces(params: SearchPlacesParams): Promise<BusanPlace[]> {
-  const url = buildSearchUrl(params);
-  logPlacesApiRequest('GET', url, {
-    contentTypeId: params.contentTypeId,
-    districtCode: params.districtCode,
-    page: params.page ?? 1,
-    size: params.size ?? 20,
-  });
+async function fetchPlaceList(
+  url: string,
+  logContext: Record<string, unknown>,
+): Promise<BusanPlace[]> {
+  logPlacesApiRequest('GET', url, logContext);
 
   let res: Response;
   let body: ApiEnvelope<PlaceSearchResponseDto> | PlaceSearchResponseDto | ApiErrorResponse | null;
@@ -107,17 +112,11 @@ export async function searchPlaces(params: SearchPlacesParams): Promise<BusanPla
       return null;
     })) as ApiEnvelope<PlaceSearchResponseDto> | PlaceSearchResponseDto | ApiErrorResponse | null;
   } catch (networkError) {
-    logPlacesApiError('GET', url, networkError, {
-      contentTypeId: params.contentTypeId,
-      districtCode: params.districtCode,
-    });
+    logPlacesApiError('GET', url, networkError, logContext);
     throw networkError;
   }
 
-  logPlacesApiResponse('GET', url, res.status, body, {
-    contentTypeId: params.contentTypeId,
-    districtCode: params.districtCode,
-  });
+  logPlacesApiResponse('GET', url, res.status, body, logContext);
 
   if (!res.ok) {
     const message = parseErrorMessage(res, body);
@@ -126,18 +125,14 @@ export async function searchPlaces(params: SearchPlacesParams): Promise<BusanPla
       url,
       responseBody: body,
     });
-    logPlacesApiError('GET', url, error, {
-      contentTypeId: params.contentTypeId,
-      districtCode: params.districtCode,
-    });
+    logPlacesApiError('GET', url, error, logContext);
     throw error;
   }
 
   const payload = unwrapData(body);
   if (!payload) {
     logPlacesApiError('GET', url, new Error('Empty places search response body'), {
-      contentTypeId: params.contentTypeId,
-      districtCode: params.districtCode,
+      ...logContext,
       status: res.status,
     });
     return [];
@@ -149,8 +144,7 @@ export async function searchPlaces(params: SearchPlacesParams): Promise<BusanPla
 
   if (mapped.length === 0 && extractPlaceSearchItems(payload).length > 0) {
     logPlacesApiError('GET', url, new Error('All place items failed coordinate mapping'), {
-      contentTypeId: params.contentTypeId,
-      districtCode: params.districtCode,
+      ...logContext,
       rawItemCount: extractPlaceSearchItems(payload).length,
     });
   }
@@ -158,8 +152,62 @@ export async function searchPlaces(params: SearchPlacesParams): Promise<BusanPla
   return mapped;
 }
 
+export async function searchPlacesByLocation(
+  params: SearchPlacesByLocationParams,
+): Promise<BusanPlace[]> {
+  logPlacesApi('search.start', 'location search', {
+    detail: {
+      contentTypeId: params.contentTypeId,
+      mapX: params.mapX,
+      mapY: params.mapY,
+      radius: params.radius,
+      page: params.page ?? 1,
+      size: params.size ?? 20,
+    },
+  });
+
+  let url: string;
+  try {
+    url = buildLocationSearchUrl(params);
+  } catch (error) {
+    logPlacesApiError('GET', '(location-url-build)', error, {
+      contentTypeId: params.contentTypeId,
+      mapX: params.mapX,
+      mapY: params.mapY,
+    });
+    throw error;
+  }
+
+  return fetchPlaceList(url, {
+    contentTypeId: params.contentTypeId,
+    mapX: params.mapX,
+    mapY: params.mapY,
+    radius: params.radius,
+    page: params.page ?? 1,
+    size: params.size ?? 20,
+  });
+}
+
 export async function fetchPlaceDetail(params: FetchPlaceDetailParams): Promise<PlaceDetailVO | null> {
-  const url = buildDetailUrl(params.contentId, params);
+  logPlacesApi('detail.start', 'place detail requested', {
+    detail: {
+      contentId: params.contentId,
+      contentTypeId: params.contentTypeId,
+      googleSearchText: params.googleSearchText,
+    },
+  });
+
+  let url: string;
+  try {
+    url = buildDetailUrl(params.contentId, params);
+  } catch (error) {
+    logPlacesApiError('GET', '(detail-url-build)', error, {
+      contentId: params.contentId,
+      contentTypeId: params.contentTypeId,
+    });
+    throw error;
+  }
+
   logPlacesApiRequest('GET', url, {
     contentId: params.contentId,
     contentTypeId: params.contentTypeId,
@@ -215,5 +263,47 @@ export async function fetchPlaceDetail(params: FetchPlaceDetailParams): Promise<
     return null;
   }
 
-  return mapPlaceDetailToPlaceDetailVO(payload);
+  return mapPlaceDetailToPlaceDetailVO(payload, {
+    name: params.fallbackName,
+    address: params.fallbackAddress,
+  });
+}
+
+export async function fetchPlaceDetailsForList(
+  places: BusanPlace[],
+): Promise<Record<string, PlaceDetailVO | null>> {
+  if (places.length === 0) {
+    return {};
+  }
+
+  logPlacesApi('details.batch.start', 'prefetch place details', {
+    detail: { count: places.length },
+  });
+
+  const entries = await Promise.all(
+    places.map(async place => {
+      const googleSearchText = [place.name, place.address].filter(Boolean).join(' ');
+      try {
+        const detail = await fetchPlaceDetail({
+          contentId: place.contentId,
+          contentTypeId: place.contentTypeId,
+          googleSearchText,
+          fallbackName: place.name,
+          fallbackAddress: place.address,
+        });
+        return [place.contentId, detail] as const;
+      } catch {
+        return [place.contentId, null] as const;
+      }
+    }),
+  );
+
+  const detailsById = Object.fromEntries(entries) as Record<string, PlaceDetailVO | null>;
+  const loadedCount = entries.filter(([, detail]) => detail != null).length;
+
+  logPlacesApi('details.batch.done', 'prefetch place details complete', {
+    detail: { requested: places.length, loaded: loadedCount },
+  });
+
+  return detailsById;
 }

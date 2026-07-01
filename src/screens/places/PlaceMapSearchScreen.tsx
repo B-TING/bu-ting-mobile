@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,42 +8,54 @@ import { PlaceMapView } from '../../components/places/PlaceMapView';
 import { BackButton } from '../../components/shared/buttons/BackButton';
 import {
   defaultPlaceContentTypeId,
+  PLACE_SEARCH_CENTER_THRESHOLD_M,
   PLACE_SEARCH_COPY,
+  PLACE_SEARCH_RADIUS_M,
 } from '../../constants/places/placeSearch';
 import { useCurrentEventZone } from '../../hooks/useCurrentEventZone';
 import type { RootStackParamList } from '../../navigation/types';
-import { searchPlaces } from '../../services/places/placesApiService';
+import { searchPlacesByLocation, fetchPlaceDetailsForList } from '../../services/places/placesApiService';
 import { useAppStore, usePlaceBookmarkStore } from '../../stores';
+import type { EventZoneCoordinate } from '../../types/eventZone';
 import type { BusanPlace } from '../../types/placeSearch';
 import { PLACE_MAP_SEARCH_TYPES } from '../../types/placesApi';
 import type { PlaceContentTypeId } from '../../types/placesApi';
+import type { PlaceDetailVO } from '../../types/googlePlaces';
 import { sortBookmarkedFirst } from '../../utils/bookmark/sortBookmarkedFirst';
-import {
-  resolveNearestTourApiDistrictCode,
-  tourApiDistrictLabelKo,
-} from '../../utils/places/tourApiDistrict';
+import { haversineKm } from '../../utils/geo/geo';
+import { logPlacesApiError } from '../../utils/places/placesApiLogger';
+import { enrichBusanPlaceFromDetail } from '../../utils/places/placesApiMapper';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PlaceMapSearch'>;
+
+function centersDifferBeyondThreshold(
+  a: EventZoneCoordinate,
+  b: EventZoneCoordinate,
+  thresholdM: number,
+): boolean {
+  const distanceM = haversineKm(a.lat, a.lng, b.lat, b.lng) * 1000;
+  return distanceM > thresholdM;
+}
 
 export function PlaceMapSearchScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const language = useAppStore(s => s.language) ?? 'ko';
   const copy = PLACE_SEARCH_COPY[language];
+  const radiusKm = PLACE_SEARCH_RADIUS_M / 1000;
 
   const initialType = defaultPlaceContentTypeId(route.params?.contentTypeId);
   const [contentTypeId, setContentTypeId] = useState<PlaceContentTypeId>(initialType);
   const [places, setPlaces] = useState<BusanPlace[]>([]);
+  const [placeDetailsById, setPlaceDetailsById] = useState<Record<string, PlaceDetailVO | null>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedPlace, setSelectedPlace] = useState<BusanPlace | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [searchCenter, setSearchCenter] = useState<EventZoneCoordinate | null>(null);
+  const [mapCenter, setMapCenter] = useState<EventZoneCoordinate | null>(null);
 
   const { location } = useCurrentEventZone();
-  const districtCode = useMemo(
-    () => resolveNearestTourApiDistrictCode(location),
-    [location],
-  );
-  const districtLabel = tourApiDistrictLabelKo(districtCode);
+  const searchRequestIdRef = useRef(0);
 
   const bookmarkedIds = usePlaceBookmarkStore(s => s.getBookmarkedIdsForType(contentTypeId));
   const togglePlaceBookmark = usePlaceBookmarkStore(s => s.togglePlaceBookmark);
@@ -56,33 +68,63 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
   }, [route.params?.contentTypeId]);
 
   useEffect(() => {
+    if (!searchCenter && location) {
+      setSearchCenter(location);
+      setMapCenter(location);
+    }
+  }, [location, searchCenter]);
+
+  useEffect(() => {
+    if (!searchCenter) {
+      return;
+    }
+
+    const requestId = searchRequestIdRef.current + 1;
+    searchRequestIdRef.current = requestId;
     let cancelled = false;
+
     setLoading(true);
     setError(null);
     setSelectedPlace(null);
     setDetailOpen(false);
+    setPlaceDetailsById({});
 
-    searchPlaces({
+    searchPlacesByLocation({
+      mapX: searchCenter.lng,
+      mapY: searchCenter.lat,
+      radius: PLACE_SEARCH_RADIUS_M,
       contentTypeId,
-      districtCode,
       page: 1,
       size: 20,
     })
-      .then(data => {
-        if (!cancelled) {
-          setPlaces(data);
+      .then(async data => {
+        if (cancelled || searchRequestIdRef.current !== requestId) {
+          return;
         }
+        const detailsById = await fetchPlaceDetailsForList(data);
+        if (cancelled || searchRequestIdRef.current !== requestId) {
+          return;
+        }
+        const enriched = data.map(place =>
+          enrichBusanPlaceFromDetail(place, detailsById[place.contentId]),
+        );
+        setPlaceDetailsById(detailsById);
+        setPlaces(enriched);
       })
       .catch(fetchError => {
-        if (!cancelled) {
+        if (!cancelled && searchRequestIdRef.current === requestId) {
           setPlaces([]);
           const message =
             fetchError instanceof Error ? fetchError.message : copy.emptySub;
           setError(message);
+          logPlacesApiError('GET', '(location-search)', fetchError, {
+            contentTypeId,
+            searchCenter,
+          });
         }
       })
       .finally(() => {
-        if (!cancelled) {
+        if (!cancelled && searchRequestIdRef.current === requestId) {
           setLoading(false);
         }
       });
@@ -90,7 +132,18 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [contentTypeId, districtCode, copy.emptySub]);
+  }, [contentTypeId, searchCenter, copy.emptySub]);
+
+  const showSearchHere = useMemo(() => {
+    if (!searchCenter || !mapCenter) {
+      return false;
+    }
+    return centersDifferBeyondThreshold(
+      searchCenter,
+      mapCenter,
+      PLACE_SEARCH_CENTER_THRESHOLD_M,
+    );
+  }, [searchCenter, mapCenter]);
 
   const sortedPlaces = useMemo(
     () => sortBookmarkedFirst(places, bookmarkedIds, (a, b) => a.name.localeCompare(b.name, 'ko')),
@@ -112,6 +165,17 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
     }
     togglePlaceBookmark(selectedPlace.contentTypeId, selectedPlace.contentId);
   }, [selectedPlace, togglePlaceBookmark]);
+
+  const handleMapCenterChange = useCallback((center: EventZoneCoordinate) => {
+    setMapCenter(center);
+  }, []);
+
+  const handleSearchHere = useCallback(() => {
+    if (!mapCenter) {
+      return;
+    }
+    setSearchCenter(mapCenter);
+  }, [mapCenter]);
 
   const captionSuffix = useCallback(
     (place: BusanPlace) => copy.subtitleLabel(copy.categoryLabels[place.contentTypeId]),
@@ -157,7 +221,7 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
           })}
         </ScrollView>
         <Text className="mt-2 text-sm font-semibold text-brand-text">
-          {copy.summary(places.length, districtLabel)}
+          {copy.summary(places.length, radiusKm)}
         </Text>
         <Text className="mt-0.5 text-[11px] text-brand-muted">{copy.dataHint}</Text>
         {error ? <Text className="mt-1 text-xs text-red-500">{error}</Text> : null}
@@ -167,15 +231,28 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
         <View className="min-h-0 flex-1">
           <PlaceMapView
             places={sortedPlaces}
-            mapCenter={location}
+            mapCenter={mapCenter ?? location}
             selectedId={selectedPlace?.id}
             bookmarkedIds={bookmarkedIds}
             onSelectPlace={handleSelectPlace}
+            onMapCenterChange={handleMapCenterChange}
             mapTitle={copy.mapTitle}
             mapSubtitle={copy.mapSubtitle}
             captionSuffix={captionSuffix}
           />
         </View>
+
+        {showSearchHere ? (
+          <View className="absolute left-0 right-0 top-3 z-20 items-center px-4">
+            <Pressable
+              onPress={handleSearchHere}
+              accessibilityRole="button"
+              accessibilityLabel={copy.searchHere}
+              className="rounded-full bg-brand-primary px-4 py-2.5 shadow-md active:opacity-90">
+              <Text className="text-sm font-bold text-white">{copy.searchHere}</Text>
+            </Pressable>
+          </View>
+        ) : null}
 
         {loading ? (
           <View className="absolute inset-0 z-10 items-center justify-center bg-brand-background/70">
@@ -237,6 +314,7 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
       <PlaceDetailSheet
         visible={detailOpen}
         place={selectedPlace}
+        detail={selectedPlace ? (placeDetailsById[selectedPlace.contentId] ?? null) : null}
         language={language}
         copy={copy}
         bookmarked={

@@ -9,6 +9,7 @@ type PlaceBookmarkState = {
   bookmarkedAccommodationIds: string[];
   bookmarkedAttractionIds: string[];
   bookmarkedRestaurantIds: string[];
+  bookmarkedFestivalIds: string[];
   toggleAccommodationBookmark: (id: string) => void;
   toggleAttractionBookmark: (id: string) => void;
   togglePlaceBookmark: (contentTypeId: PlaceContentTypeId, contentId: string) => void;
@@ -24,13 +25,18 @@ function toggleId(ids: string[], id: string): string[] {
 
 function bookmarkKeyForType(contentTypeId: PlaceContentTypeId): keyof Pick<
   PlaceBookmarkState,
-  'bookmarkedAccommodationIds' | 'bookmarkedAttractionIds' | 'bookmarkedRestaurantIds'
+  | 'bookmarkedAccommodationIds'
+  | 'bookmarkedAttractionIds'
+  | 'bookmarkedRestaurantIds'
+  | 'bookmarkedFestivalIds'
 > {
   switch (contentTypeId) {
     case PLACE_CONTENT_TYPE.accommodation:
       return 'bookmarkedAccommodationIds';
     case PLACE_CONTENT_TYPE.restaurant:
       return 'bookmarkedRestaurantIds';
+    case PLACE_CONTENT_TYPE.festival:
+      return 'bookmarkedFestivalIds';
     default:
       return 'bookmarkedAttractionIds';
   }
@@ -42,6 +48,7 @@ export const usePlaceBookmarkStore = create<PlaceBookmarkState>()(
       bookmarkedAccommodationIds: [],
       bookmarkedAttractionIds: [],
       bookmarkedRestaurantIds: [],
+      bookmarkedFestivalIds: [],
       toggleAccommodationBookmark: id =>
         set(state => ({
           bookmarkedAccommodationIds: toggleId(state.bookmarkedAccommodationIds, id),
@@ -69,6 +76,7 @@ export const usePlaceBookmarkStore = create<PlaceBookmarkState>()(
         bookmarkedAccommodationIds: state.bookmarkedAccommodationIds,
         bookmarkedAttractionIds: state.bookmarkedAttractionIds,
         bookmarkedRestaurantIds: state.bookmarkedRestaurantIds,
+        bookmarkedFestivalIds: state.bookmarkedFestivalIds,
       }),
     },
   ),

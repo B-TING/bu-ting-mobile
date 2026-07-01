@@ -92,7 +92,7 @@ function mapGooglePlacePhoto(photo: GooglePlacePhotoRaw): PlacePhotoVO {
   };
 }
 
-function parsePriceLevel(raw?: string): number | undefined {
+export function parsePriceLevel(raw?: string): number | undefined {
   if (!raw) {
     return undefined;
   }

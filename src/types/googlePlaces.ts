@@ -299,6 +299,8 @@ export type PlaceDetailVO = {
   googleMapsLinks?: GoogleMapsLinks;
   openingHours?: PlaceOpeningHoursVO;
   editorialSummary?: string;
+  /** 한국관광공사 detailIntro 필드 (체크인, 주차 등) */
+  tourismInfoRows?: { label: string; value: string }[];
   reviews: PlaceReviewVO[];
   photos: PlacePhotoVO[];
   amenities?: PlaceAmenitiesVO;

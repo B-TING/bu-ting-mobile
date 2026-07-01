@@ -6,7 +6,7 @@
     "android": "node scripts/run-android.cjs",
     "android:avd": "node scripts/run-android.cjs -- --avd",
     "ios": "react-native run-ios",
-    "lint": "eslint .",
+    "logs:android": "react-native log-android",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
