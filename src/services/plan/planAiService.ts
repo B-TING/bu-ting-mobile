@@ -144,7 +144,11 @@ function buildConstraints(
   onboarding: OnboardingProfile | null,
 ): PlanConstraints {
   const otherIds = wizard.otherConstraintIds.filter(
-    id => id !== 'heavy_luggage' && id !== 'light_luggage' && id !== 'pets',
+    id =>
+      id !== 'heavy_luggage' &&
+      id !== 'light_luggage' &&
+      id !== 'pets' &&
+      id !== 'none',
   );
   return {
     hasHeavyBaggage: wizard.hasHeavyBaggage,

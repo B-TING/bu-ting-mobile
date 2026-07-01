@@ -109,6 +109,11 @@ export function PlanDetailScreen({ navigation, route }: Props) {
     };
   }, [plan, language]);
 
+  const tripDates = useMemo(
+    () => enrichedPlan?.itinerary.map(day => day.date) ?? [],
+    [enrichedPlan],
+  );
+
   const allRoutes = useMemo(
     () => enrichedPlan?.itinerary.flatMap(d => d.routes) ?? [],
     [enrichedPlan],
@@ -311,6 +316,8 @@ export function PlanDetailScreen({ navigation, route }: Props) {
           budget: (
             <PlanBudgetTab
               copy={copy}
+              language={language}
+              tripDates={tripDates}
               budgetEntries={budgetEntries}
               budgetTotal={budgetTotal}
               members={enrichedPlan.members}
