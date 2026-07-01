@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,17 +14,13 @@ import {
 } from '../../constants/places/placeSearch';
 import { useCurrentEventZone } from '../../hooks/useCurrentEventZone';
 import type { RootStackParamList } from '../../navigation/types';
-import { searchPlacesByLocation, fetchPlaceDetailsForList } from '../../services/places/placesApiService';
-import { useAppStore, usePlaceBookmarkStore } from '../../stores';
+import { useAppStore, usePlaceBookmarkStore, usePlaceSearchStore } from '../../stores';
 import type { EventZoneCoordinate } from '../../types/eventZone';
 import type { BusanPlace } from '../../types/placeSearch';
 import { PLACE_MAP_SEARCH_TYPES } from '../../types/placesApi';
 import type { PlaceContentTypeId } from '../../types/placesApi';
-import type { PlaceDetailVO } from '../../types/googlePlaces';
 import { sortBookmarkedFirst } from '../../utils/bookmark/sortBookmarkedFirst';
 import { haversineKm } from '../../utils/geo/geo';
-import { logPlacesApiError } from '../../utils/places/placesApiLogger';
-import { enrichBusanPlaceFromDetail } from '../../utils/places/placesApiMapper';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PlaceMapSearch'>;
 
@@ -45,21 +41,27 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
 
   const initialType = defaultPlaceContentTypeId(route.params?.contentTypeId);
   const [contentTypeId, setContentTypeId] = useState<PlaceContentTypeId>(initialType);
-  const [places, setPlaces] = useState<BusanPlace[]>([]);
-  const [placeDetailsById, setPlaceDetailsById] = useState<Record<string, PlaceDetailVO | null>>({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedPlace, setSelectedPlace] = useState<BusanPlace | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [searchCenter, setSearchCenter] = useState<EventZoneCoordinate | null>(null);
   const [mapCenter, setMapCenter] = useState<EventZoneCoordinate | null>(null);
 
   const { location } = useCurrentEventZone();
-  const searchRequestIdRef = useRef(0);
+
+  const cacheEntry = usePlaceSearchStore(s => s.cacheByType[contentTypeId]);
+  const loading = usePlaceSearchStore(s => s.isLoading(contentTypeId));
+  const hasCacheForCenter = usePlaceSearchStore(s => s.hasCacheForCenter);
+  const searchByLocation = usePlaceSearchStore(s => s.searchByLocation);
+  const updateMapCenterInCache = usePlaceSearchStore(s => s.updateMapCenter);
+  const getCacheEntry = usePlaceSearchStore(s => s.getEntry);
 
   const bookmarkedIds = usePlaceBookmarkStore(s => s.getBookmarkedIdsForType(contentTypeId));
   const togglePlaceBookmark = usePlaceBookmarkStore(s => s.togglePlaceBookmark);
   const isPlaceBookmarked = usePlaceBookmarkStore(s => s.isPlaceBookmarked);
+
+  const places = cacheEntry?.places ?? [];
+  const placeDetailsById = cacheEntry?.placeDetailsById ?? {};
+  const error = cacheEntry?.error ?? null;
 
   useEffect(() => {
     if (route.params?.contentTypeId) {
@@ -67,72 +69,46 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
     }
   }, [route.params?.contentTypeId]);
 
+  const applyCachedCenters = useCallback((typeId: PlaceContentTypeId) => {
+    const cached = getCacheEntry(typeId);
+    if (!cached) {
+      return false;
+    }
+    setSearchCenter(cached.searchCenter);
+    setMapCenter(cached.mapCenter);
+    return true;
+  }, [getCacheEntry]);
+
   useEffect(() => {
+    if (applyCachedCenters(contentTypeId)) {
+      return;
+    }
     if (!searchCenter && location) {
       setSearchCenter(location);
       setMapCenter(location);
     }
-  }, [location, searchCenter]);
+    // searchCenter 변경(이곳에서 검색) 시 캐시 좌표로 되돌리지 않도록 contentTypeId·location만 감시
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- searchCenter는 의도적으로 제외
+  }, [contentTypeId, location, applyCachedCenters]);
 
   useEffect(() => {
     if (!searchCenter) {
       return;
     }
+    if (hasCacheForCenter(contentTypeId, searchCenter)) {
+      return;
+    }
 
-    const requestId = searchRequestIdRef.current + 1;
-    searchRequestIdRef.current = requestId;
-    let cancelled = false;
-
-    setLoading(true);
-    setError(null);
     setSelectedPlace(null);
     setDetailOpen(false);
-    setPlaceDetailsById({});
 
-    searchPlacesByLocation({
-      mapX: searchCenter.lng,
-      mapY: searchCenter.lat,
-      radius: PLACE_SEARCH_RADIUS_M,
+    void searchByLocation({
       contentTypeId,
-      page: 1,
-      size: 20,
-    })
-      .then(async data => {
-        if (cancelled || searchRequestIdRef.current !== requestId) {
-          return;
-        }
-        const detailsById = await fetchPlaceDetailsForList(data);
-        if (cancelled || searchRequestIdRef.current !== requestId) {
-          return;
-        }
-        const enriched = data.map(place =>
-          enrichBusanPlaceFromDetail(place, detailsById[place.contentId]),
-        );
-        setPlaceDetailsById(detailsById);
-        setPlaces(enriched);
-      })
-      .catch(fetchError => {
-        if (!cancelled && searchRequestIdRef.current === requestId) {
-          setPlaces([]);
-          const message =
-            fetchError instanceof Error ? fetchError.message : copy.emptySub;
-          setError(message);
-          logPlacesApiError('GET', '(location-search)', fetchError, {
-            contentTypeId,
-            searchCenter,
-          });
-        }
-      })
-      .finally(() => {
-        if (!cancelled && searchRequestIdRef.current === requestId) {
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [contentTypeId, searchCenter, copy.emptySub]);
+      searchCenter,
+      mapCenter: mapCenter ?? searchCenter,
+      emptyErrorFallback: copy.emptySub,
+    });
+  }, [contentTypeId, searchCenter, hasCacheForCenter, searchByLocation, copy.emptySub]);
 
   const showSearchHere = useMemo(() => {
     if (!searchCenter || !mapCenter) {
@@ -166,9 +142,13 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
     togglePlaceBookmark(selectedPlace.contentTypeId, selectedPlace.contentId);
   }, [selectedPlace, togglePlaceBookmark]);
 
-  const handleMapCenterChange = useCallback((center: EventZoneCoordinate) => {
-    setMapCenter(center);
-  }, []);
+  const handleMapCenterChange = useCallback(
+    (center: EventZoneCoordinate) => {
+      setMapCenter(center);
+      updateMapCenterInCache(contentTypeId, center);
+    },
+    [contentTypeId, updateMapCenterInCache],
+  );
 
   const handleSearchHere = useCallback(() => {
     if (!mapCenter) {
@@ -176,6 +156,29 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
     }
     setSearchCenter(mapCenter);
   }, [mapCenter]);
+
+  const handleChangeContentType = useCallback(
+    (typeId: PlaceContentTypeId) => {
+      if (typeId === contentTypeId) {
+        return;
+      }
+
+      setContentTypeId(typeId);
+      setSelectedPlace(null);
+      setDetailOpen(false);
+
+      if (applyCachedCenters(typeId)) {
+        return;
+      }
+
+      const center = mapCenter ?? searchCenter ?? location;
+      if (center) {
+        setSearchCenter(center);
+        setMapCenter(center);
+      }
+    },
+    [contentTypeId, mapCenter, searchCenter, location, applyCachedCenters],
+  );
 
   const captionSuffix = useCallback(
     (place: BusanPlace) => copy.subtitleLabel(copy.categoryLabels[place.contentTypeId]),
@@ -204,7 +207,7 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
             return (
               <Pressable
                 key={typeId}
-                onPress={() => setContentTypeId(typeId)}
+                onPress={() => handleChangeContentType(typeId)}
                 accessibilityRole="button"
                 accessibilityLabel={copy.categoryTabA11y(label)}
                 className={`mr-2 rounded-full px-3 py-1.5 ${
