@@ -51,7 +51,7 @@ const CATEGORIES: BudgetCategory[] = [
 export function BudgetEntryModal({
   visible,
   copy,
-  language,
+  language: _language,
   members,
   defaultDate,
   planId,

@@ -25,6 +25,13 @@ const androidManifestExamplePath = path.join(
   'main',
   'AndroidManifest.xml.example',
 );
+const iosInfoPlistPath = path.join(projectRoot, 'ios', 'BUTingMobile', 'Info.plist');
+const iosInfoPlistExamplePath = path.join(
+  projectRoot,
+  'ios',
+  'BUTingMobile',
+  'Info.plist.example',
+);
 
 function ensureAndroidManifest() {
   if (fs.existsSync(androidManifestPath)) {
@@ -37,6 +44,19 @@ function ensureAndroidManifest() {
   }
   fs.copyFileSync(androidManifestExamplePath, androidManifestPath);
   console.log('[Bu-Ting] Created AndroidManifest.xml from AndroidManifest.xml.example');
+}
+
+function ensureIosInfoPlist() {
+  if (fs.existsSync(iosInfoPlistPath)) {
+    return;
+  }
+  if (!fs.existsSync(iosInfoPlistExamplePath)) {
+    throw new Error(
+      '[Bu-Ting] Info.plist not found — copy Info.plist.example locally.',
+    );
+  }
+  fs.copyFileSync(iosInfoPlistExamplePath, iosInfoPlistPath);
+  console.log('[Bu-Ting] Created Info.plist from Info.plist.example');
 }
 
 function envOrEmpty(key) {
@@ -223,7 +243,7 @@ function patchAndroidManifest(kakaoNativeAppKey, keys) {
 }
 
 function patchIosInfoPlist(keys, naverOauthEnabled) {
-  const plistPath = path.join(projectRoot, 'ios', 'BUTingMobile', 'Info.plist');
+  const plistPath = iosInfoPlistPath;
   let plist = fs.readFileSync(plistPath, 'utf8');
   const kakaoKey = keys.kakaoNativeAppKey;
   const naverScheme = keys.naverUrlScheme || 'butingnaverlogin';
@@ -344,6 +364,7 @@ ${queries.map(q => `\t\t<string>${q}</string>`).join('\n')}
 function main() {
   loadProjectEnv({ root: projectRoot });
   ensureAndroidManifest();
+  ensureIosInfoPlist();
 
   const naverOauthEnabled = process.env.NAVER_OAUTH_ENABLED === 'true';
 

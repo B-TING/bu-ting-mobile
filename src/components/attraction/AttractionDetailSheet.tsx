@@ -65,7 +65,7 @@ export function AttractionDetailSheet({
     return () => {
       cancelled = true;
     };
-  }, [visible, attraction?.internalPlaceId]);
+  }, [visible, attraction]);
 
   if (!attraction) {
     return null;

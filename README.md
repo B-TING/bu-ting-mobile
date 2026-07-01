@@ -1,234 +1,268 @@
-# BU-TING-Mobile
+# BU-TING Mobile
 
-나만의 부산 여행 가이드 **부팅** 모바일 애플리케이션
+나만의 부산 여행 가이드 **부팅(Bu-Ting)** React Native 앱입니다.
+
+언어 선택 → 여행 취향 온보딩 → OAuth 로그인 후, AI 일정·카카오맵·행사 구역·여행기·마이페이지 등을 이용할 수 있습니다.
 
 ## 기술 스택
 
-- React Native 0.85.3
-- React 19
-- TypeScript
-- [NativeWind](https://www.nativewind.dev/) v4 (Tailwind CSS)
-- [Zustand](https://zustand.docs.pmnd.rs/) (전역 상태 + AsyncStorage persist)
-- ESLint + Prettier
-- Jest
+| 영역 | 스택 |
+|------|------|
+| 앱 | React Native 0.85 · React 19 · TypeScript |
+| UI | NativeWind v4 (Tailwind CSS) |
+| 상태 | Zustand + AsyncStorage persist |
+| 지도 | WebView + Kakao Map JavaScript SDK |
+| 로그인 | Google / Kakao 네이티브 SDK → 백엔드 OAuth (`id_token`) |
+| 품질 | ESLint · Prettier · Jest |
+
+## 사전 요구사항
+
+- **Node.js** ≥ 22.11.0
+- **JDK** 17+
+- **Android Studio** (Android) · **Xcode** (iOS, macOS)
+
+[React Native 환경 설정](https://reactnative.dev/docs/set-up-your-environment)은 공식 문서를 참고하세요.
+
+---
+
+## 빠른 시작
+
+### 1. 저장소 클론 & 의존성 설치
+
+```bash
+npm install
+```
+
+`postinstall`에서 아래가 자동 실행됩니다.
+
+- `kakao:sync` · `api:sync` · `oauth:sync` — `.env` → 로컬 생성 파일 동기화
+- `patch-package`
+- `hooks:install` — 커밋 전 보안 검사 훅 설치
+
+### 2. 환경 변수 설정
+
+```bash
+# Windows
+copy .env.example .env
+
+# macOS / Linux
+cp .env.example .env
+```
+
+`.env`에 필요한 키를 채운 뒤 동기화 스크립트를 실행합니다.
+
+```bash
+npm run api:sync      # API_BASE_URL, OAuth client 설정
+npm run oauth:sync    # AndroidManifest, Info.plist, oauth_strings.xml
+npm run kakao:sync    # 카카오맵 WebView 설정
+```
+
+> `.env`와 동기화로 생성되는 파일은 **git에 올리지 않습니다.** 템플릿은 `.env.example`만 커밋합니다.
+
+### 3. Metro & 앱 실행
+
+**터미널 1 — Metro**
+
+```bash
+npm start
+# NativeWind 변경 후 캐시 이슈 시
+npm start -- --reset-cache
+```
+
+**터미널 2 — 앱**
+
+```bash
+npm run android    # Android (USB 권장, adb reverse 자동)
+npm run ios        # iOS (macOS)
+```
+
+---
+
+## 환경 변수
+
+`.env.example`에 전체 목록과 설명이 있습니다. 자주 쓰는 항목만 정리합니다.
+
+| 변수 | 용도 |
+|------|------|
+| `API_BASE_URL` | 백엔드 API (OAuth, 여행 설문, 프로필 등) |
+| `GOOGLE_OAUTH_WEB_CLIENT_ID` | Google 로그인 · 백엔드 `id_token` 검증 |
+| `GOOGLE_OAUTH_IOS_CLIENT_ID` | iOS Google Sign-In |
+| `GOOGLE_OAUTH_ANDROID_CLIENT_ID_FOR_*` | Android Google Sign-In (debug/release) |
+| `KAKAO_REST_API_KEY` | 카카오 OAuth client_id |
+| `KAKAO_NATIVE_APP_KEY` | 카카오 로그인 SDK |
+| `KAKAO_JAVASCRIPT_KEY` | 앱 내 카카오맵 WebView |
+| `GOOGLE_PLACES_API_KEY` | Places API (Node 스크립트·백엔드용, 앱 번들 금지) |
+| `NGROK_AUTHTOKEN` | Metro 터널 (`start:tunnel`) |
+
+### OAuth 로그인
+
+- Google · Kakao: 네이티브 SDK에서 **`id_token`**을 받아 `POST /api/v1/auth/oauth/login`으로 전송합니다.
+- 키 입력 후 반드시 `npm run oauth:sync`를 실행해 네이티브 매니페스트를 갱신하세요.
+- 네이버는 앱 등록 전까지 비활성화 (`src/constants/auth/oauthProviders.ts`).
+
+### 카카오맵
+
+앱 내 지도(일정, 행사 구역, 짐 보관소 등)는 **WebView + 카카오맵 JS SDK**입니다.
+
+1. 카카오 콘솔에서 **Web** 플랫폼 활성화
+2. `.env`에 `KAKAO_JAVASCRIPT_KEY` 설정
+3. `npm run kakao:sync`
+
+### Google Places (개발·배치용)
+
+장소명·좌표로 `place_id`를 찾는 Node 스크립트입니다. **키는 `.env`에만** 두세요.
+
+```bash
+npm run places:resolve -- "해도용궁사" 35.1885 129.2233
+```
+
+---
+
+## Metro 연결
+
+| 방식 | Metro | 앱 | 비고 |
+|------|-------|-----|------|
+| **USB** (권장) | `npm start` | `npm run android` | `adb reverse` 자동. `npm run connect:android`로 상태 확인 |
+| **같은 Wi‑Fi** | `npm run start:lan` | `npm run android` | Dev Menu → Debug server host에 `192.168.x.x:8081` 입력 |
+| **다른 네트워크** | `npm run start:tunnel` | `REACT_NATIVE_PACKAGER_HOSTNAME` 설정 후 실행 | ngrok Authtoken 필요 |
+
+**터널 (ngrok) 최초 설정**
+
+```bash
+npm run ngrok:auth -- 여기에_토큰
+npm run start:tunnel
+```
+
+PowerShell 예시:
+
+```powershell
+$env:REACT_NATIVE_PACKAGER_HOSTNAME="출력된-ngrok-호스트"
+npm run android
+```
+
+**자주 나는 오류**
+
+- **`Unable to load script`** — Metro가 안 떠 있거나, 폰이 PC Metro에 연결되지 않은 경우. USB + `npm start` 조합을 먼저 확인하세요.
+- **`EADDRINUSE` (8081)** — 기존 `node` 프로세스 종료 후 Metro 재시작.
+
+---
+
+## npm 스크립트
+
+### 앱 실행
+
+| 명령 | 설명 |
+|------|------|
+| `npm start` | Metro (localhost) |
+| `npm run start:lan` | Metro — LAN IP 노출 |
+| `npm run start:tunnel` | Metro — ngrok 터널 |
+| `npm run connect:android` | adb reverse · Metro 연결 상태 확인 |
+| `npm run android` | Android 빌드 & 실행 |
+| `npm run android:avd` | 지정 AVD로 실행 |
+| `npm run ios` | iOS 빌드 & 실행 |
+
+### 설정 동기화
+
+| 명령 | 설명 |
+|------|------|
+| `npm run api:sync` | `.env` → `apiConfig.ts`, `apiBaseUrl.ts` |
+| `npm run oauth:sync` | `.env` → OAuth 네이티브 설정·매니페스트 |
+| `npm run kakao:sync` | `.env` → `src/kakaoMap/config.ts` |
+| `npm run map:sync` | 부산 지도 SVG 경로 추출 |
+| `npm run zone-boundaries:sync` | 구역 경계 GeoJSON 생성 |
+| `npm run hooks:install` | pre-commit 보안 훅 설치 |
+
+### 개발·품질
+
+| 명령 | 설명 |
+|------|------|
+| `npm run lint` / `lint:fix` | ESLint |
+| `npm run format` / `format:check` | Prettier |
+| `npm test` | Jest |
+| `npm run places:resolve` | Google Find Place 테스트 |
+| `npm run ngrok:auth` | ngrok Authtoken 등록 |
+| `npm run icons:generate` | 앱 아이콘 생성 |
+
+---
 
 ## 프로젝트 구조
 
 ```
 .
 ├── src/
-│   ├── components/  # UI (NativeWind)
-│   ├── constants/   # 온보딩·언어 상수
+│   ├── components/     # 공통·화면별 UI
+│   ├── constants/      # 카피·메뉴·API 경로 예시 등
+│   ├── hooks/
+│   ├── kakaoMap/       # WebView 지도 코어·오버레이
 │   ├── navigation/
-│   ├── screens/
-│   ├── services/
-│   ├── stores/      # Zustand (useAppStore)
+│   ├── screens/        # 화면 (홈, 일정, 피드, 마이페이지, 설정…)
+│   ├── services/       # auth, user, travel survey, plan AI…
+│   ├── stores/         # Zustand (auth, app, plan…)
 │   ├── types/
 │   └── utils/
-├── __tests__/       # Jest 테스트
-├── .vscode/         # 에디터 설정 (저장 시 자동 포맷)
-├── .eslintrc.js     # ESLint 설정
-├── .prettierrc.js   # Prettier 설정
-└── jest.config.js   # Jest 설정
+├── scripts/            # sync·빌드·git hooks
+├── android/ · ios/     # 네이티브 (OAuth 매니페스트는 sync로 생성)
+├── __tests__/
+├── .env.example        # 환경 변수 템플릿 (커밋 O)
+└── .env                # 로컬 비밀 (커밋 X)
 ```
 
-## 사전 요구사항
+### git에 올리지 않는 파일
 
-- Node.js >= 22.11.0
-- JDK 17+
-- Android Studio (Android 개발)
-- Xcode (iOS 개발, macOS)
+`.gitignore` 및 pre-commit 훅으로 보호합니다.
 
-## 시작하기
+- `.env`, `.env.local` 등 (`.env.example` 제외)
+- `src/constants/api/apiConfig.ts`, `apiBaseUrl.ts`
+- `src/constants/auth/oauthConfig.ts`
+- `src/kakaoMap/config.ts`
+- `android/app/src/main/AndroidManifest.xml`, `ios/.../Info.plist` (OAuth sync 결과)
 
-### 1. 의존성 설치
+---
+
+## 보안 — pre-commit 훅
+
+`npm install` 시 `.git/hooks/pre-commit`이 설치됩니다. 커밋 직전에 다음을 검사합니다.
+
+- `.env` 등 민감 경로 스테이징 차단
+- `.gitignore` 대상 파일의 `git add -f` 차단
+- 스테이징된 **추가 줄**에서 API 키·private key·env 비밀값 패턴 감지
+
+차단 시 `git restore --staged <file>`로 스테이징을 해제하세요.
 
 ```bash
-npm install
+npm run hooks:install   # 수동 재설치
 ```
 
-### 2. Metro 번들러 실행
+---
+
+## 코드 품질 & 테스트
 
 ```bash
-npm start -- --reset-cache
+npm run lint
+npm run format:check
+npm test
 ```
 
-NativeWind 설정 변경 후에는 Metro 캐시 초기화가 필요할 수 있습니다.
+- ESLint: `@react-native/eslint-config`
+- Prettier: `.prettierrc.js` (android/ios/node_modules는 ignore)
+- Jest: `__tests__/` · `*.test.tsx`
 
-#### `Unable to load script` / Metro 연결 안 됨
+### 에디터 (VS Code / Cursor)
 
-같은 Wi‑Fi여도 **`npm start`만으로는 폰이 PC Metro에 붙지 않는 경우가 많습니다.** `npm start`는 PC의 `localhost`만 엽니다.
+`.vscode/settings.json` — 저장 시 Prettier 포맷 + ESLint fix  
+권장 확장: ESLint, Prettier (`.vscode/extensions.json` 참고)
 
-| 연결 방식 | 터미널 1 (Metro) | 터미널 2 (앱) | 비고 |
-|-----------|------------------|---------------|------|
-| **USB** (권장) | `npm start` | `npm run android` | `adb reverse`가 자동 설정됨. `npm run connect:android`로 상태 확인 |
-| **같은 Wi‑Fi** (무선) | `npm run start:lan` | `npm run android` | Dev Menu → **Debug server host**에 터미널에 출력된 `192.168.x.x:8081` 입력 후 Reload. Windows 방화벽에서 Node/8081 허용 |
-| **다른 네트워크** | `npm run start:tunnel` | `REACT_NATIVE_PACKAGER_HOSTNAME` 설정 후 `npm run android` | ngrok |
+---
 
-포트 `8081`이 이미 사용 중이면(`EADDRINUSE`) Metro가 안 뜬 상태로 앱만 실행되어 이 오류가 납니다. 8081을 쓰는 `node` 프로세스를 종료한 뒤 Metro를 다시 켜세요.
-
-#### localhost로 연결이 안 될 때
-
-| 상황 | 명령 | 설명 |
-|------|------|------|
-| PC와 폰이 **같은 Wi‑Fi** | `npm run start:lan` | PC LAN IP로 Metro 노출 (`--host lan`) |
-| **다른 네트워크** / USB만 | `npm run start:tunnel` | ngrok 터널 (Expo `--tunnel`과 유사) |
-
-**터널 사용 순서**
-
-1. 터미널 1: `npm run start:tunnel` (또는 `npm run start:tunnel -- --reset-cache`)
-2. 출력된 `Packager` 호스트명 확인
-3. 터미널 2 (앱 설치·실행):
-
-```bash
-# PowerShell
-$env:REACT_NATIVE_PACKAGER_HOSTNAME="출력된-ngrok-호스트"; npm run android
-```
-
-실기기에서 이미 앱이 켜져 있다면: **흔들기 → Dev Settings → Debug server host**에 위 호스트만 입력 후 Reload.
-
-> 터널은 공식 `@ngrok/ngrok` SDK를 사용합니다. **ngrok Authtoken**(무료 가입)이 필수이며, API Key와 다릅니다.
-
-**ngrok 토큰 등록 (최초 1회)**
-
-1. [ngrok 대시보드](https://dashboard.ngrok.com/get-started/your-authtoken)에서 토큰 복사
-2. 프로젝트 루트에서:
-
-```bash
-npm run ngrok:auth -- 여기에_토큰_붙여넣기
-```
-
-또는 PowerShell:
-
-```powershell
-$env:NGROK_AUTHTOKEN="여기에_토큰"
-npm run start:tunnel
-```
-
-`env.local.example`을 `.env.local`로 복사해 `NGROK_AUTHTOKEN=`에 넣어도 됩니다.  
-또는 `.env.example` → `.env` 로 복사해 한 파일에 ngrok·Google 키를 함께 관리할 수 있습니다.
-
-#### Google Places API (TourAPI ↔ place_id 연동)
-
-공공데이터 장소명·좌표로 Google `place_id`를 역추적할 때 사용합니다. **API 키는 `.env`에만 두고 git에 올리지 마세요.**
-
-```bash
-# 1) 템플릿 복사
-copy .env.example .env          # Windows
-# cp .env.example .env          # macOS/Linux
-
-# 2) .env 에 GOOGLE_PLACES_API_KEY= 발급 키 입력
-
-# 3) Find Place 테스트 (장소명, 위도, 경도)
-npm run places:resolve -- "해동용궁사" 35.1885 129.2233
-```
-
-| 변수 | 설명 |
-|------|------|
-| `GOOGLE_PLACES_API_KEY` | [Google Cloud Console](https://console.cloud.google.com/google/maps-apis) Places API 키 |
-| `GOOGLE_PLACES_FIND_RADIUS_M` | Find Place `locationbias` 반경(m). 기본 `150` (50~200 권장) |
-| `GOOGLE_PLACES_LANGUAGE` | 응답 언어. 기본 `ko` |
-
-> Find Place·Place Details 호출은 **백엔드**에서 수행하고, 모바일 앱에는 `place_id`와 캐시된 상세만 내려주는 구성을 권장합니다. Node 스크립트(`scripts/resolve-place-id.cjs`)는 배치 매핑·로컬 검증용입니다.
-
-#### Kakao Map (앱 내 지도)
-
-숙소·짐 보관소·여행 일정 등 **모든 지도**는 `react-native-webview` + 카카오맵 JavaScript SDK로 표시합니다. Google Places API는 장소 검색·상세 조회용으로 그대로 유지합니다.
-
-> `@react-native-kakao/map` 네이티브 SDK는 Android ViewManager가 npm 패키지에 포함되지 않아 RN 0.85에서 사용할 수 없습니다.
-
-```bash
-# 1) .env 에 카카오 JavaScript 키
-KAKAO_JAVASCRIPT_KEY=발급키
-
-# 2) JS 설정 동기화 (npm install / npm run android 시 자동)
-npm run kakao:sync
-```
-
-| 변수 | 설명 |
-|------|------|
-| `KAKAO_JAVASCRIPT_KEY` | [Kakao Developers](https://developers.kakao.com/console/app) → 앱 키 → **JavaScript 키** |
-
-카카오 콘솔에서 **Web** 플랫폼을 활성화하고 **JavaScript 키**를 사용하세요. WebView 앱은 사이트 도메인에 `http://localhost` 를 추가해 두면 키 제한 오류를 줄일 수 있습니다.
-
-### 3. 앱 실행
-
-**Android**
-
-```bash
-npm run android
-```
-
-**iOS** (macOS)
+## iOS 추가 설정
 
 ```bash
 cd ios && bundle install && bundle exec pod install && cd ..
 npm run ios
 ```
 
-## 스크립트
+---
 
-| 명령어                  | 설명                       |
-| ----------------------- | -------------------------- |
-| `npm start`             | Metro 번들러 시작 (기본 localhost) |
-| `npm run start:lan`     | Metro — 같은 Wi‑Fi용 LAN IP |
-| `npm run connect:android` | adb reverse + LAN IP / Metro 상태 확인 |
-| `npm run start:tunnel`  | Metro — ngrok 터널        |
-| `npm run android`       | Android 앱 실행            |
-| `npm run ios`           | iOS 앱 실행                |
-| `npm run lint`          | ESLint 검사                |
-| `npm run lint:fix`      | ESLint 자동 수정           |
-| `npm run format`        | Prettier로 코드 포맷       |
-| `npm run format:check`  | Prettier 포맷 검사 (CI용)  |
-| `npm test`              | Jest 테스트 실행           |
-| `npm test -- --watch`   | Jest watch 모드            |
+## 라이선스
 
-## 코드 품질
-
-### ESLint
-
-React Native 공식 ESLint 설정(`@react-native/eslint-config`)을 사용합니다.
-
-```bash
-npm run lint       # 검사
-npm run lint:fix   # 자동 수정
-```
-
-### Prettier
-
-`.prettierrc.js`에 정의된 규칙(작은따옴표, trailing comma 등)으로 코드 스타일을 맞춥니다.
-
-```bash
-npm run format        # 전체 포맷
-npm run format:check  # 포맷 검사만
-```
-
-`android/`, `ios/`, `node_modules/` 등은 `.prettierignore`에서 제외됩니다.
-
-## 테스트
-
-Jest와 `@react-native/jest-preset`으로 React Native 환경에서 테스트합니다.
-
-```bash
-npm test
-```
-
-테스트 파일은 `__tests__/` 폴더 또는 `*.test.tsx` / `*.spec.tsx` 형식으로 작성합니다.
-
-현재 `__tests__/App.test.tsx`에서 `App` 컴포넌트 렌더링을 검증합니다.
-
-## 에디터 설정
-
-`.vscode/settings.json`에 다음이 설정되어 있습니다.
-
-- 저장 시 Prettier 자동 포맷
-- 저장 시 ESLint 자동 수정
-
-Cursor/VS Code에서 아래 확장 프로그램 설치를 권장합니다 (`.vscode/extensions.json` 참고).
-
-- [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
-- [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
-
-## 개발 환경 설정
-
-React Native 개발 환경 설정은 [공식 문서](https://reactnative.dev/docs/set-up-your-environment)를 참고하세요.
+Private — BU-TING 프로젝트 내부용

@@ -21,3 +21,8 @@ export {
 export { EMPTY_REVIEWS, EMPTY_SOCIAL, useTravelogueStore } from './useTravelogueStore';
 export { useLockerBookmarkStore } from './useLockerBookmarkStore';
 export { usePlaceBookmarkStore } from './usePlaceBookmarkStore';
+export {
+  searchCenterKey,
+  usePlaceSearchStore,
+  type PlaceSearchCacheEntry,
+} from './usePlaceSearchStore';

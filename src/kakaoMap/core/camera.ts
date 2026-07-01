@@ -22,7 +22,7 @@ const DEFAULT_LNG_DELTA = 0.03;
 const FOCUS_LAT_DELTA = 0.008;
 const FOCUS_LNG_DELTA = 0.012;
 /** 단일 장소 포커스 시 카카오맵 줌 (3=광역, 5=동네, 8=블록) */
-const FOCUS_ZOOM_LEVEL = 5;
+const FOCUS_ZOOM_LEVEL = 8;
 
 /** 일정 Day 선택 시 지도 스케일 (km) */
 export const SCHEDULE_DAY_FOCUS_KM_SPAN = 4;

@@ -14,6 +14,7 @@ import { OptionCard } from '../../components/shared/cards/OptionCard';
 import { PrimaryButton } from '../../components/shared/buttons/PrimaryButton';
 import {
   TRAVEL_CONSTRAINT_OPTIONS,
+  TRAVEL_CONSTRAINT_NONE_ID,
   TRAVEL_STYLE_OPTIONS,
   ACCOMMODATION_AREAS,
   ACCOMMODATION_SEARCH,
@@ -142,6 +143,12 @@ export function PlanWizardScreen({ navigation }: Props) {
   };
 
   const isConstraintSelected = (id: string): boolean => {
+    if (answers.otherConstraintIds.includes(TRAVEL_CONSTRAINT_NONE_ID)) {
+      return id === TRAVEL_CONSTRAINT_NONE_ID;
+    }
+    if (id === TRAVEL_CONSTRAINT_NONE_ID) {
+      return false;
+    }
     if (id === 'heavy_luggage') {
       return answers.hasHeavyBaggage;
     }
@@ -156,21 +163,39 @@ export function PlanWizardScreen({ navigation }: Props) {
 
   const toggleConstraint = (id: string) => {
     setAnswers(prev => {
+      if (id === TRAVEL_CONSTRAINT_NONE_ID) {
+        const isNone = prev.otherConstraintIds.includes(TRAVEL_CONSTRAINT_NONE_ID);
+        if (isNone) {
+          return { ...prev, otherConstraintIds: [] };
+        }
+        return {
+          ...prev,
+          hasHeavyBaggage: false,
+          hasPets: false,
+          otherConstraintIds: [TRAVEL_CONSTRAINT_NONE_ID],
+        };
+      }
+
+      const clearedNone = {
+        ...prev,
+        otherConstraintIds: prev.otherConstraintIds.filter(x => x !== TRAVEL_CONSTRAINT_NONE_ID),
+      };
+
       if (id === 'heavy_luggage') {
-        return { ...prev, hasHeavyBaggage: true };
+        return { ...clearedNone, hasHeavyBaggage: true };
       }
       if (id === 'light_luggage') {
-        return { ...prev, hasHeavyBaggage: false };
+        return { ...clearedNone, hasHeavyBaggage: false };
       }
       if (id === 'pets') {
-        return { ...prev, hasPets: !prev.hasPets };
+        return { ...clearedNone, hasPets: !prev.hasPets };
       }
-      const exists = prev.otherConstraintIds.includes(id);
+      const exists = clearedNone.otherConstraintIds.includes(id);
       return {
-        ...prev,
+        ...clearedNone,
         otherConstraintIds: exists
-          ? prev.otherConstraintIds.filter(x => x !== id)
-          : [...prev.otherConstraintIds, id],
+          ? clearedNone.otherConstraintIds.filter(x => x !== id)
+          : [...clearedNone.otherConstraintIds, id],
       };
     });
   };

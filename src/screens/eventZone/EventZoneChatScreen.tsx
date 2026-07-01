@@ -20,23 +20,34 @@ import {
   chatRoomTopic,
   getChatRoomById,
 } from '../../constants/eventZone/eventZone';
+import { useZoneChatWebSocket } from '../../hooks/useZoneChatWebSocket';
 import type { RootStackParamList } from '../../navigation/types';
-import { useAppStore, useAuthStore } from '../../stores';
-import type { EventZoneChatMessage } from '../../types/eventZone';
+import { useAppStore } from '../../stores';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EventZoneChat'>;
 
-let messageCounter = 0;
-
-function nextMessageId(): string {
-  messageCounter += 1;
-  return `local-msg-${messageCounter}-${Date.now()}`;
+function connectionStatusLabel(
+  status: ReturnType<typeof useZoneChatWebSocket>['status'],
+  language: string,
+): string | null {
+  switch (status) {
+    case 'connecting':
+    case 'reconnecting':
+      return language === 'ko' ? '채팅 서버 연결 중…' : 'Connecting to chat…';
+    case 'failed':
+      return language === 'ko'
+        ? '연결에 실패했습니다. 메시지는 이 기기에만 표시됩니다.'
+        : 'Connection failed. Messages stay on this device only.';
+    case 'connected':
+      return language === 'ko' ? '실시간 채팅 연결됨' : 'Live chat connected';
+    default:
+      return null;
+  }
 }
 
 export function EventZoneChatScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const language = useAppStore(s => s.language) ?? 'ko';
-  const user = useAuthStore(s => s.user);
   const copy = ZONE_CHAT_COPY[language];
   const room = getChatRoomById(route.params.roomId);
 
@@ -44,9 +55,17 @@ export function EventZoneChatScreen({ navigation, route }: Props) {
     () => chatMessagesForRoom(route.params.roomId),
     [route.params.roomId],
   );
-  const [messages, setMessages] = useState<EventZoneChatMessage[]>(seedMessages);
+
+  const { messages, sendMessage, enabled: wsEnabled, status: wsStatus, isRealtime } =
+    useZoneChatWebSocket({
+      roomId: route.params.roomId,
+      zoneId: room?.zoneId,
+      seedMessages,
+      guestDisplayNickname: language === 'ko' ? '나' : 'Me',
+    });
+
   const [input, setInput] = useState('');
-  const listRef = useRef<FlatList<EventZoneChatMessage>>(null);
+  const listRef = useRef<FlatList<(typeof messages)[number]>>(null);
 
   const scrollToEnd = useCallback(() => {
     requestAnimationFrame(() => {
@@ -54,26 +73,19 @@ export function EventZoneChatScreen({ navigation, route }: Props) {
     });
   }, []);
 
-  const sendMessage = useCallback(() => {
+  const sendMessageFromInput = useCallback(() => {
     const trimmed = input.trim();
     if (!trimmed) {
       return;
     }
-
-    const mine: EventZoneChatMessage = {
-      id: nextMessageId(),
-      roomId: route.params.roomId,
-      authorId: user?.userId ?? 'guest',
-      authorNickname: user?.nickname ?? (language === 'ko' ? '나' : 'Me'),
-      text: trimmed,
-      sentAt: new Date().toISOString(),
-      isMine: true,
-    };
-
-    setMessages(prev => [...prev, mine]);
+    sendMessage(trimmed);
     setInput('');
     scrollToEnd();
-  }, [input, language, route.params.roomId, scrollToEnd, user?.nickname, user?.userId]);
+  }, [input, scrollToEnd, sendMessage]);
+
+  const statusHint = wsEnabled
+    ? connectionStatusLabel(wsStatus, language)
+    : copy.localOnlyHint;
 
   if (!room) {
     return (
@@ -138,7 +150,12 @@ export function EventZoneChatScreen({ navigation, route }: Props) {
         />
 
         <View className="border-t border-brand-border bg-brand-surface px-4 py-3">
-          <Text className="mb-2 text-[11px] text-amber-700">{copy.localOnlyHint}</Text>
+          {statusHint ? (
+            <Text
+              className={`mb-2 text-[11px] ${isRealtime ? 'text-emerald-700' : 'text-amber-700'}`}>
+              {statusHint}
+            </Text>
+          ) : null}
           <View className="flex-row items-end gap-2">
             <TextInput
               value={input}
@@ -147,12 +164,12 @@ export function EventZoneChatScreen({ navigation, route }: Props) {
               placeholderTextColor="#94A3B8"
               multiline
               className="max-h-28 flex-1 rounded-2xl border border-brand-border bg-brand-background px-4 py-3 text-[15px] text-brand-text"
-              onSubmitEditing={sendMessage}
+              onSubmitEditing={sendMessageFromInput}
               returnKeyType="send"
             />
             <Pressable
               accessibilityRole="button"
-              onPress={sendMessage}
+              onPress={sendMessageFromInput}
               className="rounded-2xl bg-brand-primary px-4 py-3 active:opacity-80">
               <Text className="font-semibold text-white">{copy.send}</Text>
             </Pressable>

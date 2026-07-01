@@ -7,7 +7,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { NavigationProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { APP_MENU_ITEMS } from '../../../constants/common/appMenu';
@@ -24,7 +24,7 @@ const CLOSE_BTN_SIZE = 40;
 type AppMenuDrawerProps = {
   visible: boolean;
   language: AppLanguage;
-  navigation: NativeStackNavigationProp<RootStackParamList>;
+  navigation: NavigationProp<RootStackParamList>;
   onClose: () => void;
 };
 
@@ -90,7 +90,10 @@ export function AppMenuDrawer({
     dismiss();
     const { target } = item;
     if (target.kind === 'screen') {
-      navigation.navigate(target.route);
+      navigation.navigate({
+        name: target.route,
+        params: target.params,
+      } as never);
       return;
     }
     const title = language === 'ko' ? target.titleKo : target.titleEn;
@@ -162,7 +165,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   backdrop: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: APP_MODAL.backdropColor,
   },
   drawer: {

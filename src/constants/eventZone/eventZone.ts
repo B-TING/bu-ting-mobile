@@ -321,62 +321,44 @@ export const MOCK_ZONE_CHAT_ROOMS: EventZoneChatRoom[] = [
   {
     id: 'chat-haeundae-meetup',
     zoneId: 'haeundae-gijang',
-    titleKo: '해운대 오늘 만남방',
-    titleEn: 'Haeundae meetup today',
     topicKo: '오늘 해운대에서 만날 분 구해요',
     topicEn: 'Looking for company at Haeundae today',
     memberCount: 24,
-    isLive: true,
   },
   {
     id: 'chat-gwangan-info',
     zoneId: 'suyeong-nam',
-    titleKo: '광안리 야경·맛집 정보',
-    titleEn: 'Gwangan night view & food tips',
     topicKo: '광안대교 야경·맛집 정보 공유',
     topicEn: 'Share Gwangan night views and food spots',
     memberCount: 18,
-    isLive: true,
   },
   {
     id: 'chat-seomyeon-game',
     zoneId: 'geumjeong-dongnae',
-    titleKo: '서면 미니게임 대기실',
-    titleEn: 'Seomyeon mini-game lobby',
     topicKo: '구역 미니게임 매칭 대기',
     topicEn: 'Zone mini-game matchmaking lobby',
     memberCount: 31,
-    isLive: false,
   },
   {
     id: 'chat-jagalchi-market',
     zoneId: 'seo-jung-dong',
-    titleKo: '자갈치 시장 투어',
-    titleEn: 'Jagalchi market tour',
     topicKo: '자갈치·국제시장 같이 돌아요',
     topicEn: 'Explore Jagalchi and Gukje Market together',
     memberCount: 12,
-    isLive: true,
   },
   {
     id: 'chat-yeongdo-walk',
     zoneId: 'yeongdo',
-    titleKo: '영도 산책·사진방',
-    titleEn: 'Yeongdo walk & photo chat',
     topicKo: '흰여울·태종대 산책 모임',
     topicEn: 'Huinnyeoul and Taejongdae walk group',
     memberCount: 9,
-    isLive: false,
   },
   {
     id: 'chat-gamcheon-art',
     zoneId: 'gangseo-northwest',
-    titleKo: '감천마을 아트 챌린지',
-    titleEn: 'Gamcheon art challenge',
     topicKo: '감천마을 포토 미션 진행 중',
     topicEn: 'Gamcheon photo mission in progress',
     memberCount: 15,
-    isLive: true,
   },
 ];
 
@@ -424,7 +406,6 @@ export const EVENT_ZONE_COPY: Record<
     landmarksTitle: string;
     chatRoomsTitle: string;
     chatFeatureHint: string;
-    chatLiveBadge: string;
     chatMemberCount: (n: number) => string;
     selectZoneHint: string;
     planningBadge: string;
@@ -437,12 +418,11 @@ export const EVENT_ZONE_COPY: Record<
 > = {
   ko: {
     screenTitle: '이벤트 존',
-    currentZoneLabel: '내 구역',
+    currentZoneLabel: '현재 부산에 있습니다!',
     mapHint: '구역을 눌러 하이라이트하고 랜드마크를 확인하세요',
     landmarksTitle: '주요 관광지',
     chatRoomsTitle: '구역 채팅방',
     chatFeatureHint: '앱 내 채팅 (실시간 연동 준비 중)',
-    chatLiveBadge: 'LIVE',
     chatMemberCount: n => `${n}명 참여`,
     selectZoneHint: '지도에서 구역을 선택해 주세요',
     planningBadge: '기획 중',
@@ -454,12 +434,11 @@ export const EVENT_ZONE_COPY: Record<
   },
   en: {
     screenTitle: 'Event Zone',
-    currentZoneLabel: 'My zone',
+    currentZoneLabel: 'You are currently in Busan!',
     mapHint: 'Tap a zone to highlight it and view landmarks',
     landmarksTitle: 'Landmarks',
     chatRoomsTitle: 'Zone chat rooms',
     chatFeatureHint: 'In-app chat (realtime sync coming soon)',
-    chatLiveBadge: 'LIVE',
     chatMemberCount: n => `${n} joined`,
     selectZoneHint: 'Select a zone on the map',
     planningBadge: 'In planning',
@@ -471,12 +450,11 @@ export const EVENT_ZONE_COPY: Record<
   },
   ja: {
     screenTitle: 'イベントゾーン',
-    currentZoneLabel: '所属エリア',
+    currentZoneLabel: '現在、バウシンにいます！',
     mapHint: 'エリアをタップしてランドマークを表示',
     landmarksTitle: '主要観光地',
     chatRoomsTitle: 'エリアチャット',
     chatFeatureHint: 'アプリ内チャット（リアルタイム連携準備中）',
-    chatLiveBadge: 'LIVE',
     chatMemberCount: n => `${n}人参加`,
     selectZoneHint: '地図でエリアを選択してください',
     planningBadge: '企画中',
@@ -488,12 +466,11 @@ export const EVENT_ZONE_COPY: Record<
   },
   zh: {
     screenTitle: '活动区域',
-    currentZoneLabel: '我的区域',
+    currentZoneLabel: '您现在在釜山！',
     mapHint: '点击区域高亮并查看地标',
     landmarksTitle: '主要景点',
     chatRoomsTitle: '区域聊天室',
     chatFeatureHint: '应用内聊天（实时同步筹备中）',
-    chatLiveBadge: 'LIVE',
     chatMemberCount: n => `${n} 人参与`,
     selectZoneHint: '请在地图上选择区域',
     planningBadge: '策划中',

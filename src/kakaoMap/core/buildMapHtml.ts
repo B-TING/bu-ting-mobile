@@ -264,6 +264,18 @@ export function buildKakaoMapHtml(appKey: string, camera: MapCamera): string {
           };
           window.kakaoMap = new kakao.maps.Map(mapContainer, mapOption);
           window.renderKakaoMapOverlays([]);
+          kakao.maps.event.addListener(window.kakaoMap, 'dragend', function () {
+            var center = window.kakaoMap.getCenter();
+            if (window.ReactNativeWebView) {
+              window.ReactNativeWebView.postMessage(
+                JSON.stringify({
+                  type: 'centerChange',
+                  lat: center.getLat(),
+                  lng: center.getLng(),
+                }),
+              );
+            }
+          });
           if (window.ReactNativeWebView) {
             window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'ready' }));
           }

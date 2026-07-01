@@ -50,7 +50,6 @@ type EventZoneZoneDetailPanelProps = {
   room: EventZoneChatRoom | undefined;
   language: AppLanguage;
   landmarksTitle: string;
-  liveBadge: string;
   memberCountLabel: (n: number) => string;
   enterLabel: string;
   closeLabel: string;
@@ -75,7 +74,6 @@ export function EventZoneZoneDetailPanel({
   room,
   language,
   landmarksTitle,
-  liveBadge,
   memberCountLabel,
   enterLabel,
   closeLabel,
@@ -94,11 +92,6 @@ export function EventZoneZoneDetailPanel({
             <Text className="text-lg font-bold text-brand-text">
               {eventZoneName(zone, language)}
             </Text>
-            {room?.isLive ? (
-              <View className="rounded-full bg-rose-100 px-2 py-0.5">
-                <Text className="text-[10px] font-bold text-rose-600">{liveBadge}</Text>
-              </View>
-            ) : null}
           </View>
           {room ? (
             <Text className="mt-0.5 text-xs font-semibold text-brand-primary">

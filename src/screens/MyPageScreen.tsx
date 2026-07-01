@@ -3,6 +3,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { NicknameEditModal } from '../components/mypage/NicknameEditModal';
 import { PrimaryButton } from '../components/shared/buttons/PrimaryButton';
 import { AppBar } from '../components/shared/navigation/AppBar';
 import { AppMenuDrawer } from '../components/shared/navigation/AppMenuDrawer';
@@ -12,9 +13,10 @@ import { MY_PAGE_COPY } from '../constants/mypage/myPage';
 import { summarizeOnboardingPreferences } from '../constants/setup/onboarding';
 import { layout } from '../constants/common/layout';
 import { selectActivePlan, selectOnboardingForUser, useAppStore, useAuthStore, usePlanStore } from '../stores';
-import { selectAuthUser, selectIsAuthenticated } from '../stores/useAuthStore';
+import { selectAuthUser, selectIsAuthenticated, selectReusableAccessToken } from '../stores/useAuthStore';
 import type { RootStackParamList } from '../navigation/types';
 import { logoutSession } from '../services/auth/authSession';
+import { deleteMyAccount, updateMyProfile, UserServiceError } from '../services/user/userService';
 import { cn } from '../utils/common/cn';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MyPage'>;
@@ -30,6 +32,37 @@ function InfoRow({ label, value }: { label: string; value: string }) {
       <Text className="text-base text-brand-text" selectable>
         {value}
       </Text>
+    </View>
+  );
+}
+
+function NicknameRow({
+  label,
+  value,
+  actionLabel,
+  onPressAction,
+}: {
+  label: string;
+  value: string;
+  actionLabel: string;
+  onPressAction: () => void;
+}) {
+  return (
+    <View className="mb-3">
+      <Text className="mb-1 text-xs font-semibold uppercase tracking-wide text-brand-muted">
+        {label}
+      </Text>
+      <View className="flex-row items-center">
+        <Text className="flex-1 text-base text-brand-text" selectable>
+          {value}
+        </Text>
+        <Pressable
+          onPress={onPressAction}
+          className="ml-2 rounded-lg px-2 py-1 active:opacity-70"
+          accessibilityRole="button">
+          <Text className="text-xs font-semibold text-brand-primary">{actionLabel}</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -71,7 +104,11 @@ export function MyPageScreen({ navigation }: Props) {
   const activePlan = usePlanStore(selectActivePlan);
   const isAuthenticated = useAuthStore(selectIsAuthenticated);
   const rememberMe = useAuthStore(s => s.rememberMe);
+  const accessToken = useAuthStore(selectReusableAccessToken);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [nicknameModalOpen, setNicknameModalOpen] = useState(false);
+  const [savingNickname, setSavingNickname] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   const handleNavbarPress = (tab: NavbarTab) => {
     switch (tab) {
@@ -109,6 +146,76 @@ export function MyPageScreen({ navigation }: Props) {
           variant: 'danger',
           onPress: () => {
             void logoutSession().then(goToLogin);
+          },
+        },
+      ],
+    });
+  };
+
+  const applyNicknameUpdate = (nickname: string) => {
+    if (!user) {
+      return;
+    }
+    useAuthStore.getState().setUser({ ...user, nickname });
+    useAppStore.getState().login({
+      userId: user.userId,
+      displayName: nickname || user.email.split('@')[0] || 'User',
+    });
+  };
+
+  const handleSaveNickname = async (nickname: string) => {
+    if (!accessToken) {
+      alert({ title: copy.changeNicknameError });
+      return;
+    }
+    if (!nickname) {
+      alert({ title: copy.changeNicknameEmpty });
+      return;
+    }
+
+    setSavingNickname(true);
+    try {
+      const updated = await updateMyProfile(accessToken, { nickname });
+      applyNicknameUpdate(updated.nickname);
+      setNicknameModalOpen(false);
+      alert({ title: copy.changeNicknameSuccess });
+    } catch (error) {
+      const message =
+        error instanceof UserServiceError && error.message
+          ? error.message
+          : copy.changeNicknameError;
+      alert({ title: message });
+    } finally {
+      setSavingNickname(false);
+    }
+  };
+
+  const handleDeleteAccount = () => {
+    if (!accessToken || deletingAccount) {
+      return;
+    }
+
+    alert({
+      title: copy.deleteAccount,
+      message: copy.deleteAccountConfirm,
+      buttons: [
+        { label: copy.deleteAccountCancel, variant: 'secondary', onPress: () => {} },
+        {
+          label: copy.deleteAccount,
+          variant: 'danger',
+          onPress: () => {
+            setDeletingAccount(true);
+            void deleteMyAccount(accessToken)
+              .then(() => logoutSession())
+              .then(goToLogin)
+              .catch(error => {
+                const message =
+                  error instanceof UserServiceError && error.message
+                    ? error.message
+                    : copy.deleteAccountError;
+                alert({ title: message });
+              })
+              .finally(() => setDeletingAccount(false));
           },
         },
       ],
@@ -160,12 +267,27 @@ export function MyPageScreen({ navigation }: Props) {
 
           {isAuthenticated && user ? (
             <>
-              <InfoRow label={copy.nickname} value={user.nickname || '—'} />
+              <NicknameRow
+                label={copy.nickname}
+                value={user.nickname || '—'}
+                actionLabel={copy.changeNickname}
+                onPressAction={() => setNicknameModalOpen(true)}
+              />
               <InfoRow label={copy.email} value={user.email || '—'} />
               <InfoRow label={copy.provider} value={providerLabel} />
               {!hideUserIdOnMyPage ? (
                 <InfoRow label={copy.userId} value={user.userId} />
               ) : null}
+              <Pressable
+                onPress={handleDeleteAccount}
+                disabled={deletingAccount}
+                className={cn(
+                  'mt-2 self-start active:opacity-70',
+                  deletingAccount && 'opacity-50',
+                )}
+                accessibilityRole="button">
+                <Text className="text-sm font-semibold text-red-600">{copy.deleteAccount}</Text>
+              </Pressable>
             </>
           ) : (
             <Text className="mb-4 text-base text-brand-muted">{copy.notLoggedIn}</Text>
@@ -211,6 +333,26 @@ export function MyPageScreen({ navigation }: Props) {
       </ScrollView>
 
       <Navbar activeTab="my" language={language} onTabPress={handleNavbarPress} />
+
+      {user ? (
+        <NicknameEditModal
+          visible={nicknameModalOpen}
+          initialNickname={user.nickname}
+          saving={savingNickname}
+          copy={{
+            title: copy.changeNicknameTitle,
+            placeholder: copy.changeNicknamePlaceholder,
+            save: copy.changeNicknameSave,
+            cancel: copy.changeNicknameCancel,
+          }}
+          onClose={() => {
+            if (!savingNickname) {
+              setNicknameModalOpen(false);
+            }
+          }}
+          onSave={handleSaveNickname}
+        />
+      ) : null}
     </View>
   );
 }

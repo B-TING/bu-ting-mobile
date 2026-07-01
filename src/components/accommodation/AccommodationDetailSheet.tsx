@@ -62,7 +62,7 @@ export function AccommodationDetailSheet({
     return () => {
       cancelled = true;
     };
-  }, [visible, stay?.internalPlaceId]);
+  }, [visible, stay]);
 
   if (!stay) {
     return null;

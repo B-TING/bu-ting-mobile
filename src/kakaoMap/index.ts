@@ -40,6 +40,7 @@ export {
   kakaoOverlaysFromSchedule,
   kakaoOverlaysFromRoutes,
   kakaoOverlaysFromStays,
+  kakaoOverlaysFromPlaces,
   kakaoOverlaysFromAttractions,
   kakaoOverlaysFromLockerStations,
 } from './overlays/builders';

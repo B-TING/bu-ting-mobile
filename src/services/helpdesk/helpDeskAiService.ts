@@ -240,7 +240,7 @@ function buildScheduleResponse(ctx: HelpDeskContext): string {
   return `📅 **下一个行程**\n\n• ${dayLabel}（${dateStr}）\n• **${place}**${visited ? '（已访问）' : ''}\n\n可在行程标签页查看完整路线。`;
 }
 
-function findMentionedPlace(message: string, language: AppLanguage): string | null {
+function findMentionedPlace(message: string, _language: AppLanguage): string | null {
   for (const spot of BUSAN_ATTRACTIONS) {
     const labels = [spot.label.ko, spot.label.en, spot.label.ja, spot.label.zh, spot.id];
     if (labels.some(l => l && message.toLowerCase().includes(l.toLowerCase()))) {

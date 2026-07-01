@@ -159,7 +159,10 @@ export const TRAVEL_STYLE_OPTIONS: SelectOption[] = [
   { id: 'nightlife', label: { ko: '야경·나이트', en: 'Nightlife', ja: 'ナイト', zh: '夜生活' } },
 ];
 
+export const TRAVEL_CONSTRAINT_NONE_ID = 'none';
+
 export const TRAVEL_CONSTRAINT_OPTIONS: SelectOption[] = [
+  { id: TRAVEL_CONSTRAINT_NONE_ID, label: { ko: '없음', en: 'None', ja: 'なし', zh: '无' } },
   { id: 'heavy_luggage', label: { ko: '짐이 많음', en: 'Heavy luggage', ja: '荷物多め', zh: '行李较多' } },
   { id: 'light_luggage', label: { ko: '짐이 적음', en: 'Light luggage', ja: '荷物少なめ', zh: '行李较少' } },
   { id: 'pets', label: { ko: '애완동물 동반', en: 'Traveling with pets', ja: 'ペット同伴', zh: '携带宠物' } },

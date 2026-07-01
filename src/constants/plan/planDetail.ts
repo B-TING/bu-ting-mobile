@@ -30,6 +30,10 @@ export const PLAN_DETAIL_COPY: Record<
     hotelHint: string;
     hotelCta: string;
     budgetTotal: string;
+    budgetExpenseCount: (count: number) => string;
+    budgetCategoryBreakdown: string;
+    budgetExpenseList: string;
+    budgetDayEmpty: string;
     budgetAdd: string;
     budgetEmpty: string;
     exploreSoon: string;
@@ -139,6 +143,10 @@ export const PLAN_DETAIL_COPY: Record<
     hotelHint: '숙소가 아직 없어요. 일정에 맞는 숙소를 예약해 보세요.',
     hotelCta: '숙소 찾기',
     budgetTotal: '총 지출',
+    budgetExpenseCount: n => `${n}건의 지출`,
+    budgetCategoryBreakdown: '유형별 합계',
+    budgetExpenseList: '지출 내역',
+    budgetDayEmpty: '이 날짜에 기록된 지출이 없어요',
     budgetAdd: '지출 추가',
     budgetEmpty: '아직 기록된 지출이 없어요',
     exploreSoon: '탐색 탭은 곧 TourAPI·맵 연동과 함께 제공됩니다.',
@@ -248,6 +256,10 @@ export const PLAN_DETAIL_COPY: Record<
     hotelHint: 'No stay booked yet for these dates.',
     hotelCta: 'Find stays',
     budgetTotal: 'Total spent',
+    budgetExpenseCount: n => `${n} expense${n === 1 ? '' : 's'}`,
+    budgetCategoryBreakdown: 'By category',
+    budgetExpenseList: 'Expenses',
+    budgetDayEmpty: 'No expenses on this date',
     budgetAdd: 'Add expense',
     budgetEmpty: 'No expenses yet',
     exploreSoon: 'Explore will arrive with TourAPI and maps.',
@@ -358,6 +370,10 @@ export const PLAN_DETAIL_COPY: Record<
     hotelHint: '宿泊がまだありません。',
     hotelCta: '宿を探す',
     budgetTotal: '合計支出',
+    budgetExpenseCount: n => `${n}件の支出`,
+    budgetCategoryBreakdown: '分類別合計',
+    budgetExpenseList: '支出明細',
+    budgetDayEmpty: 'この日の支出はありません',
     budgetAdd: '支出を追加',
     budgetEmpty: '支出記録なし',
     exploreSoon: '探索はTourAPI連携後に提供します。',
@@ -468,6 +484,10 @@ export const PLAN_DETAIL_COPY: Record<
     hotelHint: '尚未预订住宿。',
     hotelCta: '查找住宿',
     budgetTotal: '总支出',
+    budgetExpenseCount: n => `${n} 笔支出`,
+    budgetCategoryBreakdown: '分类合计',
+    budgetExpenseList: '支出明细',
+    budgetDayEmpty: '该日期暂无支出记录',
     budgetAdd: '添加支出',
     budgetEmpty: '暂无支出记录',
     exploreSoon: '探索将与 TourAPI 和地图一同上线。',
