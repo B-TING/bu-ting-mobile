@@ -140,6 +140,41 @@ export function kakaoOverlaysFromStays(
   });
 }
 
+export function kakaoOverlaysFromPlaces(
+  places: Array<{
+    id: string;
+    name: string;
+    location: { lat: number; lng: number };
+    rating: number;
+  }>,
+  selectedId: string | null | undefined,
+  bookmarkedIds: readonly string[],
+  options?: {
+    captionSuffix?: (place: { name: string }) => string | undefined;
+  },
+): KakaoMapOverlay[] {
+  const bookmarkSet = new Set(bookmarkedIds);
+
+  return places.map(place => {
+    const active = place.id === selectedId;
+    const bookmarked = bookmarkSet.has(place.id);
+    const pinColor = bookmarked ? '#F59E0B' : '#4285F4';
+    const suffix = options?.captionSuffix?.(place);
+
+    return {
+      kind: 'rating',
+      id: place.id,
+      lat: place.location.lat,
+      lng: place.location.lng,
+      rating: place.rating > 0 ? place.rating.toFixed(1) : '—',
+      color: pinColor,
+      active,
+      bookmarked,
+      caption: active ? (suffix ? `${place.name} · ${suffix}` : place.name) : undefined,
+    };
+  });
+}
+
 export function kakaoOverlaysFromAttractions(
   attractions: BusanAttraction[],
   selectedId: string | null | undefined,

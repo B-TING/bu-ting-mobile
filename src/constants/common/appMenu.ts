@@ -1,7 +1,12 @@
 import type { RootStackParamList } from '../../navigation/types';
+import { PLACE_CONTENT_TYPE } from '../../types/placesApi';
 
 export type AppMenuTarget =
-  | { kind: 'screen'; route: keyof RootStackParamList }
+  | {
+      kind: 'screen';
+      route: keyof RootStackParamList;
+      params?: RootStackParamList[keyof RootStackParamList];
+    }
   | { kind: 'placeholder'; titleKo: string; titleEn: string };
 
 export type AppMenuItem = {
@@ -34,13 +39,21 @@ export const APP_MENU_ITEMS: AppMenuItem[] = [
     id: 'accommodation',
     labelKo: '부산 숙소',
     labelEn: 'Busan stays',
-    target: { kind: 'screen', route: 'BusanAccommodation' },
+    target: {
+      kind: 'screen',
+      route: 'PlaceMapSearch',
+      params: { contentTypeId: PLACE_CONTENT_TYPE.accommodation },
+    },
   },
   {
     id: 'attraction',
     labelKo: '부산 관광지',
     labelEn: 'Busan attractions',
-    target: { kind: 'screen', route: 'BusanAttraction' },
+    target: {
+      kind: 'screen',
+      route: 'PlaceMapSearch',
+      params: { contentTypeId: PLACE_CONTENT_TYPE.attraction },
+    },
   },
   {
     id: 'community',

@@ -1,3 +1,5 @@
+import type { PlaceContentTypeId } from '../types/placesApi';
+
 export type RootStackParamList = {
   LanguageSelection: undefined;
   Login: undefined;
@@ -14,7 +16,10 @@ export type RootStackParamList = {
   FestivalCalendar: { initialDate?: string } | undefined;
   FestivalDetail: { festivalId: string };
   LuggageStorage: undefined;
+  PlaceMapSearch: { contentTypeId?: PlaceContentTypeId } | undefined;
+  /** @deprecated PlaceMapSearch 사용 */
   BusanAccommodation: undefined;
+  /** @deprecated PlaceMapSearch 사용 */
   BusanAttraction: undefined;
   HelpDeskChat: undefined;
   EventZone: undefined;

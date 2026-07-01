@@ -46,6 +46,11 @@ export const USER_ENDPOINTS = {
   me: '/api/v1/users/me',
 } as const;
 
+export const PLACES_ENDPOINTS = {
+  search: '/api/v1/places',
+  detail: (contentId: string) => \`/api/v1/places/\${contentId}/detail\`,
+} as const;
+
 export type OAuthClientConfig = {
   clientId: string;
   redirectUri: string;

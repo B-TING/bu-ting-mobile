@@ -24,6 +24,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { layout } from '../constants/common/layout';
 import type { RootStackParamList } from '../navigation/types';
+import { PLACE_CONTENT_TYPE } from '../types/placesApi';
 import { showTravelSurveyOnboardingPrompt } from '../services/setup/travelSurveyOnboardingPrompt';
 import { selectActivePlan, useAppStore, usePlanStore, useTravelogueStore } from '../stores';
 import { isTraveloguePublic } from '../utils/review/travelReview';
@@ -181,10 +182,14 @@ export function MainHomeScreen({ navigation }: Props) {
               navigation.navigate('LuggageStorage');
             }
             if (id === 'hotels') {
-              navigation.navigate('BusanAccommodation');
+              navigation.navigate('PlaceMapSearch', {
+                contentTypeId: PLACE_CONTENT_TYPE.accommodation,
+              });
             }
             if (id === 'attractions') {
-              navigation.navigate('BusanAttraction');
+              navigation.navigate('PlaceMapSearch', {
+                contentTypeId: PLACE_CONTENT_TYPE.attraction,
+              });
             }
             if (id === 'eventZone') {
               navigation.navigate('EventZone');
