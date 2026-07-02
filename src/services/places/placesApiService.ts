@@ -129,7 +129,9 @@ async function fetchPlaceList(
     throw error;
   }
 
-  const payload = unwrapData(body);
+  const payload = unwrapData<PlaceSearchResponseDto>(
+    body as ApiEnvelope<PlaceSearchResponseDto> | PlaceSearchResponseDto | null,
+  );
   if (!payload) {
     logPlacesApiError('GET', url, new Error('Empty places search response body'), {
       ...logContext,
@@ -253,7 +255,9 @@ export async function fetchPlaceDetail(params: FetchPlaceDetailParams): Promise<
     throw error;
   }
 
-  const payload = unwrapData(body);
+  const payload = unwrapData<PlaceDetailResponseDto>(
+    body as ApiEnvelope<PlaceDetailResponseDto> | PlaceDetailResponseDto | null,
+  );
   if (!payload?.contentId) {
     logPlacesApiError('GET', url, new Error('Place detail response missing contentId'), {
       contentId: params.contentId,
