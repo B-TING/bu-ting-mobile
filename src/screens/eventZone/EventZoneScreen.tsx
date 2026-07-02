@@ -19,6 +19,10 @@ import {
 } from '../../constants/eventZone/eventZone';
 import { buildRandomMockZoneEvent } from '../../constants/eventZone/zoneEvents';
 import { useCurrentEventZone } from '../../hooks/useCurrentEventZone';
+import {
+  useAllZoneChatMemberCounts,
+  useZoneChatRoomSummary,
+} from '../../hooks/useZoneChatRoomSummary';
 import type { RootStackParamList } from '../../navigation/types';
 import { useAppStore, useZoneEventStore } from '../../stores';
 import type { EventZoneId } from '../../types/eventZone';
@@ -85,6 +89,11 @@ export function EventZoneScreen({ navigation }: Props) {
 
   const currentZone = EVENT_ZONE_BY_ID[currentZoneId];
   const selectedZone = selectedZoneId ? EVENT_ZONE_BY_ID[selectedZoneId] : null;
+  const { memberCounts: liveMemberCounts } = useAllZoneChatMemberCounts();
+  const { memberCount: currentLiveMemberCount } = useZoneChatRoomSummary(currentZoneId);
+  const { memberCount: selectedLiveMemberCount } = useZoneChatRoomSummary(
+    selectedZoneId ?? undefined,
+  );
   const currentZoneRoom = useMemo(
     () => getChatRoomByZoneId(currentZoneId),
     [currentZoneId],
@@ -138,6 +147,7 @@ export function EventZoneScreen({ navigation }: Props) {
                 currentZoneLabel={copy.currentZoneLabel}
                 memberCountLabel={copy.chatMemberCount}
                 fallbackHint={usedFallback ? copy.locationFallbackHint : undefined}
+                liveMemberCount={currentLiveMemberCount}
               />
             ) : null}
           </View>
@@ -196,6 +206,7 @@ export function EventZoneScreen({ navigation }: Props) {
                     handleEnterChat(selectedZoneId);
                   }
                 }}
+                liveMemberCount={selectedLiveMemberCount}
               />
             </View>
           </View>
@@ -211,6 +222,7 @@ export function EventZoneScreen({ navigation }: Props) {
           joinLabel={copy.enterChat}
           activeEventsByZone={activeEventsByZone}
           bottomInset={insets.bottom}
+          liveMemberCounts={liveMemberCounts}
           onRoomPress={zoneId => setSelectedZoneId(zoneId)}
           onJoinPress={roomId => navigation.navigate('EventZoneChat', { roomId })}
         />

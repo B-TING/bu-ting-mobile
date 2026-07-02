@@ -28,7 +28,7 @@ export { BUSAN_SVG_VIEWBOX as BUSAN_MAP_VIEWBOX } from './busanMapPaths';
 
 export const EVENT_ZONES: EventZoneDefinition[] = [
   {
-    id: 'haeundae-gijang',
+    id: 'HAEUNDAE_GIJANG',
     nameKo: '해운대·기장',
     nameEn: 'Haeundae · Gijang',
     nameJa: '海雲台·機張',
@@ -74,7 +74,7 @@ export const EVENT_ZONES: EventZoneDefinition[] = [
     ],
   },
   {
-    id: 'suyeong-nam',
+    id: 'SUYEONG_NAMGU',
     nameKo: '수영·남구',
     nameEn: 'Suyeong · Nam',
     nameJa: '水营·南区',
@@ -120,7 +120,7 @@ export const EVENT_ZONES: EventZoneDefinition[] = [
     ],
   },
   {
-    id: 'geumjeong-dongnae',
+    id: 'CENTRAL_NORTH',
     nameKo: '금정·동래·연제·부산진',
     nameEn: 'Geumjeong · Dongnae · Yeonje · Busanjin',
     nameJa: '金井·東莱·莲堤·釜山镇',
@@ -166,7 +166,7 @@ export const EVENT_ZONES: EventZoneDefinition[] = [
     ],
   },
   {
-    id: 'seo-jung-dong',
+    id: 'OLD_DOWNTOWN',
     nameKo: '서·중·동구',
     nameEn: 'Seo · Jung · Dong',
     nameJa: '西·中·東区',
@@ -212,7 +212,7 @@ export const EVENT_ZONES: EventZoneDefinition[] = [
     ],
   },
   {
-    id: 'yeongdo',
+    id: 'YEONGDO',
     nameKo: '영도',
     nameEn: 'Yeongdo',
     nameJa: '影岛',
@@ -248,7 +248,7 @@ export const EVENT_ZONES: EventZoneDefinition[] = [
     ],
   },
   {
-    id: 'gangseo-northwest',
+    id: 'WESTERN_BUSAN',
     nameKo: '강서·사상·사하·북구',
     nameEn: 'Gangseo · Sasang · Saha · Buk',
     nameJa: '江西·沙上·沙下·北区',
@@ -320,42 +320,42 @@ export const DEFAULT_USER_LOCATION_BUSAN = { lat: 35.1152, lng: 129.0422 };
 export const MOCK_ZONE_CHAT_ROOMS: EventZoneChatRoom[] = [
   {
     id: 'chat-haeundae-meetup',
-    zoneId: 'haeundae-gijang',
+    zoneId: 'HAEUNDAE_GIJANG',
     topicKo: '오늘 해운대에서 만날 분 구해요',
     topicEn: 'Looking for company at Haeundae today',
     memberCount: 24,
   },
   {
     id: 'chat-gwangan-info',
-    zoneId: 'suyeong-nam',
+    zoneId: 'SUYEONG_NAMGU',
     topicKo: '광안대교 야경·맛집 정보 공유',
     topicEn: 'Share Gwangan night views and food spots',
     memberCount: 18,
   },
   {
     id: 'chat-seomyeon-game',
-    zoneId: 'geumjeong-dongnae',
+    zoneId: 'CENTRAL_NORTH',
     topicKo: '구역 미니게임 매칭 대기',
     topicEn: 'Zone mini-game matchmaking lobby',
     memberCount: 31,
   },
   {
     id: 'chat-jagalchi-market',
-    zoneId: 'seo-jung-dong',
+    zoneId: 'OLD_DOWNTOWN',
     topicKo: '자갈치·국제시장 같이 돌아요',
     topicEn: 'Explore Jagalchi and Gukje Market together',
     memberCount: 12,
   },
   {
     id: 'chat-yeongdo-walk',
-    zoneId: 'yeongdo',
+    zoneId: 'YEONGDO',
     topicKo: '흰여울·태종대 산책 모임',
     topicEn: 'Huinnyeoul and Taejongdae walk group',
     memberCount: 9,
   },
   {
     id: 'chat-gamcheon-art',
-    zoneId: 'gangseo-northwest',
+    zoneId: 'WESTERN_BUSAN',
     topicKo: '감천마을 포토 미션 진행 중',
     topicEn: 'Gamcheon photo mission in progress',
     memberCount: 15,
@@ -424,7 +424,7 @@ export const EVENT_ZONE_COPY: Record<
     mapHint: '구역을 눌러 하이라이트하고 랜드마크를 확인하세요',
     landmarksTitle: '주요 관광지',
     chatRoomsTitle: '구역 채팅방',
-    chatFeatureHint: '앱 내 채팅 (실시간 연동 준비 중)',
+    chatFeatureHint: '구역별 실시간 채팅 (로컬 백엔드 테스트)',
     chatMemberCount: n => `${n}명 참여`,
     selectZoneHint: '지도에서 구역을 선택해 주세요',
     planningBadge: '기획 중',
@@ -442,7 +442,7 @@ export const EVENT_ZONE_COPY: Record<
     mapHint: 'Tap a zone to highlight it and view landmarks',
     landmarksTitle: 'Landmarks',
     chatRoomsTitle: 'Zone chat rooms',
-    chatFeatureHint: 'In-app chat (realtime sync coming soon)',
+    chatFeatureHint: 'Zone live chat (local backend test)',
     chatMemberCount: n => `${n} joined`,
     selectZoneHint: 'Select a zone on the map',
     planningBadge: 'In planning',
@@ -507,14 +507,14 @@ export const ZONE_CHAT_COPY: Record<
     send: '전송',
     emptyMessages: '아직 메시지가 없어요. 첫 인사를 남겨보세요!',
     memberCount: n => `${n}명 참여 중`,
-    localOnlyHint: '현재는 기기 내 목업 채팅입니다. 실시간 서버 연동은 준비 중이에요.',
+    localOnlyHint: '로그인 후 로컬 백엔드 채팅 서버에 연결됩니다.',
   },
   en: {
     inputPlaceholder: 'Type a message',
     send: 'Send',
     emptyMessages: 'No messages yet. Say hello!',
     memberCount: n => `${n} joined`,
-    localOnlyHint: 'Local mock chat for now. Realtime server sync is coming soon.',
+    localOnlyHint: 'Sign in to connect to the local backend chat server.',
   },
   ja: {
     inputPlaceholder: 'メッセージを入力',

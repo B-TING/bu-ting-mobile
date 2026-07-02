@@ -19,6 +19,7 @@
     "kakao:sync": "node scripts/sync-kakao-map-key.cjs",
     "map:sync": "node scripts/extract-busan-map-paths.cjs",
     "api:sync": "node scripts/sync-api-config.cjs",
+    "chat:test": "node scripts/test-zone-chat.cjs",
     "zone-boundaries:sync": "node scripts/build-busan-district-boundaries.cjs",
     "oauth:sync": "node scripts/sync-oauth-config.cjs",
     "hooks:install": "node scripts/install-git-hooks.cjs",

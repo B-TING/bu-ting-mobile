@@ -64,17 +64,3 @@ function pickIdentityValue(
       return user.userId || fallback;
   }
 }
-
-/** 수신 메시지가 현재 사용자 것인지 판별 */
-export function isZoneChatMessageMine(
-  message: {
-    authorIdentityField?: ZoneChatIdentityField;
-    authorIdentityValue: string;
-  },
-  participant: ZoneChatParticipant,
-): boolean {
-  if (message.authorIdentityField && message.authorIdentityField === participant.identityField) {
-    return message.authorIdentityValue === participant.identityValue;
-  }
-  return message.authorIdentityValue === participant.identityValue;
-}

@@ -52,6 +52,8 @@ type EventZoneMapBadgeProps = {
   currentZoneLabel: string;
   memberCountLabel: (n: number) => string;
   fallbackHint?: string;
+  /** 백엔드 currentMembers (없으면 room.memberCount) */
+  liveMemberCount?: number | null;
 };
 
 export function EventZoneMapBadge({
@@ -61,6 +63,7 @@ export function EventZoneMapBadge({
   currentZoneLabel,
   memberCountLabel,
   fallbackHint,
+  liveMemberCount,
 }: EventZoneMapBadgeProps) {
   return (
     <View className="rounded-2xl border border-brand-border bg-white px-3 py-2 shadow-sm">
@@ -72,7 +75,7 @@ export function EventZoneMapBadge({
       </Text>
       {room ? (
         <Text className="mt-0.5 text-xs text-brand-primary">
-          {memberCountLabel(room.memberCount)}
+          {memberCountLabel(liveMemberCount ?? room.memberCount)}
         </Text>
       ) : null}
       {fallbackHint ? (
@@ -100,6 +103,7 @@ type EventZoneChatListProps = {
   joinLabel: string;
   activeEventsByZone: Partial<Record<EventZoneId, ZoneEvent>>;
   bottomInset: number;
+  liveMemberCounts?: Partial<Record<EventZoneId, number>>;
   onRoomPress: (zoneId: EventZoneId) => void;
   onJoinPress: (roomId: string) => void;
 };
@@ -112,6 +116,7 @@ export function EventZoneChatList({
   joinLabel,
   activeEventsByZone,
   bottomInset,
+  liveMemberCounts,
   onRoomPress,
   onJoinPress,
 }: EventZoneChatListProps) {
@@ -150,7 +155,7 @@ export function EventZoneChatList({
                   {isEventRoom ? activeEvent.descriptionKo : chatRoomTopic(room, language)}
                 </Text>
                 <Text className="mt-1.5 text-xs font-semibold text-brand-primary">
-                  {memberCountLabel(room.memberCount)}
+                  {memberCountLabel(liveMemberCounts?.[room.zoneId] ?? room.memberCount)}
                 </Text>
               </Pressable>
               <Pressable
@@ -185,6 +190,7 @@ type EventZoneZoneDetailPanelProps = {
   eventEndedLabel: string;
   onClose: () => void;
   onEnterChat: () => void;
+  liveMemberCount?: number | null;
 };
 
 export function EventZoneZoneDetailPanel({
@@ -202,6 +208,7 @@ export function EventZoneZoneDetailPanel({
   eventEndedLabel,
   onClose,
   onEnterChat,
+  liveMemberCount,
 }: EventZoneZoneDetailPanelProps) {
   return (
     <View
@@ -221,7 +228,7 @@ export function EventZoneZoneDetailPanel({
           </View>
           {room ? (
             <Text className="mt-0.5 text-xs font-semibold text-brand-primary">
-              {memberCountLabel(room.memberCount)}
+              {memberCountLabel(liveMemberCount ?? room.memberCount)}
             </Text>
           ) : null}
           {isCurrentZone ? (

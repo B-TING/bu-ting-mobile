@@ -1,28 +1,51 @@
+import type { ChatMessage, ChatMessageRaw } from '../../types/chatApi';
+import { normalizeChatMessage } from '../../types/chatApi';
 import type { EventZoneChatMessage } from '../../types/eventZone';
-import type {
-  ZoneChatParticipant,
-  ZoneChatServerMessage,
-} from '../../types/zoneChatWebSocket';
-import { isZoneChatMessageMine } from './zoneChatIdentity';
+import type { ZoneChatParticipant } from '../../types/zoneChatWebSocket';
+
+/** 백엔드 ChatMessage 가 현재 사용자 것인지 (userId 기준) */
+export function isZoneChatMessageMine(
+  message: ChatMessage,
+  participant: ZoneChatParticipant,
+): boolean {
+  if (typeof message.isMine === 'boolean') {
+    return message.isMine;
+  }
+  if (participant.userId && message.userId) {
+    return message.userId === participant.userId;
+  }
+  return false;
+}
 
 export function mapServerMessageToEventZoneChat(
-  message: ZoneChatServerMessage,
+  raw: ChatMessageRaw,
   participant: ZoneChatParticipant,
 ): EventZoneChatMessage {
+  const message = normalizeChatMessage(raw);
   return {
-    id: message.id,
+    id: message.messageId,
     roomId: message.roomId,
-    authorId: message.authorIdentityValue,
-    authorNickname: message.authorNickname,
-    text: message.text,
-    sentAt: message.sentAt,
+    authorId: message.userId,
+    authorNickname: message.senderNickname,
+    text: message.content,
+    sentAt: message.createdAt,
     isMine: isZoneChatMessageMine(message, participant),
   };
 }
 
 export function mapServerMessagesToEventZoneChat(
-  messages: ZoneChatServerMessage[],
+  messages: ChatMessageRaw[],
   participant: ZoneChatParticipant,
 ): EventZoneChatMessage[] {
-  return messages.map(message => mapServerMessageToEventZoneChat(message, participant));
+  return sortEventZoneChatMessages(
+    messages.map(message => mapServerMessageToEventZoneChat(message, participant)),
+  );
+}
+
+export function sortEventZoneChatMessages(
+  messages: EventZoneChatMessage[],
+): EventZoneChatMessage[] {
+  return [...messages].sort(
+    (a, b) => new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime(),
+  );
 }

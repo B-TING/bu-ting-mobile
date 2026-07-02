@@ -13,6 +13,7 @@ import {
 import { HOME_EVENT_ZONE_COPY } from '../../../constants/home/mainHome';
 import { useCurrentEventZone } from '../../../hooks/useCurrentEventZone';
 import { useEventZoneCarousel } from '../../../hooks/useEventZoneCarousel';
+import { useZoneChatRoomSummary } from '../../../hooks/useZoneChatRoomSummary';
 import { useZoneEventStore } from '../../../stores';
 import type { AppLanguage } from '../../../types/user';
 import type { EventZoneId } from '../../../types/eventZone';
@@ -56,6 +57,7 @@ export function HomeEventZoneSection({
 
   const zone = EVENT_ZONE_BY_ID[chatZoneId];
   const room = getChatRoomByZoneId(chatZoneId);
+  const { memberCount: liveMemberCount } = useZoneChatRoomSummary(chatZoneId);
   const landmarks = zone.landmarks.slice(0, 3);
 
   const activeEvent = useZoneEventStore(s => s.activeEventsByZone[chatZoneId]);
@@ -118,7 +120,7 @@ export function HomeEventZoneSection({
             <View className="flex-row justify-between gap-1 w-full">
             {room ? (
               <Text className="mt-0.5 text-[10px] font-semibold text-brand-primary">
-                {zoneCopy.chatMemberCount(room.memberCount)}
+                {zoneCopy.chatMemberCount(liveMemberCount ?? room.memberCount)}
               </Text>
             ) : null}
             {activeEvent ? (

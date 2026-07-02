@@ -53,6 +53,13 @@ export const PLACES_ENDPOINTS = {
   detail: (contentId: string) => \`/api/v1/places/\${contentId}/detail\`,
 } as const;
 
+export const CHAT_ENDPOINTS = {
+  roomsByZone: '/api/v1/chat/rooms/zone',
+  enter: (roomId: string) => \`/api/v1/chat/rooms/\${roomId}/enter\`,
+  exit: (roomId: string) => \`/api/v1/chat/rooms/\${roomId}/exit\`,
+  webSocketPath: '/ws-stomp',
+} as const;
+
 export type OAuthClientConfig = {
   clientId: string;
   redirectUri: string;

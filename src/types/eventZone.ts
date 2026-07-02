@@ -1,10 +1,14 @@
+/** 백엔드 ChatZone enum 과 동일한 구역 ID */
 export type EventZoneId =
-  | 'haeundae-gijang'
-  | 'suyeong-nam'
-  | 'geumjeong-dongnae'
-  | 'seo-jung-dong'
-  | 'yeongdo'
-  | 'gangseo-northwest';
+  | 'HAEUNDAE_GIJANG'
+  | 'SUYEONG_NAMGU'
+  | 'CENTRAL_NORTH'
+  | 'OLD_DOWNTOWN'
+  | 'YEONGDO'
+  | 'WESTERN_BUSAN';
+
+/** REST·WebSocket 채팅 API query `zone` 파라미터 */
+export type ChatZone = EventZoneId;
 
 export type EventZoneCoordinate = {
   lat: number;

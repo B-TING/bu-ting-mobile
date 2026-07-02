@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   FlatList,
   KeyboardAvoidingView,
@@ -15,13 +15,14 @@ import { ZoneChatMessageBubble } from '../../components/eventZone/ZoneChatMessag
 import { BackButton } from '../../components/shared/buttons/BackButton';
 import {
   ZONE_CHAT_COPY,
-  chatMessagesForRoom,
   chatRoomTitle,
   chatRoomTopic,
   getChatRoomById,
 } from '../../constants/eventZone/eventZone';
+import { isZoneChatWebSocketEnabled } from '../../constants/chat/zoneChatConfig';
 import { useZoneChatWebSocket } from '../../hooks/useZoneChatWebSocket';
 import type { RootStackParamList } from '../../navigation/types';
+import { selectReusableAccessToken, useAuthStore } from '../../stores/useAuthStore';
 import { useAppStore } from '../../stores';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EventZoneChat'>;
@@ -29,15 +30,24 @@ type Props = NativeStackScreenProps<RootStackParamList, 'EventZoneChat'>;
 function connectionStatusLabel(
   status: ReturnType<typeof useZoneChatWebSocket>['status'],
   language: string,
+  options: { needsLogin: boolean },
 ): string | null {
+  if (options.needsLogin) {
+    return language === 'ko'
+      ? '실시간 채팅을 쓰려면 로그인이 필요합니다.'
+      : 'Sign in to use live chat.';
+  }
+
   switch (status) {
+    case 'idle':
+      return language === 'ko' ? '채팅방 입장 중…' : 'Joining chat room…';
     case 'connecting':
     case 'reconnecting':
       return language === 'ko' ? '채팅 서버 연결 중…' : 'Connecting to chat…';
     case 'failed':
       return language === 'ko'
-        ? '연결에 실패했습니다. 메시지는 이 기기에만 표시됩니다.'
-        : 'Connection failed. Messages stay on this device only.';
+        ? '연결에 실패했습니다. 네트워크·로그인 상태를 확인해 주세요.'
+        : 'Connection failed. Check network and sign-in.';
     case 'connected':
       return language === 'ko' ? '실시간 채팅 연결됨' : 'Live chat connected';
     default:
@@ -50,18 +60,17 @@ export function EventZoneChatScreen({ navigation, route }: Props) {
   const language = useAppStore(s => s.language) ?? 'ko';
   const copy = ZONE_CHAT_COPY[language];
   const room = getChatRoomById(route.params.roomId);
+  const wsEnabled = isZoneChatWebSocketEnabled();
+  const accessToken = useAuthStore(selectReusableAccessToken);
+  const needsLogin = wsEnabled && !accessToken;
 
-  const seedMessages = useMemo(
-    () => chatMessagesForRoom(route.params.roomId),
-    [route.params.roomId],
-  );
-
-  const { messages, sendMessage, enabled: wsEnabled, status: wsStatus, isRealtime } =
+  const { messages, sendMessage, enabled: chatEnabled, status: wsStatus, isRealtime, isLoadingHistory, memberCount } =
     useZoneChatWebSocket({
       roomId: route.params.roomId,
       zoneId: room?.zoneId,
-      seedMessages,
+      seedMessages: [],
       guestDisplayNickname: language === 'ko' ? '나' : 'Me',
+      wsEnabled: wsEnabled && !needsLogin,
     });
 
   const [input, setInput] = useState('');
@@ -83,9 +92,11 @@ export function EventZoneChatScreen({ navigation, route }: Props) {
     scrollToEnd();
   }, [input, scrollToEnd, sendMessage]);
 
-  const statusHint = wsEnabled
-    ? connectionStatusLabel(wsStatus, language)
-    : copy.localOnlyHint;
+  const statusHint = chatEnabled
+    ? connectionStatusLabel(wsStatus, language, { needsLogin })
+    : needsLogin
+      ? connectionStatusLabel(wsStatus, language, { needsLogin: true })
+      : copy.localOnlyHint;
 
   if (!room) {
     return (
@@ -120,7 +131,7 @@ export function EventZoneChatScreen({ navigation, route }: Props) {
             </Text>
             <Text className="text-xs text-brand-muted">{chatRoomTopic(room, language)}</Text>
             <Text className="mt-0.5 text-[11px] text-brand-muted">
-              {copy.memberCount(room.memberCount)}
+              {copy.memberCount(memberCount ?? room.memberCount)}
             </Text>
           </View>
         </View>
@@ -137,7 +148,13 @@ export function EventZoneChatScreen({ navigation, route }: Props) {
           className="flex-1 px-4 pt-4"
           contentContainerClassName="pb-4"
           ListEmptyComponent={
-            <Text className="text-center text-sm text-brand-muted">{copy.emptyMessages}</Text>
+            isLoadingHistory ? (
+              <Text className="text-center text-sm text-brand-muted">
+                {language === 'ko' ? '이전 메시지 불러오는 중…' : 'Loading chat history…'}
+              </Text>
+            ) : (
+              <Text className="text-center text-sm text-brand-muted">{copy.emptyMessages}</Text>
+            )
           }
           onContentSizeChange={scrollToEnd}
           renderItem={({ item }) => (
