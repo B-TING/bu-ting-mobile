@@ -12,11 +12,16 @@ import type { AppLanguage } from '../../types/user';
 import type { EventZoneId } from '../../types/eventZone';
 import { resolveLandmarkMapPoint } from '../../utils/eventZone/landmarkMapPoint';
 import { useZoneMapViewBox } from '../../utils/eventZone/useZoneMapViewBox';
+import { EventPulseMarker } from './EventPulseMarker';
+
+const EVENT_GLOW_COLOR = '#E91E63';
 
 type BusanZoneMapProps = {
   selectedZoneId: EventZoneId | null;
   currentZoneId: EventZoneId;
   language: AppLanguage;
+  /** 이벤트가 발생한 구역들 (glow 강조) */
+  eventZoneIds?: readonly EventZoneId[];
   onZonePress: (zoneId: EventZoneId) => void;
 };
 
@@ -104,10 +109,12 @@ export function BusanZoneMap({
   selectedZoneId,
   currentZoneId,
   language,
+  eventZoneIds = [],
   onZonePress,
 }: BusanZoneMapProps) {
   const panelOpen = selectedZoneId != null;
   const { viewBox, panHandlers, onLayout } = useZoneMapViewBox(selectedZoneId, panelOpen);
+  const hasEvent = (zoneId: EventZoneId) => eventZoneIds.includes(zoneId);
 
   const landmarkPoints = useMemo(() => {
     const zones =
@@ -123,6 +130,16 @@ export function BusanZoneMap({
     );
   }, [selectedZoneId]);
 
+  const eventCenters = useMemo(
+    () =>
+      eventZoneIds
+        .map(zoneId => ({ zoneId, center: zoneMapCenter(zoneId) }))
+        .filter(
+          (item): item is { zoneId: EventZoneId; center: { x: number; y: number } } =>
+            item.center != null,
+        ),
+    [eventZoneIds],
+  );
   return (
     <View className="flex-1 bg-[#EAEAEA]" onLayout={onLayout} {...panHandlers}>
       <Svg
@@ -170,13 +187,14 @@ export function BusanZoneMap({
               return null;
             }
             const stroke = zoneStroke(zone.id, selectedZoneId, currentZoneId);
+            const eventActive = hasEvent(zone.id);
             return (
               <Path
                 key={`${zone.id}-${districtId}`}
                 d={district.d}
                 fill={zoneFill(zone.id, zone.baseColor, selectedZoneId, currentZoneId)}
-                stroke={stroke.color}
-                strokeWidth={stroke.width}
+                stroke={eventActive ? EVENT_GLOW_COLOR : stroke.color}
+                strokeWidth={eventActive ? 3 : stroke.width}
                 strokeLinejoin="round"
                 onPress={() => onZonePress(zone.id)}
               />
@@ -204,14 +222,15 @@ export function BusanZoneMap({
                 />
               ));
               const stroke = zoneStroke(zone.id, selectedZoneId, currentZoneId);
+              const eventActive = hasEvent(zone.id);
               return [
                 ...glowLayers,
                 <Path
                   key={`selected-${districtId}`}
                   d={district.d}
                   fill={zoneFill(zone.id, zone.baseColor, selectedZoneId, currentZoneId)}
-                  stroke={stroke.color}
-                  strokeWidth={stroke.width}
+                  stroke={eventActive ? EVENT_GLOW_COLOR : stroke.color}
+                  strokeWidth={eventActive ? 3 : stroke.width}
                   strokeLinejoin="round"
                   onPress={() => onZonePress(zone.id)}
                 />,
@@ -246,7 +265,25 @@ export function BusanZoneMap({
             ) : null}
           </G>
         ))}
+
+        {eventCenters.map(({ zoneId, center }) => (
+          <EventPulseMarker key={`event-pulse-${zoneId}`} x={center.x} y={center.y} />
+        ))}
       </Svg>
     </View>
   );
+}
+
+/** 구역 랜드마크 좌표 평균으로 구역 중심점 계산 */
+function zoneMapCenter(zoneId: EventZoneId): { x: number; y: number } | null {
+  const zone = EVENT_ZONE_BY_ID[zoneId];
+  if (!zone || zone.landmarks.length === 0) {
+    return null;
+  }
+  const points = zone.landmarks.map(landmark => resolveLandmarkMapPoint(landmark));
+  const sum = points.reduce(
+    (acc, point) => ({ x: acc.x + point.x, y: acc.y + point.y }),
+    { x: 0, y: 0 },
+  );
+  return { x: sum.x / points.length, y: sum.y / points.length };
 }

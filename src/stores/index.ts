@@ -20,6 +20,7 @@ export {
 } from './usePlanStore';
 export { EMPTY_REVIEWS, EMPTY_SOCIAL, useTravelogueStore } from './useTravelogueStore';
 export { useLockerBookmarkStore } from './useLockerBookmarkStore';
+export { useZoneEventStore } from './useZoneEventStore';
 export { usePlaceBookmarkStore } from './usePlaceBookmarkStore';
 export {
   searchCenterKey,
