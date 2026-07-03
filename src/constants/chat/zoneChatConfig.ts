@@ -19,6 +19,18 @@ export const ZONE_CHAT_WS_CONFIG = {
   reconnectMaxAttempts: 5,
   reconnectBaseDelayMs: 1000,
   pingIntervalMs: 30_000,
+  /** GET /messages 페이지당 최대 개수 */
+  messagePageSize: 100,
+  /** STOMP 구독/발행 destination */
+  stomp: {
+    sendMessage: '/pub/chat/message',
+    roomMessages: (roomId: string) => `/sub/chat/room/${roomId}`,
+    roomStatus: (roomId: string) => `/sub/chat/room/${roomId}/status`,
+  },
+  /** WS 입·퇴장 후 REST currentMembers 동기화 대기(ms) */
+  memberCountSyncDelayMs: 400,
+  /** STOMP DISCONNECT 후 소켓 close 대기(ms) */
+  gracefulDisconnectMs: 100,
 } as const;
 
 export function isZoneChatWebSocketEnabled(): boolean {

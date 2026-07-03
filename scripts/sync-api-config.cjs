@@ -55,8 +55,7 @@ export const PLACES_ENDPOINTS = {
 
 export const CHAT_ENDPOINTS = {
   roomsByZone: '/api/v1/chat/rooms/zone',
-  enter: (roomId: string) => \`/api/v1/chat/rooms/\${roomId}/enter\`,
-  exit: (roomId: string) => \`/api/v1/chat/rooms/\${roomId}/exit\`,
+  messages: (roomId: string) => \`/api/v1/chat/rooms/\${roomId}/messages\`,
   webSocketPath: '/ws-stomp',
 } as const;
 

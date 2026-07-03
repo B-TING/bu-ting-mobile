@@ -99,17 +99,17 @@ async function testRoomsByZone() {
   return rooms[0].roomId;
 }
 
-async function testEnter(roomId) {
-  const { res, body } = await request(`/api/v1/chat/rooms/${roomId}/enter`, {
-    method: 'POST',
+async function testMessages(roomId, lastMessageId) {
+  const query = lastMessageId ? `?lastMessageId=${encodeURIComponent(lastMessageId)}` : '';
+  const { res, body } = await request(`/api/v1/chat/rooms/${roomId}/messages${query}`, {
+    method: 'GET',
     headers: {
       Authorization: `Bearer ${TEST_TOKEN}`,
-      'Content-Type': 'application/json',
     },
   });
-  assertOk(res.ok, `enter failed: ${res.status} ${JSON.stringify(body)}`);
+  assertOk(res.ok, `messages failed: ${res.status} ${JSON.stringify(body)}`);
   const history = Array.isArray(body) ? body : body.data;
-  console.log(`✓ enter — history ${history?.length ?? 0} messages`);
+  console.log(`✓ messages — history ${history?.length ?? 0} messages`);
   return history ?? [];
 }
 
@@ -199,26 +199,12 @@ function testStomp(roomId) {
   });
 }
 
-async function testExit(roomId) {
-  const { res, body } = await request(`/api/v1/chat/rooms/${roomId}/exit`, {
-    method: 'DELETE',
-    headers: { Authorization: `Bearer ${TEST_TOKEN}` },
-  });
-  if (!res.ok) {
-    console.warn('⚠ exit skipped:', body?.message ?? res.status);
-    console.warn('  (백엔드 enter 가 readOnly 트랜잭션이면 chat_member 미등록으로 exit 400 가능)');
-    return;
-  }
-  console.log('✓ exit');
-}
-
 async function main() {
   console.log(`\n[Bu-Ting] Chat integration test → ${BASE_URL}\n`);
   await seedTestUser();
   const roomId = await testRoomsByZone();
-  await testEnter(roomId);
+  await testMessages(roomId);
   await testStomp(roomId);
-  await testExit(roomId);
   console.log('\n모든 채팅 연동 테스트 통과 ✓\n');
 }
 

@@ -5,23 +5,29 @@ import {
   isZoneChatWebSocketEnabled,
 } from '../constants/chat/zoneChatConfig';
 import {
-  enterChatRoom,
-  exitChatRoom,
-  fetchChatRoomByZone,
-  readChatRoomMemberCount,
-} from '../services/chat/chatApiService';
+  hasMoreChatHistory,
+  loadInitialZoneChatHistory,
+  loadOlderZoneChatHistory,
+} from '../services/chat/zoneChatRoomService';
 import { buildZoneChatParticipant } from '../services/chat/zoneChatIdentity';
-import {
-  mapServerMessageToEventZoneChat,
-  mapServerMessagesToEventZoneChat,
-  sortEventZoneChatMessages,
-} from '../services/chat/zoneChatMessageMapper';
 import { ZoneChatWebSocketClient } from '../services/chat/zoneChatWebSocketClient';
+import { isBenignStompShutdownError } from '../services/chat/stompFrame';
 import { logZoneChat } from '../utils/chat/zoneChatLogger';
+import {
+  appendOptimisticZoneChatMessage,
+  createOptimisticZoneChatMessage,
+  mergeIncomingZoneChatMessage,
+  nextLocalZoneChatMessageId,
+  oldestPersistedZoneChatMessageId,
+  prependOlderZoneChatMessages,
+} from '../utils/chat/zoneChatMessageState';
 import { selectReusableAccessToken, useAuthStore } from '../stores/useAuthStore';
-import type { ChatMessage, ChatMessageRaw } from '../types/chatApi';
-import type { EventZoneId } from '../types/eventZone';
-import type { EventZoneChatMessage } from '../types/eventZone';
+import {
+  selectZoneChatMemberCount,
+  useZoneChatMemberStore,
+} from '../stores/useZoneChatMemberStore';
+import type { EventZoneId, EventZoneChatMessage } from '../types/eventZone';
+import { isSameChatRoomId } from '../types/chatApi';
 import type {
   ZoneChatConnectionStatus,
   ZoneChatIdentityField,
@@ -47,21 +53,12 @@ export type UseZoneChatWebSocketResult = {
   sendMessage: (text: string) => boolean;
   isRealtime: boolean;
   isLoadingHistory: boolean;
+  isLoadingMoreHistory: boolean;
   historyLoaded: boolean;
+  hasMoreHistory: boolean;
+  loadMoreHistory: () => void;
   memberCount: number | null;
-  refreshMemberCount: () => Promise<void>;
 };
-
-let localMessageCounter = 0;
-
-function nextLocalMessageId(): string {
-  localMessageCounter += 1;
-  return `local-msg-${localMessageCounter}-${Date.now()}`;
-}
-
-function chatMessageId(message: ChatMessage | ChatMessageRaw): string {
-  return message.messageId ?? message.id ?? '';
-}
 
 export function useZoneChatWebSocket(
   options: UseZoneChatWebSocketOptions,
@@ -95,48 +92,59 @@ export function useZoneChatWebSocket(
     accessToken ? [] : seedMessages,
   );
   const [isLoadingHistory, setIsLoadingHistory] = useState(Boolean(accessToken));
+  const [isLoadingMoreHistory, setIsLoadingMoreHistory] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
+  const [hasMoreHistory, setHasMoreHistory] = useState(false);
   const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
-  const [memberCount, setMemberCount] = useState<number | null>(null);
+  const memberCount = useZoneChatMemberStore(
+    zoneId ? selectZoneChatMemberCount(zoneId) : () => null,
+  );
+  const refreshZoneDelayed = useZoneChatMemberStore(state => state.refreshZoneDelayed);
+  const adjustMemberCount = useZoneChatMemberStore(state => state.adjustMemberCount);
+  const reconcileMemberCountDelayed = useZoneChatMemberStore(
+    state => state.reconcileMemberCountDelayed,
+  );
+  const resolveRoomId = useZoneChatMemberStore(state => state.resolveRoomId);
+  const applyRoomStatus = useZoneChatMemberStore(state => state.applyRoomStatus);
+  const setChatActiveRoom = useZoneChatMemberStore(state => state.setChatActiveRoom);
 
   const clientRef = useRef<ZoneChatWebSocketClient | null>(null);
   const activeRoomIdRef = useRef<string | null>(null);
-
-  const refreshMemberCount = useCallback(async () => {
-    if (!zoneId) {
-      return;
-    }
-    try {
-      const room = await fetchChatRoomByZone(zoneId);
-      if (room) {
-        setMemberCount(readChatRoomMemberCount(room));
-      }
-    } catch (error) {
-      logZoneChat('hook.member-count.fail', 'Failed to refresh member count', {
-        level: 'warn',
-        detail: error,
-      });
-    }
-  }, [zoneId]);
+  const participantRef = useRef(participant);
+  const messagesRef = useRef(messages);
+  const loadMoreLockRef = useRef(false);
 
   useEffect(() => {
-    if (!zoneId) {
-      setMemberCount(null);
-      return;
+    participantRef.current = participant;
+  }, [participant]);
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+
+  useEffect(() => {
+    if (!realtimeEnabled || !zoneId || !activeRoomId) {
+      setChatActiveRoom(null, null);
+      return undefined;
     }
-    void refreshMemberCount();
-  }, [zoneId, refreshMemberCount]);
+
+    activeRoomIdRef.current = activeRoomId;
+    setChatActiveRoom(zoneId, activeRoomId);
+    return () => {
+      setChatActiveRoom(null, null);
+    };
+  }, [realtimeEnabled, zoneId, activeRoomId, setChatActiveRoom]);
 
   useEffect(() => {
     if (!accessToken) {
       setMessages(seedMessages);
       setIsLoadingHistory(false);
       setHistoryLoaded(false);
+      setHasMoreHistory(false);
       setActiveRoomId(null);
     }
   }, [accessToken, roomId, seedMessages]);
 
-  /** 입장 시 REST enter 로 과거 메시지(최대 100개) 로드 */
   useEffect(() => {
     if (!accessToken) {
       return undefined;
@@ -144,11 +152,16 @@ export function useZoneChatWebSocket(
 
     let cancelled = false;
     setIsLoadingHistory(true);
+    setIsLoadingMoreHistory(false);
     setHistoryLoaded(false);
+    setHasMoreHistory(false);
     setMessages([]);
 
-    const loadHistory = async () => {
-      const resolvedRoomId = await resolveRoomId(roomId, zoneId);
+    const loadSession = async () => {
+      const resolvedRoomId = zoneId
+        ? await resolveRoomId(zoneId, roomId)
+        : roomId;
+
       if (cancelled) {
         return;
       }
@@ -157,20 +170,21 @@ export function useZoneChatWebSocket(
       activeRoomIdRef.current = resolvedRoomId;
 
       try {
-        const history = await enterChatRoom(resolvedRoomId, accessToken);
+        const history = await loadInitialZoneChatHistory(
+          resolvedRoomId,
+          accessToken,
+          participant,
+        );
         if (cancelled) {
           return;
         }
 
-        const mapped = sortEventZoneChatMessages(
-          mapServerMessagesToEventZoneChat(history, participant),
-        );
-        setMessages(mapped);
+        setMessages(history);
         setHistoryLoaded(true);
+        setHasMoreHistory(hasMoreChatHistory(history.length));
         logZoneChat('hook.history', 'Chat history loaded', {
-          detail: { roomId: resolvedRoomId, count: mapped.length },
+          detail: { roomId: resolvedRoomId, count: history.length },
         });
-        await refreshMemberCount();
       } catch (error) {
         logZoneChat('hook.history.fail', 'Failed to load chat history', {
           level: 'warn',
@@ -183,21 +197,16 @@ export function useZoneChatWebSocket(
       }
     };
 
-    void loadHistory();
+    loadSession().catch(() => undefined);
 
     return () => {
       cancelled = true;
-      const roomToExit = activeRoomIdRef.current;
       activeRoomIdRef.current = null;
-      if (roomToExit && accessToken) {
-        void exitChatRoom(roomToExit, accessToken).catch(() => undefined);
-      }
     };
-  }, [accessToken, roomId, zoneId, participant, refreshMemberCount]);
+  }, [accessToken, roomId, zoneId, participant, resolveRoomId]);
 
-  /** STOMP 실시간 연결 (히스토리 로드 후 roomId 확정 시) */
   useEffect(() => {
-    if (!realtimeEnabled || !accessToken || !activeRoomId) {
+    if (!realtimeEnabled || !accessToken || !activeRoomId || !historyLoaded) {
       if (!realtimeEnabled) {
         setStatus('disabled');
       } else if (!accessToken) {
@@ -207,32 +216,56 @@ export function useZoneChatWebSocket(
     }
 
     let cancelled = false;
+    let sessionJoined = false;
     const client = new ZoneChatWebSocketClient();
     clientRef.current = client;
 
     client.setListeners({
       onStatusChange: nextStatus => {
-        if (!cancelled) {
-          setStatus(nextStatus);
+        if (cancelled) {
+          return;
+        }
+        setStatus(nextStatus);
+        if (nextStatus === 'connected' && zoneId && !sessionJoined) {
+          sessionJoined = true;
+          adjustMemberCount(zoneId, 1);
+          reconcileMemberCountDelayed(zoneId, {
+            floor: useZoneChatMemberStore.getState().memberCountsByZone[zoneId] ?? 1,
+          });
         }
       },
       onMessage: message => {
         if (cancelled) {
           return;
         }
-        const messageId = chatMessageId(message);
-        setMessages(prev => {
-          if (messageId && prev.some(item => item.id === messageId)) {
-            return prev;
-          }
-          const mapped = mapServerMessageToEventZoneChat(message, participant);
-          const withoutOptimistic = mapped.isMine
-            ? prev.filter(item => !(item.id.startsWith('local-msg-') && item.text === mapped.text))
-            : prev;
-          return sortEventZoneChatMessages([...withoutOptimistic, mapped]);
+        setMessages(prev =>
+          mergeIncomingZoneChatMessage(prev, message, participantRef.current),
+        );
+      },
+      onRoomStatus: roomStatus => {
+        if (cancelled) {
+          return;
+        }
+        const currentRoomId = activeRoomIdRef.current;
+        if (!isSameChatRoomId(roomStatus.roomId, currentRoomId)) {
+          logZoneChat('hook.status.skip', 'roomId mismatch', {
+            level: 'warn',
+            detail: { expected: currentRoomId, received: roomStatus.roomId },
+          });
+          return;
+        }
+        if (typeof roomStatus.currentMembers !== 'number') {
+          return;
+        }
+        logZoneChat('hook.status', 'Live member count updated', {
+          detail: { roomId: currentRoomId, currentMembers: roomStatus.currentMembers },
         });
+        applyRoomStatus(roomStatus.roomId, roomStatus.currentMembers);
       },
       onError: error => {
+        if (cancelled || isBenignStompShutdownError(error.message)) {
+          return;
+        }
         logZoneChat('hook.error', error.message, { level: 'error' });
       },
     });
@@ -241,16 +274,88 @@ export function useZoneChatWebSocket(
       url: buildZoneChatWebSocketUrl(accessToken),
       roomId: activeRoomId,
       zoneId,
-      participant,
+      participant: participantRef.current,
       accessToken,
     });
 
     return () => {
       cancelled = true;
+      const leavingZoneId = zoneId;
       client.disconnect();
       clientRef.current = null;
+      if (leavingZoneId && sessionJoined) {
+        adjustMemberCount(leavingZoneId, -1);
+        reconcileMemberCountDelayed(leavingZoneId, {
+          ceiling: useZoneChatMemberStore.getState().memberCountsByZone[leavingZoneId] ?? 0,
+        });
+      } else if (leavingZoneId) {
+        refreshZoneDelayed(leavingZoneId);
+      }
     };
-  }, [realtimeEnabled, accessToken, activeRoomId, zoneId, participant]);
+  }, [
+    realtimeEnabled,
+    accessToken,
+    activeRoomId,
+    historyLoaded,
+    zoneId,
+    adjustMemberCount,
+    applyRoomStatus,
+    reconcileMemberCountDelayed,
+    refreshZoneDelayed,
+  ]);
+
+  const loadMoreHistory = useCallback(() => {
+    if (
+      !accessToken ||
+      !activeRoomId ||
+      !historyLoaded ||
+      isLoadingHistory ||
+      isLoadingMoreHistory ||
+      !hasMoreHistory ||
+      loadMoreLockRef.current
+    ) {
+      return;
+    }
+
+    const lastMessageId = oldestPersistedZoneChatMessageId(messagesRef.current);
+    if (!lastMessageId) {
+      return;
+    }
+
+    loadMoreLockRef.current = true;
+    setIsLoadingMoreHistory(true);
+
+    loadOlderZoneChatHistory(
+      activeRoomId,
+      accessToken,
+      lastMessageId,
+      participantRef.current,
+    )
+      .then(older => {
+        setMessages(prev => prependOlderZoneChatMessages(prev, older));
+        setHasMoreHistory(hasMoreChatHistory(older.length));
+        logZoneChat('hook.history.more', 'Older chat history loaded', {
+          detail: { roomId: activeRoomId, count: older.length },
+        });
+      })
+      .catch(error => {
+        logZoneChat('hook.history.more.fail', 'Failed to load older chat history', {
+          level: 'warn',
+          detail: error,
+        });
+      })
+      .finally(() => {
+        loadMoreLockRef.current = false;
+        setIsLoadingMoreHistory(false);
+      });
+  }, [
+    accessToken,
+    activeRoomId,
+    hasMoreHistory,
+    historyLoaded,
+    isLoadingHistory,
+    isLoadingMoreHistory,
+  ]);
 
   const sendMessage = useCallback(
     (text: string): boolean => {
@@ -259,23 +364,20 @@ export function useZoneChatWebSocket(
         return false;
       }
 
-      const clientMessageId = nextLocalMessageId();
-      const optimistic: EventZoneChatMessage = {
-        id: clientMessageId,
-        roomId: activeRoomId ?? roomId,
-        authorId: participant.identityValue,
-        authorNickname: participant.displayNickname,
-        text: trimmed,
-        sentAt: new Date().toISOString(),
-        isMine: true,
-      };
+      const clientMessageId = nextLocalZoneChatMessageId();
+      const optimistic = createOptimisticZoneChatMessage(
+        clientMessageId,
+        activeRoomId ?? roomId,
+        participant,
+        trimmed,
+      );
+
+      setMessages(prev => appendOptimisticZoneChatMessage(prev, optimistic));
 
       if (!realtimeEnabled || status !== 'connected') {
-        setMessages(prev => sortEventZoneChatMessages([...prev, optimistic]));
         return false;
       }
 
-      setMessages(prev => sortEventZoneChatMessages([...prev, optimistic]));
       return clientRef.current?.sendChatMessage(clientMessageId, trimmed) ?? false;
     },
     [activeRoomId, participant, realtimeEnabled, roomId, status],
@@ -289,36 +391,10 @@ export function useZoneChatWebSocket(
     sendMessage,
     isRealtime: realtimeEnabled && status === 'connected',
     isLoadingHistory,
+    isLoadingMoreHistory,
     historyLoaded,
+    hasMoreHistory,
+    loadMoreHistory,
     memberCount,
-    refreshMemberCount,
   };
-}
-
-async function resolveRoomId(
-  fallbackRoomId: string,
-  zoneId?: EventZoneId,
-): Promise<string> {
-  if (!zoneId) {
-    return fallbackRoomId;
-  }
-  try {
-    const room = await fetchChatRoomByZone(zoneId);
-    if (room?.roomId) {
-      logZoneChat('hook.resolve-room', 'Resolved backend roomId', {
-        detail: {
-          zoneId,
-          roomId: room.roomId,
-          memberCount: readChatRoomMemberCount(room),
-        },
-      });
-      return room.roomId;
-    }
-  } catch (error) {
-    logZoneChat('hook.resolve-room.fail', 'rooms/zone lookup failed', {
-      level: 'warn',
-      detail: error,
-    });
-  }
-  return fallbackRoomId;
 }

@@ -50,11 +50,7 @@ export function encodeStompFrame(frame: StompFrame): string {
  */
 export function encodeStompFrameBytes(frame: StompFrame): Uint8Array {
   const encoded = encodeStompFrame(frame);
-  const bytes = new Uint8Array(encoded.length);
-  for (let i = 0; i < encoded.length; i += 1) {
-    bytes[i] = encoded.charCodeAt(i);
-  }
-  return bytes;
+  return encodeUtf8Bytes(encoded);
 }
 
 /** STOMP 서버는 여러 프레임을 한 메시지로 보낼 수 있으므로 배열 반환 */
@@ -97,17 +93,23 @@ export function decodeWebSocketPayload(data: unknown): string {
       return new TextDecoderCtor('utf-8').decode(bytes);
     }
 
-    let result = '';
-    for (let i = 0; i < bytes.length; i += 1) {
-      result += String.fromCharCode(bytes[i]!);
-    }
-    return result;
+    return decodeUtf8Bytes(bytes);
   }
   return String(data);
 }
 
 export function isStompHeartbeat(raw: string): boolean {
-  return raw === '\n' || raw === '\r\n';
+  const trimmed = raw.trim();
+  return trimmed === '' && raw.length > 0 && /^[\r\n]+$/.test(raw);
+}
+
+/** STOMP 1.2 CONNECTED 의 heart-beat 헤더에서 클라이언트 송신 주기(ms) 파싱 */
+export function parseStompClientHeartbeatMs(heartBeatHeader?: string): number {
+  if (!heartBeatHeader) {
+    return 0;
+  }
+  const [clientOutgoing] = heartBeatHeader.split(',').map(part => Number.parseInt(part.trim(), 10));
+  return Number.isFinite(clientOutgoing) && clientOutgoing > 0 ? clientOutgoing : 0;
 }
 
 function parseSingleFrame(raw: string): StompFrame | null {
@@ -139,4 +141,87 @@ function parseSingleFrame(raw: string): StompFrame | null {
   }
 
   return { command, headers, body };
+}
+
+function encodeUtf8Bytes(value: string): Uint8Array {
+  const TextEncoderCtor = (
+    globalThis as typeof globalThis & {
+      TextEncoder?: new () => { encode(input: string): Uint8Array };
+    }
+  ).TextEncoder;
+
+  if (TextEncoderCtor) {
+    return new TextEncoderCtor().encode(value);
+  }
+
+  const bytes: number[] = [];
+  for (let i = 0; i < value.length; i += 1) {
+    const codePoint = value.codePointAt(i) ?? 0;
+    if (codePoint > 0xffff) {
+      i += 1;
+    }
+
+    if (codePoint <= 0x7f) {
+      bytes.push(codePoint);
+    } else if (codePoint <= 0x7ff) {
+      bytes.push(0xc0 | (codePoint >> 6), 0x80 | (codePoint & 0x3f));
+    } else if (codePoint <= 0xffff) {
+      bytes.push(
+        0xe0 | (codePoint >> 12),
+        0x80 | ((codePoint >> 6) & 0x3f),
+        0x80 | (codePoint & 0x3f),
+      );
+    } else {
+      bytes.push(
+        0xf0 | (codePoint >> 18),
+        0x80 | ((codePoint >> 12) & 0x3f),
+        0x80 | ((codePoint >> 6) & 0x3f),
+        0x80 | (codePoint & 0x3f),
+      );
+    }
+  }
+  return new Uint8Array(bytes);
+}
+
+function decodeUtf8Bytes(bytes: Uint8Array): string {
+  let result = '';
+  for (let i = 0; i < bytes.length; i += 1) {
+    const first = bytes[i] ?? 0;
+    if (first < 0x80) {
+      result += String.fromCharCode(first);
+      continue;
+    }
+
+    let codePoint = 0xfffd;
+    if (first >= 0xc0 && first < 0xe0 && i + 1 < bytes.length) {
+      codePoint = ((first & 0x1f) << 6) | ((bytes[i + 1] ?? 0) & 0x3f);
+      i += 1;
+    } else if (first >= 0xe0 && first < 0xf0 && i + 2 < bytes.length) {
+      codePoint =
+        ((first & 0x0f) << 12) |
+        (((bytes[i + 1] ?? 0) & 0x3f) << 6) |
+        ((bytes[i + 2] ?? 0) & 0x3f);
+      i += 2;
+    } else if (first >= 0xf0 && first < 0xf8 && i + 3 < bytes.length) {
+      codePoint =
+        ((first & 0x07) << 18) |
+        (((bytes[i + 1] ?? 0) & 0x3f) << 12) |
+        (((bytes[i + 2] ?? 0) & 0x3f) << 6) |
+        ((bytes[i + 3] ?? 0) & 0x3f);
+      i += 3;
+    }
+
+    result += String.fromCodePoint(codePoint);
+  }
+  return result;
+}
+
+/** 의도적 DISCONNECT 직후 서버가 보내는 ERROR — 실패가 아님 */
+export function isBenignStompShutdownError(message: string): boolean {
+  const normalized = message.trim().toLowerCase();
+  return (
+    normalized.includes('session closed') ||
+    normalized.includes('connection closed') ||
+    normalized.includes('going away')
+  );
 }

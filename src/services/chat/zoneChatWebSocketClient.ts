@@ -2,7 +2,8 @@ import {
   ZONE_CHAT_WS_CONFIG,
   buildZoneChatWebSocketUrl,
 } from '../../constants/chat/zoneChatConfig';
-import type { ChatMessage, ChatSendPayload } from '../../types/chatApi';
+import type { ChatMessage, ChatSendPayload, ParsedChatRoomStatusPayload } from '../../types/chatApi';
+import { isChatStatusDestination, parseChatRoomStatusBody } from '../../types/chatApi';
 import type {
   ZoneChatConnectionStatus,
   ZoneChatWebSocketConnectOptions,
@@ -12,24 +13,30 @@ import {
   decodeStompFrames,
   decodeWebSocketPayload,
   encodeStompFrameBytes,
+  isBenignStompShutdownError,
   isStompHeartbeat,
+  parseStompClientHeartbeatMs,
   type StompFrame,
 } from './stompFrame';
 
 export type ZoneChatWebSocketListener = {
   onStatusChange?: (status: ZoneChatConnectionStatus) => void;
-  /** SUBSCRIBE 로 수신한 채팅 메시지 (백엔드 ChatMessage) */
+  /** SUBSCRIBE /sub/chat/room/{roomId} — 채팅 메시지 */
   onMessage?: (message: ChatMessage) => void;
+  /** SUBSCRIBE /sub/chat/room/{roomId}/status — 실시간 인원 (채팅방 진입 시 메시지와 동시 구독) */
+  onRoomStatus?: (status: ParsedChatRoomStatusPayload) => void;
   onError?: (error: Error) => void;
 };
 
-const SUBSCRIBE_DESTINATION = (roomId: string) => `/sub/chat/room/${roomId}`;
-const SEND_DESTINATION = '/pub/chat/message';
+const MESSAGE_SUBSCRIBE_DESTINATION = ZONE_CHAT_WS_CONFIG.stomp.roomMessages;
+const STATUS_SUBSCRIBE_DESTINATION = ZONE_CHAT_WS_CONFIG.stomp.roomStatus;
+const SEND_DESTINATION = ZONE_CHAT_WS_CONFIG.stomp.sendMessage;
 
 /**
  * STOMP over raw WebSocket 채팅 클라이언트.
  * CONNECT 시 Authorization: Bearer 헤더로 인증하고
- * /sub/chat/room/{roomId} 구독 · /pub/chat/message 발행.
+ * /sub/chat/room/{roomId} · /sub/chat/room/{roomId}/status 구독 · /pub/chat/message 발행.
+ * 목록 화면 인원은 zoneChatRoomStatusHub 가 담당합니다.
  */
 export class ZoneChatWebSocketClient {
   private ws: WebSocket | null = null;
@@ -39,9 +46,12 @@ export class ZoneChatWebSocketClient {
   private reconnectAttempt = 0;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
-  private subscriptionId = 'sub-0';
+  private heartbeatBytes: Uint8Array | null = null;
+  private messageSubscriptionId = 'sub-messages';
+  private statusSubscriptionId = 'sub-status';
   private intentionalClose = false;
   private stompConnected = false;
+  private disconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
   getStatus(): ZoneChatConnectionStatus {
     return this.status;
@@ -62,14 +72,35 @@ export class ZoneChatWebSocketClient {
     this.intentionalClose = true;
     this.clearReconnectTimer();
     this.clearHeartbeatTimer();
-    if (this.ws) {
-      if (this.stompConnected && this.ws.readyState === WebSocket.OPEN) {
-        this.sendFrame({ command: 'DISCONNECT', headers: {}, body: '' });
-      }
-      this.ws.close();
-      this.ws = null;
+    this.clearDisconnectTimer();
+
+    const ws = this.ws;
+    if (!ws) {
+      this.stompConnected = false;
+      this.setStatus('disconnected');
+      return;
     }
-    this.stompConnected = false;
+
+    const finishClose = () => {
+      if (this.ws === ws) {
+        try {
+          ws.close();
+        } catch {
+          /* ignore */
+        }
+        this.ws = null;
+      }
+      this.stompConnected = false;
+    };
+
+    if (this.stompConnected && ws.readyState === WebSocket.OPEN) {
+      this.sendFrame({ command: 'DISCONNECT', headers: {}, body: '' });
+      this.stompConnected = false;
+      this.disconnectTimer = setTimeout(finishClose, ZONE_CHAT_WS_CONFIG.gracefulDisconnectMs);
+    } else {
+      finishClose();
+    }
+
     this.setStatus('disconnected');
   }
 
@@ -95,6 +126,7 @@ export class ZoneChatWebSocketClient {
   private openSocket(options: ZoneChatWebSocketConnectOptions): void {
     this.clearReconnectTimer();
     this.clearHeartbeatTimer();
+    this.clearDisconnectTimer();
     this.stompConnected = false;
 
     if (this.ws) {
@@ -149,6 +181,9 @@ export class ZoneChatWebSocketClient {
     };
 
     this.ws.onerror = () => {
+      if (this.intentionalClose) {
+        return;
+      }
       const error = new Error('WebSocket connection error');
       logZoneChat('stomp.ws.error', error.message, { level: 'error' });
       this.listeners.onError?.(error);
@@ -192,7 +227,7 @@ export class ZoneChatWebSocketClient {
 
     switch (command) {
       case 'CONNECTED':
-        this.onStompConnected();
+        this.onStompConnected(frame);
         break;
       case 'MESSAGE':
         this.onStompMessage(frame);
@@ -205,25 +240,64 @@ export class ZoneChatWebSocketClient {
     }
   }
 
-  private onStompConnected(): void {
+  private onStompConnected(frame: StompFrame): void {
     if (!this.connectOptions) {
       return;
     }
     this.stompConnected = true;
     this.reconnectAttempt = 0;
     this.setStatus('connected');
+    this.startHeartbeat(frame.headers['heart-beat']);
 
     logZoneChat('stomp.connected', 'STOMP CONNECTED, subscribing', {
-      detail: { roomId: this.connectOptions.roomId },
+      detail: {
+        roomId: this.connectOptions.roomId,
+        heartBeat: frame.headers['heart-beat'],
+      },
     });
 
     this.sendFrame({
       command: 'SUBSCRIBE',
       headers: {
-        id: this.subscriptionId,
-        destination: SUBSCRIBE_DESTINATION(this.connectOptions.roomId),
+        id: this.messageSubscriptionId,
+        destination: MESSAGE_SUBSCRIBE_DESTINATION(this.connectOptions.roomId),
       },
       body: '',
+    });
+    this.sendFrame({
+      command: 'SUBSCRIBE',
+      headers: {
+        id: this.statusSubscriptionId,
+        destination: STATUS_SUBSCRIBE_DESTINATION(this.connectOptions.roomId),
+      },
+      body: '',
+    });
+  }
+
+  private startHeartbeat(heartBeatHeader?: string): void {
+    this.clearHeartbeatTimer();
+    const intervalMs = parseStompClientHeartbeatMs(heartBeatHeader);
+    if (intervalMs <= 0) {
+      return;
+    }
+
+    this.heartbeatBytes = new Uint8Array([0x0a]);
+    this.heartbeatTimer = setInterval(() => {
+      if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+        return;
+      }
+      try {
+        this.ws.send(this.heartbeatBytes!);
+      } catch (error) {
+        logZoneChat('stomp.heartbeat.fail', 'Failed to send heartbeat', {
+          level: 'warn',
+          detail: error,
+        });
+      }
+    }, intervalMs);
+
+    logZoneChat('stomp.heartbeat', 'Heartbeat enabled', {
+      detail: { intervalMs },
     });
   }
 
@@ -231,6 +305,25 @@ export class ZoneChatWebSocketClient {
     if (!frame.body) {
       return;
     }
+
+    const destination = frame.headers.destination ?? '';
+
+    if (isChatStatusDestination(destination)) {
+      const status = parseChatRoomStatusBody(frame.body);
+      if (status) {
+        logZoneChat('stomp.room-status', 'Received room status', {
+          detail: { roomId: status.roomId, currentMembers: status.currentMembers },
+        });
+        this.listeners.onRoomStatus?.(status);
+      } else {
+        logZoneChat('stomp.room-status.parse.fail', 'Bad status MESSAGE body', {
+          level: 'warn',
+          detail: { preview: frame.body.slice(0, 120) },
+        });
+      }
+      return;
+    }
+
     try {
       const message = JSON.parse(frame.body) as ChatMessage;
       logZoneChat('stomp.message', 'Received chat message', {
@@ -247,8 +340,20 @@ export class ZoneChatWebSocketClient {
 
   private onStompError(frame: StompFrame): void {
     const message = frame.headers.message || frame.body || 'STOMP ERROR';
+
+    if (this.intentionalClose || isBenignStompShutdownError(message)) {
+      logZoneChat('stomp.disconnect', 'STOMP session ended', {
+        detail: { message, intentionalClose: this.intentionalClose },
+      });
+      return;
+    }
+
     logZoneChat('stomp.error', message, { level: 'error' });
     this.listeners.onError?.(new Error(message));
+
+    this.stompConnected = false;
+    this.clearHeartbeatTimer();
+    this.ws?.close();
   }
 
   private sendFrame(frame: StompFrame): boolean {
@@ -321,12 +426,20 @@ export class ZoneChatWebSocketClient {
       clearInterval(this.heartbeatTimer);
       this.heartbeatTimer = null;
     }
+    this.heartbeatBytes = null;
   }
 
   private clearReconnectTimer(): void {
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
+    }
+  }
+
+  private clearDisconnectTimer(): void {
+    if (this.disconnectTimer) {
+      clearTimeout(this.disconnectTimer);
+      this.disconnectTimer = null;
     }
   }
 

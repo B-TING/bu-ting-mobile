@@ -21,7 +21,6 @@ import { buildRandomMockZoneEvent } from '../../constants/eventZone/zoneEvents';
 import { useCurrentEventZone } from '../../hooks/useCurrentEventZone';
 import {
   useAllZoneChatMemberCounts,
-  useZoneChatRoomSummary,
 } from '../../hooks/useZoneChatRoomSummary';
 import type { RootStackParamList } from '../../navigation/types';
 import { useAppStore, useZoneEventStore } from '../../stores';
@@ -90,10 +89,10 @@ export function EventZoneScreen({ navigation }: Props) {
   const currentZone = EVENT_ZONE_BY_ID[currentZoneId];
   const selectedZone = selectedZoneId ? EVENT_ZONE_BY_ID[selectedZoneId] : null;
   const { memberCounts: liveMemberCounts } = useAllZoneChatMemberCounts();
-  const { memberCount: currentLiveMemberCount } = useZoneChatRoomSummary(currentZoneId);
-  const { memberCount: selectedLiveMemberCount } = useZoneChatRoomSummary(
-    selectedZoneId ?? undefined,
-  );
+  const currentLiveMemberCount = liveMemberCounts[currentZoneId] ?? null;
+  const selectedLiveMemberCount = selectedZoneId
+    ? (liveMemberCounts[selectedZoneId] ?? null)
+    : null;
   const currentZoneRoom = useMemo(
     () => getChatRoomByZoneId(currentZoneId),
     [currentZoneId],
