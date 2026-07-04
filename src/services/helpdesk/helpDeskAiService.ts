@@ -1,14 +1,17 @@
 import {
   getFestivalStatus,
-  MOCK_BUSAN_FESTIVALS,
+  sortFestivalsByStatus,
+  todayIso,
   type BusanFestival,
 } from '../../constants/festival/festivalCalendar';
 import { PLACE_CATALOG } from '../../constants/places/placeCatalog';
 import type { HelpDeskIntent } from '../../constants/helpdesk/helpDesk';
 import { HELP_DESK_COPY } from '../../constants/helpdesk/helpDesk';
 import { BUSAN_ATTRACTIONS, BUSAN_FOODS } from '../../constants/plan/planWizard';
+import { searchFestivals } from '../places/placesApiService';
 import type { TravelPlan } from '../types/travelPlan';
 import type { AppLanguage } from '../types/user';
+import { toYyyymmdd } from '../../utils/places/festivalApiMapper';
 import { getNearestUpcomingStop } from '../../utils/plan/planSchedule';
 import { findNearbyRebootCandidates } from '../../utils/places/rebootPlaces';
 import { fetchSubwayLockerStations } from '../locker/subwayLockerService';
@@ -141,9 +144,32 @@ function buildEmergencyResponse(language: AppLanguage): string {
   return `🚨 **韩国紧急联系方式**\n\n• **119** — 消防/急救\n• **112** — 警察\n• **118** — 海警\n• **1339** — 疾病管理热线\n• **1330** — 旅游翻译咨询\n\n遇险请优先拨打 119 或 112。`;
 }
 
-function buildFestivalsResponse(ctx: HelpDeskContext): string {
+async function buildFestivalsResponse(ctx: HelpDeskContext): Promise<string> {
   const { language } = ctx;
-  const ongoing = MOCK_BUSAN_FESTIVALS.filter(f => getFestivalStatus(f) === 'ongoing');
+  const today = todayIso();
+  const end = new Date();
+  end.setDate(end.getDate() + 30);
+  const eventEndDate = toYyyymmdd(
+    `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, '0')}-${String(end.getDate()).padStart(2, '0')}`,
+  );
+
+  let festivals: BusanFestival[] = [];
+  try {
+    const result = await searchFestivals({
+      eventStartDate: toYyyymmdd(today),
+      eventEndDate,
+      page: 1,
+      size: 50,
+      arrange: 'C',
+    });
+    festivals = result.festivals;
+  } catch {
+    return HELP_DESK_COPY[language].noOngoingFestivals;
+  }
+
+  const ongoing = sortFestivalsByStatus(
+    festivals.filter(f => getFestivalStatus(f) === 'ongoing'),
+  );
 
   if (ongoing.length === 0) {
     return HELP_DESK_COPY[language].noOngoingFestivals;

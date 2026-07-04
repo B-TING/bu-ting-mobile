@@ -1,3 +1,4 @@
+import type { MockEvent } from '../home/mainHome';
 import type { AppLanguage } from '../../types/user';
 import type { RouteItem } from '../../types/travelPlan';
 
@@ -73,6 +74,8 @@ export const FESTIVAL_CALENDAR_COPY: Record<
     commentsComingSoon: string;
     close: string;
     mockHint: string;
+    tagFestival: string;
+    tagExhibition: string;
   }
 > = {
   ko: {
@@ -101,6 +104,8 @@ export const FESTIVAL_CALENDAR_COPY: Record<
     commentsComingSoon: '코멘트 기능은 준비 중이에요',
     close: '닫기',
     mockHint: '축제 API 연동 전 목업 데이터입니다.',
+    tagFestival: '축제',
+    tagExhibition: '전시',
   },
   en: {
     screenTitle: 'Festival Calendar',
@@ -128,6 +133,8 @@ export const FESTIVAL_CALENDAR_COPY: Record<
     commentsComingSoon: 'Comments are coming soon',
     close: 'Close',
     mockHint: 'Mock data until festival API is connected.',
+    tagFestival: 'Festival',
+    tagExhibition: 'Exhibition',
   },
   ja: {
     screenTitle: '祭りカレンダー',
@@ -155,6 +162,8 @@ export const FESTIVAL_CALENDAR_COPY: Record<
     commentsComingSoon: 'コメント機能は準備中です',
     close: '閉じる',
     mockHint: '祭りAPI連携前のモックデータです。',
+    tagFestival: '祭り',
+    tagExhibition: '展示',
   },
   zh: {
     screenTitle: '节庆日历',
@@ -182,6 +191,8 @@ export const FESTIVAL_CALENDAR_COPY: Record<
     commentsComingSoon: '评论功能即将上线',
     close: '关闭',
     mockHint: '节庆 API 接入前的模拟数据。',
+    tagFestival: '节庆',
+    tagExhibition: '展览',
   },
 };
 
@@ -571,8 +582,41 @@ export function festivalDaysInMonth(
   return days;
 }
 
-export function getFestivalById(id: string): BusanFestival | undefined {
-  return MOCK_BUSAN_FESTIVALS.find(f => f.id === id);
+export function getFestivalById(
+  id: string,
+  festivals?: BusanFestival[],
+): BusanFestival | undefined {
+  const source = festivals ?? MOCK_BUSAN_FESTIVALS;
+  return source.find(f => f.id === id);
+}
+
+export function festivalTagLabel(
+  tag: BusanFestival['tag'],
+  language: AppLanguage,
+): string {
+  const copy = FESTIVAL_CALENDAR_COPY[language];
+  return tag === 'FESTIVAL' ? copy.tagFestival : copy.tagExhibition;
+}
+
+export function festivalToHomeEvent(festival: BusanFestival): MockEvent {
+  return {
+    id: festival.id,
+    tag: festival.tag,
+    titleKo: festival.titleKo,
+    titleEn: festival.titleEn,
+    titleJa: festival.titleJa,
+    titleZh: festival.titleZh,
+    locationKo: festival.locationKo,
+    locationEn: festival.locationEn,
+    locationJa: festival.locationJa,
+    locationZh: festival.locationZh,
+    dateKo: festivalPeriodLabel(festival, 'ko'),
+    dateEn: festivalPeriodLabel(festival, 'en'),
+    dateJa: festivalPeriodLabel(festival, 'ja'),
+    dateZh: festivalPeriodLabel(festival, 'zh'),
+    imageColor: festival.imageColor,
+    imageEmoji: festival.imageEmoji,
+  };
 }
 
 export function festivalTitle(festival: BusanFestival, language: AppLanguage): string {

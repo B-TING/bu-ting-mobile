@@ -134,7 +134,9 @@ export type PlaceDetailVO = {
   openingHours?: PlaceOpeningHoursVO;
   editorialSummary?: string;
   /** 한국관광공사 detailIntro 필드 (체크인, 주차 등) */
-  tourismInfoRows?: { label: string; value: string }[];
+  tourismInfoRows?: { key: string; label: string; value: string }[];
+  /** 상세 시트에서 언어별 라벨 재생성용 */
+  tourismRawDetails?: Record<string, string>;
   reviews: PlaceReviewVO[];
   photos: PlacePhotoVO[];
   amenities?: PlaceAmenitiesVO;

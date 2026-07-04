@@ -16,17 +16,18 @@ import { useAppAlert } from '../components/shared/modals';
 import { HELP_DESK_COPY } from '../constants/helpdesk/helpDesk';
 import {
   MAIN_HOME_COPY,
-  MOCK_EVENTS,
   MOCK_SPECIAL_OFFER,
   MOCK_TRAVELOGUE,
   QUICK_ACCESS_ITEMS,
 } from '../constants/home/mainHome';
+import { festivalToHomeEvent } from '../constants/festival/festivalCalendar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { layout } from '../constants/common/layout';
 import type { RootStackParamList } from '../navigation/types';
 import { PLACE_CONTENT_TYPE } from '../types/placesApi';
+import { upcomingFestivalDateRangeYyyymmdd } from '../utils/places/festivalApiMapper';
 import { showTravelSurveyOnboardingPrompt } from '../services/setup/travelSurveyOnboardingPrompt';
-import { selectActivePlan, useAppStore, usePlanStore, useTravelogueStore } from '../stores';
+import { selectActivePlan, useAppStore, useFestivalStore, usePlanStore, useTravelogueStore } from '../stores';
 import { isTraveloguePublic } from '../utils/review/travelReview';
 import { getNearestUpcomingStop } from '../utils/plan/planSchedule';
 import { getChatRoomByZoneId } from '../constants/eventZone/eventZone';
@@ -54,6 +55,18 @@ export function MainHomeScreen({ navigation }: Props) {
   );
   const [activeTab, setActiveTab] = useState<NavbarTab>('home');
   const [menuOpen, setMenuOpen] = useState(false);
+  const homeFestivals = useFestivalStore(s => s.homeFestivals);
+  const fetchHomeFestivals = useFestivalStore(s => s.fetchHomeFestivals);
+  const homeEvents = useMemo(
+    () => homeFestivals.map(festivalToHomeEvent),
+    [homeFestivals],
+  );
+
+  useEffect(() => {
+    void fetchHomeFestivals(
+      language === 'ko' ? '행사 정보를 불러오지 못했어요' : 'Could not load events',
+    );
+  }, [fetchHomeFestivals, language]);
 
   useEffect(() => {
     if (!pendingTravelSurveyPrompt) {
@@ -209,10 +222,18 @@ export function MainHomeScreen({ navigation }: Props) {
         <EventsSectionMock
           title={copy.eventsTitle}
           viewAllLabel={copy.eventsViewAll}
-          events={MOCK_EVENTS}
+          events={homeEvents}
           language={language}
           onViewAllPress={() => navigation.navigate('FestivalCalendar')}
-          onEventPress={id => navigation.navigate('FestivalDetail', { festivalId: id })}
+          onEventPress={id => {
+            const { eventStartDate, eventEndDate } = upcomingFestivalDateRangeYyyymmdd();
+            navigation.navigate('PlaceMapSearch', {
+              contentTypeId: PLACE_CONTENT_TYPE.festival,
+              selectedContentId: id,
+              festivalEventStartDate: eventStartDate,
+              festivalEventEndDate: eventEndDate,
+            });
+          }}
         />
 
         <TraveloguePreviewMock

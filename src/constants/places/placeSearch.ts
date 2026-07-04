@@ -47,6 +47,14 @@ export const PLACE_SEARCH_COPY: Record<
     categoryLabels: Record<PlaceContentTypeId, string>;
     categoryTabA11y: (label: string) => string;
     subtitleLabel: (label: string) => string;
+    festivalSummary: (count: number) => string;
+    festivalEmptySub: string;
+    festivalMapSubtitle: string;
+    festivalListMeta: (address: string) => string;
+    festivalDetailMeta: string;
+    festivalTagFestival: string;
+    festivalTagExhibition: string;
+    detailSectionEvent: string;
   }
 > = {
   ko: {
@@ -92,6 +100,14 @@ export const PLACE_SEARCH_COPY: Record<
     },
     categoryTabA11y: label => `${label} 보기`,
     subtitleLabel: label => label,
+    festivalSummary: count => `이번 달 행사 · ${count}건`,
+    festivalEmptySub: '다른 달 축제는 캘린더에서 확인해 보세요',
+    festivalMapSubtitle: '행사 장소를 지도에서 확인할 수 있어요',
+    festivalListMeta: address => (address ? address : '행사 정보'),
+    festivalDetailMeta: '한국관광공사 행사 정보',
+    festivalTagFestival: '축제',
+    festivalTagExhibition: '전시',
+    detailSectionEvent: '행사 정보',
   },
   en: {
     screenTitle: 'Find places in Busan',
@@ -136,6 +152,14 @@ export const PLACE_SEARCH_COPY: Record<
     },
     categoryTabA11y: label => `Show ${label}`,
     subtitleLabel: label => label,
+    festivalSummary: count => `Events this month · ${count}`,
+    festivalEmptySub: 'Browse the festival calendar for other months',
+    festivalMapSubtitle: 'Festival venues on the map',
+    festivalListMeta: address => (address ? address : 'Event info'),
+    festivalDetailMeta: 'Korea Tourism Organization event info',
+    festivalTagFestival: 'Festival',
+    festivalTagExhibition: 'Exhibition',
+    detailSectionEvent: 'Event info',
   },
   ja: {
     screenTitle: '釜山のスポット',
@@ -180,6 +204,14 @@ export const PLACE_SEARCH_COPY: Record<
     },
     categoryTabA11y: label => `${label}を表示`,
     subtitleLabel: label => label,
+    festivalSummary: count => `今月のイベント · ${count}件`,
+    festivalEmptySub: '他の月は祭りカレンダーで確認してください',
+    festivalMapSubtitle: '地図で会場を確認できます',
+    festivalListMeta: address => (address ? address : 'イベント情報'),
+    festivalDetailMeta: '韓国観光公社イベント情報',
+    festivalTagFestival: '祭り',
+    festivalTagExhibition: '展示',
+    detailSectionEvent: 'イベント情報',
   },
   zh: {
     screenTitle: '釜山地点搜索',
@@ -224,6 +256,14 @@ export const PLACE_SEARCH_COPY: Record<
     },
     categoryTabA11y: label => `查看${label}`,
     subtitleLabel: label => label,
+    festivalSummary: count => `本月活动 · ${count} 个`,
+    festivalEmptySub: '其他月份请查看节庆日历',
+    festivalMapSubtitle: '在地图上查看活动地点',
+    festivalListMeta: address => (address ? address : '活动信息'),
+    festivalDetailMeta: '韩国观光公社活动信息',
+    festivalTagFestival: '节庆',
+    festivalTagExhibition: '展览',
+    detailSectionEvent: '活动信息',
   },
 };
 
@@ -231,4 +271,8 @@ export function defaultPlaceContentTypeId(
   value: PlaceContentTypeId | undefined,
 ): PlaceContentTypeId {
   return value ?? PLACE_CONTENT_TYPE.attraction;
+}
+
+export function isFestivalPlaceSearch(contentTypeId: PlaceContentTypeId): boolean {
+  return contentTypeId === PLACE_CONTENT_TYPE.festival;
 }

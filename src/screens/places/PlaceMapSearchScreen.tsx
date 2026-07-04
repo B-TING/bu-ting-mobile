@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,6 +8,7 @@ import { PlaceMapView } from '../../components/places/PlaceMapView';
 import { BackButton } from '../../components/shared/buttons/BackButton';
 import {
   defaultPlaceContentTypeId,
+  isFestivalPlaceSearch,
   PLACE_SEARCH_CENTER_THRESHOLD_M,
   PLACE_SEARCH_COPY,
   PLACE_SEARCH_RADIUS_M,
@@ -20,6 +21,10 @@ import type { BusanPlace } from '../../types/placeSearch';
 import { PLACE_MAP_SEARCH_TYPES } from '../../types/placesApi';
 import type { PlaceContentTypeId } from '../../types/placesApi';
 import { sortBookmarkedFirst } from '../../utils/bookmark/sortBookmarkedFirst';
+import {
+  currentMonthDateRangeYyyymmdd,
+  upcomingFestivalDateRangeYyyymmdd,
+} from '../../utils/places/festivalApiMapper';
 import { haversineKm } from '../../utils/geo/geo';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PlaceMapSearch'>;
@@ -31,6 +36,21 @@ function centersDifferBeyondThreshold(
 ): boolean {
   const distanceM = haversineKm(a.lat, a.lng, b.lat, b.lng) * 1000;
   return distanceM > thresholdM;
+}
+
+function resolveFestivalDateRange(
+  params: RootStackParamList['PlaceMapSearch'],
+): { eventStartDate: string; eventEndDate: string } {
+  if (params?.festivalEventStartDate) {
+    return {
+      eventStartDate: params.festivalEventStartDate,
+      eventEndDate: params.festivalEventEndDate ?? params.festivalEventStartDate,
+    };
+  }
+  if (params?.selectedContentId) {
+    return upcomingFestivalDateRangeYyyymmdd();
+  }
+  return currentMonthDateRangeYyyymmdd();
 }
 
 export function PlaceMapSearchScreen({ navigation, route }: Props) {
@@ -45,13 +65,20 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
   const [detailOpen, setDetailOpen] = useState(false);
   const [searchCenter, setSearchCenter] = useState<EventZoneCoordinate | null>(null);
   const [mapCenter, setMapCenter] = useState<EventZoneCoordinate | null>(null);
+  const [festivalDateRange, setFestivalDateRange] = useState(() =>
+    resolveFestivalDateRange(route.params),
+  );
+  const selectedContentHandledRef = useRef<string | null>(null);
 
+  const isFestivalMode = isFestivalPlaceSearch(contentTypeId);
   const { location } = useCurrentEventZone();
 
   const cacheEntry = usePlaceSearchStore(s => s.cacheByType[contentTypeId]);
   const loading = usePlaceSearchStore(s => s.isLoading(contentTypeId));
   const hasCacheForCenter = usePlaceSearchStore(s => s.hasCacheForCenter);
+  const hasCacheForFestivalRange = usePlaceSearchStore(s => s.hasCacheForFestivalRange);
   const searchByLocation = usePlaceSearchStore(s => s.searchByLocation);
+  const searchFestivalsByDateRange = usePlaceSearchStore(s => s.searchFestivalsByDateRange);
   const updateMapCenterInCache = usePlaceSearchStore(s => s.updateMapCenter);
   const getCacheEntry = usePlaceSearchStore(s => s.getEntry);
 
@@ -67,7 +94,16 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
     if (route.params?.contentTypeId) {
       setContentTypeId(defaultPlaceContentTypeId(route.params.contentTypeId));
     }
-  }, [route.params?.contentTypeId]);
+    if (route.params?.festivalEventStartDate || route.params?.festivalEventEndDate) {
+      setFestivalDateRange(resolveFestivalDateRange(route.params));
+    }
+    selectedContentHandledRef.current = null;
+  }, [
+    route.params?.contentTypeId,
+    route.params?.festivalEventStartDate,
+    route.params?.festivalEventEndDate,
+    route.params?.selectedContentId,
+  ]);
 
   const applyCachedCenters = useCallback((typeId: PlaceContentTypeId) => {
     const cached = getCacheEntry(typeId);
@@ -76,10 +112,24 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
     }
     setSearchCenter(cached.searchCenter);
     setMapCenter(cached.mapCenter);
+    if (cached.festivalDateRange) {
+      setFestivalDateRange(cached.festivalDateRange);
+    }
     return true;
   }, [getCacheEntry]);
 
   useEffect(() => {
+    if (isFestivalMode) {
+      if (applyCachedCenters(contentTypeId)) {
+        return;
+      }
+      if (!mapCenter && location) {
+        setSearchCenter(location);
+        setMapCenter(location);
+      }
+      return;
+    }
+
     if (applyCachedCenters(contentTypeId)) {
       return;
     }
@@ -87,11 +137,35 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
       setSearchCenter(location);
       setMapCenter(location);
     }
-    // searchCenter 변경(이곳에서 검색) 시 캐시 좌표로 되돌리지 않도록 contentTypeId·location만 감시
     // eslint-disable-next-line react-hooks/exhaustive-deps -- searchCenter는 의도적으로 제외
-  }, [contentTypeId, location, applyCachedCenters]);
+  }, [contentTypeId, location, applyCachedCenters, isFestivalMode]);
 
   useEffect(() => {
+    if (isFestivalMode) {
+      if (!mapCenter) {
+        return;
+      }
+      if (
+        hasCacheForFestivalRange(
+          festivalDateRange.eventStartDate,
+          festivalDateRange.eventEndDate,
+        )
+      ) {
+        return;
+      }
+
+      setSelectedPlace(null);
+      setDetailOpen(false);
+
+      void searchFestivalsByDateRange({
+        eventStartDate: festivalDateRange.eventStartDate,
+        eventEndDate: festivalDateRange.eventEndDate,
+        mapCenter,
+        emptyErrorFallback: copy.festivalEmptySub,
+      });
+      return;
+    }
+
     if (!searchCenter) {
       return;
     }
@@ -108,9 +182,45 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
       mapCenter: mapCenter ?? searchCenter,
       emptyErrorFallback: copy.emptySub,
     });
-  }, [contentTypeId, searchCenter, mapCenter, hasCacheForCenter, searchByLocation, copy.emptySub]);
+  }, [
+    isFestivalMode,
+    contentTypeId,
+    searchCenter,
+    mapCenter,
+    festivalDateRange,
+    hasCacheForCenter,
+    hasCacheForFestivalRange,
+    searchByLocation,
+    searchFestivalsByDateRange,
+    copy.emptySub,
+    copy.festivalEmptySub,
+  ]);
+
+  useEffect(() => {
+    const selectedContentId = route.params?.selectedContentId;
+    if (!selectedContentId || places.length === 0) {
+      return;
+    }
+    const handleKey = `${selectedContentId}:${places.length}`;
+    if (selectedContentHandledRef.current === handleKey) {
+      return;
+    }
+
+    const place = places.find(item => item.contentId === selectedContentId);
+    if (!place) {
+      return;
+    }
+
+    selectedContentHandledRef.current = handleKey;
+    setSelectedPlace(place);
+    setDetailOpen(true);
+    setMapCenter(place.location);
+  }, [route.params?.selectedContentId, places]);
 
   const showSearchHere = useMemo(() => {
+    if (isFestivalMode) {
+      return false;
+    }
     if (!searchCenter || !mapCenter) {
       return false;
     }
@@ -119,16 +229,23 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
       mapCenter,
       PLACE_SEARCH_CENTER_THRESHOLD_M,
     );
-  }, [searchCenter, mapCenter]);
+  }, [isFestivalMode, searchCenter, mapCenter]);
 
   const sortedPlaces = useMemo(
     () => sortBookmarkedFirst(places, bookmarkedIds, (a, b) => a.name.localeCompare(b.name, 'ko')),
     [places, bookmarkedIds],
   );
 
+  const summaryText = isFestivalMode
+    ? copy.festivalSummary(places.length)
+    : copy.summary(places.length, radiusKm);
+
+  const mapSubtitle = isFestivalMode ? copy.festivalMapSubtitle : copy.mapSubtitle;
+
   const handleSelectPlace = useCallback((place: BusanPlace) => {
     setSelectedPlace(place);
     setDetailOpen(true);
+    setMapCenter(place.location);
   }, []);
 
   const handleCloseDetail = useCallback(() => {
@@ -166,6 +283,11 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
       setContentTypeId(typeId);
       setSelectedPlace(null);
       setDetailOpen(false);
+      selectedContentHandledRef.current = null;
+
+      if (isFestivalPlaceSearch(typeId)) {
+        setFestivalDateRange(currentMonthDateRangeYyyymmdd());
+      }
 
       if (applyCachedCenters(typeId)) {
         return;
@@ -223,9 +345,7 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
             );
           })}
         </ScrollView>
-        <Text className="mt-2 text-sm font-semibold text-brand-text">
-          {copy.summary(places.length, radiusKm)}
-        </Text>
+        <Text className="mt-2 text-sm font-semibold text-brand-text">{summaryText}</Text>
         <Text className="mt-0.5 text-[11px] text-brand-muted">{copy.dataHint}</Text>
         {error ? <Text className="mt-1 text-xs text-red-500">{error}</Text> : null}
       </View>
@@ -240,7 +360,7 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
             onSelectPlace={handleSelectPlace}
             onMapCenterChange={handleMapCenterChange}
             mapTitle={copy.mapTitle}
-            mapSubtitle={copy.mapSubtitle}
+            mapSubtitle={mapSubtitle}
             captionSuffix={captionSuffix}
           />
         </View>
@@ -271,7 +391,9 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
                 <Text className="text-center text-sm font-semibold text-brand-text">
                   {copy.empty}
                 </Text>
-                <Text className="mt-1 text-center text-xs text-brand-muted">{copy.emptySub}</Text>
+                <Text className="mt-1 text-center text-xs text-brand-muted">
+                  {isFestivalMode ? copy.festivalEmptySub : copy.emptySub}
+                </Text>
               </View>
             ) : (
               <>
@@ -302,7 +424,9 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
                         </View>
                         <Text className="mt-0.5 text-xs text-brand-muted">
                           {copy.categoryLabels[place.contentTypeId]} ·{' '}
-                          {copy.ratingSummary(place.rating, place.userRatingsTotal)}
+                          {isFestivalPlaceSearch(place.contentTypeId)
+                            ? copy.festivalListMeta(place.address)
+                            : copy.ratingSummary(place.rating, place.userRatingsTotal)}
                         </Text>
                       </Pressable>
                     );

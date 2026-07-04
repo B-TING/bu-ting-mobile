@@ -224,6 +224,7 @@ export function mapPlaceDetailToPlaceDetailVO(
         }
       : undefined,
     openingHours,
+    tourismRawDetails: detail.details,
     tourismInfoRows: tourismInfoRows.length > 0 ? tourismInfoRows : undefined,
     reviews: reviews.map((review, index) => ({
       reviewId: `${detail.contentId}-${index}`,

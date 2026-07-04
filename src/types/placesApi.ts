@@ -74,6 +74,31 @@ export type PlaceSearchResponseDto = {
   total?: number;
 };
 
+/** GET /api/v1/places/festivals 목록 항목 */
+export type FestivalSearchItemDto = {
+  contentId: string;
+  contentTypeId: string;
+  title: string;
+  address?: string;
+  imageUrl?: string;
+  thumbnailUrl?: string;
+  latitude?: number;
+  longitude?: number;
+  regionCode?: string;
+  districtCode?: string;
+  eventStartDate: string;
+  eventEndDate?: string;
+};
+
+export type FestivalSearchResponseDto = {
+  eventStartDate: string;
+  eventEndDate?: string;
+  page: number;
+  size: number;
+  totalCount: number;
+  festivals: FestivalSearchItemDto[];
+};
+
 export type PlaceDetailReviewDto = {
   authorName?: string;
   rating?: number;
