@@ -49,8 +49,7 @@ export function encodeStompFrame(frame: StompFrame): string {
  * 바이너리로 보내야 서버가 CONNECTED 를 반환합니다.
  */
 export function encodeStompFrameBytes(frame: StompFrame): Uint8Array {
-  const encoded = encodeStompFrame(frame);
-  return encodeUtf8Bytes(encoded);
+  return new TextEncoder().encode(encodeStompFrame(frame));
 }
 
 /** STOMP 서버는 여러 프레임을 한 메시지로 보낼 수 있으므로 배열 반환 */
@@ -83,17 +82,7 @@ export function decodeWebSocketPayload(data: unknown): string {
         ? new Uint8Array(data)
         : new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
 
-    const TextDecoderCtor = (
-      globalThis as typeof globalThis & {
-        TextDecoder?: new (label?: string) => { decode(input: Uint8Array): string };
-      }
-    ).TextDecoder;
-
-    if (TextDecoderCtor) {
-      return new TextDecoderCtor('utf-8').decode(bytes);
-    }
-
-    return decodeUtf8Bytes(bytes);
+    return new TextDecoder('utf-8').decode(bytes);
   }
   return String(data);
 }
@@ -141,79 +130,6 @@ function parseSingleFrame(raw: string): StompFrame | null {
   }
 
   return { command, headers, body };
-}
-
-function encodeUtf8Bytes(value: string): Uint8Array {
-  const TextEncoderCtor = (
-    globalThis as typeof globalThis & {
-      TextEncoder?: new () => { encode(input: string): Uint8Array };
-    }
-  ).TextEncoder;
-
-  if (TextEncoderCtor) {
-    return new TextEncoderCtor().encode(value);
-  }
-
-  const bytes: number[] = [];
-  for (let i = 0; i < value.length; i += 1) {
-    const codePoint = value.codePointAt(i) ?? 0;
-    if (codePoint > 0xffff) {
-      i += 1;
-    }
-
-    if (codePoint <= 0x7f) {
-      bytes.push(codePoint);
-    } else if (codePoint <= 0x7ff) {
-      bytes.push(0xc0 | (codePoint >> 6), 0x80 | (codePoint & 0x3f));
-    } else if (codePoint <= 0xffff) {
-      bytes.push(
-        0xe0 | (codePoint >> 12),
-        0x80 | ((codePoint >> 6) & 0x3f),
-        0x80 | (codePoint & 0x3f),
-      );
-    } else {
-      bytes.push(
-        0xf0 | (codePoint >> 18),
-        0x80 | ((codePoint >> 12) & 0x3f),
-        0x80 | ((codePoint >> 6) & 0x3f),
-        0x80 | (codePoint & 0x3f),
-      );
-    }
-  }
-  return new Uint8Array(bytes);
-}
-
-function decodeUtf8Bytes(bytes: Uint8Array): string {
-  let result = '';
-  for (let i = 0; i < bytes.length; i += 1) {
-    const first = bytes[i] ?? 0;
-    if (first < 0x80) {
-      result += String.fromCharCode(first);
-      continue;
-    }
-
-    let codePoint = 0xfffd;
-    if (first >= 0xc0 && first < 0xe0 && i + 1 < bytes.length) {
-      codePoint = ((first & 0x1f) << 6) | ((bytes[i + 1] ?? 0) & 0x3f);
-      i += 1;
-    } else if (first >= 0xe0 && first < 0xf0 && i + 2 < bytes.length) {
-      codePoint =
-        ((first & 0x0f) << 12) |
-        (((bytes[i + 1] ?? 0) & 0x3f) << 6) |
-        ((bytes[i + 2] ?? 0) & 0x3f);
-      i += 2;
-    } else if (first >= 0xf0 && first < 0xf8 && i + 3 < bytes.length) {
-      codePoint =
-        ((first & 0x07) << 18) |
-        (((bytes[i + 1] ?? 0) & 0x3f) << 12) |
-        (((bytes[i + 2] ?? 0) & 0x3f) << 6) |
-        ((bytes[i + 3] ?? 0) & 0x3f);
-      i += 3;
-    }
-
-    result += String.fromCodePoint(codePoint);
-  }
-  return result;
 }
 
 /** 의도적 DISCONNECT 직후 서버가 보내는 ERROR — 실패가 아님 */
