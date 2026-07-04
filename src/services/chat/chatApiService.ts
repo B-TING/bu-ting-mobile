@@ -1,7 +1,7 @@
 import { API_BASE_URL, CHAT_ENDPOINTS } from '../../constants/api/apiConfig';
 import { ZONE_CHAT_WS_CONFIG } from '../../constants/chat/zoneChatConfig';
 import type { ChatMessage, ChatMessageRaw, ChatRoomSummary, FetchChatRoomMessagesOptions } from '../../types/chatApi';
-import { normalizeChatMessage, readChatRoomMemberCount } from '../../types/chatApi';
+import { extractChatMessageList, normalizeChatMessage, readChatRoomMemberCount } from '../../types/chatApi';
 import type { ChatZone } from '../../types/eventZone';
 import { logZoneChat } from '../../utils/chat/zoneChatLogger';
 import { chatApiGet, chatApiRequest } from './chatApiClient';
@@ -38,7 +38,7 @@ export async function fetchChatRoomMessages(
   }
   const queryString = query.toString();
   const url = `${API_BASE_URL}${CHAT_ENDPOINTS.messages(roomId)}${queryString ? `?${queryString}` : ''}`;
-  const history = await chatApiRequest<ChatMessageRaw[]>(url, {
+  const history = await chatApiRequest<ChatMessageRaw[] | Record<string, unknown>>(url, {
     method: 'GET',
     accessToken,
     logStep: 'rest.messages',
@@ -46,7 +46,18 @@ export async function fetchChatRoomMessages(
     logDetail: { roomId, lastMessageId: options?.lastMessageId ?? null },
   });
 
-  const normalized = Array.isArray(history) ? history.map(normalizeChatMessage) : [];
+  const rawList = extractChatMessageList(history);
+  const normalized: ChatMessage[] = [];
+  for (const item of rawList) {
+    try {
+      normalized.push(normalizeChatMessage(item));
+    } catch (error) {
+      logZoneChat('rest.messages.skip', 'Skipped invalid chat message', {
+        level: 'warn',
+        detail: error,
+      });
+    }
+  }
   logZoneChat('rest.messages.success', 'Chat messages loaded', {
     detail: {
       roomId,

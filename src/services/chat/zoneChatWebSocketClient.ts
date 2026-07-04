@@ -10,6 +10,7 @@ import type {
 } from '../../types/zoneChatWebSocket';
 import { logZoneChat } from '../../utils/chat/zoneChatLogger';
 import { isWebSocketAuthHandshakeFailure } from '../../utils/chat/zoneChatConnectionStatus';
+import { openZoneChatWebSocket } from '../../utils/chat/openZoneChatWebSocket';
 import {
   decodeStompFrames,
   decodeWebSocketPayload,
@@ -143,9 +144,7 @@ export class ZoneChatWebSocketClient {
     });
 
     try {
-      const socket = new WebSocket(url) as WebSocket & { binaryType?: string };
-      socket.binaryType = 'arraybuffer';
-      this.ws = socket;
+      this.ws = openZoneChatWebSocket(url, options.accessToken);
     } catch (error) {
       this.handleConnectFailure(error);
       return;

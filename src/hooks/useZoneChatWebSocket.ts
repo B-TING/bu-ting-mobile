@@ -177,7 +177,7 @@ export function useZoneChatWebSocket(
         const history = await loadInitialZoneChatHistory(
           resolvedRoomId,
           accessToken,
-          participant,
+          participantRef.current,
         );
         if (cancelled) {
           return;
@@ -207,7 +207,7 @@ export function useZoneChatWebSocket(
       cancelled = true;
       activeRoomIdRef.current = null;
     };
-  }, [accessToken, roomId, zoneId, participant, resolveRoomId]);
+  }, [accessToken, roomId, zoneId, user?.userId, resolveRoomId]);
 
   useEffect(() => {
     if (!realtimeEnabled || !accessToken || !activeRoomId || !historyLoaded) {

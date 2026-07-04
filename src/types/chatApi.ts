@@ -20,12 +20,19 @@ export type ChatRoomSummary = {
 export type ChatMessageRaw = {
   messageId?: string;
   id?: string;
-  roomId: string;
-  userId: string;
-  senderNickname: string;
-  content: string;
-  createdAt: string;
+  roomId?: string;
+  userId?: string;
+  senderId?: string;
+  senderNickname?: string;
+  nickname?: string;
+  senderName?: string;
+  content?: string;
+  message?: string;
+  text?: string;
+  createdAt?: string;
+  sentAt?: string;
   isMine?: boolean;
+  [key: string]: unknown;
 };
 
 /** 앱 내부 정규화 메시지 */
@@ -64,15 +71,56 @@ export function normalizeChatMessage(raw: ChatMessageRaw): ChatMessage {
   if (!messageId) {
     throw new Error('Chat message missing id/messageId');
   }
+
+  const userId = raw.userId ?? raw.senderId ?? '';
+  const senderNickname =
+    raw.senderNickname ?? raw.nickname ?? raw.senderName ?? 'Unknown';
+  const content = raw.content ?? raw.message ?? raw.text ?? '';
+  const createdAt = raw.createdAt ?? raw.sentAt ?? new Date().toISOString();
+
   return {
     messageId,
-    roomId: raw.roomId,
-    userId: raw.userId,
-    senderNickname: raw.senderNickname,
-    content: raw.content,
-    createdAt: raw.createdAt,
+    roomId: raw.roomId ?? '',
+    userId,
+    senderNickname,
+    content,
+    createdAt,
     isMine: raw.isMine,
   };
+}
+
+/** REST 응답 본문에서 메시지 배열 추출 ({ data: [...] } · { data: { messages } } 등) */
+export function extractChatMessageList(body: unknown): ChatMessageRaw[] {
+  if (Array.isArray(body)) {
+    return body as ChatMessageRaw[];
+  }
+
+  if (!body || typeof body !== 'object') {
+    return [];
+  }
+
+  const record = body as Record<string, unknown>;
+  const nested = record.data;
+
+  if (Array.isArray(nested)) {
+    return nested as ChatMessageRaw[];
+  }
+
+  if (nested && typeof nested === 'object') {
+    const nestedRecord = nested as Record<string, unknown>;
+    if (Array.isArray(nestedRecord.messages)) {
+      return nestedRecord.messages as ChatMessageRaw[];
+    }
+    if (Array.isArray(nestedRecord.content)) {
+      return nestedRecord.content as ChatMessageRaw[];
+    }
+  }
+
+  if (Array.isArray(record.messages)) {
+    return record.messages as ChatMessageRaw[];
+  }
+
+  return [];
 }
 
 export function readChatMessageId(message: ChatMessage | ChatMessageRaw): string {
