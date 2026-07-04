@@ -6,6 +6,7 @@ import {
 import type { ParsedChatRoomStatusPayload } from '../../types/chatApi';
 import { isChatStatusDestination, parseChatRoomStatusBody } from '../../types/chatApi';
 import { logZoneChat } from '../../utils/chat/zoneChatLogger';
+import { isWebSocketAuthHandshakeFailure } from '../../utils/chat/zoneChatConnectionStatus';
 import {
   decodeStompFrames,
   decodeWebSocketPayload,
@@ -199,7 +200,7 @@ class ZoneChatRoomStatusHub {
       logZoneChat('status-hub.ws.error', 'WebSocket error', { level: 'error' });
     };
 
-    this.ws.onclose = () => {
+    this.ws.onclose = event => {
       this.clearHeartbeatTimer();
       this.ws = null;
       this.stompConnected = false;
@@ -209,6 +210,15 @@ class ZoneChatRoomStatusHub {
       if (this.intentionalClose) {
         return;
       }
+
+      if (isWebSocketAuthHandshakeFailure(event.reason)) {
+        logZoneChat('status-hub.ws.auth', 'WebSocket handshake rejected (401/403)', {
+          level: 'error',
+          detail: { reason: event.reason },
+        });
+        return;
+      }
+
       this.scheduleReconnect();
     };
   }

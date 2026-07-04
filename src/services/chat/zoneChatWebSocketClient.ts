@@ -9,6 +9,7 @@ import type {
   ZoneChatWebSocketConnectOptions,
 } from '../../types/zoneChatWebSocket';
 import { logZoneChat } from '../../utils/chat/zoneChatLogger';
+import { isWebSocketAuthHandshakeFailure } from '../../utils/chat/zoneChatConnectionStatus';
 import {
   decodeStompFrames,
   decodeWebSocketPayload,
@@ -201,6 +202,17 @@ export class ZoneChatWebSocketClient {
         this.setStatus('disconnected');
         return;
       }
+
+      if (isWebSocketAuthHandshakeFailure(event.reason)) {
+        const error = new Error(
+          'WebSocket handshake rejected (401/403). Sign in again or check access token.',
+        );
+        logZoneChat('stomp.ws.auth', error.message, { level: 'error' });
+        this.listeners.onError?.(error);
+        this.setStatus('failed');
+        return;
+      }
+
       this.scheduleReconnect();
     };
   }

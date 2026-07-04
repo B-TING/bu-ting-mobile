@@ -4,6 +4,10 @@
 
 org.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=512m
 
+# RN Android 빌드는 JDK 17 권장. JDK 24+ 는 CMake configure 시 실패할 수 있음.
+# 설치 경로에 맞게 수정하세요.
+org.gradle.java.home=C:/Program Files/Java/jdk-17
+
 android.useAndroidX=true
 
 # Windows에서 x86 CMake 빌드가 자주 실패함. 실기기·ARM 에뮬레이터용만 기본 빌드.

@@ -33,6 +33,9 @@ import type {
   ZoneChatIdentityField,
 } from '../types/zoneChatWebSocket';
 
+const EMPTY_SEED_MESSAGES: EventZoneChatMessage[] = [];
+const NULL_MEMBER_COUNT_SELECTOR = (): number | null => null;
+
 export type UseZoneChatWebSocketOptions = {
   /** mock roomId. zoneId 로 실제 roomId 를 조회하지 못할 때 폴백 */
   roomId: string;
@@ -66,7 +69,7 @@ export function useZoneChatWebSocket(
   const {
     roomId,
     zoneId,
-    seedMessages = [],
+    seedMessages = EMPTY_SEED_MESSAGES,
     identityField,
     guestDisplayNickname,
     wsEnabled: wsEnabledOverride,
@@ -97,7 +100,7 @@ export function useZoneChatWebSocket(
   const [hasMoreHistory, setHasMoreHistory] = useState(false);
   const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
   const memberCount = useZoneChatMemberStore(
-    zoneId ? selectZoneChatMemberCount(zoneId) : () => null,
+    zoneId ? selectZoneChatMemberCount(zoneId) : NULL_MEMBER_COUNT_SELECTOR,
   );
   const refreshZoneDelayed = useZoneChatMemberStore(state => state.refreshZoneDelayed);
   const adjustMemberCount = useZoneChatMemberStore(state => state.adjustMemberCount);
@@ -136,13 +139,14 @@ export function useZoneChatWebSocket(
   }, [realtimeEnabled, zoneId, activeRoomId, setChatActiveRoom]);
 
   useEffect(() => {
-    if (!accessToken) {
-      setMessages(seedMessages);
-      setIsLoadingHistory(false);
-      setHistoryLoaded(false);
-      setHasMoreHistory(false);
-      setActiveRoomId(null);
+    if (accessToken) {
+      return;
     }
+    setMessages(seedMessages);
+    setIsLoadingHistory(false);
+    setHistoryLoaded(false);
+    setHasMoreHistory(false);
+    setActiveRoomId(null);
   }, [accessToken, roomId, seedMessages]);
 
   useEffect(() => {

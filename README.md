@@ -91,7 +91,6 @@ npm run ios        # iOS (macOS)
 | `KAKAO_REST_API_KEY` | 카카오 OAuth client_id |
 | `KAKAO_NATIVE_APP_KEY` | 카카오 로그인 SDK |
 | `KAKAO_JAVASCRIPT_KEY` | 앱 내 카카오맵 WebView |
-| `GOOGLE_PLACES_API_KEY` | Places API (Node 스크립트·백엔드용, 앱 번들 금지) |
 | `NGROK_AUTHTOKEN` | Metro 터널 (`start:tunnel`) |
 
 ### OAuth 로그인
@@ -107,14 +106,6 @@ npm run ios        # iOS (macOS)
 1. 카카오 콘솔에서 **Web** 플랫폼 활성화
 2. `.env`에 `KAKAO_JAVASCRIPT_KEY` 설정
 3. `npm run kakao:sync`
-
-### Google Places (개발·배치용)
-
-장소명·좌표로 `place_id`를 찾는 Node 스크립트입니다. **키는 `.env`에만** 두세요.
-
-```bash
-npm run places:resolve -- "해도용궁사" 35.1885 129.2233
-```
 
 ---
 
@@ -179,7 +170,6 @@ npm run android
 | `npm run lint` / `lint:fix` | ESLint |
 | `npm run format` / `format:check` | Prettier |
 | `npm test` | Jest |
-| `npm run places:resolve` | Google Find Place 테스트 |
 | `npm run ngrok:auth` | ngrok Authtoken 등록 |
 | `npm run icons:generate` | 앱 아이콘 생성 |
 

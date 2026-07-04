@@ -1,5 +1,11 @@
 import type { ZoneChatConnectionStatus } from '../../types/zoneChatWebSocket';
 
+/** RN WebSocket — HTTP 101 대신 401/403 이 오면 재연결해도 성공하지 않음 */
+export function isWebSocketAuthHandshakeFailure(reason?: string | null): boolean {
+  const normalized = (reason ?? '').trim();
+  return /\b403\b/.test(normalized) || /\b401\b/.test(normalized);
+}
+
 type StatusLabelOptions = {
   needsLogin: boolean;
 };

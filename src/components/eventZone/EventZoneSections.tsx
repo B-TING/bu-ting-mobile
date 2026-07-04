@@ -149,10 +149,10 @@ export function EventZoneChatList({
                 onPress={() => onRoomPress(room.zoneId)}
                 className="min-w-0 flex-1 pr-3 active:opacity-80">
                 <Text className="text-[15px] font-bold text-brand-text" numberOfLines={1}>
-                  {isEventRoom ? `⚡ ${activeEvent.titleKo}` : eventZoneName(zone, language)}
+                  {eventZoneName(zone, language)}
                 </Text>
                 <Text className="mt-1 text-xs text-brand-muted" numberOfLines={2}>
-                  {isEventRoom ? activeEvent.descriptionKo : chatRoomTopic(room, language)}
+                  {isEventRoom ? `⚡ ${activeEvent.titleKo}` + ` - ${activeEvent.descriptionKo}` : chatRoomTopic(room, language)}
                 </Text>
                 <Text className="mt-1.5 text-xs font-semibold text-brand-primary">
                   {memberCountLabel(liveMemberCounts?.[room.zoneId] ?? room.memberCount)}
