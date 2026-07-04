@@ -39,10 +39,6 @@ function pointsSignature(points: MapPoint[]): string {
   return points.map(point => `${point.lat.toFixed(5)},${point.lng.toFixed(5)}`).join('|');
 }
 
-function cameraSignature(camera: MapCamera): string {
-  return `${camera.lat.toFixed(5)},${camera.lng.toFixed(5)},${camera.zoomLevel}`;
-}
-
 function syncMapCamera(webViewRef: RefObject<WebView | null>, camera: MapCamera) {
   webViewRef.current?.injectJavaScript(buildKakaoMapMoveScript(camera));
 }
@@ -108,8 +104,8 @@ export function KakaoMapShell({
     });
   }, [points, focusPoint, cameraKmSpan, fitPointsToCamera]);
 
-  const cameraKey = targetCamera ? cameraSignature(targetCamera) : null;
   const overlayKey = overlaysSignature(mergedOverlays);
+  const pointsSyncKey = fitPointsToCamera ? regionSyncKey : null;
 
   if (bootstrapHtmlRef.current === null && KAKAO_MAP_JS_KEY && points.length > 0) {
     const bootstrapCamera =
@@ -142,7 +138,7 @@ export function KakaoMapShell({
     return () => {
       retryTimers.forEach(clearTimeout);
     };
-  }, [mapReady, cameraKey, fitPointsToCamera ? regionSyncKey : null]);
+  }, [mapReady, targetCamera, pointsSyncKey]);
 
   useEffect(() => {
     if (!mapReady) {

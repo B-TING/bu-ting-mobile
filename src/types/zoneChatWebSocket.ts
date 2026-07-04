@@ -1,3 +1,4 @@
+import type { ChatMessage } from './chatApi';
 import type { EventZoneId } from './eventZone';
 
 /** 백엔드 입장 식별자 필드 — 확정 전까지 설정으로 전환 */
@@ -20,59 +21,8 @@ export type ZoneChatConnectionStatus =
   | 'disconnected'
   | 'failed';
 
-/** Client → Server */
-export type ZoneChatClientFrame =
-  | {
-      type: 'JOIN';
-      roomId: string;
-      zoneId?: EventZoneId;
-      participant: ZoneChatParticipant;
-    }
-  | {
-      type: 'LEAVE';
-      roomId: string;
-    }
-  | {
-      type: 'MESSAGE';
-      roomId: string;
-      clientMessageId: string;
-      text: string;
-    }
-  | { type: 'PING' };
-
-/** Server → Client (백엔드 스펙 확정 전 가안) */
-export type ZoneChatServerFrame =
-  | {
-      type: 'WELCOME';
-      roomId: string;
-      participantCount?: number;
-    }
-  | {
-      type: 'HISTORY';
-      roomId: string;
-      messages: ZoneChatServerMessage[];
-    }
-  | {
-      type: 'MESSAGE';
-      roomId: string;
-      message: ZoneChatServerMessage;
-    }
-  | {
-      type: 'ERROR';
-      code?: string;
-      message: string;
-    }
-  | { type: 'PONG' };
-
-export type ZoneChatServerMessage = {
-  id: string;
-  roomId: string;
-  authorIdentityField?: ZoneChatIdentityField;
-  authorIdentityValue: string;
-  authorNickname: string;
-  text: string;
-  sentAt: string;
-};
+/** 서버 수신 메시지는 백엔드 ChatMessage 를 그대로 사용 */
+export type ZoneChatServerMessage = ChatMessage;
 
 export type ZoneChatWebSocketConnectOptions = {
   url: string;

@@ -13,6 +13,8 @@ import {
 import { HOME_EVENT_ZONE_COPY } from '../../../constants/home/mainHome';
 import { useCurrentEventZone } from '../../../hooks/useCurrentEventZone';
 import { useEventZoneCarousel } from '../../../hooks/useEventZoneCarousel';
+import { useZoneChatRoomSummary } from '../../../hooks/useZoneChatRoomSummary';
+import { useZoneEventStore } from '../../../stores';
 import type { AppLanguage } from '../../../types/user';
 import type { EventZoneId } from '../../../types/eventZone';
 import { isInsideBusanBounds } from '../../../utils/eventZone/zoneResolver';
@@ -55,7 +57,10 @@ export function HomeEventZoneSection({
 
   const zone = EVENT_ZONE_BY_ID[chatZoneId];
   const room = getChatRoomByZoneId(chatZoneId);
+  const { memberCount: liveMemberCount } = useZoneChatRoomSummary(chatZoneId);
   const landmarks = zone.landmarks.slice(0, 3);
+
+  const activeEvent = useZoneEventStore(s => s.activeEventsByZone[chatZoneId]);
 
   return (
     <View className="mb-6">
@@ -101,15 +106,29 @@ export function HomeEventZoneSection({
             },
           ]}>
           <View>
-            <Text className="text-sm font-bold text-brand-text" numberOfLines={1}>
-              {eventZoneName(zone, language)}
-            </Text>
+            <View className="flex-row items-center gap-1">
+              <Text className="flex-1 text-sm font-bold text-brand-text" numberOfLines={1}>
+                {eventZoneName(zone, language)}
+              </Text>
+              {activeEvent ? (
+                <View className="rounded-full bg-pink-600 px-1.5 py-0.5">
+                  <Text className="text-[9px] font-bold text-white">🔥 이벤트</Text>
+                </View>
+              ) : null}
+            </View>
+            
+            <View className="flex-row justify-between gap-1 w-full">
             {room ? (
               <Text className="mt-0.5 text-[10px] font-semibold text-brand-primary">
-                {zoneCopy.chatMemberCount(room.memberCount)}
+                {zoneCopy.chatMemberCount(liveMemberCount ?? room.memberCount)}
               </Text>
             ) : null}
-
+            {activeEvent ? (
+              <Text className="mt-0.5 text-[10px] font-semibold text-pink-600 ellipsis" numberOfLines={1}>
+                ⚡ {activeEvent.titleKo}
+              </Text>
+            ) : null}
+            </View>
             <Text className="mb-1.5 mt-2 text-[10px] font-bold uppercase tracking-wide text-brand-muted">
               {copy.landmarksTitle}
             </Text>

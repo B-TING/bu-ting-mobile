@@ -161,12 +161,12 @@ export const BUSAN_DISTRICT_LABEL_CENTERS: Record<string, { x: number; y: number
 };
 
 export const EVENT_ZONE_DISTRICT_IDS: Record<EventZoneId, string[]> = {
-  'haeundae-gijang': ['CD26350', 'CD26710'],
-  'suyeong-nam': ['CD26500', 'CD26290'],
-  'geumjeong-dongnae': ['CD26410', 'CD26260', 'CD26470', 'CD26230'],
-  'seo-jung-dong': ['CD26140', 'CD26110', 'CD26170'],
-  'yeongdo': ['CD26200'],
-  'gangseo-northwest': ['CD26440', 'CD26530', 'CD26380', 'CD26320'],
+  HAEUNDAE_GIJANG: ['CD26350', 'CD26710'],
+  SUYEONG_NAMGU: ['CD26500', 'CD26290'],
+  CENTRAL_NORTH: ['CD26410', 'CD26260', 'CD26470', 'CD26230'],
+  OLD_DOWNTOWN: ['CD26140', 'CD26110', 'CD26170'],
+  YEONGDO: ['CD26200'],
+  WESTERN_BUSAN: ['CD26440', 'CD26530', 'CD26380', 'CD26320'],
 };
 
 export const BUSAN_DISTRICT_BY_ID: Record<string, BusanDistrictPath> = Object.fromEntries(

@@ -25,7 +25,7 @@ function toBase64Url(bytes: Uint8Array): string {
   return btoaFn(binary)
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
-    .replace(/=+$/, '');
+    .replace(/[=]+$/, '');
 }
 
 /** RFC 7636 — 43~128자 URL-safe 랜덤 문자열 */

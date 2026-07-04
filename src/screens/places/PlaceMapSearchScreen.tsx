@@ -59,7 +59,7 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
   const togglePlaceBookmark = usePlaceBookmarkStore(s => s.togglePlaceBookmark);
   const isPlaceBookmarked = usePlaceBookmarkStore(s => s.isPlaceBookmarked);
 
-  const places = cacheEntry?.places ?? [];
+  const places = useMemo(() => cacheEntry?.places ?? [], [cacheEntry]);
   const placeDetailsById = cacheEntry?.placeDetailsById ?? {};
   const error = cacheEntry?.error ?? null;
 
@@ -108,7 +108,7 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
       mapCenter: mapCenter ?? searchCenter,
       emptyErrorFallback: copy.emptySub,
     });
-  }, [contentTypeId, searchCenter, hasCacheForCenter, searchByLocation, copy.emptySub]);
+  }, [contentTypeId, searchCenter, mapCenter, hasCacheForCenter, searchByLocation, copy.emptySub]);
 
   const showSearchHere = useMemo(() => {
     if (!searchCenter || !mapCenter) {

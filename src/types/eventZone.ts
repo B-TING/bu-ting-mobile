@@ -1,10 +1,14 @@
+/** 백엔드 ChatZone enum 과 동일한 구역 ID */
 export type EventZoneId =
-  | 'haeundae-gijang'
-  | 'suyeong-nam'
-  | 'geumjeong-dongnae'
-  | 'seo-jung-dong'
-  | 'yeongdo'
-  | 'gangseo-northwest';
+  | 'HAEUNDAE_GIJANG'
+  | 'SUYEONG_NAMGU'
+  | 'CENTRAL_NORTH'
+  | 'OLD_DOWNTOWN'
+  | 'YEONGDO'
+  | 'WESTERN_BUSAN';
+
+/** REST·WebSocket 채팅 API query `zone` 파라미터 */
+export type ChatZone = EventZoneId;
 
 export type EventZoneCoordinate = {
   lat: number;
@@ -70,4 +74,24 @@ export type EventZoneChatMessage = {
   text: string;
   sentAt: string;
   isMine?: boolean;
+};
+
+/** 번개 이벤트 종류 (기획 확정 전 목업) */
+export type ZoneEventType =
+  | 'walk_conquest' // 부산 도보 정복전
+  | 'receipt_auth' // 소울푸드 영수증 인증
+  | 'qr_cross' // 핫플 QR 크로스
+  | 'zone_battle'; // 타 구역 유저와 대결
+
+/** 구역에 발생하는 이벤트 VO (목업) */
+export type ZoneEvent = {
+  id: string;
+  type: ZoneEventType;
+  zoneId: EventZoneId;
+  titleKo: string;
+  descriptionKo: string;
+  /** ISO 8601 시작 시각 */
+  startsAt: string;
+  /** 이벤트 지속 시간(분) */
+  durationMinutes: number;
 };
