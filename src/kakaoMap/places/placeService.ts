@@ -19,12 +19,10 @@ import type { BusanAttraction } from '../../types/attraction';
 import type {
   AccommodationPlaceDetail,
   AttractionPlaceDetail,
-  GooglePlaceDetailsResponse,
   PlaceDetailVO,
 } from '../../types/googlePlaces';
 import type { AppLanguage } from '../../types/user';
 import type { RouteItemType } from '../../types/travelPlan';
-import { mapGooglePlaceDetailsResponse } from '../../utils/places/googlePlacesMapper';
 
 function delay(ms: number) {
   return new Promise<void>(resolve => {
@@ -32,7 +30,7 @@ function delay(ms: number) {
   });
 }
 
-/** 지???�면??부???�소 목록 ??백엔??GET /api/accommodations (공공?�이??Google Places 병합) */
+/** ?????????????????? ?? ????????GET /api/accommodations (???????Google Places ?????) */
 export async function fetchBusanAccommodations(
   language: AppLanguage = 'ko',
 ): Promise<BusanAccommodation[]> {
@@ -43,7 +41,7 @@ export async function fetchBusanAccommodations(
   }));
 }
 
-/** 지???�면??부??관광�? 목록 ??백엔??GET /api/places/recommendations (공공?�이??Google Places 병합) */
+/** ??????????????????? ?? ????????GET /api/places/recommendations (???????Google Places ?????) */
 export async function fetchBusanAttractions(
   language: AppLanguage = 'ko',
 ): Promise<BusanAttraction[]> {
@@ -54,7 +52,7 @@ export async function fetchBusanAttractions(
   }));
 }
 
-/** ?�소 ?�세 (지??마커 ???? ??백엔??GET /api/accommodations/{id} */
+/** ????? ????? (??????? ???? ????????GET /api/accommodations/{id} */
 export async function fetchAccommodationDetail(
   placeId: string,
 ): Promise<AccommodationPlaceDetail | null> {
@@ -62,7 +60,7 @@ export async function fetchAccommodationDetail(
   return getAccommodationMockDetail(placeId);
 }
 
-/** 관광�? ?�세 (지??마커 ???? ??백엔??GET /api/places/{placeId} (?�는 recommendations ?�세) */
+/** ?????? ????? (??????? ???? ????????GET /api/places/{placeId} (????? recommendations ?????) */
 export async function fetchAttractionDetail(
   placeId: string,
 ): Promise<AttractionPlaceDetail | null> {
@@ -74,7 +72,7 @@ export function shouldFetchGooglePlaceDetail(type: RouteItemType): boolean {
   return type === 'ATTRACTION' || type === 'RESTAURANT';
 }
 
-/** ?�정 경로 ?�소 ?�세 (RouteMapView + PlaceDetailModal) */
+/** ???? ??? ????? ????? (RouteMapView + PlaceDetailModal) */
 export async function fetchRoutePlaceDetail(
   placeId: string,
   type: RouteItemType,
@@ -83,14 +81,6 @@ export async function fetchRoutePlaceDetail(
     return null;
   }
   return fetchAttractionDetail(placeId);
-}
-
-export async function fetchPlaceDetailFromGoogleResponse(
-  response: GooglePlaceDetailsResponse,
-  options?: { internalPlaceId?: string },
-): Promise<PlaceDetailVO | null> {
-  await delay(100);
-  return mapGooglePlaceDetailsResponse(response, options);
 }
 
 export function buildGoogleMapsUrl(

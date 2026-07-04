@@ -44,7 +44,6 @@ export type {
   TravelogueRouteSnapshot,
 } from './travelReview';
 export type {
-  GooglePlaceDetailsResponse,
   PlaceDetailVO,
   PlaceListItemVO,
   PlaceReviewVO,
