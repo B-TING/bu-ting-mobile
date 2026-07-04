@@ -16,7 +16,6 @@
     "connect:android": "node scripts/connect-android.cjs",
     "start:tunnel": "node scripts/start-tunnel.cjs",
     "ngrok:auth": "node scripts/ngrok-auth.cjs",
-    "places:resolve": "node scripts/resolve-place-id.cjs",
     "kakao:sync": "node scripts/sync-kakao-map-key.cjs",
     "map:sync": "node scripts/extract-busan-map-paths.cjs",
     "api:sync": "node scripts/sync-api-config.cjs",

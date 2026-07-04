@@ -1,20 +1,12 @@
 import { API_BASE_URL, AUTH_ENDPOINTS } from '../../constants/api/apiConfig';
-import type {
-  ApiEnvelope,
-  ApiErrorResponse,
-  OAuthLoginRequest,
-  OAuthLoginResponse,
-  OAuthProvider,
-} from '../../types/auth';
+import type { OAuthLoginRequest, OAuthLoginResponse, OAuthProvider } from '../../types/auth';
 import { logAuth } from '../../utils/auth/authLogger';
+import { ApiClientError, apiPost } from '../api/apiClient';
 
-export class AuthServiceError extends Error {
-  status?: number;
-
+export class AuthServiceError extends ApiClientError {
   constructor(message: string, status?: number) {
-    super(message);
+    super(message, { status });
     this.name = 'AuthServiceError';
-    this.status = status;
   }
 }
 
@@ -31,13 +23,6 @@ export async function loginWithOAuth(
 ): Promise<OAuthLoginResponse> {
   const url = `${API_BASE_URL}${AUTH_ENDPOINTS.oauthLogin}`;
   const storedAccessToken = options?.storedAccessToken ?? null;
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
-
-  if (storedAccessToken) {
-    headers.Authorization = `Bearer ${storedAccessToken}`;
-  }
 
   logAuth('api.request', 'OAuth login request', {
     detail: {
@@ -48,43 +33,44 @@ export async function loginWithOAuth(
     },
   });
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(request),
-  });
-
-  const body = (await res.json().catch(() => null)) as
-    | ApiEnvelope<OAuthLoginResponse>
-    | ApiErrorResponse
-    | null;
-
-  if (!res.ok) {
-    const message =
-      (body && 'message' in body && body.message) ||
-      `OAuth login failed (${res.status})`;
-    logAuth('api.error', message, {
-      level: 'error',
-      detail: { status: res.status, provider: request.provider, body },
+  try {
+    const data = await apiPost<OAuthLoginResponse>(url, {
+      body: request,
+      accessToken: storedAccessToken,
+      errorMessagePrefix: 'OAuth login failed',
+      mapError: error => new AuthServiceError(error.message, error.status),
+      onError: error => {
+        logAuth('api.error', error.message, {
+          level: 'error',
+          detail: { status: error.status, provider: request.provider, body: error.responseBody },
+        });
+      },
     });
-    throw new AuthServiceError(message, res.status);
+
+    if (!data?.accessToken) {
+      logAuth('api.error', 'Invalid OAuth login response.', { level: 'error' });
+      throw new AuthServiceError('Invalid OAuth login response.');
+    }
+
+    logAuth('api.success', 'OAuth login succeeded', {
+      detail: {
+        provider: data.provider,
+        userId: data.userId,
+        email: data.email,
+        nickname: data.nickname,
+        accessToken: data.accessToken,
+        expiresIn: data.expiresIn,
+      },
+    });
+
+    return data;
+  } catch (error) {
+    if (error instanceof AuthServiceError) {
+      throw error;
+    }
+    if (error instanceof ApiClientError) {
+      throw new AuthServiceError(error.message, error.status);
+    }
+    throw error;
   }
-
-  if (!body || !('data' in body) || !body.data?.accessToken) {
-    logAuth('api.error', 'Invalid OAuth login response.', { level: 'error' });
-    throw new AuthServiceError('Invalid OAuth login response.');
-  }
-
-  logAuth('api.success', 'OAuth login succeeded', {
-    detail: {
-      provider: body.data.provider,
-      userId: body.data.userId,
-      email: body.data.email,
-      nickname: body.data.nickname,
-      accessToken: body.data.accessToken,
-      expiresIn: body.data.expiresIn,
-    },
-  });
-
-  return body.data;
 }

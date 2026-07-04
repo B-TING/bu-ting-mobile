@@ -1,41 +1,14 @@
-import type { ApiEnvelope, ApiErrorResponse } from '../../types/auth';
 import { logZoneChat } from '../../utils/chat/zoneChatLogger';
+import { ApiClientError, apiRequest, bearerAuthHeaders, unwrapApiData } from '../api/apiClient';
 
-export class ChatApiError extends Error {
-  status?: number;
-
+export class ChatApiError extends ApiClientError {
   constructor(message: string, status?: number) {
-    super(message);
+    super(message, { status });
     this.name = 'ChatApiError';
-    this.status = status;
   }
 }
 
-export function chatAuthHeaders(accessToken: string): Record<string, string> {
-  return {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${accessToken}`,
-  };
-}
-
-export function unwrapChatApiBody<T>(body: ApiEnvelope<T> | ApiErrorResponse | T | null): T {
-  if (body && typeof body === 'object' && 'data' in body && (body as ApiEnvelope<T>).data != null) {
-    return (body as ApiEnvelope<T>).data;
-  }
-  return body as T;
-}
-
-async function parseChatErrorMessage(res: Response, body: unknown): Promise<string> {
-  if (
-    body &&
-    typeof body === 'object' &&
-    'message' in body &&
-    typeof (body as { message: unknown }).message === 'string'
-  ) {
-    return (body as { message: string }).message;
-  }
-  return `Chat request failed (${res.status})`;
-}
+export { bearerAuthHeaders as chatAuthHeaders, unwrapApiData as unwrapChatApiBody };
 
 type ChatApiRequestOptions = {
   method?: string;
@@ -45,6 +18,10 @@ type ChatApiRequestOptions = {
   logDetail?: Record<string, unknown>;
 };
 
+function mapChatError(error: ApiClientError): ChatApiError {
+  return new ChatApiError(error.message, error.status);
+}
+
 /** 인증 채팅 REST 호출. 204/빈 본문이면 undefined, JSON이면 unwrap 후 반환 */
 export async function chatApiRequest<T>(
   url: string,
@@ -52,29 +29,15 @@ export async function chatApiRequest<T>(
 ): Promise<T | undefined> {
   const { method = 'GET', accessToken, logStep, logMessage, logDetail } = options;
 
-  logZoneChat(logStep, logMessage, { detail: { url, ...logDetail } });
-
-  const headers: Record<string, string> = {};
-  if (accessToken) {
-    Object.assign(headers, chatAuthHeaders(accessToken));
-  }
-
-  const res = await fetch(url, { method, headers });
-  const body = (await res.json().catch(() => null)) as
-    | ApiEnvelope<T>
-    | ApiErrorResponse
-    | T
-    | null;
-
-  if (!res.ok) {
-    throw new ChatApiError(await parseChatErrorMessage(res, body), res.status);
-  }
-
-  if (res.status === 204 || body == null) {
-    return undefined;
-  }
-
-  return unwrapChatApiBody<T>(body);
+  return apiRequest<T>(url, {
+    method,
+    accessToken,
+    errorMessagePrefix: 'Chat request failed',
+    mapError: mapChatError,
+    onRequest: () => {
+      logZoneChat(logStep, logMessage, { detail: { url, ...logDetail } });
+    },
+  });
 }
 
 /** 인증 불필요한 GET */

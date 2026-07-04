@@ -1,5 +1,4 @@
 import { API_BASE_URL, PLACES_ENDPOINTS } from '../../constants/api/apiConfig';
-import type { ApiEnvelope, ApiErrorResponse } from '../../types/auth';
 import type { BusanPlace } from '../../types/placeSearch';
 import type {
   PlaceContentTypeId,
@@ -18,18 +17,16 @@ import {
   logPlacesApiResponse,
 } from '../../utils/places/placesApiLogger';
 import type { PlaceDetailVO } from '../../types/googlePlaces';
+import { ApiClientError, apiGet } from '../api/apiClient';
 
-export class PlacesApiServiceError extends Error {
-  status?: number;
-  url?: string;
-  responseBody?: unknown;
-
+export class PlacesApiServiceError extends ApiClientError {
   constructor(message: string, options?: { status?: number; url?: string; responseBody?: unknown }) {
-    super(message);
+    super(message, {
+      status: options?.status,
+      url: options?.url,
+      responseBody: options?.responseBody,
+    });
     this.name = 'PlacesApiServiceError';
-    this.status = options?.status;
-    this.url = options?.url;
-    this.responseBody = options?.responseBody;
   }
 }
 
@@ -51,23 +48,12 @@ type FetchPlaceDetailParams = {
   fallbackAddress?: string;
 };
 
-function unwrapData<T>(body: ApiEnvelope<T> | T | null): T | null {
-  if (body && typeof body === 'object' && 'data' in body && body.data != null) {
-    return body.data;
-  }
-  return body as T | null;
-}
-
-function parseErrorMessage(res: Response, body: unknown): string {
-  if (body && typeof body === 'object') {
-    if ('message' in body && typeof body.message === 'string') {
-      return body.message;
-    }
-    if ('error' in body && typeof body.error === 'string') {
-      return body.error;
-    }
-  }
-  return `Places request failed (${res.status})`;
+function mapPlacesError(error: ApiClientError): PlacesApiServiceError {
+  return new PlacesApiServiceError(error.message, {
+    status: error.status,
+    url: error.url,
+    responseBody: error.responseBody,
+  });
 }
 
 function buildLocationSearchUrl(params: SearchPlacesByLocationParams): string {
@@ -97,45 +83,24 @@ async function fetchPlaceList(
   url: string,
   logContext: Record<string, unknown>,
 ): Promise<BusanPlace[]> {
-  logPlacesApiRequest('GET', url, logContext);
+  const payload = await apiGet<PlaceSearchResponseDto>(url, {
+    headers: { Accept: 'application/json' },
+    errorMessagePrefix: 'Places request failed',
+    mapError: mapPlacesError,
+    onRequest: () => {
+      logPlacesApiRequest('GET', url, logContext);
+    },
+    onResponse: ({ status, body }) => {
+      logPlacesApiResponse('GET', url, status, body, logContext);
+    },
+    onError: error => {
+      logPlacesApiError('GET', url, error, logContext);
+    },
+  });
 
-  let res: Response;
-  let body: ApiEnvelope<PlaceSearchResponseDto> | PlaceSearchResponseDto | ApiErrorResponse | null;
-
-  try {
-    res = await fetch(url, {
-      method: 'GET',
-      headers: { Accept: 'application/json' },
-    });
-    body = (await res.json().catch(parseError => {
-      logPlacesApiError('GET', url, parseError, { step: 'json-parse' });
-      return null;
-    })) as ApiEnvelope<PlaceSearchResponseDto> | PlaceSearchResponseDto | ApiErrorResponse | null;
-  } catch (networkError) {
-    logPlacesApiError('GET', url, networkError, logContext);
-    throw networkError;
-  }
-
-  logPlacesApiResponse('GET', url, res.status, body, logContext);
-
-  if (!res.ok) {
-    const message = parseErrorMessage(res, body);
-    const error = new PlacesApiServiceError(message, {
-      status: res.status,
-      url,
-      responseBody: body,
-    });
-    logPlacesApiError('GET', url, error, logContext);
-    throw error;
-  }
-
-  const payload = unwrapData<PlaceSearchResponseDto>(
-    body as ApiEnvelope<PlaceSearchResponseDto> | PlaceSearchResponseDto | null,
-  );
   if (!payload) {
     logPlacesApiError('GET', url, new Error('Empty places search response body'), {
       ...logContext,
-      status: res.status,
     });
     return [];
   }
@@ -210,59 +175,30 @@ export async function fetchPlaceDetail(params: FetchPlaceDetailParams): Promise<
     throw error;
   }
 
-  logPlacesApiRequest('GET', url, {
+  const logContext = {
     contentId: params.contentId,
     contentTypeId: params.contentTypeId,
     googleSearchText: params.googleSearchText,
+  };
+
+  const payload = await apiGet<PlaceDetailResponseDto>(url, {
+    headers: { Accept: 'application/json' },
+    errorMessagePrefix: 'Places request failed',
+    mapError: mapPlacesError,
+    onRequest: () => {
+      logPlacesApiRequest('GET', url, logContext);
+    },
+    onResponse: ({ status, body }) => {
+      logPlacesApiResponse('GET', url, status, body, logContext);
+    },
+    onError: error => {
+      logPlacesApiError('GET', url, error, logContext);
+    },
   });
 
-  let res: Response;
-  let body: ApiEnvelope<PlaceDetailResponseDto> | PlaceDetailResponseDto | ApiErrorResponse | null;
-
-  try {
-    res = await fetch(url, {
-      method: 'GET',
-      headers: { Accept: 'application/json' },
-    });
-    body = (await res.json().catch(parseError => {
-      logPlacesApiError('GET', url, parseError, { step: 'json-parse' });
-      return null;
-    })) as ApiEnvelope<PlaceDetailResponseDto> | PlaceDetailResponseDto | ApiErrorResponse | null;
-  } catch (networkError) {
-    logPlacesApiError('GET', url, networkError, {
-      contentId: params.contentId,
-      contentTypeId: params.contentTypeId,
-    });
-    throw networkError;
-  }
-
-  logPlacesApiResponse('GET', url, res.status, body, {
-    contentId: params.contentId,
-    contentTypeId: params.contentTypeId,
-  });
-
-  if (!res.ok) {
-    const message = parseErrorMessage(res, body);
-    const error = new PlacesApiServiceError(message, {
-      status: res.status,
-      url,
-      responseBody: body,
-    });
-    logPlacesApiError('GET', url, error, {
-      contentId: params.contentId,
-      contentTypeId: params.contentTypeId,
-    });
-    throw error;
-  }
-
-  const payload = unwrapData<PlaceDetailResponseDto>(
-    body as ApiEnvelope<PlaceDetailResponseDto> | PlaceDetailResponseDto | null,
-  );
   if (!payload?.contentId) {
     logPlacesApiError('GET', url, new Error('Place detail response missing contentId'), {
-      contentId: params.contentId,
-      contentTypeId: params.contentTypeId,
-      status: res.status,
+      ...logContext,
     });
     return null;
   }
