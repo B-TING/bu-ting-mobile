@@ -57,7 +57,6 @@ export function EventZoneChatScreen({ navigation, route }: Props) {
   } = useZoneChatWebSocket({
     roomId: route.params.roomId,
     zoneId: room?.zoneId,
-    seedMessages: [],
     guestDisplayNickname: language === 'ko' ? '나' : 'Me',
     wsEnabled: wsEnabled && !needsLogin,
   });

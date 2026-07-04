@@ -5,7 +5,9 @@ import type { ZoneChatIdentityField } from '../../types/zoneChatWebSocket';
 
 /**
  * 구역 채팅 WebSocket 설정 (백엔드 STOMP 스펙).
- * ws://{HOST}:8080/ws-stomp — CONNECT 시 Authorization: Bearer 헤더로 인증.
+ * ws://{HOST}:8080/ws-stomp
+ * - RN WebSocket 은 핸드셰이크에 Authorization 헤더를 붙일 수 없어 access_token 쿼리 사용
+ * - STOMP CONNECT 프레임에도 Bearer 헤더를 함께 전송
  */
 export const ZONE_CHAT_WS_CONFIG = {
   /** 백엔드 채팅 연동 테스트 활성화 */
@@ -43,13 +45,17 @@ export function httpBaseUrlToWebSocketBase(httpBase: string): string {
 }
 
 /**
- * STOMP 연결 URL. 인증은 CONNECT 프레임의 Authorization 헤더로 하므로
- * accessToken 을 URL 쿼리에 붙이지 않습니다.
+ * STOMP WebSocket URL.
+ * accessToken 이 있으면 핸드셰이크 인증용 쿼리(access_token)를 붙입니다.
  */
-export function buildZoneChatWebSocketUrl(_accessToken?: string | null): string {
+export function buildZoneChatWebSocketUrl(accessToken?: string | null): string {
   if (ZONE_CHAT_WS_CONFIG.urlOverride) {
     return ZONE_CHAT_WS_CONFIG.urlOverride;
   }
   const wsBase = httpBaseUrlToWebSocketBase(API_BASE_URL);
-  return `${wsBase}${ZONE_CHAT_WS_CONFIG.path}`;
+  const base = `${wsBase}${ZONE_CHAT_WS_CONFIG.path}`;
+  if (!accessToken) {
+    return base;
+  }
+  return `${base}?access_token=${encodeURIComponent(accessToken)}`;
 }
