@@ -1,15 +1,23 @@
 import { API_BASE_URL, PLACES_ENDPOINTS } from '../../constants/api/apiConfig';
+import type { BusanFestival } from '../../constants/festival/festivalCalendar';
 import type { BusanPlace } from '../../types/placeSearch';
 import type {
+  FestivalSearchResponseDto,
   PlaceContentTypeId,
   PlaceDetailResponseDto,
   PlaceSearchResponseDto,
+  TourApiDistrictCode,
 } from '../../types/placesApi';
+import { PLACE_CONTENT_TYPE } from '../../types/placesApi';
 import {
   extractPlaceSearchItems,
   mapPlaceDetailToPlaceDetailVO,
   mapPlaceSearchItemToBusanPlace,
 } from '../../utils/places/placesApiMapper';
+import {
+  enrichFestivalFromDetail,
+  mapFestivalSearchItemToBusanFestival,
+} from '../../utils/places/festivalApiMapper';
 import {
   logPlacesApi,
   logPlacesApiError,
@@ -48,6 +56,22 @@ type FetchPlaceDetailParams = {
   fallbackAddress?: string;
 };
 
+type SearchFestivalsParams = {
+  eventStartDate: string;
+  eventEndDate?: string;
+  page?: number;
+  size?: number;
+  districtCode?: TourApiDistrictCode;
+  arrange?: 'A' | 'C' | 'D' | 'O' | 'Q' | 'R';
+};
+
+export type FestivalSearchResult = {
+  festivals: BusanFestival[];
+  totalCount: number;
+  page: number;
+  size: number;
+};
+
 function mapPlacesError(error: ApiClientError): PlacesApiServiceError {
   return new PlacesApiServiceError(error.message, {
     status: error.status,
@@ -77,6 +101,22 @@ function buildDetailUrl(contentId: string, params: Omit<FetchPlaceDetailParams, 
     query.set('googleSearchText', params.googleSearchText.trim());
   }
   return `${API_BASE_URL}${PLACES_ENDPOINTS.detail(contentId)}?${query.toString()}`;
+}
+
+function buildFestivalsUrl(params: SearchFestivalsParams): string {
+  const query = new URLSearchParams({
+    eventStartDate: params.eventStartDate,
+    page: String(params.page ?? 1),
+    size: String(params.size ?? 20),
+    arrange: params.arrange ?? 'C',
+  });
+  if (params.eventEndDate) {
+    query.set('eventEndDate', params.eventEndDate);
+  }
+  if (params.districtCode) {
+    query.set('districtCode', params.districtCode);
+  }
+  return `${API_BASE_URL}${PLACES_ENDPOINTS.festivals}?${query.toString()}`;
 }
 
 async function fetchPlaceList(
@@ -117,6 +157,105 @@ async function fetchPlaceList(
   }
 
   return mapped;
+}
+
+export async function searchFestivals(
+  params: SearchFestivalsParams,
+): Promise<FestivalSearchResult> {
+  logPlacesApi('festivals.start', 'festival search', {
+    detail: {
+      eventStartDate: params.eventStartDate,
+      eventEndDate: params.eventEndDate,
+      page: params.page ?? 1,
+      size: params.size ?? 20,
+      districtCode: params.districtCode,
+    },
+  });
+
+  let url: string;
+  try {
+    url = buildFestivalsUrl(params);
+  } catch (error) {
+    logPlacesApiError('GET', '(festivals-url-build)', error, {
+      eventStartDate: params.eventStartDate,
+    });
+    throw error;
+  }
+
+  const logContext = {
+    eventStartDate: params.eventStartDate,
+    eventEndDate: params.eventEndDate,
+    page: params.page ?? 1,
+    size: params.size ?? 20,
+  };
+
+  const payload = await apiGet<FestivalSearchResponseDto>(url, {
+    headers: { Accept: 'application/json' },
+    errorMessagePrefix: 'Festivals request failed',
+    mapError: mapPlacesError,
+    onRequest: () => {
+      logPlacesApiRequest('GET', url, logContext);
+    },
+    onResponse: ({ status, body }) => {
+      logPlacesApiResponse('GET', url, status, body, logContext);
+    },
+    onError: error => {
+      logPlacesApiError('GET', url, error, logContext);
+    },
+  });
+
+  if (!payload) {
+    logPlacesApiError('GET', url, new Error('Empty festivals search response body'), logContext);
+    return {
+      festivals: [],
+      totalCount: 0,
+      page: params.page ?? 1,
+      size: params.size ?? 20,
+    };
+  }
+
+  const festivals = (payload.festivals ?? []).map(mapFestivalSearchItemToBusanFestival);
+
+  return {
+    festivals,
+    totalCount: payload.totalCount ?? festivals.length,
+    page: payload.page ?? params.page ?? 1,
+    size: payload.size ?? params.size ?? 20,
+  };
+}
+
+export async function fetchFestivalDetail(festival: BusanFestival): Promise<BusanFestival> {
+  const googleSearchText = [festival.titleKo, festival.addressKo].filter(Boolean).join(' ');
+  const url = buildDetailUrl(festival.id, {
+    contentTypeId: PLACE_CONTENT_TYPE.festival,
+    googleSearchText,
+  });
+  const logContext = {
+    contentId: festival.id,
+    contentTypeId: PLACE_CONTENT_TYPE.festival,
+    googleSearchText,
+  };
+
+  const payload = await apiGet<PlaceDetailResponseDto>(url, {
+    headers: { Accept: 'application/json' },
+    errorMessagePrefix: 'Festival detail request failed',
+    mapError: mapPlacesError,
+    onRequest: () => {
+      logPlacesApiRequest('GET', url, logContext);
+    },
+    onResponse: ({ status, body }) => {
+      logPlacesApiResponse('GET', url, status, body, logContext);
+    },
+    onError: error => {
+      logPlacesApiError('GET', url, error, logContext);
+    },
+  });
+
+  if (!payload?.contentId) {
+    return festival;
+  }
+
+  return enrichFestivalFromDetail(festival, payload);
 }
 
 export async function searchPlacesByLocation(

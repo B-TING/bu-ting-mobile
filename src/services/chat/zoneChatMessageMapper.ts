@@ -37,9 +37,15 @@ export function mapServerMessagesToEventZoneChat(
   messages: ChatMessageRaw[],
   participant: ZoneChatParticipant,
 ): EventZoneChatMessage[] {
-  return sortEventZoneChatMessages(
-    messages.map(message => mapServerMessageToEventZoneChat(message, participant)),
-  );
+  const mapped: EventZoneChatMessage[] = [];
+  for (const message of messages) {
+    try {
+      mapped.push(mapServerMessageToEventZoneChat(message, participant));
+    } catch {
+      // normalizeChatMessage 실패 — 개별 메시지 스킵
+    }
+  }
+  return sortEventZoneChatMessages(mapped);
 }
 
 export function sortEventZoneChatMessages(

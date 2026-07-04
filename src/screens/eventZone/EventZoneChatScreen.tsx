@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   FlatList,
   KeyboardAvoidingView,
@@ -32,7 +32,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'EventZoneChat'>;
 
 const LOAD_MORE_SCROLL_THRESHOLD = 72;
 const STICK_TO_BOTTOM_THRESHOLD = 96;
-const MAX_INITIAL_RENDER = 100;
+const INITIAL_RENDER_BATCH = 40;
 
 export function EventZoneChatScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
@@ -51,6 +51,7 @@ export function EventZoneChatScreen({ navigation, route }: Props) {
     isRealtime,
     isLoadingHistory,
     isLoadingMoreHistory,
+    historyLoaded,
     hasMoreHistory,
     loadMoreHistory,
     memberCount,
@@ -62,29 +63,25 @@ export function EventZoneChatScreen({ navigation, route }: Props) {
   });
 
   const [input, setInput] = useState('');
-  const [listSessionKey, setListSessionKey] = useState(0);
   const listRef = useRef<FlatList<(typeof messages)[number]>>(null);
   const lastMessageIdRef = useRef<string | null>(null);
   const loadMoreArmedRef = useRef(true);
   const stickToBottomRef = useRef(true);
   const canLoadMoreRef = useRef(false);
+  const initialScrollDoneRef = useRef(false);
 
   useEffect(() => {
-    setListSessionKey(0);
     lastMessageIdRef.current = null;
     loadMoreArmedRef.current = true;
     stickToBottomRef.current = true;
     canLoadMoreRef.current = false;
+    initialScrollDoneRef.current = false;
   }, [route.params.roomId]);
 
   useEffect(() => {
-    if (isLoadingHistory || messages.length === 0) {
+    if (!historyLoaded) {
       canLoadMoreRef.current = false;
       return undefined;
-    }
-
-    if (listSessionKey === 0) {
-      setListSessionKey(1);
     }
 
     const timer = setTimeout(() => {
@@ -94,42 +91,26 @@ export function EventZoneChatScreen({ navigation, route }: Props) {
     return () => {
       clearTimeout(timer);
     };
-  }, [isLoadingHistory, listSessionKey, messages.length, route.params.roomId]);
+  }, [historyLoaded, route.params.roomId]);
 
-  const historyMounted = listSessionKey > 0;
-
-  const lastMessageIndex = messages.length - 1;
-
-  const initialRenderCount = useMemo(() => {
-    if (!historyMounted) {
-      return 24;
+  const scrollToLatest = useCallback((animated = false) => {
+    const list = listRef.current;
+    if (!list || messages.length === 0) {
+      return;
     }
-    return Math.min(Math.max(messages.length, 24), MAX_INITIAL_RENDER);
-  }, [historyMounted, messages.length]);
-
-  const scrollToLatest = useCallback(
-    (animated = false) => {
-      if (lastMessageIndex < 0) {
-        return;
-      }
-
-      const list = listRef.current;
-      if (!list) {
-        return;
-      }
-
-      list.scrollToIndex({
-        index: lastMessageIndex,
-        animated,
-        viewPosition: 1,
-      });
-      list.scrollToEnd({ animated });
-    },
-    [lastMessageIndex],
-  );
+    list.scrollToEnd({ animated });
+  }, [messages.length]);
 
   useEffect(() => {
-    if (!historyMounted || messages.length === 0) {
+    if (!historyLoaded || messages.length === 0) {
+      return;
+    }
+
+    if (!initialScrollDoneRef.current) {
+      requestAnimationFrame(() => {
+        scrollToLatest(false);
+        initialScrollDoneRef.current = true;
+      });
       return;
     }
 
@@ -144,18 +125,7 @@ export function EventZoneChatScreen({ navigation, route }: Props) {
     if (previousLastId !== lastMessageId && stickToBottomRef.current) {
       scrollToLatest(true);
     }
-  }, [historyMounted, messages, scrollToLatest]);
-
-  const handleScrollToIndexFailed = useCallback(
-    (info: { index: number; averageItemLength: number }) => {
-      listRef.current?.scrollToOffset({
-        offset: Math.max(0, info.averageItemLength * info.index),
-        animated: false,
-      });
-      setTimeout(() => scrollToLatest(false), 50);
-    },
-    [scrollToLatest],
-  );
+  }, [historyLoaded, messages, scrollToLatest]);
 
   const handleScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -249,33 +219,46 @@ export function EventZoneChatScreen({ navigation, route }: Props) {
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}>
-        {historyMounted ? (
+        {isLoadingHistory ? (
+          <View className="flex-1 items-center justify-center px-4">
+            <Text className="text-center text-sm text-brand-muted">
+              {language === 'ko' ? '이전 메시지 불러오는 중…' : 'Loading chat history…'}
+            </Text>
+          </View>
+        ) : (
           <FlatList
-            key={`${route.params.roomId}-${listSessionKey}`}
             ref={listRef}
             data={messages}
             keyExtractor={item => item.id}
             className="flex-1 px-4 pt-4"
-            contentContainerClassName="pb-4"
-            initialScrollIndex={lastMessageIndex >= 0 ? lastMessageIndex : undefined}
-            initialNumToRender={initialRenderCount}
-            maxToRenderPerBatch={initialRenderCount}
-            windowSize={21}
+            contentContainerClassName="grow pb-4"
+            initialNumToRender={Math.min(messages.length || INITIAL_RENDER_BATCH, INITIAL_RENDER_BATCH)}
+            maxToRenderPerBatch={INITIAL_RENDER_BATCH}
+            windowSize={11}
             removeClippedSubviews={false}
             maintainVisibleContentPosition={
               hasMoreHistory
                 ? {
-                    minIndexForVisible: 1,
+                    minIndexForVisible: 0,
                     autoscrollToTopThreshold: 80,
                   }
                 : undefined
             }
-            onScrollToIndexFailed={handleScrollToIndexFailed}
             onContentSizeChange={() => {
+              if (!initialScrollDoneRef.current && messages.length > 0) {
+                scrollToLatest(false);
+                initialScrollDoneRef.current = true;
+                return;
+              }
               if (stickToBottomRef.current) {
                 scrollToLatest(false);
               }
             }}
+            ListEmptyComponent={
+              <View className="flex-1 items-center justify-center py-12">
+                <Text className="text-center text-sm text-brand-muted">{copy.emptyMessages}</Text>
+              </View>
+            }
             ListHeaderComponent={
               isLoadingMoreHistory ? (
                 <Text className="py-2 text-center text-sm text-brand-muted">
@@ -295,16 +278,6 @@ export function EventZoneChatScreen({ navigation, route }: Props) {
               />
             )}
           />
-        ) : (
-          <View className="flex-1 items-center justify-center px-4">
-            <Text className="text-center text-sm text-brand-muted">
-              {isLoadingHistory
-                ? language === 'ko'
-                  ? '이전 메시지 불러오는 중…'
-                  : 'Loading chat history…'
-                : copy.emptyMessages}
-            </Text>
-          </View>
         )}
 
         <View className="border-t border-brand-border bg-brand-surface px-4 py-3">

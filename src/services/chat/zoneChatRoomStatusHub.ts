@@ -7,6 +7,7 @@ import type { ParsedChatRoomStatusPayload } from '../../types/chatApi';
 import { isChatStatusDestination, parseChatRoomStatusBody } from '../../types/chatApi';
 import { logZoneChat } from '../../utils/chat/zoneChatLogger';
 import { isWebSocketAuthHandshakeFailure } from '../../utils/chat/zoneChatConnectionStatus';
+import { openZoneChatWebSocket } from '../../utils/chat/openZoneChatWebSocket';
 import {
   decodeStompFrames,
   decodeWebSocketPayload,
@@ -170,9 +171,7 @@ class ZoneChatRoomStatusHub {
     });
 
     try {
-      const socket = new WebSocket(url) as WebSocket & { binaryType?: string };
-      socket.binaryType = 'arraybuffer';
-      this.ws = socket;
+      this.ws = openZoneChatWebSocket(url, this.accessToken);
     } catch (error) {
       this.handleConnectFailure(error);
       return;

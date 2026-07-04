@@ -11,6 +11,9 @@ import {
 } from 'react-native';
 
 import type { PlaceDetailVO } from '../../types/googlePlaces';
+import type { AppLanguage } from '../../types/user';
+import { PLACE_CONTENT_TYPE } from '../../types/placesApi';
+import { formatTourismInfoRows } from '../../utils/places/tourismDetailFormatter';
 import { GoogleReviewCard } from '../accommodation/GoogleReviewCard';
 
 export type PlaceGoogleDetailCopy = {
@@ -29,6 +32,7 @@ export type PlaceGoogleDetailCopy = {
   detailSectionFacility?: string;
   detailSectionReviews?: string;
   detailSectionEmpty?: string;
+  detailSectionEvent?: string;
 };
 
 type PlaceGoogleDetailBodyProps = {
@@ -37,6 +41,8 @@ type PlaceGoogleDetailBodyProps = {
   fallbackAddress?: string;
   copy: PlaceGoogleDetailCopy;
   showPriceLevel?: boolean;
+  language?: AppLanguage;
+  contentTypeId?: string;
 };
 
 type DetailSectionId = 'info' | 'facility' | 'reviews';
@@ -172,11 +178,15 @@ function PlaceDetailSectionPager({
   copy,
   showPriceLevel,
   fallbackAddress,
+  language = 'ko',
+  contentTypeId,
 }: {
   detail: PlaceDetailVO | null;
   copy: PlaceGoogleDetailCopy;
   showPriceLevel: boolean;
   fallbackAddress?: string;
+  language?: AppLanguage;
+  contentTypeId?: string;
 }) {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const pageWidth = screenWidth;
@@ -187,12 +197,25 @@ function PlaceDetailSectionPager({
   const sectionLabels = useMemo(
     () => ({
       info: copy.detailSectionInfo ?? '기본 정보',
-      facility: copy.detailSectionFacility ?? '시설',
+      facility:
+        contentTypeId === PLACE_CONTENT_TYPE.festival
+          ? (copy.detailSectionEvent ?? '행사 정보')
+          : (copy.detailSectionFacility ?? '시설'),
       reviews: copy.detailSectionReviews ?? '리뷰',
       empty: copy.detailSectionEmpty ?? '표시할 정보가 없어요',
     }),
-    [copy],
+    [copy, contentTypeId],
   );
+
+  const facilityRows = useMemo(() => {
+    if (!detail) {
+      return [];
+    }
+    if (detail.tourismRawDetails && contentTypeId) {
+      return formatTourismInfoRows(detail.tourismRawDetails, contentTypeId, language);
+    }
+    return detail.tourismInfoRows ?? [];
+  }, [detail, contentTypeId, language]);
 
   const sections = useMemo<DetailSectionId[]>(() => ['info', 'facility', 'reviews'], []);
 
@@ -262,10 +285,7 @@ function PlaceDetailSectionPager({
           <InfoSection detail={detail} copy={copy} showPriceLevel={showPriceLevel} />
         </DetailPage>
         <DetailPage pageWidth={pageWidth}>
-          <FacilitySection
-            rows={detail.tourismInfoRows ?? []}
-            emptyMessage={sectionLabels.empty}
-          />
+          <FacilitySection rows={facilityRows} emptyMessage={sectionLabels.empty} />
         </DetailPage>
         <DetailPage pageWidth={pageWidth}>
           <ReviewsSection detail={detail} copy={copy} emptyMessage={sectionLabels.empty} />
@@ -281,6 +301,8 @@ export function PlaceGoogleDetailBody({
   fallbackAddress,
   copy,
   showPriceLevel = false,
+  language = 'ko',
+  contentTypeId,
 }: PlaceGoogleDetailBodyProps) {
   if (loading) {
     return (
@@ -297,6 +319,8 @@ export function PlaceGoogleDetailBody({
       copy={copy}
       showPriceLevel={showPriceLevel}
       fallbackAddress={fallbackAddress}
+      language={language}
+      contentTypeId={contentTypeId}
     />
   );
 }

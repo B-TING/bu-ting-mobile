@@ -1,6 +1,5 @@
 import { BUSAN_ATTRACTIONS } from '../plan/planWizard';
 import { PLACE_CATALOG, type PlaceCatalogEntry } from './placeCatalog';
-import { getJagalchiMarketPlaceDetail } from './placeSamples';
 import type { AttractionPlaceDetail, PlaceReviewVO } from '../../types/googlePlaces';
 
 function mockReviews(placeName: string): PlaceReviewVO[] {
@@ -76,15 +75,6 @@ function mockAttractionDetail(params: {
 
 function buildAttractionMockDetails(): Record<string, AttractionPlaceDetail> {
   const details: Record<string, AttractionPlaceDetail> = {};
-
-  const jagalchi = getJagalchiMarketPlaceDetail();
-  if (jagalchi) {
-    details.tour_jagalchi = {
-      ...jagalchi,
-      internalPlaceId: 'tour_jagalchi',
-      kind: 'market',
-    };
-  }
 
   for (const spot of BUSAN_ATTRACTIONS) {
     if (!spot.meta) {

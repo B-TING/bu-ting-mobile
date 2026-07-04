@@ -71,7 +71,6 @@ export {
   fetchAccommodationDetail,
   fetchAttractionDetail,
   fetchRoutePlaceDetail,
-  fetchPlaceDetailFromGoogleResponse,
   shouldFetchGooglePlaceDetail,
   buildGoogleMapsUrl,
   listKnownAccommodationPlaceIds,

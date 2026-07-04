@@ -1,84 +1,5 @@
 import type { RouteItemType } from './travelPlan';
 
-// ---------------------------------------------------------------------------
-// Google Places API (New) — Place Details raw response
-// 필드명·중첩 구조는 API JSON과 동일하게 유지 (백엔드 DTO / 캐시 스키마 참고용)
-// ---------------------------------------------------------------------------
-
-export type GoogleLocalizedText = {
-  text: string;
-  languageCode: string;
-};
-
-export type GoogleLatLng = {
-  latitude: number;
-  longitude: number;
-};
-
-export type GoogleViewport = {
-  low: GoogleLatLng;
-  high: GoogleLatLng;
-};
-
-export type GoogleAddressComponent = {
-  longText: string;
-  shortText: string;
-  types: string[];
-  languageCode: string;
-};
-
-export type GooglePlusCode = {
-  globalCode: string;
-  compoundCode?: string;
-};
-
-export type GoogleOpeningHoursPoint = {
-  day: number;
-  hour: number;
-  minute: number;
-  date?: { year: number; month: number; day: number };
-};
-
-export type GoogleOpeningHoursPeriod = {
-  open: GoogleOpeningHoursPoint;
-  close?: GoogleOpeningHoursPoint;
-};
-
-export type GoogleOpeningHours = {
-  openNow?: boolean;
-  periods?: GoogleOpeningHoursPeriod[];
-  weekdayDescriptions?: string[];
-  nextCloseTime?: string;
-};
-
-export type GoogleAuthorAttribution = {
-  displayName: string;
-  uri?: string;
-  photoUri?: string;
-};
-
-/** Places API (New) reviews[] 항목 */
-export type GooglePlaceReviewRaw = {
-  name: string;
-  relativePublishTimeDescription?: string;
-  rating: number;
-  text?: GoogleLocalizedText;
-  originalText?: GoogleLocalizedText;
-  authorAttribution: GoogleAuthorAttribution;
-  publishTime?: string;
-  flagContentUri?: string;
-  googleMapsUri?: string;
-};
-
-export type GooglePlacePhotoRaw = {
-  name: string;
-  widthPx?: number;
-  heightPx?: number;
-  authorAttributions?: GoogleAuthorAttribution[];
-  flagContentUri?: string;
-  googleMapsUri?: string;
-};
-
 export type GooglePaymentOptions = {
   acceptsCreditCards?: boolean;
   acceptsDebitCards?: boolean;
@@ -103,15 +24,6 @@ export type GoogleAccessibilityOptions = {
   wheelchairAccessibleSeating?: boolean;
 };
 
-export type GooglePostalAddress = {
-  regionCode?: string;
-  languageCode?: string;
-  postalCode?: string;
-  administrativeArea?: string;
-  locality?: string;
-  addressLines?: string[];
-};
-
 export type GoogleMapsLinks = {
   directionsUri?: string;
   placeUri?: string;
@@ -120,85 +32,7 @@ export type GoogleMapsLinks = {
   photosUri?: string;
 };
 
-export type GoogleTimeZone = {
-  id: string;
-};
-
-export type GoogleAddressDescriptorLandmark = {
-  name: string;
-  placeId: string;
-  displayName: GoogleLocalizedText;
-  types: string[];
-  straightLineDistanceMeters?: number;
-};
-
-export type GoogleAddressDescriptorArea = {
-  name: string;
-  placeId: string;
-  displayName: GoogleLocalizedText;
-  containment?: string;
-};
-
-export type GoogleAddressDescriptor = {
-  landmarks?: GoogleAddressDescriptorLandmark[];
-  areas?: GoogleAddressDescriptorArea[];
-};
-
-/**
- * GET places/{placeId} (FieldMask 전체) 응답 VO.
- * @example 자갈치시장 — placeId `ChIJudkrFArpaDURbbCzajeQs0c`
- */
-export type GooglePlaceDetailsResponse = {
-  name: string;
-  id: string;
-  types: string[];
-  nationalPhoneNumber?: string;
-  internationalPhoneNumber?: string;
-  formattedAddress?: string;
-  shortFormattedAddress?: string;
-  addressComponents?: GoogleAddressComponent[];
-  plusCode?: GooglePlusCode;
-  location?: GoogleLatLng;
-  viewport?: GoogleViewport;
-  rating?: number;
-  googleMapsUri?: string;
-  websiteUri?: string;
-  regularOpeningHours?: GoogleOpeningHours;
-  currentOpeningHours?: GoogleOpeningHours;
-  utcOffsetMinutes?: number;
-  adrFormatAddress?: string;
-  businessStatus?: string;
-  userRatingCount?: number;
-  iconMaskBaseUri?: string;
-  iconBackgroundColor?: string;
-  displayName?: GoogleLocalizedText;
-  primaryType?: string;
-  primaryTypeDisplayName?: GoogleLocalizedText;
-  googleMapsTypeLabel?: GoogleLocalizedText;
-  editorialSummary?: GoogleLocalizedText;
-  reviews?: GooglePlaceReviewRaw[];
-  photos?: GooglePlacePhotoRaw[];
-  priceLevel?: string;
-  delivery?: boolean;
-  dineIn?: boolean;
-  takeout?: boolean;
-  reservable?: boolean;
-  restroom?: boolean;
-  paymentOptions?: GooglePaymentOptions;
-  parkingOptions?: GoogleParkingOptions;
-  accessibilityOptions?: GoogleAccessibilityOptions;
-  pureServiceAreaBusiness?: boolean;
-  addressDescriptor?: GoogleAddressDescriptor;
-  googleMapsLinks?: GoogleMapsLinks;
-  timeZone?: GoogleTimeZone;
-  postalAddress?: GooglePostalAddress;
-};
-
-// ---------------------------------------------------------------------------
-// App domain VOs — UI·일정·백엔드 내부 API 공통 표현
-// ---------------------------------------------------------------------------
-
-/** 앱에서 구분하는 장소 유형 (Google types → 앱 도메인) */
+/** 앱에서 구분하는 장소 유형 */
 export type PlaceKind =
   | 'attraction'
   | 'accommodation'
@@ -300,7 +134,9 @@ export type PlaceDetailVO = {
   openingHours?: PlaceOpeningHoursVO;
   editorialSummary?: string;
   /** 한국관광공사 detailIntro 필드 (체크인, 주차 등) */
-  tourismInfoRows?: { label: string; value: string }[];
+  tourismInfoRows?: { key: string; label: string; value: string }[];
+  /** 상세 시트에서 언어별 라벨 재생성용 */
+  tourismRawDetails?: Record<string, string>;
   reviews: PlaceReviewVO[];
   photos: PlacePhotoVO[];
   amenities?: PlaceAmenitiesVO;

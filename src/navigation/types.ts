@@ -14,9 +14,15 @@ export type RootStackParamList = {
   TravelogueFeed: undefined;
   TravelogueDetail: { travelogueId: string };
   FestivalCalendar: { initialDate?: string } | undefined;
+  /** @deprecated PlaceMapSearch 사용 */
   FestivalDetail: { festivalId: string };
   LuggageStorage: undefined;
-  PlaceMapSearch: { contentTypeId?: PlaceContentTypeId } | undefined;
+  PlaceMapSearch: {
+    contentTypeId?: PlaceContentTypeId;
+    selectedContentId?: string;
+    festivalEventStartDate?: string;
+    festivalEventEndDate?: string;
+  } | undefined;
   /** @deprecated PlaceMapSearch 사용 */
   BusanAccommodation: undefined;
   /** @deprecated PlaceMapSearch 사용 */

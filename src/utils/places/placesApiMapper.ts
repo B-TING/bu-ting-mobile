@@ -8,8 +8,25 @@ import type {
   PlaceSearchResponseDto,
 } from '../../types/placesApi';
 import { PLACE_CONTENT_TYPE } from '../../types/placesApi';
-import { parsePriceLevel } from './googlePlacesMapper';
 import { formatTourismInfoRows } from './tourismDetailFormatter';
+
+function parsePriceLevel(raw?: string): number | undefined {
+  if (!raw) {
+    return undefined;
+  }
+  const match = raw.match(/PRICE_LEVEL_(FREE|INEXPENSIVE|MODERATE|EXPENSIVE|VERY_EXPENSIVE)/);
+  if (!match) {
+    return undefined;
+  }
+  const map: Record<string, number> = {
+    FREE: 0,
+    INEXPENSIVE: 1,
+    MODERATE: 2,
+    EXPENSIVE: 3,
+    VERY_EXPENSIVE: 4,
+  };
+  return map[match[1]];
+}
 
 function resolvePriceLevel(value?: string | number): number | undefined {
   if (typeof value === 'number' && Number.isFinite(value)) {
@@ -207,6 +224,7 @@ export function mapPlaceDetailToPlaceDetailVO(
         }
       : undefined,
     openingHours,
+    tourismRawDetails: detail.details,
     tourismInfoRows: tourismInfoRows.length > 0 ? tourismInfoRows : undefined,
     reviews: reviews.map((review, index) => ({
       reviewId: `${detail.contentId}-${index}`,

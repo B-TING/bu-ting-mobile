@@ -5,9 +5,9 @@ import type { ZoneChatIdentityField } from '../../types/zoneChatWebSocket';
 
 /**
  * 구역 채팅 WebSocket 설정 (백엔드 STOMP 스펙).
- * ws://{HOST}:8080/ws-stomp
- * - RN WebSocket 은 핸드셰이크에 Authorization 헤더를 붙일 수 없어 access_token 쿼리 사용
- * - STOMP CONNECT 프레임에도 Bearer 헤더를 함께 전송
+ * wss://{API_HOST}/ws-stomp
+ * - 핸드셰이크·STOMP CONNECT: Authorization: Bearer
+ * - access_token 쿼리는 OpaqueTokenAuthenticationFilter 호환용
  */
 export const ZONE_CHAT_WS_CONFIG = {
   /** 백엔드 채팅 연동 테스트 활성화 */

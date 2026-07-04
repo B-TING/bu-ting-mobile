@@ -12,10 +12,16 @@ export type MockEvent = {
   tag: 'FESTIVAL' | 'EXHIBITION';
   titleKo: string;
   titleEn: string;
+  titleJa: string;
+  titleZh: string;
   locationKo: string;
   locationEn: string;
+  locationJa: string;
+  locationZh: string;
   dateKo: string;
   dateEn: string;
+  dateJa: string;
+  dateZh: string;
   imageColor: string;
   imageEmoji: string;
 };
@@ -187,10 +193,16 @@ export const MOCK_EVENTS: MockEvent[] = [
     tag: 'FESTIVAL',
     titleKo: '부산 국제 록 페스티벌',
     titleEn: 'Busan International Rock Festival',
+    titleJa: '釜山国際ロックフェスティバル',
+    titleZh: '釜山国际摇滚音乐节',
     locationKo: '사상 삼락',
     locationEn: 'Sasang Samnak',
+    locationJa: '沙上三楽',
+    locationZh: '沙上三乐',
     dateKo: '10.04 - 10.06',
     dateEn: 'Oct 4 - 6',
+    dateJa: '10/4 - 10/6',
+    dateZh: '10/4 - 10/6',
     imageColor: '#1e3a5f',
     imageEmoji: '🎆',
   },
@@ -199,10 +211,16 @@ export const MOCK_EVENTS: MockEvent[] = [
     tag: 'EXHIBITION',
     titleKo: '광안리 M 드론 라이트쇼',
     titleEn: 'Gwangalli M Drone Light Show',
+    titleJa: '広安里Mドローンライトショー',
+    titleZh: '广安里M无人机灯光秀',
     locationKo: '광안리 해수욕장',
     locationEn: 'Gwangalli Beach',
+    locationJa: '広安里海水浴場',
+    locationZh: '广安里海水浴场',
     dateKo: '매주 토요일',
     dateEn: 'Every Saturday',
+    dateJa: '毎週土曜日',
+    dateZh: '每周六',
     imageColor: '#0f766e',
     imageEmoji: '🛸',
   },

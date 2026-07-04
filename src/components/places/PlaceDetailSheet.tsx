@@ -1,6 +1,6 @@
 import { Linking, Pressable, Text, useWindowDimensions, View } from 'react-native';
 
-import { PLACE_SEARCH_COPY } from '../../constants/places/placeSearch';
+import { PLACE_SEARCH_COPY, isFestivalPlaceSearch } from '../../constants/places/placeSearch';
 import { buildGoogleMapsUrl } from '../../kakaoMap';
 import type { BusanPlace } from '../../types/placeSearch';
 import type { PlaceDetailVO } from '../../types/googlePlaces';
@@ -27,6 +27,7 @@ export function PlaceDetailSheet({
   visible,
   place,
   detail,
+  language,
   copy,
   bookmarked = false,
   onToggleBookmark,
@@ -40,8 +41,12 @@ export function PlaceDetailSheet({
   }
 
   const categoryLabel = copy.categoryLabels[place.contentTypeId];
+  const isFestival = isFestivalPlaceSearch(place.contentTypeId);
   const rating = detail?.rating ?? place.rating;
   const reviewCount = detail?.userRatingCount ?? place.userRatingsTotal;
+  const metaLine = isFestival
+    ? copy.festivalDetailMeta
+    : copy.ratingSummary(rating, reviewCount);
 
   const openGoogleMaps = () => {
     if (detail) {
@@ -70,6 +75,7 @@ export function PlaceDetailSheet({
     detailSectionFacility: copy.detailSectionFacility,
     detailSectionReviews: copy.detailSectionReviews,
     detailSectionEmpty: copy.detailSectionEmpty,
+    detailSectionEvent: copy.detailSectionEvent,
   };
 
   return (
@@ -113,9 +119,7 @@ export function PlaceDetailSheet({
           </View>
         </View>
 
-        <Text className="mt-2 text-sm font-semibold text-brand-primary px-5">
-          {copy.ratingSummary(rating, reviewCount)}
-        </Text>
+        <Text className="mt-2 text-sm font-semibold text-brand-primary px-5">{metaLine}</Text>
 
         <Pressable
           onPress={openGoogleMaps}
@@ -129,6 +133,8 @@ export function PlaceDetailSheet({
           fallbackAddress={place.address}
           copy={googleDetailCopy}
           showPriceLevel={place.contentTypeId === '32'}
+          language={language}
+          contentTypeId={place.contentTypeId}
         />
     </AppModal>
   );

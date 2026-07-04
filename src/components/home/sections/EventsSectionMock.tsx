@@ -1,16 +1,42 @@
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
+import { festivalTagLabel } from '../../../constants/festival/festivalCalendar';
 import type { MockEvent } from '../../../constants/home/mainHome';
+import type { AppLanguage } from '../../../types/user';
 import { cn } from '../../../utils/common/cn';
 
 type EventsSectionMockProps = {
   title: string;
   viewAllLabel: string;
   events: MockEvent[];
-  language?: 'ko' | 'en' | 'ja' | 'zh';
+  language?: AppLanguage;
   onViewAllPress?: () => void;
   onEventPress?: (id: string) => void;
+  showMockHint?: boolean;
 };
+
+function pickLocalizedEventField(
+  event: MockEvent,
+  field: 'title' | 'location' | 'date',
+  language: AppLanguage,
+): string {
+  if (field === 'title') {
+    if (language === 'ja') return event.titleJa;
+    if (language === 'zh') return event.titleZh;
+    if (language === 'en') return event.titleEn;
+    return event.titleKo;
+  }
+  if (field === 'location') {
+    if (language === 'ja') return event.locationJa;
+    if (language === 'zh') return event.locationZh;
+    if (language === 'en') return event.locationEn;
+    return event.locationKo;
+  }
+  if (language === 'ja') return event.dateJa;
+  if (language === 'zh') return event.dateZh;
+  if (language === 'en') return event.dateEn;
+  return event.dateKo;
+}
 
 function EventCard({
   event,
@@ -18,12 +44,12 @@ function EventCard({
   onPress,
 }: {
   event: MockEvent;
-  language: 'ko' | 'en' | 'ja' | 'zh';
+  language: AppLanguage;
   onPress?: () => void;
 }) {
-  const title = language === 'ko' ? event.titleKo : event.titleEn;
-  const location = language === 'ko' ? event.locationKo : event.locationEn;
-  const date = language === 'ko' ? event.dateKo : event.dateEn;
+  const title = pickLocalizedEventField(event, 'title', language);
+  const location = pickLocalizedEventField(event, 'location', language);
+  const date = pickLocalizedEventField(event, 'date', language);
 
   return (
     <Pressable
@@ -41,7 +67,9 @@ function EventCard({
             'mb-2 self-start rounded-md px-2 py-0.5',
             event.tag === 'FESTIVAL' ? 'bg-brand-primary' : 'bg-orange-500',
           )}>
-          <Text className="text-[10px] font-bold text-white">{event.tag}</Text>
+          <Text className="text-[10px] font-bold text-white">
+            {festivalTagLabel(event.tag, language)}
+          </Text>
         </View>
         <Text className="text-sm font-bold text-brand-text" numberOfLines={2}>
           {title}
@@ -61,6 +89,7 @@ export function EventsSectionMock({
   language = 'ko',
   onViewAllPress,
   onEventPress,
+  showMockHint = false,
 }: EventsSectionMockProps) {
   return (
     <View className="mb-6">
@@ -83,11 +112,17 @@ export function EventsSectionMock({
           />
         ))}
       </ScrollView>
-      <Text className="mt-2 text-[10px] text-brand-muted">
-        {language === 'ko'
-          ? '축제 API 연동 전 목업 데이터입니다.'
-          : 'Mock data until festival API is connected.'}
-      </Text>
+      {showMockHint ? (
+        <Text className="mt-2 text-[10px] text-brand-muted">
+          {language === 'ko'
+            ? '축제 API 연동 전 목업 데이터입니다.'
+            : language === 'ja'
+              ? '祭りAPI連携前のモックデータです。'
+              : language === 'zh'
+                ? '节庆 API 接入前的模拟数据。'
+                : 'Mock data until festival API is connected.'}
+        </Text>
+      ) : null}
     </View>
   );
 }
