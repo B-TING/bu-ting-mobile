@@ -12,10 +12,11 @@ import {
   PLACE_SEARCH_CENTER_THRESHOLD_M,
   PLACE_SEARCH_COPY,
   PLACE_SEARCH_RADIUS_M,
+  buildPlaceListMetaLine,
 } from '../../constants/places/placeSearch';
 import { useCurrentEventZone } from '../../hooks/useCurrentEventZone';
 import type { RootStackParamList } from '../../navigation/types';
-import { useAppStore, usePlaceBookmarkStore, usePlaceSearchStore } from '../../stores';
+import { useAppStore, usePlaceBookmarkStore, usePlaceDetailCacheStore, usePlaceSearchStore } from '../../stores';
 import type { EventZoneCoordinate } from '../../types/eventZone';
 import type { BusanPlace } from '../../types/placeSearch';
 import { PLACE_MAP_SEARCH_TYPES } from '../../types/placesApi';
@@ -88,6 +89,7 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
 
   const places = useMemo(() => cacheEntry?.places ?? [], [cacheEntry]);
   const placeDetailsById = cacheEntry?.placeDetailsById ?? {};
+  const globalPlaceDetails = usePlaceDetailCacheStore(s => s.detailsByPlaceId);
   const error = cacheEntry?.error ?? null;
 
   useEffect(() => {
@@ -423,10 +425,7 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
                           <Text className="text-sm font-bold text-brand-text">{place.name}</Text>
                         </View>
                         <Text className="mt-0.5 text-xs text-brand-muted">
-                          {copy.categoryLabels[place.contentTypeId]} ·{' '}
-                          {isFestivalPlaceSearch(place.contentTypeId)
-                            ? copy.festivalListMeta(place.address)
-                            : copy.ratingSummary(place.rating, place.userRatingsTotal)}
+                          {buildPlaceListMetaLine(place, copy)}
                         </Text>
                       </Pressable>
                     );
@@ -441,7 +440,13 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
       <PlaceDetailSheet
         visible={detailOpen}
         place={selectedPlace}
-        detail={selectedPlace ? (placeDetailsById[selectedPlace.contentId] ?? null) : null}
+        detail={
+          selectedPlace
+            ? (placeDetailsById[selectedPlace.contentId] ??
+              globalPlaceDetails[selectedPlace.contentId] ??
+              null)
+            : null
+        }
         language={language}
         copy={copy}
         bookmarked={

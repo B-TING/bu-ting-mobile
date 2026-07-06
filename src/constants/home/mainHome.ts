@@ -24,6 +24,7 @@ export type MockEvent = {
   dateZh: string;
   imageColor: string;
   imageEmoji: string;
+  imageUri?: string;
 };
 
 export type MockTravelogue = {

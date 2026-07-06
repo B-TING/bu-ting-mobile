@@ -33,5 +33,5 @@ export function optimizeRouteOrder(routes: RouteItem[]): RouteItem[] {
     result.push(remaining.splice(nearestIdx, 1)[0]);
   }
 
-  return result.map((r, i) => ({ ...r, sequence: i }));
+  return result.map((r, i) => ({ ...r, sequence: i + 1 }));
 }

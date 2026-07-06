@@ -1,4 +1,5 @@
 import type { AppLanguage } from '../../types/user';
+import type { BusanPlace } from '../../types/placeSearch';
 import { PLACE_CONTENT_TYPE } from '../../types/placesApi';
 import type { PlaceContentTypeId } from '../../types/placesApi';
 
@@ -275,4 +276,21 @@ export function defaultPlaceContentTypeId(
 
 export function isFestivalPlaceSearch(contentTypeId: PlaceContentTypeId): boolean {
   return contentTypeId === PLACE_CONTENT_TYPE.festival;
+}
+
+type PlaceSearchCopy = (typeof PLACE_SEARCH_COPY)['ko'];
+
+/** 지도·리스트 공통 — `관광지 · ★ 4.5` 형식 */
+export function buildPlaceListMetaLine(
+  place: BusanPlace,
+  copy: PlaceSearchCopy,
+  secondary?: string,
+): string {
+  const category = copy.categoryLabels[place.contentTypeId];
+  const tail =
+    secondary ??
+    (isFestivalPlaceSearch(place.contentTypeId)
+      ? copy.festivalListMeta(place.address)
+      : copy.ratingSummary(place.rating, place.userRatingsTotal));
+  return `${category} · ${tail}`;
 }

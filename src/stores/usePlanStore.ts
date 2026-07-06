@@ -2,7 +2,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
+import { PLACE_SEARCH_COPY } from '../constants/places/placeSearch';
 import { enrichPlaceInfo } from '../constants/places/placeCatalog';
+import { isTourApiContentId, routeTypeToContentTypeId } from '../utils/places/routePlaceDetail';
 import type { PlanWizardAnswers } from '../types/planWizard';
 import type { BudgetEntry, RouteItem, TravelLegMode, TravelPlan } from '../types/travelPlan';
 import type { Travelogue } from '../types/travelReview';
@@ -87,7 +89,7 @@ export const usePlanStore = create<PlanState>()(
                 const filtered = day.routes.filter(r => r.itemId !== itemId);
                 return {
                   ...day,
-                  routes: filtered.map((r, i) => ({ ...r, sequence: i })),
+                  routes: filtered.map((r, i) => ({ ...r, sequence: i + 1 })),
                 };
               }),
             };
@@ -129,10 +131,19 @@ export const usePlanStore = create<PlanState>()(
                 if (day.dayNumber !== dayNumber) {
                   return day;
                 }
-                const sequence = day.routes.length;
                 return {
                   ...day,
-                  routes: [...day.routes, { ...route, sequence }],
+                  routes: [
+                    ...day.routes,
+                    {
+                      ...route,
+                      sequence:
+                        route.sequence ??
+                        (day.routes.length === 0
+                          ? 1
+                          : Math.max(...day.routes.map(r => r.sequence)) + 1),
+                    },
+                  ],
                 };
               }),
             };
@@ -154,7 +165,7 @@ export const usePlanStore = create<PlanState>()(
                 const routes = orderedItemIds
                   .map((id, i) => {
                     const r = byId[id];
-                    return r ? { ...r, sequence: i } : null;
+                    return r ? { ...r, sequence: i + 1 } : null;
                   })
                   .filter((r): r is RouteItem => r != null);
                 return { ...day, routes };
@@ -259,13 +270,21 @@ export function hydrateRoutePlaceInfo(
   route: RouteItem,
   lang: 'ko' | 'en' | 'ja' | 'zh',
 ): RouteItem {
+  const placeInfo =
+    route.placeInfo ?? enrichPlaceInfo(route.placeId, route.placeName, route.type, lang);
+
+  if (isTourApiContentId(route.placeId)) {
+    const categoryLabel =
+      PLACE_SEARCH_COPY[lang].categoryLabels[routeTypeToContentTypeId(route.type)];
+    if (placeInfo.category !== categoryLabel) {
+      return { ...route, placeInfo: { ...placeInfo, category: categoryLabel } };
+    }
+  }
+
   if (route.placeInfo) {
     return route;
   }
-  return {
-    ...route,
-    placeInfo: enrichPlaceInfo(route.placeId, route.placeName, route.type, lang),
-  };
+  return { ...route, placeInfo };
 }
 
 export const emptyWizardAnswers = (): PlanWizardAnswers => ({

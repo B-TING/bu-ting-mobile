@@ -13,6 +13,7 @@ import { PLACE_CONTENT_TYPE, type PlaceContentTypeId } from '../types/placesApi'
 import { enrichBusanPlaceFromDetail } from '../utils/places/placesApiMapper';
 import { mapFestivalToBusanPlace } from '../utils/places/festivalApiMapper';
 import { logPlacesApiError } from '../utils/places/placesApiLogger';
+import { usePlaceDetailCacheStore } from './usePlaceDetailCacheStore';
 
 export type PlaceSearchCacheEntry = {
   places: BusanPlace[];
@@ -133,6 +134,8 @@ export const usePlaceSearchStore = create<PlaceSearchState>()((set, get) => ({
         return;
       }
 
+      usePlaceDetailCacheStore.getState().mergeDetails(detailsById);
+
       const enriched = data.map(place =>
         enrichBusanPlaceFromDetail(place, detailsById[place.contentId]),
       );
@@ -212,6 +215,8 @@ export const usePlaceSearchStore = create<PlaceSearchState>()((set, get) => ({
       if (get().requestIdByType[contentTypeId] !== requestId) {
         return;
       }
+
+      usePlaceDetailCacheStore.getState().mergeDetails(detailsById);
 
       const enriched = data.map(place =>
         enrichBusanPlaceFromDetail(place, detailsById[place.contentId]),

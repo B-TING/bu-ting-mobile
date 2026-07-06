@@ -92,6 +92,14 @@ function resolvePhone(detail: PlaceDetailResponseDto): string | undefined {
   return undefined;
 }
 
+export function resolvePlaceDetailImageUrl(
+  detail: Pick<PlaceDetailResponseDto, 'imageUrl' | 'thumbnailUrl' | 'firstImage' | 'details'>,
+): string | undefined {
+  const fromDetails = detail.details?.firstimage?.trim() || detail.details?.firstimage2?.trim();
+  const url = detail.imageUrl ?? detail.thumbnailUrl ?? detail.firstImage ?? fromDetails;
+  return url || undefined;
+}
+
 function parseCoord(value: number | string | undefined): number | null {
   if (value == null || value === '') {
     return null;
@@ -193,6 +201,7 @@ export function enrichBusanPlaceFromDetail(
     rating: detail.rating ?? place.rating,
     userRatingsTotal: detail.userRatingCount ?? place.userRatingsTotal,
     address: detail.formattedAddress || place.address,
+    imageUrl: detail.imageUrl ?? place.imageUrl,
   };
 }
 
@@ -206,6 +215,11 @@ export function mapPlaceDetailToPlaceDetailVO(
   const openingHours = resolveOpeningHours(detail);
   const reviews = resolveReviews(detail);
   const tourismInfoRows = formatTourismInfoRows(detail.details, detail.contentTypeId);
+  const imageUrl = resolvePlaceDetailImageUrl(detail);
+  const overview =
+    detail.details?.overview?.trim() ||
+    detail.details?.infotext?.trim() ||
+    detail.details?.expdetail?.trim();
 
   return {
     googlePlaceId: google?.placeId ?? detail.googlePlaceId ?? detail.contentId,
@@ -224,6 +238,7 @@ export function mapPlaceDetailToPlaceDetailVO(
         }
       : undefined,
     openingHours,
+    editorialSummary: overview,
     tourismRawDetails: detail.details,
     tourismInfoRows: tourismInfoRows.length > 0 ? tourismInfoRows : undefined,
     reviews: reviews.map((review, index) => ({
@@ -235,6 +250,7 @@ export function mapPlaceDetailToPlaceDetailVO(
       publishTime: review.publishTime,
     })),
     photos: [],
+    imageUrl,
     priceLevel: resolvePriceLevel(google?.priceLevel ?? detail.priceLevel),
   };
 }

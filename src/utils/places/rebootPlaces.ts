@@ -11,6 +11,8 @@ export type RebootPlaceCandidate = {
   placeName: string;
   location: { lat: number; lng: number };
   distanceKm: number;
+  imageUrl?: string;
+  address?: string;
 };
 
 const REBOOT_NEARBY_LIMIT = 5;
@@ -123,6 +125,12 @@ export function candidateToRouteItem(
   type: RouteItemType = 'ATTRACTION',
   legMode?: RouteItem['legMode'],
 ): RouteItem {
+  const baseInfo = enrichPlaceInfo(
+    candidate.placeId,
+    candidate.placeName,
+    type,
+    language,
+  );
   return {
     itemId: createId('r'),
     sequence,
@@ -132,18 +140,30 @@ export function candidateToRouteItem(
     location: candidate.location,
     isVisited: false,
     legMode,
-    placeInfo: enrichPlaceInfo(
-      candidate.placeId,
-      candidate.placeName,
-      type,
-      language,
-    ),
+    placeInfo: {
+      ...baseInfo,
+      address: candidate.address?.trim() || baseInfo.address,
+      imageUrl: candidate.imageUrl ?? baseInfo.imageUrl,
+    },
   };
 }
 
 export function formatDistanceKm(km: number, language: AppLanguage): string {
-  if (km < 0.1) {
-    return language === 'ko' ? '근처' : language === 'ja' ? '近く' : language === 'zh' ? '?�近' : 'Nearby';
+  if (km < 0.05) {
+    return language === 'ko' ? '50m ??' : language === 'ja' ? '50m??' : language === 'zh' ? '50??' : '< 50 m';
+  }
+  if (km < 1) {
+    const meters = Math.round(km * 1000);
+    if (language === 'ko') {
+      return `${meters}m`;
+    }
+    if (language === 'ja') {
+      return `${meters}m`;
+    }
+    if (language === 'zh') {
+      return `${meters}?`;
+    }
+    return `${meters} m`;
   }
   const rounded = Math.round(km * 10) / 10;
   if (language === 'ko') {

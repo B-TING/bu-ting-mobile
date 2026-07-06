@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 
+import { useCurrentEventZone } from '../../hooks/useCurrentEventZone';
 import type { DailyItinerary } from '../../types/travelPlan';
 import { KakaoMapShell } from '../core/KakaoMapShell';
 import { SCHEDULE_DAY_FOCUS_KM_SPAN } from '../core/camera';
@@ -23,14 +24,19 @@ export function ScheduleMapView({
   mapTitle,
   mapSubtitle,
 }: ScheduleMapViewProps) {
+  const { location } = useCurrentEventZone();
   const mapDays = useMemo(() => buildScheduleMapDays(itinerary), [itinerary]);
   const visibleDays = useMemo(
     () => mapDays.filter(day => day.routes.length > 0),
     [mapDays],
   );
-  const points = useMemo(
+  const schedulePoints = useMemo(
     () => collectScheduleMapPoints(visibleDays, selectedDayNumber),
     [visibleDays, selectedDayNumber],
+  );
+  const points = useMemo(
+    () => (schedulePoints.length > 0 ? schedulePoints : [location]),
+    [schedulePoints, location],
   );
   const { lines, markers } = useScheduleMapOverlays(itinerary, selectedDayNumber);
   const overlays = useMemo(
@@ -42,7 +48,11 @@ export function ScheduleMapView({
     <KakaoMapShell
       points={points}
       overlays={overlays}
-      cameraKmSpan={selectedDayNumber != null ? SCHEDULE_DAY_FOCUS_KM_SPAN : undefined}
+      cameraKmSpan={
+        schedulePoints.length === 0 || selectedDayNumber != null
+          ? SCHEDULE_DAY_FOCUS_KM_SPAN
+          : undefined
+      }
       size="fill"
       emptySubtitle={mapSubtitle}
       footer={{ title: mapTitle, subtitle: mapSubtitle }}

@@ -616,6 +616,7 @@ export function festivalToHomeEvent(festival: BusanFestival): MockEvent {
     dateZh: festivalPeriodLabel(festival, 'zh'),
     imageColor: festival.imageColor,
     imageEmoji: festival.imageEmoji,
+    imageUri: festival.imageUri || undefined,
   };
 }
 

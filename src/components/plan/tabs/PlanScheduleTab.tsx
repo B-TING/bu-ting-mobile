@@ -62,6 +62,7 @@ type PlanScheduleTabProps = {
   onToggleVisited: (itemId: string) => void;
   onWriteReview: (route: RouteItem) => void;
   onQuickRating: (route: RouteItem, rating: number) => void;
+  onDeleteRoute: (route: RouteItem) => void;
   onRouteRemoved?: (itemId: string) => void;
   onScheduleModalChange: (modal: ScheduleModalState) => void;
   onReorderActiveChange?: (active: boolean) => void;
@@ -81,6 +82,7 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
       onToggleVisited,
       onWriteReview,
       onQuickRating,
+      onDeleteRoute,
       onRouteRemoved,
       onScheduleModalChange,
       onReorderActiveChange,
@@ -88,7 +90,6 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
     ref,
   ) {
     const { alert } = useAppAlert();
-    const removeRoute = usePlanStore(s => s.removeRouteFromPlan);
     const reorderRoutes = usePlanStore(s => s.reorderRoutesInPlan);
     const updateLegMode = usePlanStore(s => s.updateRouteLegMode);
     const optimizeDayRoute = usePlanStore(s => s.optimizeDayRoute);
@@ -204,7 +205,7 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
     };
 
     const handleDelete = (route: RouteItem) => {
-      removeRoute(planId, route.itemId);
+      onDeleteRoute(route);
       onRouteRemoved?.(route.itemId);
       clearReboot();
     };
@@ -341,7 +342,7 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
 
     return (
       <ScheduleMapSplit
-        planId={planId}
+        itinerary={plan.itinerary}
         selectedDayNumber={day?.dayNumber ?? 1}
         mapTitle={copy.mapPlaceholder}
         mapSubtitle={copy.mapPlaceholderSub}
@@ -394,6 +395,8 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
                     route.legMode,
                   )
                 : null;
+            const zoneColor =
+              EVENT_ZONE_BY_ID[resolveEventZoneForRoute(route)].baseColor;
 
             return (
               <View key={route.itemId}>
@@ -402,6 +405,7 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
                     leg={leg}
                     directionsLabel={copy.directions}
                     copy={legCopy}
+                    lineColor={zoneColor}
                   />
                 ) : null}
                 {renderRouteSlot(route, index)}

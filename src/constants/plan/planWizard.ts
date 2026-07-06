@@ -139,10 +139,10 @@ export const PLAN_WIZARD_STEPS: PlanWizardStepConfig[] = [
       zh: '如何生成行程',
     },
     subtitle: {
-      ko: 'AI 자동 생성 또는 후보에서 선택',
-      en: 'AI auto-build or pick from options',
-      ja: 'AI自動 or 候補から選択',
-      zh: 'AI 自动生成或从候选中选择',
+      ko: 'AI 자동 생성, 후보 선택, 또는 직접 만들기',
+      en: 'AI auto-build, pick options, or build manually',
+      ja: 'AI自動・候補選択・手動作成',
+      zh: 'AI 生成、候选或手动创建',
     },
   },
 ];
@@ -193,7 +193,7 @@ export const BUSAN_FOODS: SelectOption[] = [
   { id: 'chimaek', label: { ko: '치맥·야식', en: 'Chicken & beer', ja: 'チキン', zh: '炸鸡啤酒' } },
 ];
 
-export const COMPANION_TYPE_OPTIONS: { id: import('../types/planWizard').CompanionGroupType; label: LocalizedLabel }[] = [
+export const COMPANION_TYPE_OPTIONS: { id: import('../../types/planWizard').CompanionGroupType; label: LocalizedLabel }[] = [
   { id: 'solo', label: { ko: '혼자', en: 'Solo', ja: 'ひとり', zh: '独自' } },
   { id: 'family', label: { ko: '가족', en: 'Family', ja: '家族', zh: '家人' } },
   { id: 'couple', label: { ko: '애인·연인', en: 'Partner', ja: '恋人', zh: '伴侣' } },
@@ -240,7 +240,11 @@ export const PLAN_WIZARD_COPY: Record<
     modeAutoSub: string;
     modeCandidates: string;
     modeCandidatesSub: string;
+    modeManual: string;
+    modeManualSub: string;
     generating: string;
+    creatingManual: string;
+    createManualError: string;
     pickPlan: string;
     days: (n: number) => string;
     statusDraft: string;
@@ -253,6 +257,7 @@ export const PLAN_WIZARD_COPY: Record<
     back: '이전',
     finish: '완료',
     createPlan: '새 여행 계획',
+    newPlan: '새 일정',
     activePlan: '진행 중인 계획',
     noPlan: '아직 진행 중인 계획이 없어요',
     noPlanSub: '버튼을 눌러 맞춤 일정을 만들어 보세요',
@@ -268,7 +273,11 @@ export const PLAN_WIZARD_COPY: Record<
     modeAutoSub: '입력한 정보로 바로 플랜 생성',
     modeCandidates: '후보에서 직접 선택',
     modeCandidatesSub: 'AI 후보를 받고 마음에 드는 플랜 선택',
+    modeManual: '직접 일정 만들기',
+    modeManualSub: '날짜·인원만으로 빈 일정을 만들고 장소를 직접 추가',
     generating: 'AI에게 일정 요청 중…',
+    creatingManual: '여행 일정 생성 중…',
+    createManualError: '여행 생성에 실패했습니다. 로그인 상태와 API 서버를 확인해 주세요.',
     pickPlan: '이 일정으로 시작',
     days: n => `${n}일`,
     statusDraft: '생성 중',
@@ -280,6 +289,7 @@ export const PLAN_WIZARD_COPY: Record<
     back: 'Back',
     finish: 'Done',
     createPlan: 'New trip plan',
+    newPlan: 'New plan',
     activePlan: 'Current plan',
     noPlan: 'No active plan yet',
     noPlanSub: 'Tap below to build a personalized itinerary',
@@ -295,7 +305,11 @@ export const PLAN_WIZARD_COPY: Record<
     modeAutoSub: 'Generate from your answers',
     modeCandidates: 'Choose from options',
     modeCandidatesSub: 'Review AI options and pick one',
+    modeManual: 'Build itinerary manually',
+    modeManualSub: 'Create an empty plan with dates & travelers, then add places yourself',
     generating: 'Requesting plan from AI…',
+    creatingManual: 'Creating your trip…',
+    createManualError: 'Could not create the trip. Check login and API server.',
     pickPlan: 'Start with this plan',
     days: n => `${n} days`,
     statusDraft: 'Draft',
@@ -307,6 +321,7 @@ export const PLAN_WIZARD_COPY: Record<
     back: '戻る',
     finish: '完了',
     createPlan: '新しい旅行プラン',
+    newPlan: '新規プラン',
     activePlan: '進行中のプラン',
     noPlan: '進行中のプランがありません',
     noPlanSub: 'ボタンからオリジナル行程を作成',
@@ -322,7 +337,11 @@ export const PLAN_WIZARD_COPY: Record<
     modeAutoSub: '回答からすぐ生成',
     modeCandidates: '候補から選択',
     modeCandidatesSub: 'AI候補から選ぶ',
+    modeManual: '手動で行程作成',
+    modeManualSub: '日付・人数だけで空の行程を作り、場所を追加',
     generating: 'AIにリクエスト中…',
+    creatingManual: '旅行を作成中…',
+    createManualError: '旅行の作成に失敗しました。ログインとAPIを確認してください。',
     pickPlan: 'このプランで開始',
     days: n => `${n}日`,
     statusDraft: '作成中',
@@ -334,6 +353,7 @@ export const PLAN_WIZARD_COPY: Record<
     back: '上一步',
     finish: '完成',
     createPlan: '新建旅行计划',
+    newPlan: '新计划',
     activePlan: '进行中的计划',
     noPlan: '暂无进行中的计划',
     noPlanSub: '点击下方创建专属行程',
@@ -349,7 +369,11 @@ export const PLAN_WIZARD_COPY: Record<
     modeAutoSub: '根据回答立即生成',
     modeCandidates: '从候选中选择',
     modeCandidatesSub: '查看 AI 候选并挑选',
+    modeManual: '手动创建行程',
+    modeManualSub: '仅用日期和人数创建空行程，自行添加地点',
     generating: '正在向 AI 请求行程…',
+    creatingManual: '正在创建旅行…',
+    createManualError: '创建旅行失败。请检查登录和 API 服务器。',
     pickPlan: '使用此行程',
     days: n => `${n}天`,
     statusDraft: '草稿',

@@ -2,6 +2,7 @@ import type { BusanFestival } from '../../constants/festival/festivalCalendar';
 import type { FestivalSearchItemDto, PlaceDetailResponseDto } from '../../types/placesApi';
 import { PLACE_CONTENT_TYPE } from '../../types/placesApi';
 import type { BusanPlace } from '../../types/placeSearch';
+import { resolvePlaceDetailImageUrl } from './placesApiMapper';
 import { tourApiDistrictLabelKo } from './tourApiDistrict';
 
 const DEFAULT_FESTIVAL_COLOR = '#6366f1';
@@ -191,5 +192,6 @@ export function enrichFestivalFromDetail(
     summaryJa: summary,
     summaryZh: summary,
     location,
+    imageUri: resolvePlaceDetailImageUrl(detail) || festival.imageUri,
   };
 }

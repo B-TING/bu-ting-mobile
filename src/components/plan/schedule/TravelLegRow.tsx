@@ -1,11 +1,13 @@
 import { Pressable, Text, View } from 'react-native';
 
+import { ScheduleTimelineRail } from './ScheduleTimelineRail';
 import type { TravelLeg } from '../../../types/travelPlan';
 
 type TravelLegRowProps = {
   leg: TravelLeg;
   directionsLabel: string;
   copy: { legWalk: string; legDrive: string; legTransit: string };
+  lineColor?: string;
 };
 
 function modeLabel(leg: TravelLeg, copy: TravelLegRowProps['copy']) {
@@ -28,16 +30,31 @@ function modeIcon(mode: TravelLeg['mode']) {
   return '🚌';
 }
 
-export function TravelLegRow({ leg, directionsLabel, copy }: TravelLegRowProps) {
+export function TravelLegRow({
+  leg,
+  directionsLabel,
+  copy,
+  lineColor = '#CBD5E1',
+}: TravelLegRowProps) {
   return (
-    <View className="my-2 flex-row items-center py-1">
-      <View className="mr-3 h-8 w-8 items-center justify-center rounded-full bg-brand-selected">
-        <Text>{modeIcon(leg.mode)}</Text>
+    <View className="flex-row items-stretch py-1">
+      <ScheduleTimelineRail
+        lineColor={lineColor}
+        extendTop={14}
+        extendBottom={14}
+        dashed
+        node={
+          <View className="h-8 w-8 items-center justify-center rounded-full border border-brand-border bg-brand-surface">
+            <Text>{modeIcon(leg.mode)}</Text>
+          </View>
+        }
+      />
+      <View className="flex-1 justify-center">
+        <Text className="text-sm text-brand-muted">
+          {modeLabel(leg, copy)} · {leg.durationMinutes} min · {leg.distanceKm} km
+        </Text>
       </View>
-      <Text className="flex-1 text-sm text-brand-muted">
-        {modeLabel(leg, copy)} · {leg.durationMinutes} min · {leg.distanceKm} km
-      </Text>
-      <Pressable hitSlop={8} className="active:opacity-80">
+      <Pressable hitSlop={8} className="self-center active:opacity-80">
         <Text className="text-sm font-semibold text-brand-primary">
           {directionsLabel}
         </Text>

@@ -2,6 +2,8 @@
 
 import {
   FESTIVAL_DETAIL_FIELD_ORDER,
+  isTourismCheckFlagKey,
+  tourismAvailabilityValue,
   tourismDetailLabel,
 } from '../../constants/places/tourismDetailLabels';
 import type { AppLanguage } from '../../types/user';
@@ -118,6 +120,19 @@ function formatGeneralField(
   if (PHONE_DETAIL_KEYS.has(key) || shouldSkipRawValue(value)) {
     return null;
   }
+
+  const normalized = key.toLowerCase();
+  if (isTourismCheckFlagKey(normalized)) {
+    if (!isTruthyFlag(value)) {
+      return null;
+    }
+    return {
+      key,
+      label: tourismDetailLabel(key, language),
+      value: tourismAvailabilityValue(language),
+    };
+  }
+
   return {
     key,
     label: tourismDetailLabel(key, language),

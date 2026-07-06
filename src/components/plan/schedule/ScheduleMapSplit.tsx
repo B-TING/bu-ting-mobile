@@ -11,7 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { routeFabScrollPadding } from '../fab/RouteOptimizeFab';
 import { ScheduleMapView } from '../../../kakaoMap';
-import { usePlanStore } from '../../../stores';
+import type { DailyItinerary } from '../../../types/travelPlan';
 
 const DEFAULT_SCHEDULE_RATIO = 0.38;
 const MAX_SCHEDULE_RATIO = 1.0;
@@ -20,7 +20,7 @@ const SNAP_CLOSE_THRESHOLD = 72;
 const HANDLE_HEIGHT = 32;
 
 type ScheduleMapSplitProps = {
-  planId: string;
+  itinerary: DailyItinerary[];
   selectedDayNumber: number;
   mapTitle: string;
   mapSubtitle: string;
@@ -58,7 +58,7 @@ function snapScheduleHeight(height: number, containerHeight: number): number {
 }
 
 export function ScheduleMapSplit({
-  planId,
+  itinerary,
   selectedDayNumber,
   mapTitle,
   mapSubtitle,
@@ -71,13 +71,6 @@ export function ScheduleMapSplit({
   const scheduleHeightRef = useRef(0);
   const dragStartHeightRef = useRef(0);
   const containerHeightRef = useRef(0);
-
-  const itinerary = usePlanStore(
-    useCallback(
-      state => state.plans.find(plan => plan.planId === planId)?.itinerary ?? [],
-      [planId],
-    ),
-  );
 
   const applyScheduleHeight = useCallback((height: number) => {
     const max = Math.min(

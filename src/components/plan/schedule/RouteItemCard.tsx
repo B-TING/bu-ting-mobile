@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { StarRating } from '../../shared/rating/StarRating';
 import { catalogThumbnail } from '../../../constants/places/placeCatalog';
@@ -47,6 +48,8 @@ export function RouteItemCard({
 }: RouteItemCardProps) {
   const info = route.placeInfo;
   const thumb = catalogThumbnail(route.placeId);
+  const imageUrl = info?.imageUrl;
+  const [imageFailed, setImageFailed] = useState(false);
   const leftBorderColor = zoneColor ?? dayColor;
 
   return (
@@ -122,9 +125,17 @@ export function RouteItemCard({
           <Text className="text-[11px] font-bold text-brand-primary">{editLabel}</Text>
         </Pressable>
         <View
-          className="h-[56px] w-[56px] rounded-xl"
-          style={{ backgroundColor: thumb }}
-        />
+          className="h-[56px] w-[56px] overflow-hidden rounded-xl"
+          style={!imageUrl || imageFailed ? { backgroundColor: thumb } : undefined}>
+          {imageUrl && !imageFailed ? (
+            <Image
+              source={{ uri: imageUrl }}
+              className="h-full w-full"
+              resizeMode="cover"
+              onError={() => setImageFailed(true)}
+            />
+          ) : null}
+        </View>
       </View>
     </View>
   );

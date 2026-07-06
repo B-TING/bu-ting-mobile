@@ -23,6 +23,7 @@ import type {
 } from '../../types/googlePlaces';
 import type { AppLanguage } from '../../types/user';
 import type { RouteItemType } from '../../types/travelPlan';
+import { fetchRoutePlaceDetail as fetchRoutePlaceDetailFromApi } from '../../utils/places/routePlaceDetail';
 
 function delay(ms: number) {
   return new Promise<void>(resolve => {
@@ -72,15 +73,16 @@ export function shouldFetchGooglePlaceDetail(type: RouteItemType): boolean {
   return type === 'ATTRACTION' || type === 'RESTAURANT';
 }
 
-/** ???? ??? ????? ????? (RouteMapView + PlaceDetailModal) */
+/** 일정 장소 상세 (RouteMapView + PlaceDetailModal) */
 export async function fetchRoutePlaceDetail(
   placeId: string,
   type: RouteItemType,
-): Promise<PlaceDetailVO | null> {
+  options?: { placeName?: string; address?: string },
+) {
   if (!shouldFetchGooglePlaceDetail(type)) {
     return null;
   }
-  return fetchAttractionDetail(placeId);
+  return fetchRoutePlaceDetailFromApi(placeId, type, options);
 }
 
 export function buildGoogleMapsUrl(

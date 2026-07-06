@@ -34,3 +34,4 @@ export {
   type PlaceSearchCacheEntry,
 } from './usePlaceSearchStore';
 export { useFestivalStore } from './useFestivalStore';
+export { usePlaceDetailCacheStore } from './usePlaceDetailCacheStore';

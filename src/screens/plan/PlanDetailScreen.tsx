@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -20,20 +20,25 @@ import { PlanTabPager } from '../../components/plan/tabs/PlanTabPager';
 import { PlaceReviewFormModal } from '../../components/review/modals/PlaceReviewFormModal';
 import { PLAN_DETAIL_COPY, type PlanDetailTab } from '../../constants/plan/planDetail';
 import { TRAVEL_REVIEW_COPY } from '../../constants/review/travelReview';
+import { usePlanRoutePlaceDetails } from '../../hooks/usePlanRoutePlaceDetails';
 import type { RootStackParamList } from '../../navigation/types';
+import { addPlanPlaceFromCandidate, nextPlanPlaceSequence, removePlanPlaceFromApi } from '../../services/travel/planPlaceSync';
 import {
   EMPTY_REVIEWS,
   hydrateRoutePlaceInfo,
   useAppStore,
+  useAuthStore,
   usePlanStore,
   useTravelogueStore,
 } from '../../stores';
+import { selectReusableAccessToken } from '../../stores/useAuthStore';
 import type { BudgetEntry, RouteItem, TravelLegMode } from '../../types/travelPlan';
 import { sortedRoutes } from '../../utils/plan/planItinerary';
 import {
   candidateToRouteItem,
   type RebootPlaceCandidate,
 } from '../../utils/places/rebootPlaces';
+import { mergeRouteWithPlaceDetail } from '../../utils/places/routePlaceDetail';
 import { getReviewForRoute, reviewProgress } from '../../utils/review/travelReview';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PlanDetail'>;
@@ -51,10 +56,12 @@ export function PlanDetailScreen({ navigation, route }: Props) {
   const toggleVisited = usePlanStore(s => s.toggleRouteVisited);
   const replaceRoute = usePlanStore(s => s.replaceRouteInPlan);
   const addRoute = usePlanStore(s => s.addRouteToPlan);
+  const removeRoute = usePlanStore(s => s.removeRouteFromPlan);
   const addBudgetEntry = usePlanStore(s => s.addBudgetEntry);
   const completePlan = usePlanStore(s => s.completePlan);
   const upsertPlaceReview = useTravelogueStore(s => s.upsertPlaceReview);
   const displayName = useAppStore(s => s.auth.displayName) ?? 'Traveler';
+  const accessToken = useAuthStore(selectReusableAccessToken);
 
   const plan = useMemo(() => {
     if (paramPlanId) {
@@ -96,6 +103,12 @@ export function PlanDetailScreen({ navigation, route }: Props) {
   const scheduleRef = useRef<PlanScheduleTabHandle>(null);
   const openRebootPendingRef = useRef(route.params?.openReboot === true);
 
+  const rawAllRoutes = useMemo(
+    () => plan?.itinerary.flatMap(day => sortedRoutes(day.routes)) ?? [],
+    [plan],
+  );
+  const detailsByPlaceId = usePlanRoutePlaceDetails(rawAllRoutes);
+
   const enrichedPlan = useMemo(() => {
     if (!plan) {
       return null;
@@ -104,10 +117,17 @@ export function PlanDetailScreen({ navigation, route }: Props) {
       ...plan,
       itinerary: plan.itinerary.map(day => ({
         ...day,
-        routes: sortedRoutes(day.routes).map(r => hydrateRoutePlaceInfo(r, language)),
+        routes: sortedRoutes(day.routes).map(route => {
+          const withCatalog = hydrateRoutePlaceInfo(route, language);
+          return mergeRouteWithPlaceDetail(
+            withCatalog,
+            detailsByPlaceId[route.placeId] ?? null,
+            language,
+          );
+        }),
       })),
     };
-  }, [plan, language]);
+  }, [plan, language, detailsByPlaceId]);
 
   const tripDates = useMemo(
     () => enrichedPlan?.itinerary.map(day => day.date) ?? [],
@@ -134,10 +154,38 @@ export function PlanDetailScreen({ navigation, route }: Props) {
       ? (scheduleRoutes.find(r => r.itemId === scheduleModal.itemId) ?? null)
       : null;
   const lastScheduleRoute = scheduleRoutes[scheduleRoutes.length - 1];
+  const addPlaceAnchor =
+    lastScheduleRoute?.location ?? enrichedPlan?.constraints.initialAnchor;
+  const isApiPlan = enrichedPlan?.source === 'api';
 
   const closeScheduleModal = useCallback(() => {
     setScheduleModal({ kind: 'none' });
   }, []);
+
+  const handleDeleteRoute = useCallback(
+    async (route: RouteItem) => {
+      if (!planId) {
+        return;
+      }
+
+      if (isApiPlan && accessToken && (route.apiPlanPlaceId || route.itemId)) {
+        try {
+          await removePlanPlaceFromApi(accessToken, route);
+        } catch (error) {
+          const message =
+            error instanceof Error ? error.message : '장소 삭제에 실패했습니다.';
+          Alert.alert('장소 삭제 실패', message);
+          return;
+        }
+      }
+
+      removeRoute(planId, route.itemId);
+      if (selectedRoute?.itemId === route.itemId) {
+        setSelectedRoute(null);
+      }
+    },
+    [planId, isApiPlan, accessToken, removeRoute, selectedRoute?.itemId],
+  );
 
   const handlePickReplacement = useCallback(
     (candidate: RebootPlaceCandidate, legMode?: TravelLegMode) => {
@@ -165,13 +213,37 @@ export function PlanDetailScreen({ navigation, route }: Props) {
   );
 
   const handleAddPlace = useCallback(
-    (candidate: RebootPlaceCandidate, legMode?: TravelLegMode) => {
-      if (!scheduleDay || !planId) {
+    async (candidate: RebootPlaceCandidate, legMode?: TravelLegMode) => {
+      if (!scheduleDay || !planId || !enrichedPlan) {
         return;
       }
+
+      const apiPlanId = scheduleDay.apiPlanId;
+      const nextSequence = nextPlanPlaceSequence(scheduleRoutes);
+      if (isApiPlan && apiPlanId && accessToken) {
+        try {
+          const created = await addPlanPlaceFromCandidate(
+            accessToken,
+            apiPlanId,
+            candidate,
+            nextSequence,
+          );
+          addRoute(planId, scheduleDay.dayNumber, {
+            ...created,
+            legMode: legMode ?? 'walk',
+          });
+          closeScheduleModal();
+        } catch (error) {
+          const message =
+            error instanceof Error ? error.message : '장소 추가에 실패했습니다.';
+          Alert.alert('장소 추가 실패', message);
+        }
+        return;
+      }
+
       const newRoute = candidateToRouteItem(
         candidate,
-        scheduleRoutes.length,
+        nextPlanPlaceSequence(scheduleRoutes),
         language,
         'ATTRACTION',
         legMode ?? 'walk',
@@ -179,7 +251,17 @@ export function PlanDetailScreen({ navigation, route }: Props) {
       addRoute(planId, scheduleDay.dayNumber, newRoute);
       closeScheduleModal();
     },
-    [scheduleDay, scheduleRoutes.length, language, planId, addRoute, closeScheduleModal],
+    [
+      scheduleDay,
+      scheduleRoutes.length,
+      language,
+      planId,
+      enrichedPlan,
+      isApiPlan,
+      accessToken,
+      addRoute,
+      closeScheduleModal,
+    ],
   );
 
   const handleQuickRating = useCallback(
@@ -304,6 +386,7 @@ export function PlanDetailScreen({ navigation, route }: Props) {
               onToggleVisited={itemId => toggleVisited(planId, itemId)}
               onWriteReview={setReviewFormRoute}
               onQuickRating={handleQuickRating}
+              onDeleteRoute={handleDeleteRoute}
               onRouteRemoved={itemId => {
                 if (selectedRoute?.itemId === itemId) {
                   setSelectedRoute(null);
@@ -394,10 +477,11 @@ export function PlanDetailScreen({ navigation, route }: Props) {
 
       <PlacePickModal
         visible={scheduleModal.kind === 'add'}
-        anchor={lastScheduleRoute?.location}
+        anchor={addPlaceAnchor}
         language={language}
         showTransportMode
         defaultLegMode="walk"
+        useTourApiNearby={isApiPlan}
         copy={{
           title: copy.addPlaceTitle,
           subtitle: copy.addPlaceSub,
