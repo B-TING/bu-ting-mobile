@@ -87,6 +87,11 @@ export function RouteItemCard({
       </Pressable>
       <Pressable onPress={onPress} className="min-h-[72px] flex-1 pr-2 active:opacity-90">
         <Text className="text-base font-bold text-brand-text">{route.placeName}</Text>
+        {route.memo ? (
+          <Text className="mt-1 text-xs text-brand-muted" numberOfLines={2}>
+            {route.memo}
+          </Text>
+        ) : null}
         {isDetailPending && detailLoadingLabel ? (
           <Text className="mt-1 text-xs text-brand-muted">{detailLoadingLabel}</Text>
         ) : info ? (

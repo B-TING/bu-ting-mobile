@@ -135,6 +135,7 @@ export function planPlaceToRouteItem(place: PlanPlaceResponse): RouteItem {
       lng: place.longitude ?? 0,
     },
     isVisited: Boolean(place.visited),
+    memo: place.memo ?? undefined,
     placeInfo: {
       description: '',
       hours: '',
@@ -172,6 +173,7 @@ export function travelPlansResponseToPlan(
           provider: p.provider,
           providerPlaceId: p.providerPlaceId,
           durationMinutes: p.durationMinutes,
+          memo: p.memo,
           visited: p.visited,
         }),
       ),

@@ -6,6 +6,7 @@ import {
   createPlanPlace,
   deletePlanPlace,
   fetchPlanPlaces,
+  updatePlanPlace,
   updatePlanPlaceSequence,
 } from './travelService';
 import { planPlaceToRouteItem } from './travelMapper';
@@ -149,8 +150,16 @@ export async function updatePlanPlaceOrderOnApi(
   await updatePlanPlaceSequence(accessToken, apiPlanId, { planPlaceIds });
 }
 
+export async function updatePlanPlaceMemoOnApi(
+  accessToken: string,
+  route: RouteItem,
+  memo: string | null,
+): Promise<void> {
+  const normalized = memo?.trim() || null;
+  await updatePlanPlace(accessToken, resolveApiPlanPlaceId(route), { memo: normalized });
+}
+
 /**
- * [임시] 인근 장소로 대체(reboot)
  *
  * 백엔드에 plan place의 장소 자체를 바꾸는 API가 없다.
  * `PATCH /api/v1/plans/places/{planPlaceId}`는 메모·예정 시간·소요 시간만 수정한다.

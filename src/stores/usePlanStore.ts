@@ -28,6 +28,7 @@ type PlanState = {
   addRouteToPlan: (planId: string, dayNumber: number, route: RouteItem) => void;
   reorderRoutesInPlan: (planId: string, dayNumber: number, orderedItemIds: string[]) => void;
   updateRouteLegMode: (planId: string, itemId: string, legMode: TravelLegMode) => void;
+  updateRouteMemo: (planId: string, itemId: string, memo: string | undefined) => void;
   optimizeDayRoute: (planId: string, dayNumber: number) => void;
   addBudgetEntry: (entry: Omit<BudgetEntry, 'entryId'>) => void;
   getBudgetForPlan: (planId: string) => BudgetEntry[];
@@ -186,6 +187,23 @@ export const usePlanStore = create<PlanState>()(
                 ...day,
                 routes: day.routes.map(r =>
                   r.itemId === itemId ? { ...r, legMode } : r,
+                ),
+              })),
+            };
+          }),
+        })),
+      updateRouteMemo: (planId, itemId, memo) =>
+        set(state => ({
+          plans: state.plans.map(plan => {
+            if (plan.planId !== planId) {
+              return plan;
+            }
+            return {
+              ...plan,
+              itinerary: plan.itinerary.map(day => ({
+                ...day,
+                routes: day.routes.map(r =>
+                  r.itemId === itemId ? { ...r, memo } : r,
                 ),
               })),
             };

@@ -63,6 +63,7 @@ type PlanScheduleTabProps = {
   onWriteReview: (route: RouteItem) => void;
   onQuickRating: (route: RouteItem, rating: number) => void;
   onDeleteRoute: (route: RouteItem) => void;
+  onSaveRouteMemo?: (route: RouteItem, memo: string | undefined) => void | Promise<void>;
   onReorderRoutes?: (dayNumber: number, orderedItemIds: string[]) => void | Promise<void>;
   onOptimizeDayRoute?: (dayNumber: number) => void | Promise<void>;
   onRouteRemoved?: (itemId: string) => void;
@@ -84,6 +85,7 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
       onWriteReview,
       onQuickRating,
       onDeleteRoute,
+      onSaveRouteMemo,
       onReorderRoutes,
       onOptimizeDayRoute,
       onRouteRemoved,
@@ -388,6 +390,7 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
         placeReview={getReviewForRoute(planReviews, focusedRoute.itemId)}
         onToggleVisited={() => onToggleVisited(focusedRoute.itemId)}
         onWriteReview={() => onWriteReview(focusedRoute)}
+        onSaveMemo={memo => onSaveRouteMemo?.(focusedRoute, memo)}
       />
     ) : null;
 

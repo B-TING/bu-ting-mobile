@@ -3,6 +3,7 @@ import type {
   PlanPlaceCreateRequest,
   PlanPlaceResponse,
   PlanPlaceSequenceUpdateRequest,
+  PlanPlaceUpdateRequest,
   TravelCreateRequest,
   TravelPlansResponse,
   TravelResponse,
@@ -98,6 +99,15 @@ function summarizePlanPlaceSequenceRequest(
   };
 }
 
+function summarizePlanPlaceUpdateRequest(body: PlanPlaceUpdateRequest): Record<string, unknown> {
+  return {
+    memo: body.memo,
+    durationMinutes: body.durationMinutes,
+    scheduledTime: body.scheduledTime,
+    visited: body.visited,
+  };
+}
+
 function summarizePlanPlaceItem(item: PlanPlaceResponse): Record<string, unknown> {
   return {
     planPlaceId: item.planPlaceId,
@@ -107,6 +117,7 @@ function summarizePlanPlaceItem(item: PlanPlaceResponse): Record<string, unknown
     provider: item.provider,
     providerPlaceId: item.providerPlaceId,
     visited: item.visited,
+    memo: item.memo,
   };
 }
 
@@ -199,6 +210,9 @@ function summarizeRequestBody(body: unknown): Record<string, unknown> | undefine
   }
   if ('planPlaceIds' in body) {
     return summarizePlanPlaceSequenceRequest(body as PlanPlaceSequenceUpdateRequest);
+  }
+  if ('memo' in body || 'durationMinutes' in body || 'scheduledTime' in body || 'visited' in body) {
+    return summarizePlanPlaceUpdateRequest(body as PlanPlaceUpdateRequest);
   }
 
   return { keys: Object.keys(body as Record<string, unknown>) };

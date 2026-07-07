@@ -111,6 +111,8 @@ export const PLAN_DETAIL_COPY: Record<
     budgetAmount: string;
     budgetMemo: string;
     budgetMemoPlaceholder: string;
+    placeMemoTitle: string;
+    placeMemoPlaceholder: string;
     budgetCategoryFood: string;
     budgetCategoryShopping: string;
     budgetCategoryAccommodation: string;
@@ -229,6 +231,8 @@ export const PLAN_DETAIL_COPY: Record<
     budgetAmount: '금액',
     budgetMemo: '메모',
     budgetMemoPlaceholder: '세부 사항 (선택)',
+    placeMemoTitle: '장소 메모',
+    placeMemoPlaceholder: '이 장소에 대한 메모를 남겨 보세요',
     budgetCategoryFood: '식비',
     budgetCategoryShopping: '쇼핑',
     budgetCategoryAccommodation: '숙박비',
@@ -347,6 +351,8 @@ export const PLAN_DETAIL_COPY: Record<
     budgetAmount: 'Amount',
     budgetMemo: 'Memo',
     budgetMemoPlaceholder: 'Details (optional)',
+    placeMemoTitle: 'Place memo',
+    placeMemoPlaceholder: 'Notes about this stop (optional)',
     budgetCategoryFood: 'Food',
     budgetCategoryShopping: 'Shopping',
     budgetCategoryAccommodation: 'Lodging',
@@ -465,6 +471,8 @@ export const PLAN_DETAIL_COPY: Record<
     budgetAmount: '金額',
     budgetMemo: 'メモ',
     budgetMemoPlaceholder: '詳細（任意）',
+    placeMemoTitle: '場所メモ',
+    placeMemoPlaceholder: 'この場所についてメモを残しましょう',
     budgetCategoryFood: '食費',
     budgetCategoryShopping: '買い物',
     budgetCategoryAccommodation: '宿泊',
@@ -582,6 +590,8 @@ export const PLAN_DETAIL_COPY: Record<
     budgetAmount: '金额',
     budgetMemo: '备注',
     budgetMemoPlaceholder: '详情（可选）',
+    placeMemoTitle: '地点备注',
+    placeMemoPlaceholder: '记录关于此地点的备注（可选）',
     budgetCategoryFood: '餐饮',
     budgetCategoryShopping: '购物',
     budgetCategoryAccommodation: '住宿',

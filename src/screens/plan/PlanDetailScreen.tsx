@@ -23,7 +23,7 @@ import { useAppAlert } from '../../components/shared/modals';
 import { usePlanRoutePlaceDetails } from '../../hooks/usePlanRoutePlaceDetails';
 import { useApiTravelPlanSync } from '../../hooks/useApiTravelPlanSync';
 import type { RootStackParamList } from '../../navigation/types';
-import { addPlanPlaceFromCandidate, findDayRoute, getDayRoutesFromPlan, removePlanPlaceFromApi, replacePlanPlaceFromCandidate, routesInItemOrder, updatePlanPlaceOrderOnApi } from '../../services/travel/planPlaceSync';
+import { addPlanPlaceFromCandidate, findDayRoute, getDayRoutesFromPlan, removePlanPlaceFromApi, replacePlanPlaceFromCandidate, routesInItemOrder, updatePlanPlaceMemoOnApi, updatePlanPlaceOrderOnApi } from '../../services/travel/planPlaceSync';
 import {
   EMPTY_REVIEWS,
   hydrateRoutePlaceInfo,
@@ -60,6 +60,7 @@ export function PlanDetailScreen({ navigation, route }: Props) {
   const addRoute = usePlanStore(s => s.addRouteToPlan);
   const removeRoute = usePlanStore(s => s.removeRouteFromPlan);
   const reorderRoutes = usePlanStore(s => s.reorderRoutesInPlan);
+  const updateRouteMemo = usePlanStore(s => s.updateRouteMemo);
   const addBudgetEntry = usePlanStore(s => s.addBudgetEntry);
   const completePlan = usePlanStore(s => s.completePlan);
   const upsertPlaceReview = useTravelogueStore(s => s.upsertPlaceReview);
@@ -193,6 +194,29 @@ export function PlanDetailScreen({ navigation, route }: Props) {
       removeRoute(planId, route.itemId);
     },
     [planId, isApiPlan, accessToken, removeRoute, syncFromServer],
+  );
+
+  const handleSaveRouteMemo = useCallback(
+    async (route: RouteItem, memo: string | undefined) => {
+      if (!planId) {
+        return;
+      }
+
+      const previousMemo = route.memo;
+      updateRouteMemo(planId, route.itemId, memo);
+
+      if (isApiPlan && accessToken) {
+        try {
+          await updatePlanPlaceMemoOnApi(accessToken, route, memo ?? null);
+        } catch (error) {
+          updateRouteMemo(planId, route.itemId, previousMemo);
+          const message =
+            error instanceof Error ? error.message : '메모 저장에 실패했습니다.';
+          Alert.alert('메모 저장 실패', message);
+        }
+      }
+    },
+    [planId, isApiPlan, accessToken, updateRouteMemo],
   );
 
   const handlePickReplacement = useCallback(
@@ -505,6 +529,7 @@ export function PlanDetailScreen({ navigation, route }: Props) {
               onWriteReview={setReviewFormRoute}
               onQuickRating={handleQuickRating}
               onDeleteRoute={handleDeleteRoute}
+              onSaveRouteMemo={handleSaveRouteMemo}
               onReorderRoutes={isApiPlan ? handleReorderRoutes : undefined}
               onOptimizeDayRoute={isApiPlan ? handleOptimizeDayRoute : undefined}
               onScheduleModalChange={setScheduleModal}

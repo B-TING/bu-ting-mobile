@@ -65,6 +65,8 @@ export type RouteItem = {
   type: RouteItemType;
   location: { lat: number; lng: number };
   isVisited: boolean;
+  /** 장소별 메모 (서버 plan_place.memo) */
+  memo?: string;
   /** 이전 장소에서 이동할 때 사용하는 교통수단 */
   legMode?: TravelLegMode;
   placeInfo?: PlaceInfo;

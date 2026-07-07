@@ -4,6 +4,7 @@ import type {
   PlanPlaceCreateRequest,
   PlanPlaceResponse,
   PlanPlaceSequenceUpdateRequest,
+  PlanPlaceUpdateRequest,
   PlanResponse,
   TravelCreateRequest,
   TravelPlansResponse,
@@ -170,6 +171,26 @@ export async function updatePlanPlaceSequence(
     ...travelPlanLogHooks('PATCH', url, accessToken, { planId, requestBody: body }),
   });
   return data ?? [];
+}
+
+export async function updatePlanPlace(
+  accessToken: string,
+  planPlaceId: string,
+  body: PlanPlaceUpdateRequest,
+): Promise<PlanPlaceResponse> {
+  const url = travelUrl(TRAVEL_ENDPOINTS.planPlaceById(planPlaceId));
+  const data = await apiPatch<PlanPlaceResponse>(url, {
+    ...authOpts(accessToken),
+    body,
+    ...travelPlanLogHooks('PATCH', url, accessToken, {
+      planId: planPlaceId,
+      requestBody: body,
+    }),
+  });
+  if (!data?.planPlaceId) {
+    throw new TravelServiceError('Plan place update response missing planPlaceId');
+  }
+  return data;
 }
 
 export async function deletePlanPlace(accessToken: string, planPlaceId: string): Promise<void> {

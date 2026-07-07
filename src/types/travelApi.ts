@@ -78,6 +78,13 @@ export type TravelPlanDayDto = {
   places: TravelPlanPlaceDto[];
 };
 
+export type PlanPlaceUpdateRequest = {
+  memo?: string | null;
+  durationMinutes?: number | null;
+  scheduledTime?: string | null;
+  visited?: boolean | null;
+};
+
 export type TravelPlanPlaceDto = {
   planPlaceId: string;
   sequence: number;
@@ -88,6 +95,7 @@ export type TravelPlanPlaceDto = {
   provider: PlaceProviderDto;
   providerPlaceId: string;
   durationMinutes?: number | null;
+  memo?: string | null;
   visited?: boolean | null;
   routeToNext?: {
     transportType?: string;
