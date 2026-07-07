@@ -39,9 +39,7 @@ export type {
 export {
   kakaoOverlaysFromSchedule,
   kakaoOverlaysFromRoutes,
-  kakaoOverlaysFromStays,
   kakaoOverlaysFromPlaces,
-  kakaoOverlaysFromAttractions,
   kakaoOverlaysFromLockerStations,
 } from './overlays/builders';
 export { kakaoOverlaysFromEventZones } from './overlays/zoneOverlays';
@@ -63,21 +61,6 @@ export {
 // --- 뷰 ---
 export { RouteMapView } from './views/RouteMapView';
 export { ScheduleMapView } from './views/ScheduleMapView';
-
-// --- 장소 데이터 ---
-export {
-  fetchBusanAccommodations,
-  fetchBusanAttractions,
-  fetchAccommodationDetail,
-  fetchAttractionDetail,
-  fetchRoutePlaceDetail,
-  shouldFetchGooglePlaceDetail,
-  buildGoogleMapsUrl,
-  listKnownAccommodationPlaceIds,
-  listKnownAttractionPlaceIds,
-  resolveAccommodationPlaceId,
-  resolveAttractionPlaceId,
-} from './places/placeService';
 
 // --- 훅 ---
 export { useScheduleMapOverlays } from './hooks/useScheduleMapOverlays';

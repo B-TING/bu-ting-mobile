@@ -275,7 +275,6 @@ export function KakaoMapShell({
         {eventZoneToggle ? (
           <View className="absolute left-2 top-2 z-10">
             <EventZoneLayerToggle
-              language={language}
               visible={eventZonesVisible}
               onToggle={() => setEventZonesVisible(current => !current)}
             />
