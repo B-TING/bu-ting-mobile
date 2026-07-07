@@ -10,10 +10,10 @@ import {
   defaultPlaceContentTypeId,
   isFestivalPlaceSearch,
   PLACE_SEARCH_CENTER_THRESHOLD_M,
-  PLACE_SEARCH_COPY,
   PLACE_SEARCH_RADIUS_M,
   buildPlaceListMetaLine,
 } from '../../constants/places/placeSearch';
+import { useAppLanguage, useCopy } from '../../i18n';
 import { useCurrentEventZone } from '../../hooks/useCurrentEventZone';
 import type { RootStackParamList } from '../../navigation/types';
 import { useAppStore, usePlaceBookmarkStore, usePlaceDetailCacheStore, usePlaceSearchStore } from '../../stores';
@@ -56,8 +56,8 @@ function resolveFestivalDateRange(
 
 export function PlaceMapSearchScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
-  const language = useAppStore(s => s.language) ?? 'ko';
-  const copy = PLACE_SEARCH_COPY[language];
+  const language = useAppLanguage();
+  const copy = useCopy('placeSearch');
   const radiusKm = PLACE_SEARCH_RADIUS_M / 1000;
 
   const initialType = defaultPlaceContentTypeId(route.params?.contentTypeId);

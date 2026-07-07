@@ -1,12 +1,12 @@
 import { Text, View } from 'react-native';
 
-import type { TRAVEL_REVIEW_COPY } from '../../../constants/review/travelReview';
+import type { CopyFor } from '../../../i18n';
 import type { Travelogue } from '../../../types/travelReview';
 import type { TravelPlan } from '../../../types/travelPlan';
 import type { AppLanguage } from '../../../types/user';
 import { AppModal, AppModalActions } from '../../shared/modals';
 
-type Copy = (typeof TRAVEL_REVIEW_COPY)[AppLanguage];
+type Copy = CopyFor<'travelReview'>;
 
 export type ImportPlanModalPhase = 'confirm' | 'activePlanConfirm' | 'success' | 'error';
 

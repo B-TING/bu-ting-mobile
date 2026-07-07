@@ -1,11 +1,11 @@
 import { Pressable, Text, View } from 'react-native';
 
-import type { TRAVEL_REVIEW_COPY } from '../../constants/review/travelReview';
+import type { CopyFor } from '../../i18n';
 import type { TravelogueSocial } from '../../types/travelReview';
 import type { AppLanguage } from '../../types/user';
 import { getHelpfulCount, isHelpfulByUser } from '../../utils/review/travelReview';
 
-type Copy = (typeof TRAVEL_REVIEW_COPY)[AppLanguage];
+type Copy = CopyFor<'travelReview'>;
 
 type TravelogueSocialBarProps = {
   copy: Copy;

@@ -1,11 +1,11 @@
 import { Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 
-import type { LUGGAGE_STORAGE_COPY } from '../../constants/locker/luggageStorage';
+import type { CopyFor } from '../../i18n';
 import type { SubwayLockerStation } from '../../types/subwayLocker';
 import { AppModal, AppModalActions } from '../shared/modals';
 import { LockerInventoryTable } from './LockerInventoryTable';
 
-type Copy = (typeof LUGGAGE_STORAGE_COPY)['ko'];
+type Copy = CopyFor<'luggageStorage'>;
 
 const SHEET_HEIGHT_RATIO = 0.55;
 

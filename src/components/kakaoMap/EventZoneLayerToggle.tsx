@@ -1,21 +1,18 @@
 import { Pressable, Text, View } from 'react-native';
 
-import { EVENT_ZONE_MAP_LAYER_COPY } from '../../constants/eventZone/eventZone';
-import type { AppLanguage } from '../../types/user';
+import { useCopy } from '../../i18n';
 import { cn } from '../../utils/common/cn';
 
 type EventZoneLayerToggleProps = {
-  language: AppLanguage;
   visible: boolean;
   onToggle: () => void;
 };
 
 export function EventZoneLayerToggle({
-  language,
   visible,
   onToggle,
 }: EventZoneLayerToggleProps) {
-  const copy = EVENT_ZONE_MAP_LAYER_COPY[language];
+  const copy = useCopy('eventZoneMapLayer');
 
   return (
     <Pressable

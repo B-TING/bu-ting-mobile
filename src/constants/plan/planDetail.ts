@@ -9,6 +9,7 @@ export const PLAN_DETAIL_TABS: { id: PlanDetailTab; label: Record<AppLanguage, s
   { id: 'records', label: { ko: '기록', en: 'Records', ja: '記録', zh: '记录' } },
 ];
 
+/** @deprecated Use useCopy('planDetail') from src/i18n */
 export const PLAN_DETAIL_COPY: Record<
   AppLanguage,
   {
@@ -88,6 +89,7 @@ export const PLAN_DETAIL_COPY: Record<
     visitFirstReview: string;
     recordReview: string;
     quickRatingHint: string;
+    scheduleDetailLoading: string;
     detailLoading: string;
     notFound: string;
     addressLabel: string;
@@ -201,6 +203,7 @@ export const PLAN_DETAIL_COPY: Record<
     visitFirstReview: '방문 체크 후 후기를 남길 수 있어요',
     recordReview: '기록 남기기',
     quickRatingHint: '별점만 남기기',
+    scheduleDetailLoading: '세부 정보를 불러오는 중입니다...',
     detailLoading: '리뷰·평점을 불러오는 중…',
     notFound: '장소 정보를 찾을 수 없어요.',
     addressLabel: '주소',
@@ -211,8 +214,11 @@ export const PLAN_DETAIL_COPY: Record<
     reviewsTitle: 'Google 리뷰',
     reviewsSource: 'Google Maps에서 제공하는 리뷰입니다.',
     openInGoogleMaps: 'Google 지도에서 보기',
-    placeRatingSummary: (rating, count) =>
-      `★ ${rating.toFixed(1)} · 리뷰 ${count.toLocaleString()}개`,
+    placeRatingSummary: (rating, count) => {
+      const r = Number(rating) || 0;
+      const c = Number(count) || 0;
+      return `★ ${r.toFixed(1)} · 리뷰 ${c.toLocaleString()}개`;
+    },
     transportModeTitle: '이동 수단',
     routeOptimized: '경로를 최적화했어요',
     budgetPayer: '지불자',
@@ -315,6 +321,7 @@ export const PLAN_DETAIL_COPY: Record<
     visitFirstReview: 'Mark visited before writing a review',
     recordReview: 'Leave a record',
     quickRatingHint: 'Quick rating',
+    scheduleDetailLoading: 'Loading place details…',
     detailLoading: 'Loading ratings and reviews…',
     notFound: 'Place not found.',
     addressLabel: 'Address',
@@ -325,8 +332,11 @@ export const PLAN_DETAIL_COPY: Record<
     reviewsTitle: 'Google reviews',
     reviewsSource: 'Reviews provided by Google Maps.',
     openInGoogleMaps: 'Open in Google Maps',
-    placeRatingSummary: (rating, count) =>
-      `★ ${rating.toFixed(1)} · ${count.toLocaleString()} reviews`,
+    placeRatingSummary: (rating, count) => {
+      const r = Number(rating) || 0;
+      const c = Number(count) || 0;
+      return `★ ${r.toFixed(1)} · ${c.toLocaleString()} reviews`;
+    },
     transportModeTitle: 'Transport mode',
     routeOptimized: 'Route optimized',
     budgetPayer: 'Paid by',
@@ -429,6 +439,7 @@ export const PLAN_DETAIL_COPY: Record<
     visitFirstReview: '訪問チェック後にレビューを書けます',
     recordReview: '記録を残す',
     quickRatingHint: '星だけ付ける',
+    scheduleDetailLoading: '詳細情報を読み込み中です...',
     detailLoading: '評価・レビューを読み込み中…',
     notFound: '場所情報が見つかりません。',
     addressLabel: '住所',
@@ -439,8 +450,11 @@ export const PLAN_DETAIL_COPY: Record<
     reviewsTitle: 'Googleレビュー',
     reviewsSource: 'Google Mapsのレビューです。',
     openInGoogleMaps: 'Googleマップで見る',
-    placeRatingSummary: (rating, count) =>
-      `★ ${rating.toFixed(1)} · レビュー ${count.toLocaleString()}件`,
+    placeRatingSummary: (rating, count) => {
+      const r = Number(rating) || 0;
+      const c = Number(count) || 0;
+      return `★ ${r.toFixed(1)} · レビュー ${c.toLocaleString()}件`;
+    },
     transportModeTitle: '移動手段',
     routeOptimized: 'ルートを最適化しました',
     budgetPayer: '支払者',
@@ -542,6 +556,7 @@ export const PLAN_DETAIL_COPY: Record<
     visitFirstReview: '标记到访后可写点评',
     recordReview: '留下记录',
     quickRatingHint: '仅评分',
+    scheduleDetailLoading: '正在加载详细信息...',
     detailLoading: '正在加载评分与评价…',
     notFound: '未找到地点信息。',
     addressLabel: '地址',
@@ -552,8 +567,11 @@ export const PLAN_DETAIL_COPY: Record<
     reviewsTitle: 'Google 评价',
     reviewsSource: '评价来自 Google Maps。',
     openInGoogleMaps: '在 Google 地图中打开',
-    placeRatingSummary: (rating, count) =>
-      `★ ${rating.toFixed(1)} · ${count.toLocaleString()} 条评价`,
+    placeRatingSummary: (rating, count) => {
+      const r = Number(rating) || 0;
+      const c = Number(count) || 0;
+      return `★ ${r.toFixed(1)} · ${c.toLocaleString()} 条评价`;
+    },
     transportModeTitle: '交通方式',
     routeOptimized: '路线已优化',
     budgetPayer: '付款人',

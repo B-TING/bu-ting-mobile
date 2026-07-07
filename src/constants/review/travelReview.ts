@@ -7,6 +7,7 @@ export const REVIEW_TAG_PRESETS: Record<AppLanguage, string[]> = {
   zh: ['美食', '风景', '拍照', '放松', '家庭', '约会', '再访', '推荐'],
 };
 
+/** @deprecated Use useCopy('travelReview') from src/i18n */
 export const TRAVEL_REVIEW_COPY: Record<
   AppLanguage,
   {

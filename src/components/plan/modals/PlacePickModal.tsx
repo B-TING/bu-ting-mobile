@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, TextInput, View } from 'react-native';
 
-import { PLACE_SEARCH_COPY, buildPlaceListMetaLine } from '../../../constants/places/placeSearch';
+import { buildPlaceListMetaLine } from '../../../constants/places/placeSearch';
+import { useCopy } from '../../../i18n';
 import { usePlaceSearchStore } from '../../../stores';
 import { TransportModePicker } from '../schedule/TransportModePicker';
 import type { BusanPlace } from '../../../types/placeSearch';
@@ -89,7 +90,7 @@ export function PlacePickModal({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [legMode, setLegMode] = useState<TravelLegMode>(defaultLegMode);
 
-  const searchCopy = PLACE_SEARCH_COPY[language];
+  const searchCopy = useCopy('placeSearch');
   const cacheEntry = usePlaceSearchStore(s => s.cacheByType[PLAN_PICK_CONTENT_TYPE]);
   const apiLoading = usePlaceSearchStore(s => s.isLoading(PLAN_PICK_CONTENT_TYPE));
   const searchByLocation = usePlaceSearchStore(s => s.searchByLocation);

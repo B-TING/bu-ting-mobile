@@ -217,6 +217,7 @@ export const ACCOMMODATION_SEARCH: (SelectOption & { areaId: string })[] = [
   { id: 'hotel_gwangan', areaId: 'gwangan', label: { ko: '광안리 비치 호텔', en: 'Gwangalli Beach Hotel', ja: '広安里ビーチ', zh: '广安里海滩酒店' }, meta: { lat: 35.154, lng: 129.118, placeId: 'stay_gwangan' } },
 ];
 
+/** @deprecated Use useCopy('planWizard') from src/i18n */
 export const PLAN_WIZARD_COPY: Record<
   AppLanguage,
   {

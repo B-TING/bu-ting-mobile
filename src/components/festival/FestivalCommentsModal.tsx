@@ -1,10 +1,10 @@
 import { ScrollView, useWindowDimensions } from 'react-native';
 
-import type { FESTIVAL_CALENDAR_COPY } from '../../constants/festival/festivalCalendar';
+import type { CopyFor } from '../../i18n';
 import { AppModal, AppModalActions } from '../shared/modals';
 import { FestivalCommentsPlaceholder } from './FestivalCommentsPlaceholder';
 
-type Copy = (typeof FESTIVAL_CALENDAR_COPY)['ko'];
+type Copy = CopyFor<'festivalCalendar'>;
 
 const SHEET_HEIGHT_RATIO = 0.72;
 

@@ -9,7 +9,7 @@ import { AppBar } from '../components/shared/navigation/AppBar';
 import { AppMenuDrawer } from '../components/shared/navigation/AppMenuDrawer';
 import { Navbar, type NavbarTab } from '../components/shared/navigation/Navbar';
 import { useAppAlert } from '../components/shared/modals';
-import { MY_PAGE_COPY } from '../constants/mypage/myPage';
+import { useAppLanguage, useCopy } from '../i18n';
 import { summarizeOnboardingPreferences } from '../constants/setup/onboarding';
 import { layout } from '../constants/common/layout';
 import { selectActivePlan, selectOnboardingForUser, useAppStore, useAuthStore, usePlanStore } from '../stores';
@@ -95,12 +95,12 @@ function SettingToggle({
 export function MyPageScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const { alert } = useAppAlert();
-  const language = useAppStore(s => s.language) ?? 'ko';
+  const language = useAppLanguage();
   const user = useAuthStore(selectAuthUser);
   const onboarding = useAppStore(selectOnboardingForUser(user?.userId));
   const hideUserIdOnMyPage = useAppStore(s => s.hideUserIdOnMyPage);
   const setHideUserIdOnMyPage = useAppStore(s => s.setHideUserIdOnMyPage);
-  const copy = MY_PAGE_COPY[language];
+  const copy = useCopy('myPage');
   const activePlan = usePlanStore(selectActivePlan);
   const isAuthenticated = useAuthStore(selectIsAuthenticated);
   const rememberMe = useAuthStore(s => s.rememberMe);

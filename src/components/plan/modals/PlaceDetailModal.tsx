@@ -2,9 +2,9 @@ import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { PLACE_SEARCH_COPY } from '../../../constants/places/placeSearch';
+import { useCopy } from '../../../i18n';
 import { useCachedRoutePlaceDetail } from '../../../hooks/useCachedRoutePlaceDetail';
-import { shouldFetchGooglePlaceDetail } from '../../../kakaoMap';
+import { shouldFetchRoutePlaceDetail } from '../../../utils/places/routePlaceDetail';
 import type { PlaceReview } from '../../../types/travelReview';
 import type { RouteItem } from '../../../types/travelPlan';
 import type { AppLanguage } from '../../../types/user';
@@ -63,11 +63,11 @@ export function PlaceDetailModal({
 }: PlaceDetailModalProps) {
   const insets = useSafeAreaInsets();
   const { height: screenHeight } = useWindowDimensions();
-  const searchCopy = PLACE_SEARCH_COPY[language];
+  const searchCopy = useCopy('placeSearch');
 
   const mapAreaHeight = Math.min(Math.round(screenHeight * MAP_AREA_RATIO), MAP_AREA_MAX);
 
-  const showPlaceSearchDetail = route != null && shouldFetchGooglePlaceDetail(route.type);
+  const showPlaceSearchDetail = route != null && shouldFetchRoutePlaceDetail(route.type);
   const { detail, loading: loadingDetail } = useCachedRoutePlaceDetail(
     route,
     visible && showPlaceSearchDetail,

@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 import type { SetupPhase } from '../navigation/types';
+import { changeAppLanguage } from '../i18n';
 import { selectIsAuthenticated, useAuthStore } from './useAuthStore';
 import type {
   AppLanguage,
@@ -68,7 +69,10 @@ export const useAppStore = create<AppState>()(
       hideUserIdOnMyPage: false,
       _hasHydrated: false,
       setHasHydrated: value => set({ _hasHydrated: value }),
-      setLanguage: language => set({ language }),
+      setLanguage: language => {
+        void changeAppLanguage(language);
+        set({ language });
+      },
       setHideUserIdOnMyPage: hideUserIdOnMyPage => set({ hideUserIdOnMyPage }),
       setPendingTravelSurveyPrompt: pendingTravelSurveyPrompt =>
         set({ pendingTravelSurveyPrompt }),

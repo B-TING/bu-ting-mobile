@@ -767,6 +767,7 @@ export function summarizeOnboardingPreferences(
   ];
 }
 
+/** @deprecated Use useCopy('setup') from src/i18n */
 export const SETUP_COPY: Record<
   AppLanguage,
   {

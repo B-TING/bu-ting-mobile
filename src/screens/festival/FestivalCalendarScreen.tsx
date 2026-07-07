@@ -6,11 +6,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FestivalCard } from '../../components/festival/FestivalCard';
 import { BackButton } from '../../components/shared/buttons/BackButton';
 import {
-  FESTIVAL_CALENDAR_COPY,
   festivalsInMonth,
   parseIsoDate,
   todayIso,
 } from '../../constants/festival/festivalCalendar';
+import { useAppLanguage, useCopy } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
 import { PLACE_CONTENT_TYPE } from '../../types/placesApi';
 import { useAppStore, useFestivalStore } from '../../stores';
@@ -20,8 +20,8 @@ type Props = NativeStackScreenProps<RootStackParamList, 'FestivalCalendar'>;
 
 export function FestivalCalendarScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
-  const language = useAppStore(s => s.language) ?? 'ko';
-  const copy = FESTIVAL_CALENDAR_COPY[language];
+  const language = useAppLanguage();
+  const copy = useCopy('festivalCalendar');
 
   const initialDate = route.params?.initialDate ?? todayIso();
   const initialParsed = parseIsoDate(initialDate);

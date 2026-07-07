@@ -13,9 +13,7 @@ import { AppBar } from '../components/shared/navigation/AppBar';
 import { AppMenuDrawer } from '../components/shared/navigation/AppMenuDrawer';
 import { Navbar, type NavbarTab } from '../components/shared/navigation/Navbar';
 import { useAppAlert } from '../components/shared/modals';
-import { HELP_DESK_COPY } from '../constants/helpdesk/helpDesk';
 import {
-  MAIN_HOME_COPY,
   MOCK_SPECIAL_OFFER,
   MOCK_TRAVELOGUE,
   QUICK_ACCESS_ITEMS,
@@ -31,6 +29,7 @@ import { selectActivePlan, useAppStore, useFestivalStore, usePlanStore, useTrave
 import { isTraveloguePublic } from '../utils/review/travelReview';
 import { getNearestUpcomingStop } from '../utils/plan/planSchedule';
 import { getChatRoomByZoneId } from '../constants/eventZone/eventZone';
+import { useAppLanguage, useCopy } from '../i18n';
 import type { EventZoneId } from '../types/eventZone';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MainHome'>;
@@ -40,13 +39,13 @@ const NAVBAR_HEIGHT = 72;
 export function MainHomeScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const { alert } = useAppAlert();
-  const language = useAppStore(s => s.language) ?? 'ko';
+  const language = useAppLanguage();
+  const copy = useCopy('mainHome');
+  const helpCopy = useCopy('helpdesk');
   const pendingTravelSurveyPrompt = useAppStore(s => s.pendingTravelSurveyPrompt);
   const setPendingTravelSurveyPrompt = useAppStore(
     s => s.setPendingTravelSurveyPrompt,
   );
-  const copy = MAIN_HOME_COPY[language];
-  const helpCopy = HELP_DESK_COPY[language];
   const activePlan = usePlanStore(selectActivePlan);
   const publishedTravelogues = useTravelogueStore(s => s.publishedTravelogues);
   const latestTravelogue = useMemo(
@@ -214,7 +213,6 @@ export function MainHomeScreen({ navigation }: Props) {
         />
 
         <HomeEventZoneSection
-          language={language}
           onMapPress={goToEventZone}
           onEnterChat={goToEventZoneChat}
         />

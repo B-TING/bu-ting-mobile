@@ -4,7 +4,7 @@ import { Pressable, Text, View } from 'react-native';
 import { PlaceReviewCard } from '../../review/cards/PlaceReviewCard';
 import { PlaceReviewFormModal } from '../../review/modals/PlaceReviewFormModal';
 import { TravelogueComposeModal } from '../../review/modals/TravelogueComposeModal';
-import { TRAVEL_REVIEW_COPY } from '../../../constants/review/travelReview';
+import { useCopy } from '../../../i18n';
 import { EMPTY_REVIEWS, useTravelogueStore } from '../../../stores/useTravelogueStore';
 import type { AppLanguage } from '../../../types/user';
 import type { RouteItem, TravelPlan } from '../../../types/travelPlan';
@@ -42,7 +42,7 @@ export function PlanRecordsTab({
   onViewFeed,
   onViewTravelogue,
 }: PlanRecordsTabProps) {
-  const copy = TRAVEL_REVIEW_COPY[language];
+  const copy = useCopy('travelReview');
   const reviews =
     useTravelogueStore(s => s.reviewsByPlan[plan.planId]) ?? EMPTY_REVIEWS;
   const upsertReview = useTravelogueStore(s => s.upsertPlaceReview);
@@ -67,10 +67,10 @@ export function PlanRecordsTab({
     if (minutes <= 0) {
       return null;
     }
-    return TRAVEL_REVIEW_COPY[language].totalDuration(
+    return copy.totalDuration(
       formatDurationMinutes(minutes, language),
     );
-  }, [plan.itinerary, language]);
+  }, [copy, plan.itinerary, language]);
 
   const handlePublish = (payload: {
     title: string;

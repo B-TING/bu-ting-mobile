@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LockerMapView } from '../../components/locker/LockerMapView';
 import { SubwayLockerDetailSheet } from '../../components/locker/SubwayLockerDetailSheet';
 import { BackButton } from '../../components/shared/buttons/BackButton';
-import { LUGGAGE_STORAGE_COPY } from '../../constants/locker/luggageStorage';
+import { useAppLanguage, useCopy } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
 import { fetchSubwayLockerStations } from '../../services/locker/subwayLockerService';
 import { useAppStore, useLockerBookmarkStore } from '../../stores';
@@ -17,8 +17,8 @@ type Props = NativeStackScreenProps<RootStackParamList, 'LuggageStorage'>;
 
 export function LuggageStorageScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
-  const language = useAppStore(s => s.language) ?? 'ko';
-  const copy = LUGGAGE_STORAGE_COPY[language];
+  const language = useAppLanguage();
+  const copy = useCopy('luggageStorage');
 
   const bookmarkedStationIds = useLockerBookmarkStore(s => s.bookmarkedStationIds);
   const toggleBookmark = useLockerBookmarkStore(s => s.toggleBookmark);

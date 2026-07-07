@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import {
-  FESTIVAL_CALENDAR_COPY,
   festivalAddress,
   festivalDescription,
   festivalHours,
@@ -10,6 +9,7 @@ import {
   festivalTitle,
   type BusanFestival,
 } from '../../constants/festival/festivalCalendar';
+import { useCopy } from '../../i18n';
 import type { AppLanguage } from '../../types/user';
 import { FestivalTagBadges } from './FestivalTagBadges';
 
@@ -40,7 +40,7 @@ export function FestivalDetailHero({
   commentsAccessibilityLabel,
 }: FestivalDetailHeroProps) {
   const [imageFailed, setImageFailed] = useState(false);
-  const copy = FESTIVAL_CALENDAR_COPY[language];
+  const copy = useCopy('festivalCalendar');
   const title = festivalTitle(festival, language);
   const description = festivalDescription(festival, language);
   const address = festivalAddress(festival, language);

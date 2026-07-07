@@ -16,17 +16,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ZoneChatMessageBubble } from '../../components/eventZone/ZoneChatMessageBubble';
 import { BackButton } from '../../components/shared/buttons/BackButton';
 import {
-  ZONE_CHAT_COPY,
   chatRoomTitle,
   chatRoomTopic,
   getChatRoomById,
 } from '../../constants/eventZone/eventZone';
+import { useAppLanguage, useCopy } from '../../i18n';
 import { isZoneChatWebSocketEnabled, ZONE_CHAT_WS_CONFIG } from '../../constants/chat/zoneChatConfig';
 import { useZoneChatWebSocket } from '../../hooks/useZoneChatWebSocket';
 import { zoneChatConnectionStatusLabel } from '../../utils/chat/zoneChatConnectionStatus';
 import type { RootStackParamList } from '../../navigation/types';
 import { selectReusableAccessToken, useAuthStore } from '../../stores/useAuthStore';
-import { useAppStore } from '../../stores';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EventZoneChat'>;
 
@@ -36,8 +35,8 @@ const INITIAL_RENDER_BATCH = 40;
 
 export function EventZoneChatScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
-  const language = useAppStore(s => s.language) ?? 'ko';
-  const copy = ZONE_CHAT_COPY[language];
+  const language = useAppLanguage();
+  const copy = useCopy('zoneChat');
   const room = getChatRoomById(route.params.roomId);
   const wsEnabled = isZoneChatWebSocketEnabled();
   const accessToken = useAuthStore(selectReusableAccessToken);

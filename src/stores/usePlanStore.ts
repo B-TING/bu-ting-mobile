@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import { PLACE_SEARCH_COPY } from '../constants/places/placeSearch';
+import { getCopyForLanguage } from '../i18n';
 import { enrichPlaceInfo } from '../constants/places/placeCatalog';
 import { isTourApiContentId, routeTypeToContentTypeId } from '../utils/places/routePlaceDetail';
 import type { PlanWizardAnswers } from '../types/planWizard';
@@ -275,7 +275,7 @@ export function hydrateRoutePlaceInfo(
 
   if (isTourApiContentId(route.placeId)) {
     const categoryLabel =
-      PLACE_SEARCH_COPY[lang].categoryLabels[routeTypeToContentTypeId(route.type)];
+      getCopyForLanguage('placeSearch', lang).categoryLabels[routeTypeToContentTypeId(route.type)];
     if (placeInfo.category !== categoryLabel) {
       return { ...route, placeInfo: { ...placeInfo, category: categoryLabel } };
     }

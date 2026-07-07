@@ -9,8 +9,6 @@ import { useSetupPhase } from '../hooks/useSetupPhase';
 import { FestivalCalendarScreen } from '../screens/festival/FestivalCalendarScreen';
 import { FestivalDetailScreen } from '../screens/festival/FestivalDetailScreen';
 import { PlaceMapSearchScreen } from '../screens/places/PlaceMapSearchScreen';
-import { BusanAccommodationScreen } from '../screens/accommodation/BusanAccommodationScreen';
-import { BusanAttractionScreen } from '../screens/attraction/BusanAttractionScreen';
 import { HelpDeskChatScreen } from '../screens/helpdesk/HelpDeskChatScreen';
 import { EventZoneScreen } from '../screens/eventZone/EventZoneScreen';
 import { EventZoneChatScreen } from '../screens/eventZone/EventZoneChatScreen';
@@ -26,6 +24,7 @@ import { PlanWizardScreen } from '../screens/plan/PlanWizardScreen';
 import { LanguageSelectionScreen } from '../screens/setup/LanguageSelectionScreen';
 import { LoginScreen } from '../screens/setup/LoginScreen';
 import { OnboardingScreen } from '../screens/setup/OnboardingScreen';
+import { initI18n } from '../i18n';
 import { bootstrapAuth } from '../services/auth/authSession';
 import {
   hydrateAppStore,
@@ -72,6 +71,8 @@ export function RootNavigator() {
       })
       .finally(() => {
         if (!cancelled) {
+          const language = useAppStore.getState().language ?? 'ko';
+          initI18n(language);
           setReady(true);
         }
       });
@@ -117,8 +118,6 @@ export function RootNavigator() {
         <Stack.Screen name="FestivalDetail" component={FestivalDetailScreen} />
         <Stack.Screen name="LuggageStorage" component={LuggageStorageScreen} />
         <Stack.Screen name="PlaceMapSearch" component={PlaceMapSearchScreen} />
-        <Stack.Screen name="BusanAccommodation" component={BusanAccommodationScreen} />
-        <Stack.Screen name="BusanAttraction" component={BusanAttractionScreen} />
         <Stack.Screen name="HelpDeskChat" component={HelpDeskChatScreen} />
         <Stack.Screen name="EventZone" component={EventZoneScreen} />
         <Stack.Screen name="EventZoneChat" component={EventZoneChatScreen} />

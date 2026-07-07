@@ -9,7 +9,7 @@ import {
   memberNickname,
   splitSummary,
 } from '../modals/BudgetEntryModal';
-import type { PLAN_DETAIL_COPY } from '../../../constants/plan/planDetail';
+import type { CopyFor } from '../../../i18n';
 import type { AppLanguage } from '../../../types/user';
 import type { BudgetEntry, PlanMember } from '../../../types/travelPlan';
 import {
@@ -17,7 +17,7 @@ import {
   sumBudgetByCategory,
 } from '../../../utils/plan/budgetTotals';
 
-type Copy = (typeof PLAN_DETAIL_COPY)[AppLanguage];
+type Copy = CopyFor<'planDetail'>;
 
 type PlanBudgetTabProps = {
   copy: Copy;

@@ -24,10 +24,10 @@ import {
   COMPANION_TYPE_OPTIONS,
   dayCountBetween,
   isValidIsoDate,
-  PLAN_WIZARD_COPY,
   PLAN_WIZARD_STEP_COUNT,
   PLAN_WIZARD_STEPS,
 } from '../../constants/plan/planWizard';
+import { useAppLanguage, useCopy } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
 import { requestAutoPlan, requestPlanCandidates } from '../../services/plan/planAiService';
 import { createManualTravelPlan } from '../../services/travel/createManualTravelPlan';
@@ -49,15 +49,14 @@ function defaultDates() {
 }
 
 export function PlanWizardScreen({ navigation }: Props) {
-  const language = useAppStore(s => s.language) ?? 'ko';
+  const language = useAppLanguage();
+  const copy = useCopy('planWizard');
   const user = useAuthStore(selectAuthUser);
   const accessToken = useAuthStore(selectReusableAccessToken);
   const onboarding = useAppStore(selectOnboardingForUser(user?.userId));
   const addPlan = usePlanStore(s => s.addPlan);
   const confirmPlan = usePlanStore(s => s.confirmPlan);
   const setPlanCandidates = usePlanStore(s => s.setPlanCandidates);
-
-  const copy = PLAN_WIZARD_COPY[language];
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState(() => ({
     ...emptyWizardAnswers(),

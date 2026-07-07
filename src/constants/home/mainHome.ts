@@ -43,6 +43,7 @@ export type MockSpecialOffer = {
   subtitleEn: string;
 };
 
+/** @deprecated Use useCopy('mainHome') from src/i18n */
 export const MAIN_HOME_COPY: Record<
   AppLanguage,
   {
@@ -118,6 +119,7 @@ export const MAIN_HOME_COPY: Record<
   },
 };
 
+/** @deprecated Use useCopy('homeEventZone') from src/i18n */
 export const HOME_EVENT_ZONE_COPY: Record<
   AppLanguage,
   {

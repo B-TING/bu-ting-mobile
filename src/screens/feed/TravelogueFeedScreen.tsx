@@ -8,7 +8,7 @@ import { ImportPlanModal } from '../../components/feed/modals/ImportPlanModal';
 import { TravelogueCommentModal } from '../../components/feed/modals/TravelogueCommentModal';
 import { useTravelogueSocialActions } from '../../components/feed/useTravelogueSocialActions';
 import { BackButton } from '../../components/shared/buttons/BackButton';
-import { TRAVEL_REVIEW_COPY } from '../../constants/review/travelReview';
+import { useAppLanguage, useCopy } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
 import { useAppStore, useTravelogueStore } from '../../stores';
 import type { Travelogue } from '../../types/travelReview';
@@ -30,7 +30,7 @@ function TravelogueFeedRow({
   navigation,
   onOpenComposer,
 }: FeedRowProps) {
-  const copy = TRAVEL_REVIEW_COPY[language];
+  const copy = useCopy('travelReview');
   const {
     social,
     userId,
@@ -65,9 +65,9 @@ function TravelogueFeedRow({
 
 export function TravelogueFeedScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
-  const language = useAppStore(s => s.language) ?? 'ko';
+  const language = useAppLanguage();
   const auth = useAppStore(s => s.auth);
-  const copy = TRAVEL_REVIEW_COPY[language];
+  const copy = useCopy('travelReview');
   const publishedTravelogues = useTravelogueStore(s => s.publishedTravelogues);
   const addComment = useTravelogueStore(s => s.addComment);
   const travelogues = useMemo(

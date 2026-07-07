@@ -1,7 +1,7 @@
 import type { NavigationProp } from '@react-navigation/native';
 
 import type { AppAlertButton } from '../../components/shared/modals/AppAlertModal';
-import { SETUP_COPY } from '../../constants/setup/onboarding';
+import { getCopyForLanguage } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
 import type { AppLanguage } from '../../types/user';
 
@@ -19,7 +19,7 @@ export function showTravelSurveyOnboardingPrompt(
   navigation: TravelSurveyNavigation,
   language: AppLanguage,
 ): void {
-  const copy = SETUP_COPY[language];
+  const copy = getCopyForLanguage('setup', language);
   alert({
     title: copy.travelSurveyPromptTitle,
     message: copy.travelSurveyPromptMessage,

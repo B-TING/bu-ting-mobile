@@ -11,12 +11,11 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { OAuthProviderList } from '../../components/setup/OAuthProviderButton';
 import { BrandLogo } from '../../components/shared/brand/BrandLogo';
 import { layout } from '../../constants/common/layout';
-import { SETUP_COPY } from '../../constants/setup/onboarding';
+import { useAppLanguage, useCopy } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
 import { completeProviderLogin } from '../../services/auth/authSession';
 import { AuthServiceError } from '../../services/auth/authService';
 import { OAuthSdkError, signInWithProvider } from '../../services/auth/oauthSdkService';
-import { useAppStore } from '../../stores';
 import type { OAuthProvider } from '../../types/auth';
 import { logAuth } from '../../utils/auth/authLogger';
 import { cn } from '../../utils/common/cn';
@@ -25,14 +24,13 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
 export function LoginScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
-  const language = useAppStore(state => state.language) ?? 'en';
+  const language = useAppLanguage();
+  const copy = useCopy('setup');
   const [rememberMe, setRememberMe] = useState(true);
   const [loadingProvider, setLoadingProvider] = useState<OAuthProvider | null>(
     null,
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const copy = SETUP_COPY[language];
   const isLoading = loadingProvider !== null;
 
   const onProviderLogin = useCallback(

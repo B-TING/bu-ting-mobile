@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
-import { REVIEW_TAG_PRESETS, type TRAVEL_REVIEW_COPY } from '../../../constants/review/travelReview';
+import { REVIEW_TAG_PRESETS } from '../../../constants/review/travelReview';
+import type { CopyFor } from '../../../i18n';
 import type { AppLanguage } from '../../../types/user';
 import type { PlaceReview, ReviewMedia } from '../../../types/travelReview';
 import type { RouteItem } from '../../../types/travelPlan';
@@ -9,7 +10,7 @@ import { createId } from '../../../utils/common/id';
 import { StarRating } from '../../shared/rating/StarRating';
 import { AppModal, AppModalActions } from '../../shared/modals';
 
-type Copy = (typeof TRAVEL_REVIEW_COPY)[AppLanguage];
+type Copy = CopyFor<'travelReview'>;
 
 type PlaceReviewFormModalProps = {
   visible: boolean;

@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 
 import type { ImportPlanModalPhase, ImportPlanModalProps } from './modals/ImportPlanModal';
-import type { TRAVEL_REVIEW_COPY } from '../../constants/review/travelReview';
+import type { CopyFor } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
 import {
   selectActivePlan,
@@ -13,7 +13,7 @@ import {
 import type { Travelogue } from '../../types/travelReview';
 import type { AppLanguage } from '../../types/user';
 
-type Copy = (typeof TRAVEL_REVIEW_COPY)[AppLanguage];
+type Copy = CopyFor<'travelReview'>;
 
 type TravelogueNavigation = {
   navigate: (

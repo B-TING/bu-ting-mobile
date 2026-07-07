@@ -1,13 +1,13 @@
 import { useWindowDimensions, View } from 'react-native';
 
-import { PLACE_SEARCH_COPY } from '../../constants/places/placeSearch';
+import type { CopyFor } from '../../i18n';
 import type { BusanPlace } from '../../types/placeSearch';
 import type { PlaceDetailVO } from '../../types/googlePlaces';
 import type { AppLanguage } from '../../types/user';
 import { AppModal, AppModalActions } from '../shared/modals';
 import { PlaceDetailPanel } from './PlaceDetailPanel';
 
-type Copy = (typeof PLACE_SEARCH_COPY)['ko'];
+type Copy = CopyFor<'placeSearch'>;
 
 const SHEET_HEIGHT_RATIO = 0.62;
 

@@ -9,6 +9,7 @@ export const PLACE_SEARCH_RADIUS_M = 3000;
 /** 지도 중심이 검색 중심과 이 거리(m) 이상 벗어나면 '이곳에서 검색하기' 표시 */
 export const PLACE_SEARCH_CENTER_THRESHOLD_M = 150;
 
+/** @deprecated Use useCopy('placeSearch') from src/i18n */
 export const PLACE_SEARCH_COPY: Record<
   AppLanguage,
   {
@@ -72,8 +73,11 @@ export const PLACE_SEARCH_COPY: Record<
     mapSubtitle: '지도를 움직이면 다른 위치를 검색할 수 있어요',
     selectHint: '지도에서 장소를 선택하면 상세 정보를 볼 수 있어요',
     close: '닫기',
-    ratingSummary: (rating, count) =>
-      count > 0 ? `★ ${rating.toFixed(1)} · 리뷰 ${count.toLocaleString()}개` : '리뷰 없음',
+    ratingSummary: (rating, count) => {
+      const r = Number(rating) || 0;
+      const c = Number(count) || 0;
+      return c > 0 ? `★ ${r.toFixed(1)} · 리뷰 ${c.toLocaleString()}개` : '리뷰 없음';
+    },
     reviewsTitle: 'Google 리뷰',
     reviewsSource: 'Google Maps에서 제공하는 리뷰입니다.',
     openInGoogleMaps: 'Google 지도에서 보기',
@@ -124,8 +128,11 @@ export const PLACE_SEARCH_COPY: Record<
     mapSubtitle: 'Pan the map to search a different area',
     selectHint: 'Select a place on the map to see details',
     close: 'Close',
-    ratingSummary: (rating, count) =>
-      count > 0 ? `★ ${rating.toFixed(1)} · ${count.toLocaleString()} reviews` : 'No reviews',
+    ratingSummary: (rating, count) => {
+      const r = Number(rating) || 0;
+      const c = Number(count) || 0;
+      return c > 0 ? `★ ${r.toFixed(1)} · ${c.toLocaleString()} reviews` : 'No reviews';
+    },
     reviewsTitle: 'Google reviews',
     reviewsSource: 'Reviews from Google Maps.',
     openInGoogleMaps: 'Open in Google Maps',
@@ -176,8 +183,11 @@ export const PLACE_SEARCH_COPY: Record<
     mapSubtitle: '地図を動かすと別のエリアを検索できます',
     selectHint: '地図で場所を選ぶと詳細が表示されます',
     close: '閉じる',
-    ratingSummary: (rating, count) =>
-      count > 0 ? `★ ${rating.toFixed(1)} · レビュー ${count.toLocaleString()}件` : 'レビューなし',
+    ratingSummary: (rating, count) => {
+      const r = Number(rating) || 0;
+      const c = Number(count) || 0;
+      return c > 0 ? `★ ${r.toFixed(1)} · レビュー ${c.toLocaleString()}件` : 'レビューなし';
+    },
     reviewsTitle: 'Googleレビュー',
     reviewsSource: 'Google Mapsのレビューです。',
     openInGoogleMaps: 'Googleマップで見る',
@@ -228,8 +238,11 @@ export const PLACE_SEARCH_COPY: Record<
     mapSubtitle: '移动地图可搜索其他区域',
     selectHint: '在地图上选择地点查看详情',
     close: '关闭',
-    ratingSummary: (rating, count) =>
-      count > 0 ? `★ ${rating.toFixed(1)} · ${count.toLocaleString()} 条评价` : '暂无评价',
+    ratingSummary: (rating, count) => {
+      const r = Number(rating) || 0;
+      const c = Number(count) || 0;
+      return c > 0 ? `★ ${r.toFixed(1)} · ${c.toLocaleString()} 条评价` : '暂无评价';
+    },
     reviewsTitle: 'Google评价',
     reviewsSource: '来自 Google Maps。',
     openInGoogleMaps: '在 Google 地图中打开',

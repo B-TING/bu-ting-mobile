@@ -14,6 +14,7 @@ export type SuggestedQuestion = {
   label: Record<AppLanguage, string>;
 };
 
+/** @deprecated Use useCopy('helpdesk') from src/i18n */
 export const HELP_DESK_COPY: Record<
   AppLanguage,
   {

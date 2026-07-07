@@ -1,8 +1,8 @@
 import { Text, TextInput, View } from 'react-native';
 
-import type { FESTIVAL_CALENDAR_COPY } from '../../constants/festival/festivalCalendar';
+import type { CopyFor } from '../../i18n';
 
-type Copy = (typeof FESTIVAL_CALENDAR_COPY)['ko'];
+type Copy = CopyFor<'festivalCalendar'>;
 
 type FestivalCommentsPlaceholderProps = {
   copy: Copy;

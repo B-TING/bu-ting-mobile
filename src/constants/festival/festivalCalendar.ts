@@ -1,4 +1,5 @@
 import type { MockEvent } from '../home/mainHome';
+import { getCopyForLanguage } from '../../i18n';
 import type { AppLanguage } from '../../types/user';
 import type { RouteItem } from '../../types/travelPlan';
 
@@ -46,6 +47,7 @@ export const MONTH_NAMES: Record<AppLanguage, string[]> = {
   zh: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
 };
 
+/** @deprecated Use useCopy('festivalCalendar') from src/i18n */
 export const FESTIVAL_CALENDAR_COPY: Record<
   AppLanguage,
   {
@@ -510,7 +512,7 @@ export function getFestivalStatus(
 }
 
 export function festivalStatusLabel(status: FestivalStatus, language: AppLanguage): string {
-  const copy = FESTIVAL_CALENDAR_COPY[language];
+  const copy = getCopyForLanguage('festivalCalendar', language);
   return status === 'upcoming' ? copy.statusComingSoon : copy.statusEnded;
 }
 
@@ -594,7 +596,7 @@ export function festivalTagLabel(
   tag: BusanFestival['tag'],
   language: AppLanguage,
 ): string {
-  const copy = FESTIVAL_CALENDAR_COPY[language];
+  const copy = getCopyForLanguage('festivalCalendar', language);
   return tag === 'FESTIVAL' ? copy.tagFestival : copy.tagExhibition;
 }
 
@@ -670,7 +672,7 @@ export function festivalPeriodLabel(festival: BusanFestival, language: AppLangua
     return language === 'ko' ? `${m}.${day}` : `${m}/${day}`;
   };
   if (festival.recurringWeekday != null) {
-    const weekDay = FESTIVAL_CALENDAR_COPY[language].weekDays[festival.recurringWeekday];
+    const weekDay = getCopyForLanguage('festivalCalendar', language).weekDays[festival.recurringWeekday];
     return language === 'ko'
       ? `매주 ${weekDay}요일`
       : language === 'ja'
@@ -687,7 +689,7 @@ export function festivalPeriodLabel(festival: BusanFestival, language: AppLangua
 
 export function formatSelectedDateLabel(dateIso: string, language: AppLanguage): string {
   const d = parseIsoDate(dateIso);
-  const weekDay = FESTIVAL_CALENDAR_COPY[language].weekDays[d.getDay()];
+  const weekDay = getCopyForLanguage('festivalCalendar', language).weekDays[d.getDay()];
   const m = d.getMonth() + 1;
   const day = d.getDate();
   if (language === 'ko') {

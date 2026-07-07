@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Text, View } from 'react-native';
 
-import type { LUGGAGE_STORAGE_COPY } from '../../constants/locker/luggageStorage';
+import type { CopyFor } from '../../i18n';
 import type { LockerFeeGroup, SubwayLockerStation } from '../../types/subwayLocker';
 import {
   buildLockerInventoryRows,
@@ -10,7 +10,7 @@ import {
   lockerSizeLabel,
 } from '../../utils/locker/subwayLockerFees';
 
-type Copy = (typeof LUGGAGE_STORAGE_COPY)['ko'];
+type Copy = CopyFor<'luggageStorage'>;
 
 type LockerInventoryTableProps = {
   station: SubwayLockerStation;

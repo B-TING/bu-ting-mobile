@@ -1,14 +1,16 @@
 import type { ReactNode } from 'react';
 import { Linking, Pressable, Text, View } from 'react-native';
 
-import { PLACE_SEARCH_COPY, isFestivalPlaceSearch } from '../../constants/places/placeSearch';
-import { buildGoogleMapsUrl } from '../../kakaoMap';
+import { isFestivalPlaceSearch } from '../../constants/places/placeSearch';
+import { useCopy } from '../../i18n';
+import type { CopyFor } from '../../i18n';
+import { buildGoogleMapsUrl } from '../../utils/places/googleMapsUrl';
 import type { BusanPlace } from '../../types/placeSearch';
 import type { PlaceDetailVO } from '../../types/googlePlaces';
 import type { AppLanguage } from '../../types/user';
 import { PlaceGoogleDetailBody } from './PlaceGoogleDetailBody';
 
-type Copy = (typeof PLACE_SEARCH_COPY)['ko'];
+type Copy = CopyFor<'placeSearch'>;
 
 type PlaceDetailPanelProps = {
   place: BusanPlace;
@@ -33,7 +35,8 @@ export function PlaceDetailPanel({
   headerExtra,
   footerExtra,
 }: PlaceDetailPanelProps) {
-  const copy = copyProp ?? PLACE_SEARCH_COPY[language];
+  const defaultCopy = useCopy('placeSearch');
+  const copy = copyProp ?? defaultCopy;
   const categoryLabel = copy.categoryLabels[place.contentTypeId];
   const isFestival = isFestivalPlaceSearch(place.contentTypeId);
   const rating = detail?.rating ?? place.rating;

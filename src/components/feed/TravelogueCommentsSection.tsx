@@ -1,10 +1,10 @@
 import { Pressable, Text, View } from 'react-native';
 
-import type { TRAVEL_REVIEW_COPY } from '../../constants/review/travelReview';
+import type { CopyFor } from '../../i18n';
 import type { TravelogueComment } from '../../types/travelReview';
 import { authorInitial } from '../../utils/review/travelReview';
 
-type Copy = (typeof TRAVEL_REVIEW_COPY)['ko'];
+type Copy = CopyFor<'travelReview'>;
 
 type TravelogueCommentsSectionProps = {
   copy: Copy;

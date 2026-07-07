@@ -188,6 +188,7 @@ type EventZoneZoneDetailPanelProps = {
   activeEvent?: ZoneEvent;
   eventEndsInLabel: (remaining: string) => string;
   eventEndedLabel: string;
+  surpriseMissionBadge: string;
   onClose: () => void;
   onEnterChat: () => void;
   liveMemberCount?: number | null;
@@ -206,6 +207,7 @@ export function EventZoneZoneDetailPanel({
   activeEvent,
   eventEndsInLabel,
   eventEndedLabel,
+  surpriseMissionBadge,
   onClose,
   onEnterChat,
   liveMemberCount,
@@ -222,7 +224,7 @@ export function EventZoneZoneDetailPanel({
             </Text>
             {activeEvent ? (
               <View className="rounded-full bg-pink-600 px-2 py-0.5">
-                <Text className="text-[10px] font-bold text-white">🔥 깜짝 미션 중!</Text>
+                <Text className="text-[10px] font-bold text-white">{surpriseMissionBadge}</Text>
               </View>
             ) : null}
           </View>

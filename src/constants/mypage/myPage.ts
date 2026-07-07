@@ -1,5 +1,6 @@
 import type { AppLanguage } from '../../types/user';
 
+/** @deprecated Use useCopy('myPage') from src/i18n */
 export const MY_PAGE_COPY: Record<
   AppLanguage,
   {

@@ -2,14 +2,14 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Animated, Pressable, Text, View } from 'react-native';
 
 import { getBudgetCategoryStyle } from '../../../constants/plan/budgetCategoryStyle';
-import type { PLAN_DETAIL_COPY } from '../../../constants/plan/planDetail';
+import type { CopyFor } from '../../../i18n';
 import type { AppLanguage } from '../../../types/user';
 import type { BudgetCategory } from '../../../types/travelPlan';
 import { getCategoryBreakdownRows } from '../../../utils/plan/budgetTotals';
 import { budgetCategoryDisplay } from '../modals/BudgetEntryModal';
 import { BudgetCategoryBadge } from './BudgetCategoryBadge';
 
-type Copy = (typeof PLAN_DETAIL_COPY)[AppLanguage];
+type Copy = CopyFor<'planDetail'>;
 type CategoryTotals = Record<BudgetCategory, number>;
 
 type BudgetSummarySectionProps = {
