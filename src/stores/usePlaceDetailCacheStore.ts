@@ -1,8 +1,13 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
 import type { PlaceDetailVO } from '../types/googlePlaces';
-import type { RouteItemType } from '../types/travelPlan';
-import { fetchRoutePlaceDetail } from '../utils/places/routePlaceDetail';
+import type { RouteItem, RouteItemType } from '../types/travelPlan';
+import {
+  fetchRoutePlaceDetail,
+  shouldPrefetchRouteDetail,
+} from '../utils/places/routePlaceDetail';
 
 type PlaceDetailCacheState = {
   detailsByPlaceId: Record<string, PlaceDetailVO | null>;
@@ -10,7 +15,9 @@ type PlaceDetailCacheState = {
   hasDetail: (placeId: string) => boolean;
   getDetail: (placeId: string) => PlaceDetailVO | null | undefined;
   isLoading: (placeId: string) => boolean;
+  isRouteDetailPending: (route: RouteItem) => boolean;
   mergeDetails: (details: Record<string, PlaceDetailVO | null>) => void;
+  prefetchRoutes: (routes: RouteItem[]) => void;
   fetchForRoute: (
     placeId: string,
     type: RouteItemType,
@@ -20,54 +27,100 @@ type PlaceDetailCacheState = {
 
 const pendingFetches = new Map<string, Promise<PlaceDetailVO | null>>();
 
-export const usePlaceDetailCacheStore = create<PlaceDetailCacheState>()((set, get) => ({
-  detailsByPlaceId: {},
-  loadingIds: {},
+function uniquePrefetchRoutes(routes: RouteItem[]): RouteItem[] {
+  const seen = new Set<string>();
+  const result: RouteItem[] = [];
 
-  hasDetail: placeId => placeId in get().detailsByPlaceId,
-
-  getDetail: placeId => get().detailsByPlaceId[placeId],
-
-  isLoading: placeId => get().loadingIds[placeId] ?? false,
-
-  mergeDetails: details => {
-    if (Object.keys(details).length === 0) {
-      return;
+  for (const route of routes) {
+    if (!shouldPrefetchRouteDetail(route)) {
+      continue;
     }
-    set(state => ({
-      detailsByPlaceId: { ...state.detailsByPlaceId, ...details },
-    }));
-  },
-
-  fetchForRoute: async (placeId, type, options) => {
-    if (get().hasDetail(placeId)) {
-      return get().getDetail(placeId) ?? null;
+    if (seen.has(route.placeId)) {
+      continue;
     }
+    seen.add(route.placeId);
+    result.push(route);
+  }
 
-    const pending = pendingFetches.get(placeId);
-    if (pending) {
-      return pending;
-    }
+  return result;
+}
 
-    set(state => ({
-      loadingIds: { ...state.loadingIds, [placeId]: true },
-    }));
+export const usePlaceDetailCacheStore = create<PlaceDetailCacheState>()(
+  persist(
+    (set, get) => ({
+      detailsByPlaceId: {},
+      loadingIds: {},
 
-    const promise = fetchRoutePlaceDetail(placeId, type, options)
-      .then(result => {
-        get().mergeDetails({ [placeId]: result });
-        return result;
-      })
-      .finally(() => {
-        pendingFetches.delete(placeId);
-        set(state => {
-          const nextLoading = { ...state.loadingIds };
-          delete nextLoading[placeId];
-          return { loadingIds: nextLoading };
-        });
-      });
+      hasDetail: placeId => placeId in get().detailsByPlaceId,
 
-    pendingFetches.set(placeId, promise);
-    return promise;
-  },
-}));
+      getDetail: placeId => get().detailsByPlaceId[placeId],
+
+      isLoading: placeId => get().loadingIds[placeId] ?? false,
+
+      isRouteDetailPending: route => {
+        if (!shouldPrefetchRouteDetail(route)) {
+          return false;
+        }
+        return !get().hasDetail(route.placeId);
+      },
+
+      mergeDetails: details => {
+        if (Object.keys(details).length === 0) {
+          return;
+        }
+        set(state => ({
+          detailsByPlaceId: { ...state.detailsByPlaceId, ...details },
+        }));
+      },
+
+      prefetchRoutes: routes => {
+        for (const route of uniquePrefetchRoutes(routes)) {
+          if (get().hasDetail(route.placeId) || pendingFetches.has(route.placeId)) {
+            continue;
+          }
+          void get().fetchForRoute(route.placeId, route.type, {
+            placeName: route.placeName,
+            address: route.placeInfo?.address,
+          });
+        }
+      },
+
+      fetchForRoute: async (placeId, type, options) => {
+        if (get().hasDetail(placeId)) {
+          return get().getDetail(placeId) ?? null;
+        }
+
+        const pending = pendingFetches.get(placeId);
+        if (pending) {
+          return pending;
+        }
+
+        set(state => ({
+          loadingIds: { ...state.loadingIds, [placeId]: true },
+        }));
+
+        const promise = fetchRoutePlaceDetail(placeId, type, options)
+          .then(result => {
+            get().mergeDetails({ [placeId]: result });
+            return result;
+          })
+          .finally(() => {
+            pendingFetches.delete(placeId);
+            set(state => {
+              const nextLoading = { ...state.loadingIds };
+              delete nextLoading[placeId];
+              return { loadingIds: nextLoading };
+            });
+          });
+
+        pendingFetches.set(placeId, promise);
+        return promise;
+      },
+    }),
+    {
+      name: 'buting-place-detail-cache',
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: state => ({ detailsByPlaceId: state.detailsByPlaceId }),
+    },
+  ),
+);

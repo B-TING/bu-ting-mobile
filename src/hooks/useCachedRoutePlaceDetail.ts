@@ -31,9 +31,12 @@ export function useCachedRoutePlaceDetail(
   }, [enabled, route, fetchForRoute]);
 
   const isCached = cached !== undefined;
+  const isLoading = usePlaceDetailCacheStore(s =>
+    placeId ? s.isLoading(placeId) : false,
+  );
 
   return {
     detail: isCached ? cached : null,
-    loading: enabled && !isCached,
+    loading: enabled && (isLoading || !isCached),
   };
 }

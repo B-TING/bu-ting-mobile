@@ -1,5 +1,5 @@
 import { getAttractionMockDetail } from '../../constants/places/attractionPlaces';
-import { PLACE_SEARCH_COPY } from '../../constants/places/placeSearch';
+import { getCopyForLanguage } from '../../i18n';
 import { enrichPlaceInfo } from '../../constants/places/placeCatalog';
 import { fetchPlaceDetail } from '../../services/places/placesApiService';
 import type { PlaceDetailVO } from '../../types/googlePlaces';
@@ -10,6 +10,18 @@ import type { AppLanguage } from '../../types/user';
 
 export function shouldFetchRoutePlaceDetail(type: RouteItemType): boolean {
   return type === 'ATTRACTION' || type === 'RESTAURANT' || type === 'ACCOMMODATION';
+}
+
+/** 일정 카드·프리로드 대상 — API/목업 상세가 아직 없을 때 */
+export function shouldPrefetchRouteDetail(route: RouteItem): boolean {
+  if (!shouldFetchRoutePlaceDetail(route.type) && !isTourApiContentId(route.placeId)) {
+    return false;
+  }
+  const info = route.placeInfo;
+  if (info?.imageUrl && info.description?.trim()) {
+    return false;
+  }
+  return true;
 }
 
 export function isTourApiContentId(placeId: string): boolean {
@@ -50,7 +62,7 @@ export function mapPlaceDetailVoToPlaceInfo(
   fallback?: Partial<PlaceInfo>,
 ): PlaceInfo {
   const contentTypeId = routeTypeToContentTypeId(type);
-  const categoryLabel = PLACE_SEARCH_COPY[lang].categoryLabels[contentTypeId];
+  const categoryLabel = getCopyForLanguage('placeSearch', lang).categoryLabels[contentTypeId];
 
   return {
     description:

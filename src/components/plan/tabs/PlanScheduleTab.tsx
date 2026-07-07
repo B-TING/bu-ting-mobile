@@ -14,7 +14,7 @@ import { DayChips } from '../schedule/DayChips';
 import { ScheduleMapSplit } from '../schedule/ScheduleMapSplit';
 import { TravelLegRow } from '../schedule/TravelLegRow';
 import { ScheduleRouteSlot, type RebootPhase } from '../schedule/ScheduleRouteSlot';
-import type { PLAN_DETAIL_COPY } from '../../../constants/plan/planDetail';
+import type { CopyFor } from '../../../i18n';
 import { EVENT_ZONE_BY_ID } from '../../../constants/eventZone/eventZone';
 import { getScheduleDayColor } from '../../../constants/plan/scheduleDayColors';
 import { usePlanStore } from '../../../stores';
@@ -32,7 +32,7 @@ import { estimateTravelLeg } from '../../../utils/geo/geo';
 import { computeDayTotalMinutes, formatDurationMinutes } from '../../../utils/geo/tripDuration';
 import { getReviewForRoute } from '../../../utils/review/travelReview';
 
-type Copy = (typeof PLAN_DETAIL_COPY)[AppLanguage];
+type Copy = CopyFor<'planDetail'>;
 
 type RebootState = {
   itemId: string;
@@ -163,6 +163,8 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
         rebootCancel: copy.rebootCancel,
         recordReview: copy.recordReview,
         quickRatingHint: copy.quickRatingHint,
+        scheduleDetailLoading: copy.scheduleDetailLoading,
+        placeRatingSummary: copy.placeRatingSummary,
         transportModeTitle: copy.transportModeTitle,
         legWalk: copy.legWalk,
         legDrive: copy.legDrive,

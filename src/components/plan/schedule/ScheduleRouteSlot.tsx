@@ -23,6 +23,8 @@ type ScheduleRouteSlotProps = {
     rebootCancel: string;
     recordReview?: string;
     quickRatingHint?: string;
+    scheduleDetailLoading?: string;
+    placeRatingSummary?: (rating: number, count: number) => string;
     transportModeTitle?: string;
     legWalk: string;
     legDrive: string;
@@ -162,6 +164,8 @@ export function ScheduleRouteSlot({
             editLabel={copy.editRoute}
             recordReviewLabel={copy.recordReview}
             quickRatingHint={copy.quickRatingHint}
+            detailLoadingLabel={copy.scheduleDetailLoading}
+            ratingSummary={copy.placeRatingSummary}
             reviewRating={reviewRating}
             onWriteReview={onWriteReview}
             onQuickRating={onQuickRating}

@@ -18,8 +18,8 @@ import {
 } from '../../components/plan/tabs/PlanScheduleTab';
 import { PlanTabPager } from '../../components/plan/tabs/PlanTabPager';
 import { PlaceReviewFormModal } from '../../components/review/modals/PlaceReviewFormModal';
-import { PLAN_DETAIL_COPY, type PlanDetailTab } from '../../constants/plan/planDetail';
-import { TRAVEL_REVIEW_COPY } from '../../constants/review/travelReview';
+import { type PlanDetailTab } from '../../constants/plan/planDetail';
+import { useAppLanguage, useCopy } from '../../i18n';
 import { usePlanRoutePlaceDetails } from '../../hooks/usePlanRoutePlaceDetails';
 import type { RootStackParamList } from '../../navigation/types';
 import { addPlanPlaceFromCandidate, nextPlanPlaceSequence, removePlanPlaceFromApi } from '../../services/travel/planPlaceSync';
@@ -48,7 +48,7 @@ const EMPTY_BUDGET: BudgetEntry[] = [];
 export function PlanDetailScreen({ navigation, route }: Props) {
   const paramPlanId = route.params?.planId;
   const insets = useSafeAreaInsets();
-  const language = useAppStore(s => s.language) ?? 'ko';
+  const language = useAppLanguage();
 
   const plans = usePlanStore(s => s.plans);
   const activePlanId = usePlanStore(s => s.activePlanId);
@@ -89,8 +89,8 @@ export function PlanDetailScreen({ navigation, route }: Props) {
     [budgetByPlan, planId],
   );
 
-  const copy = PLAN_DETAIL_COPY[language];
-  const reviewCopy = TRAVEL_REVIEW_COPY[language];
+  const copy = useCopy('planDetail');
+  const reviewCopy = useCopy('travelReview');
 
   const [tab, setTab] = useState<PlanDetailTab>(route.params?.tab ?? 'overview');
   const [selectedDay, setSelectedDay] = useState(1);
@@ -107,7 +107,7 @@ export function PlanDetailScreen({ navigation, route }: Props) {
     () => plan?.itinerary.flatMap(day => sortedRoutes(day.routes)) ?? [],
     [plan],
   );
-  const detailsByPlaceId = usePlanRoutePlaceDetails(rawAllRoutes);
+  const detailsByPlaceId = usePlanRoutePlaceDetails(rawAllRoutes, tab === 'schedule');
 
   const enrichedPlan = useMemo(() => {
     if (!plan) {

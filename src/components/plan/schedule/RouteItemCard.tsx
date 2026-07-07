@@ -3,6 +3,7 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { StarRating } from '../../shared/rating/StarRating';
 import { catalogThumbnail } from '../../../constants/places/placeCatalog';
+import { usePlaceDetailCacheStore } from '../../../stores/usePlaceDetailCacheStore';
 import type { RouteItem } from '../../../types/travelPlan';
 
 type RouteItemCardProps = {
@@ -24,6 +25,8 @@ type RouteItemCardProps = {
   reviewRating?: number;
   onWriteReview?: () => void;
   onQuickRating?: (rating: number) => void;
+  detailLoadingLabel?: string;
+  ratingSummary?: (rating: number, count: number) => string;
 };
 
 export function RouteItemCard({
@@ -45,8 +48,11 @@ export function RouteItemCard({
   reviewRating = 0,
   onWriteReview,
   onQuickRating,
+  detailLoadingLabel,
+  ratingSummary,
 }: RouteItemCardProps) {
   const info = route.placeInfo;
+  const isDetailPending = usePlaceDetailCacheStore(s => s.isRouteDetailPending(route));
   const thumb = catalogThumbnail(route.placeId);
   const imageUrl = info?.imageUrl;
   const [imageFailed, setImageFailed] = useState(false);
@@ -79,16 +85,20 @@ export function RouteItemCard({
       </Pressable>
       <Pressable onPress={onPress} className="min-h-[72px] flex-1 pr-2 active:opacity-90">
         <Text className="text-base font-bold text-brand-text">{route.placeName}</Text>
-        {info && (
+        {isDetailPending && detailLoadingLabel ? (
+          <Text className="mt-1 text-xs text-brand-muted">{detailLoadingLabel}</Text>
+        ) : info ? (
           <>
             <Text className="mt-0.5 text-xs text-brand-muted">
               {info.hours} · {info.category}
             </Text>
             <Text className="mt-1 text-xs text-brand-muted" numberOfLines={2}>
-              {info.description}
+              {ratingSummary
+                ? ratingSummary(info.rating ?? 0, info.reviewCount ?? 0)
+                : info.description}
             </Text>
           </>
-        )}
+        ) : null}
         <Pressable onPress={onToggleVisited} className="mt-2 self-start active:opacity-80">
           <Text
             className={
