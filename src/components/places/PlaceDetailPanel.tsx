@@ -1,6 +1,7 @@
-import type { ReactNode } from 'react';
-import { Linking, Pressable, Text, View } from 'react-native';
+import { useEffect, useState, type ReactNode } from 'react';
+import { Image, Linking, Pressable, Text, View } from 'react-native';
 
+import { catalogThumbnail } from '../../constants/places/placeCatalog';
 import { isFestivalPlaceSearch } from '../../constants/places/placeSearch';
 import { useCopy } from '../../i18n';
 import type { CopyFor } from '../../i18n';
@@ -22,6 +23,7 @@ type PlaceDetailPanelProps = {
   onToggleBookmark?: () => void;
   headerExtra?: ReactNode;
   footerExtra?: ReactNode;
+  close?: () => void;
 };
 
 export function PlaceDetailPanel({
@@ -34,9 +36,11 @@ export function PlaceDetailPanel({
   onToggleBookmark,
   headerExtra,
   footerExtra,
+  close,
 }: PlaceDetailPanelProps) {
   const defaultCopy = useCopy('placeSearch');
   const copy = copyProp ?? defaultCopy;
+  const [imageFailed, setImageFailed] = useState(false);
   const categoryLabel = copy.categoryLabels[place.contentTypeId];
   const isFestival = isFestivalPlaceSearch(place.contentTypeId);
   const rating = detail?.rating ?? place.rating;
@@ -44,6 +48,12 @@ export function PlaceDetailPanel({
   const metaLine = isFestival
     ? copy.festivalDetailMeta
     : copy.ratingSummary(rating, reviewCount);
+  const imageUrl = detail?.imageUrl ?? place.imageUrl;
+  const thumbColor = catalogThumbnail(place.contentId);
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [imageUrl]);
 
   const openGoogleMaps = () => {
     if (detail) {
@@ -78,34 +88,46 @@ export function PlaceDetailPanel({
   return (
     <View>
       {headerExtra}
-
       <View className="flex-row items-start justify-between gap-3 px-5">
-        <Text className="min-w-0 flex-1 pr-2 text-xl font-bold text-brand-text">{place.name}</Text>
-        <View className="shrink-0 items-end gap-2">
-          <View className="rounded-full bg-brand-selected px-2.5 py-1">
-            <Text className="text-[10px] font-semibold text-brand-primary">{categoryLabel}</Text>
-          </View>
-          {onToggleBookmark ? (
-            <Pressable
-              onPress={onToggleBookmark}
-              accessibilityRole="button"
-              accessibilityLabel={bookmarked ? copy.unbookmark : copy.bookmark}
-              className={`flex-row items-center gap-1 rounded-full px-3 py-2 active:opacity-80 ${
-                bookmarked ? 'bg-amber-100' : 'bg-brand-selected'
-              }`}>
-              <Text className="text-sm">{bookmarked ? '📌' : '☆'}</Text>
-              <Text
-                className={`text-xs font-bold ${
-                  bookmarked ? 'text-amber-700' : 'text-brand-primary'
+        <View className="flex-1">
+          <View className="flex-row items-center gap-2 justify-between">
+            <Text className="text-xl font-bold text-brand-text">{place.name}</Text>
+            {onToggleBookmark ? (
+              <Pressable
+                onPress={onToggleBookmark}
+                accessibilityRole="button"
+                accessibilityLabel={bookmarked ? copy.unbookmark : copy.bookmark}
+                className={`flex-row items-center gap-1 rounded-full px-3 py-1 active:opacity-80 ${
+                  bookmarked ? 'bg-amber-100' : 'bg-brand-selected'
                 }`}>
-                {bookmarked ? copy.unbookmark : copy.bookmark}
-              </Text>
-            </Pressable>
+                <Text className="text-xs">{bookmarked ? '📌' : '☆'}</Text>
+                <Text
+                  className={`text-xs font-bold ${
+                    bookmarked ? 'text-amber-700' : 'text-brand-primary'
+                  }`}>
+                  {bookmarked ? copy.unbookmark : copy.bookmark}
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>   
+          <Text className="mt-1 text-[10px] font-semibold text-brand-primary">{categoryLabel}</Text>
+          <Text className="mt-1 text-sm font-semibold text-brand-primary">{metaLine}</Text>
+        </View>
+        <View
+          className="h-[64px] w-[64px] overflow-hidden rounded-xl bg-brand-surface"
+          style={!imageUrl || imageFailed ? { backgroundColor: thumbColor } : undefined}>
+          {imageUrl && !imageFailed ? (
+            <Image
+              source={{ uri: imageUrl }}
+              className="h-full w-full"
+              resizeMode="cover"
+              onError={() => setImageFailed(true)}
+            />
           ) : null}
         </View>
       </View>
 
-      <Text className="mt-2 px-5 text-sm font-semibold text-brand-primary">{metaLine}</Text>
+      
 
       <Pressable
         onPress={openGoogleMaps}

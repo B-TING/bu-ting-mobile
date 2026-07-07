@@ -21,7 +21,7 @@ type PlaceDetailCacheState = {
   fetchForRoute: (
     placeId: string,
     type: RouteItemType,
-    options?: { placeName?: string; address?: string },
+    options?: { placeName?: string; address?: string; imageUrl?: string },
   ) => Promise<PlaceDetailVO | null>;
 };
 
@@ -81,6 +81,7 @@ export const usePlaceDetailCacheStore = create<PlaceDetailCacheState>()(
           void get().fetchForRoute(route.placeId, route.type, {
             placeName: route.placeName,
             address: route.placeInfo?.address,
+            imageUrl: route.placeInfo?.imageUrl,
           });
         }
       },

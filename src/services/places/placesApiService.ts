@@ -54,6 +54,7 @@ type FetchPlaceDetailParams = {
   googleSearchText?: string;
   fallbackName?: string;
   fallbackAddress?: string;
+  fallbackImageUrl?: string;
 };
 
 type SearchFestivalsParams = {
@@ -345,6 +346,7 @@ export async function fetchPlaceDetail(params: FetchPlaceDetailParams): Promise<
   return mapPlaceDetailToPlaceDetailVO(payload, {
     name: params.fallbackName,
     address: params.fallbackAddress,
+    imageUrl: params.fallbackImageUrl,
   });
 }
 
@@ -369,6 +371,7 @@ export async function fetchPlaceDetailsForList(
           googleSearchText,
           fallbackName: place.name,
           fallbackAddress: place.address,
+          fallbackImageUrl: place.imageUrl,
         });
         return [place.contentId, detail] as const;
       } catch {

@@ -16,6 +16,7 @@ type RouteItemCardProps = {
   onEditPress: () => void;
   onIndexPress?: () => void;
   indexSelected?: boolean;
+  isFocused?: boolean;
   onToggleVisited: () => void;
   visitedLabel: string;
   editLabel: string;
@@ -39,6 +40,7 @@ export function RouteItemCard({
   onEditPress,
   onIndexPress,
   indexSelected,
+  isFocused,
   onToggleVisited,
   visitedLabel,
   editLabel,
@@ -62,7 +64,7 @@ export function RouteItemCard({
     <View
       className="mb-2 flex-row rounded-2xl border bg-brand-surface p-3"
       style={
-        indexSelected
+        indexSelected || isFocused
           ? { borderColor: dayColor, borderWidth: 2, backgroundColor: dayColorLight }
           : { borderColor: '#E2E8F0', borderLeftWidth: 4, borderLeftColor: leftBorderColor }
       }>

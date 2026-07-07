@@ -18,6 +18,7 @@ function parseStrokeColor(hex: string): { color: string; opacity: number } {
 export function kakaoOverlaysFromSchedule(
   lines: ScheduleMapLineOverlay[],
   markers: ScheduleMapMarkerOverlay[],
+  highlightItemId?: string | null,
 ): KakaoMapOverlay[] {
   const overlays: KakaoMapOverlay[] = [];
 
@@ -42,16 +43,17 @@ export function kakaoOverlaysFromSchedule(
 
   for (const marker of markers) {
     const dayColor = getScheduleDayColor(marker.dayNumber);
+    const active = highlightItemId != null && highlightItemId === marker.itemId;
     overlays.push({
       kind: 'numbered',
       id: marker.key,
       lat: marker.coordinate.latitude,
       lng: marker.coordinate.longitude,
       order: marker.order,
-      color: dayColor.main,
+      color: active ? '#0077B6' : dayColor.main,
       opacity: marker.isSelectedDay ? 1 : 0.72,
-      size: marker.isActiveDay ? 30 : 26,
-      zIndex: marker.isActiveDay ? 10 : 5,
+      size: active ? 34 : marker.isActiveDay ? 30 : 26,
+      zIndex: active ? 12 : marker.isActiveDay ? 10 : 5,
     });
   }
 

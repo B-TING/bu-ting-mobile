@@ -207,7 +207,7 @@ export function enrichBusanPlaceFromDetail(
 
 export function mapPlaceDetailToPlaceDetailVO(
   detail: PlaceDetailResponseDto,
-  fallback?: { name?: string; address?: string },
+  fallback?: { name?: string; address?: string; imageUrl?: string },
 ): PlaceDetailVO {
   const location = resolveLatLng(detail) ?? { lat: 35.1796, lng: 129.0756 };
   const google = detail.googlePlace;
@@ -215,7 +215,7 @@ export function mapPlaceDetailToPlaceDetailVO(
   const openingHours = resolveOpeningHours(detail);
   const reviews = resolveReviews(detail);
   const tourismInfoRows = formatTourismInfoRows(detail.details, detail.contentTypeId);
-  const imageUrl = resolvePlaceDetailImageUrl(detail);
+  const imageUrl = resolvePlaceDetailImageUrl(detail) ?? fallback?.imageUrl;
   const overview =
     detail.details?.overview?.trim() ||
     detail.details?.infotext?.trim() ||

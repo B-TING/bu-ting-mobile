@@ -107,7 +107,7 @@ export function mergeRouteWithPlaceDetail(
 export async function fetchRoutePlaceDetail(
   placeId: string,
   type: RouteItemType,
-  options?: { placeName?: string; address?: string },
+  options?: { placeName?: string; address?: string; imageUrl?: string },
 ): Promise<PlaceDetailVO | null> {
   const mock = getAttractionMockDetail(placeId);
   if (mock) {
@@ -126,5 +126,6 @@ export async function fetchRoutePlaceDetail(
     googleSearchText,
     fallbackName: options?.placeName,
     fallbackAddress: options?.address,
+    fallbackImageUrl: options?.imageUrl,
   });
 }

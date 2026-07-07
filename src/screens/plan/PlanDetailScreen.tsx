@@ -5,7 +5,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '../../components/shared/buttons/BackButton';
 import { BudgetEntryModal } from '../../components/plan/modals/BudgetEntryModal';
-import { PlaceDetailModal } from '../../components/plan/modals/PlaceDetailModal';
 import { PlacePickModal } from '../../components/plan/modals/PlacePickModal';
 import { RouteOptimizeFab, routeFabBottom } from '../../components/plan/fab/RouteOptimizeFab';
 import { PlanBudgetTab } from '../../components/plan/tabs/PlanBudgetTab';
@@ -94,7 +93,6 @@ export function PlanDetailScreen({ navigation, route }: Props) {
 
   const [tab, setTab] = useState<PlanDetailTab>(route.params?.tab ?? 'overview');
   const [selectedDay, setSelectedDay] = useState(1);
-  const [selectedRoute, setSelectedRoute] = useState<RouteItem | null>(null);
   const [scheduleModal, setScheduleModal] = useState<ScheduleModalState>({ kind: 'none' });
   const [scheduleReorderActive, setScheduleReorderActive] = useState(false);
   const [reviewFormRoute, setReviewFormRoute] = useState<RouteItem | null>(null);
@@ -180,11 +178,8 @@ export function PlanDetailScreen({ navigation, route }: Props) {
       }
 
       removeRoute(planId, route.itemId);
-      if (selectedRoute?.itemId === route.itemId) {
-        setSelectedRoute(null);
-      }
     },
-    [planId, isApiPlan, accessToken, removeRoute, selectedRoute?.itemId],
+    [planId, isApiPlan, accessToken, removeRoute],
   );
 
   const handlePickReplacement = useCallback(
@@ -200,16 +195,9 @@ export function PlanDetailScreen({ navigation, route }: Props) {
         legMode ?? pickRoute.legMode,
       );
       replaceRoute(planId, pickRoute.itemId, replacement);
-      if (selectedRoute?.itemId === pickRoute.itemId) {
-        setSelectedRoute({
-          ...replacement,
-          itemId: pickRoute.itemId,
-          sequence: pickRoute.sequence,
-        });
-      }
       closeScheduleModal();
     },
-    [pickRoute, language, planId, replaceRoute, selectedRoute, closeScheduleModal],
+    [pickRoute, language, planId, replaceRoute, closeScheduleModal],
   );
 
   const handleAddPlace = useCallback(
@@ -382,16 +370,10 @@ export function PlanDetailScreen({ navigation, route }: Props) {
               selectedDay={selectedDay}
               planReviews={planReviews}
               onSelectDay={setSelectedDay}
-              onSelectRoute={setSelectedRoute}
               onToggleVisited={itemId => toggleVisited(planId, itemId)}
               onWriteReview={setReviewFormRoute}
               onQuickRating={handleQuickRating}
               onDeleteRoute={handleDeleteRoute}
-              onRouteRemoved={itemId => {
-                if (selectedRoute?.itemId === itemId) {
-                  setSelectedRoute(null);
-                }
-              }}
               onScheduleModalChange={setScheduleModal}
               onReorderActiveChange={setScheduleReorderActive}
             />
@@ -496,33 +478,6 @@ export function PlanDetailScreen({ navigation, route }: Props) {
         excludePlaceIds={schedulePlaceIds}
         onClose={closeScheduleModal}
         onSelect={handleAddPlace}
-      />
-
-      <PlaceDetailModal
-        visible={!!selectedRoute}
-        route={selectedRoute}
-        language={language}
-        copy={copy}
-        placeReview={
-          selectedRoute
-            ? getReviewForRoute(planReviews, selectedRoute.itemId)
-            : undefined
-        }
-        onClose={() => setSelectedRoute(null)}
-        onToggleVisited={() => {
-          if (selectedRoute) {
-            toggleVisited(planId, selectedRoute.itemId);
-            setSelectedRoute({
-              ...selectedRoute,
-              isVisited: !selectedRoute.isVisited,
-            });
-          }
-        }}
-        onWriteReview={() => {
-          if (selectedRoute) {
-            setReviewFormRoute(selectedRoute);
-          }
-        }}
       />
 
       <PlaceReviewFormModal

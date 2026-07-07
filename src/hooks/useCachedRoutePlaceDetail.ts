@@ -27,6 +27,7 @@ export function useCachedRoutePlaceDetail(
     void fetchForRoute(route.placeId, route.type, {
       placeName: route.placeName,
       address: route.placeInfo?.address,
+      imageUrl: route.placeInfo?.imageUrl,
     });
   }, [enabled, route, fetchForRoute]);
 

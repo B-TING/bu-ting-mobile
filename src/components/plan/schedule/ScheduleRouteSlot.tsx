@@ -37,6 +37,7 @@ type ScheduleRouteSlotProps = {
   onPress: () => void;
   onEdit: () => void;
   indexSelected: boolean;
+  isFocused?: boolean;
   indexHint: string;
   onIndexPress: () => void;
   onToggleVisited: () => void;
@@ -59,6 +60,7 @@ export function ScheduleRouteSlot({
   onPress,
   onEdit,
   indexSelected,
+  isFocused,
   indexHint,
   onIndexPress,
   onToggleVisited,
@@ -157,6 +159,7 @@ export function ScheduleRouteSlot({
             onPress={onPress}
             onEditPress={onEdit}
             indexSelected={indexSelected}
+            isFocused={isFocused}
             indexHint={indexHint}
             onIndexPress={onIndexPress}
             onToggleVisited={onToggleVisited}
