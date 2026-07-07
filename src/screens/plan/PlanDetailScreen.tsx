@@ -19,9 +19,11 @@ import { PlanTabPager } from '../../components/plan/tabs/PlanTabPager';
 import { PlaceReviewFormModal } from '../../components/review/modals/PlaceReviewFormModal';
 import { type PlanDetailTab } from '../../constants/plan/planDetail';
 import { useAppLanguage, useCopy } from '../../i18n';
+import { useAppAlert } from '../../components/shared/modals';
 import { usePlanRoutePlaceDetails } from '../../hooks/usePlanRoutePlaceDetails';
+import { useApiTravelPlanSync } from '../../hooks/useApiTravelPlanSync';
 import type { RootStackParamList } from '../../navigation/types';
-import { addPlanPlaceFromCandidate, nextPlanPlaceSequence, removePlanPlaceFromApi } from '../../services/travel/planPlaceSync';
+import { addPlanPlaceFromCandidate, findDayRoute, getDayRoutesFromPlan, removePlanPlaceFromApi, replacePlanPlaceFromCandidate, routesInItemOrder, updatePlanPlaceOrderOnApi } from '../../services/travel/planPlaceSync';
 import {
   EMPTY_REVIEWS,
   hydrateRoutePlaceInfo,
@@ -33,6 +35,7 @@ import {
 import { selectReusableAccessToken } from '../../stores/useAuthStore';
 import type { BudgetEntry, RouteItem, TravelLegMode } from '../../types/travelPlan';
 import { sortedRoutes } from '../../utils/plan/planItinerary';
+import { optimizeRouteOrder } from '../../utils/plan/routeOptimize';
 import {
   candidateToRouteItem,
   type RebootPlaceCandidate,
@@ -56,6 +59,7 @@ export function PlanDetailScreen({ navigation, route }: Props) {
   const replaceRoute = usePlanStore(s => s.replaceRouteInPlan);
   const addRoute = usePlanStore(s => s.addRouteToPlan);
   const removeRoute = usePlanStore(s => s.removeRouteFromPlan);
+  const reorderRoutes = usePlanStore(s => s.reorderRoutesInPlan);
   const addBudgetEntry = usePlanStore(s => s.addBudgetEntry);
   const completePlan = usePlanStore(s => s.completePlan);
   const upsertPlaceReview = useTravelogueStore(s => s.upsertPlaceReview);
@@ -76,6 +80,13 @@ export function PlanDetailScreen({ navigation, route }: Props) {
   }, [paramPlanId, plans, activePlanId]);
 
   const planId = plan?.planId ?? '';
+  const isApiPlan = plan?.source === 'api';
+
+  const { syncFromServer } = useApiTravelPlanSync({
+    planId,
+    enabled: isApiPlan,
+    accessToken,
+  });
   const planReviews =
     useTravelogueStore(s => (planId ? s.reviewsByPlan[planId] : undefined)) ??
     EMPTY_REVIEWS;
@@ -90,6 +101,7 @@ export function PlanDetailScreen({ navigation, route }: Props) {
 
   const copy = useCopy('planDetail');
   const reviewCopy = useCopy('travelReview');
+  const { alert } = useAppAlert();
 
   const [tab, setTab] = useState<PlanDetailTab>(route.params?.tab ?? 'overview');
   const [selectedDay, setSelectedDay] = useState(1);
@@ -154,7 +166,6 @@ export function PlanDetailScreen({ navigation, route }: Props) {
   const lastScheduleRoute = scheduleRoutes[scheduleRoutes.length - 1];
   const addPlaceAnchor =
     lastScheduleRoute?.location ?? enrichedPlan?.constraints.initialAnchor;
-  const isApiPlan = enrichedPlan?.source === 'api';
 
   const closeScheduleModal = useCallback(() => {
     setScheduleModal({ kind: 'none' });
@@ -169,24 +180,57 @@ export function PlanDetailScreen({ navigation, route }: Props) {
       if (isApiPlan && accessToken && (route.apiPlanPlaceId || route.itemId)) {
         try {
           await removePlanPlaceFromApi(accessToken, route);
+          await syncFromServer();
         } catch (error) {
           const message =
             error instanceof Error ? error.message : '장소 삭제에 실패했습니다.';
           Alert.alert('장소 삭제 실패', message);
           return;
         }
+        return;
       }
 
       removeRoute(planId, route.itemId);
     },
-    [planId, isApiPlan, accessToken, removeRoute],
+    [planId, isApiPlan, accessToken, removeRoute, syncFromServer],
   );
 
   const handlePickReplacement = useCallback(
-    (candidate: RebootPlaceCandidate, legMode?: TravelLegMode) => {
-      if (!pickRoute || !planId) {
+    async (candidate: RebootPlaceCandidate, legMode?: TravelLegMode) => {
+      if (!pickRoute || !planId || !scheduleDay) {
         return;
       }
+
+      const apiPlanId = scheduleDay.apiPlanId;
+      if (isApiPlan && accessToken && apiPlanId) {
+        // [임시] 장소 변경 API 없음 → POST 추가 → sequence 교환 → DELETE
+        try {
+          const synced = await syncFromServer();
+          const freshRoutes = getDayRoutesFromPlan(synced, scheduleDay.dayNumber);
+          const freshRoute =
+            findDayRoute(synced, scheduleDay.dayNumber, pickRoute) ?? pickRoute;
+
+          const created = await replacePlanPlaceFromCandidate(
+            accessToken,
+            apiPlanId,
+            freshRoute,
+            candidate,
+            freshRoutes,
+          );
+          await syncFromServer();
+          if (legMode && legMode !== pickRoute.legMode) {
+            usePlanStore.getState().updateRouteLegMode(planId, created.itemId, legMode);
+          }
+          closeScheduleModal();
+        } catch (error) {
+          const message =
+            error instanceof Error ? error.message : '장소 변경에 실패했습니다.';
+          Alert.alert('장소 변경 실패', message);
+          await syncFromServer();
+        }
+        return;
+      }
+
       const replacement = candidateToRouteItem(
         candidate,
         pickRoute.sequence,
@@ -197,7 +241,93 @@ export function PlanDetailScreen({ navigation, route }: Props) {
       replaceRoute(planId, pickRoute.itemId, replacement);
       closeScheduleModal();
     },
-    [pickRoute, language, planId, replaceRoute, closeScheduleModal],
+    [
+      pickRoute,
+      scheduleDay,
+      language,
+      planId,
+      isApiPlan,
+      accessToken,
+      replaceRoute,
+      closeScheduleModal,
+      syncFromServer,
+    ],
+  );
+
+  const handleReorderRoutes = useCallback(
+    async (dayNumber: number, orderedItemIds: string[]) => {
+      if (!planId) {
+        return;
+      }
+
+      const day = enrichedPlan?.itinerary.find(d => d.dayNumber === dayNumber);
+      const apiPlanId = day?.apiPlanId;
+      if (!isApiPlan || !accessToken || !apiPlanId) {
+        reorderRoutes(planId, dayNumber, orderedItemIds);
+        return;
+      }
+
+      try {
+        const synced = await syncFromServer();
+        const freshRoutes = getDayRoutesFromPlan(synced, dayNumber);
+        const orderedRoutes = routesInItemOrder(freshRoutes, orderedItemIds);
+        if (orderedRoutes.length !== freshRoutes.length) {
+          throw new Error(
+            '일정이 동기화되지 않았습니다. 잠시 후 다시 시도해 주세요.',
+          );
+        }
+
+        await updatePlanPlaceOrderOnApi(accessToken, apiPlanId, orderedRoutes);
+        await syncFromServer();
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : '순서 변경에 실패했습니다.';
+        Alert.alert('순서 변경 실패', message);
+        await syncFromServer();
+      }
+    },
+    [planId, enrichedPlan, isApiPlan, accessToken, reorderRoutes, syncFromServer],
+  );
+
+  const handleOptimizeDayRoute = useCallback(
+    async (dayNumber: number) => {
+      if (!planId) {
+        return;
+      }
+
+      const day = enrichedPlan?.itinerary.find(d => d.dayNumber === dayNumber);
+      const apiPlanId = day?.apiPlanId;
+      const routes = getDayRoutesFromPlan(enrichedPlan, dayNumber);
+      if (routes.length < 2) {
+        return;
+      }
+
+      if (!isApiPlan || !accessToken || !apiPlanId) {
+        const orderedItemIds = optimizeRouteOrder(routes).map(r => r.itemId);
+        reorderRoutes(planId, dayNumber, orderedItemIds);
+        alert({ title: copy.routeOptimize, message: copy.routeOptimized });
+        return;
+      }
+
+      try {
+        const synced = await syncFromServer();
+        const freshRoutes = getDayRoutesFromPlan(synced, dayNumber);
+        if (freshRoutes.length < 2) {
+          return;
+        }
+        const optimized = optimizeRouteOrder(freshRoutes);
+
+        await updatePlanPlaceOrderOnApi(accessToken, apiPlanId, optimized);
+        await syncFromServer();
+        alert({ title: copy.routeOptimize, message: copy.routeOptimized });
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : '경로 최적화에 실패했습니다.';
+        Alert.alert('경로 최적화 실패', message);
+        await syncFromServer();
+      }
+    },
+    [planId, enrichedPlan, isApiPlan, accessToken, reorderRoutes, syncFromServer, alert, copy],
   );
 
   const handleAddPlace = useCallback(
@@ -207,31 +337,31 @@ export function PlanDetailScreen({ navigation, route }: Props) {
       }
 
       const apiPlanId = scheduleDay.apiPlanId;
-      const nextSequence = nextPlanPlaceSequence(scheduleRoutes);
       if (isApiPlan && apiPlanId && accessToken) {
         try {
-          const created = await addPlanPlaceFromCandidate(
-            accessToken,
-            apiPlanId,
-            candidate,
-            nextSequence,
-          );
-          addRoute(planId, scheduleDay.dayNumber, {
-            ...created,
-            legMode: legMode ?? 'walk',
-          });
+          await syncFromServer();
+          await addPlanPlaceFromCandidate(accessToken, apiPlanId, candidate);
+          const afterAdd = await syncFromServer();
+          if (legMode && legMode !== 'walk') {
+            const dayRoutes = getDayRoutesFromPlan(afterAdd, scheduleDay.dayNumber);
+            const added = dayRoutes.find(r => r.placeId === candidate.placeId);
+            if (added) {
+              usePlanStore.getState().updateRouteLegMode(planId, added.itemId, legMode);
+            }
+          }
           closeScheduleModal();
         } catch (error) {
           const message =
             error instanceof Error ? error.message : '장소 추가에 실패했습니다.';
           Alert.alert('장소 추가 실패', message);
+          await syncFromServer();
         }
         return;
       }
 
       const newRoute = candidateToRouteItem(
         candidate,
-        nextPlanPlaceSequence(scheduleRoutes),
+        scheduleRoutes.length + 1,
         language,
         'ATTRACTION',
         legMode ?? 'walk',
@@ -241,7 +371,7 @@ export function PlanDetailScreen({ navigation, route }: Props) {
     },
     [
       scheduleDay,
-      scheduleRoutes.length,
+      scheduleRoutes,
       language,
       planId,
       enrichedPlan,
@@ -249,6 +379,7 @@ export function PlanDetailScreen({ navigation, route }: Props) {
       accessToken,
       addRoute,
       closeScheduleModal,
+      syncFromServer,
     ],
   );
 
@@ -374,6 +505,8 @@ export function PlanDetailScreen({ navigation, route }: Props) {
               onWriteReview={setReviewFormRoute}
               onQuickRating={handleQuickRating}
               onDeleteRoute={handleDeleteRoute}
+              onReorderRoutes={isApiPlan ? handleReorderRoutes : undefined}
+              onOptimizeDayRoute={isApiPlan ? handleOptimizeDayRoute : undefined}
               onScheduleModalChange={setScheduleModal}
               onReorderActiveChange={setScheduleReorderActive}
             />
@@ -441,6 +574,7 @@ export function PlanDetailScreen({ navigation, route }: Props) {
         language={language}
         showTransportMode
         defaultLegMode={pickRoute?.legMode ?? 'walk'}
+        useTourApiNearby
         copy={{
           title: copy.rebootModalTitle,
           subtitle: pickRoute ? copy.rebootModalSub(pickRoute.placeName) : undefined,
@@ -463,7 +597,7 @@ export function PlanDetailScreen({ navigation, route }: Props) {
         language={language}
         showTransportMode
         defaultLegMode="walk"
-        useTourApiNearby={isApiPlan}
+        useTourApiNearby
         copy={{
           title: copy.addPlaceTitle,
           subtitle: copy.addPlaceSub,

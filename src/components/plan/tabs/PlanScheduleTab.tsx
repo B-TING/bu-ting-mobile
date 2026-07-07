@@ -63,6 +63,8 @@ type PlanScheduleTabProps = {
   onWriteReview: (route: RouteItem) => void;
   onQuickRating: (route: RouteItem, rating: number) => void;
   onDeleteRoute: (route: RouteItem) => void;
+  onReorderRoutes?: (dayNumber: number, orderedItemIds: string[]) => void | Promise<void>;
+  onOptimizeDayRoute?: (dayNumber: number) => void | Promise<void>;
   onRouteRemoved?: (itemId: string) => void;
   onScheduleModalChange: (modal: ScheduleModalState) => void;
   onReorderActiveChange?: (active: boolean) => void;
@@ -82,6 +84,8 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
       onWriteReview,
       onQuickRating,
       onDeleteRoute,
+      onReorderRoutes,
+      onOptimizeDayRoute,
       onRouteRemoved,
       onScheduleModalChange,
       onReorderActiveChange,
@@ -91,7 +95,7 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
     const { alert } = useAppAlert();
     const reorderRoutes = usePlanStore(s => s.reorderRoutesInPlan);
     const updateLegMode = usePlanStore(s => s.updateRouteLegMode);
-    const optimizeDayRoute = usePlanStore(s => s.optimizeDayRoute);
+    const optimizeDayRouteLocal = usePlanStore(s => s.optimizeDayRoute);
 
     const [reboot, setReboot] = useState<RebootState>(null);
     const [focusedRoute, setFocusedRoute] = useState<RouteItem | null>(null);
@@ -254,9 +258,13 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
         next[indexA] = idB;
         next[indexB] = idA;
         setOrderedIds(next);
-        reorderRoutes(planId, day.dayNumber, next);
+        if (onReorderRoutes) {
+          onReorderRoutes(day.dayNumber, next);
+        } else {
+          reorderRoutes(planId, day.dayNumber, next);
+        }
       },
-      [day, orderedIds, planId, reorderRoutes],
+      [day, orderedIds, planId, reorderRoutes, onReorderRoutes],
     );
 
     const handleIndexPress = useCallback(
@@ -299,9 +307,13 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
       }
       clearReboot();
       onModalChangeRef.current({ kind: 'none' });
-      optimizeDayRoute(planId, day.dayNumber);
-      alert({ title: copy.routeOptimize, message: copy.routeOptimized });
-    }, [day, dayRoutes.length, optimizeDayRoute, planId, copy, alert]);
+      if (onOptimizeDayRoute) {
+        onOptimizeDayRoute(day.dayNumber);
+      } else {
+        optimizeDayRouteLocal(planId, day.dayNumber);
+        alert({ title: copy.routeOptimize, message: copy.routeOptimized });
+      }
+    }, [day, dayRoutes.length, optimizeDayRouteLocal, onOptimizeDayRoute, planId, copy, alert]);
 
     const handleAddPlacePress = useCallback(() => {
       clearReboot();

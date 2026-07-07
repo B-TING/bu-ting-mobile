@@ -59,6 +59,14 @@ export const CHAT_ENDPOINTS = {
   webSocketPath: '/ws-stomp',
 } as const;
 
+export const TRAVEL_ENDPOINTS = {
+  travels: '/api/v1/travels',
+  travelPlans: (travelId: string) => \`/api/v1/travels/\${travelId}/plans\`,
+  planPlaces: (planId: string) => \`/api/v1/plans/\${planId}/places\`,
+  planPlaceSequence: (planId: string) => \`/api/v1/plans/\${planId}/places/sequence\`,
+  planPlaceById: (planPlaceId: string) => \`/api/v1/plans/places/\${planPlaceId}\`,
+} as const;
+
 export type OAuthClientConfig = {
   clientId: string;
   redirectUri: string;

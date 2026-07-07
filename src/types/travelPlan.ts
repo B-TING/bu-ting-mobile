@@ -1,3 +1,5 @@
+import type { PlaceProviderDto } from './travelApi';
+
 export type PlanStatus = 'DRAFT' | 'CONFIRMED' | 'COMPLETED';
 
 export type MemberRole = 'OWNER' | 'EDITOR' | 'VIEWER';
@@ -55,6 +57,8 @@ export type RouteItem = {
   itemId: string;
   /** 백엔드 plan_place UUID */
   apiPlanPlaceId?: string;
+  /** 백엔드 place provider (동기화용) */
+  apiProvider?: PlaceProviderDto;
   sequence: number;
   placeId: string;
   placeName: string;

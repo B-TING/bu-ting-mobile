@@ -36,6 +36,7 @@ type PlanState = {
     travelogue: Travelogue,
     member: { userId: string; displayName: string },
   ) => TravelPlan | null;
+  replacePlan: (plan: TravelPlan) => void;
 };
 
 export const usePlanStore = create<PlanState>()(
@@ -234,6 +235,10 @@ export const usePlanStore = create<PlanState>()(
         get().addPlan(plan);
         return plan;
       },
+      replacePlan: plan =>
+        set(state => ({
+          plans: state.plans.map(p => (p.planId === plan.planId ? plan : p)),
+        })),
     }),
     {
       name: '@buting/plans',

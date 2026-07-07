@@ -125,6 +125,7 @@ export function planPlaceToRouteItem(place: PlanPlaceResponse): RouteItem {
   return {
     itemId: place.planPlaceId,
     apiPlanPlaceId: place.planPlaceId,
+    apiProvider: place.provider,
     sequence: place.sequence,
     placeId: place.providerPlaceId,
     placeName: place.placeName,
@@ -151,12 +152,12 @@ export function travelPlansResponseToPlan(
   startDate: string,
   endDate: string,
 ): TravelPlan {
-  const itinerary: DailyItinerary[] = response.days.map(day => ({
+  const itinerary: DailyItinerary[] = (response.days ?? []).map(day => ({
     dailyId: day.planId,
     apiPlanId: day.planId,
     dayNumber: day.dayNumber,
     date: day.visitDate,
-    routes: day.places
+    routes: (day.places ?? [])
       .slice()
       .sort((a, b) => a.sequence - b.sequence)
       .map(p =>
@@ -203,6 +204,66 @@ export function travelPlansResponseToPlan(
     itinerary,
     createdAt: new Date().toISOString(),
     source: 'api',
+  };
+}
+
+/** 서버 일정을 기준으로 덮되, 로컬 UI 메타(legMode·placeInfo 등)는 유지 */
+export function mergeApiTravelPlanWithLocal(
+  local: TravelPlan,
+  response: TravelPlansResponse,
+): TravelPlan {
+  const synced = travelPlansResponseToPlan(
+    response,
+    local.members,
+    local.constraints,
+    local.startDate,
+    local.endDate,
+  );
+
+  const localDayByNumber = Object.fromEntries(
+    local.itinerary.map(day => [day.dayNumber, day]),
+  );
+  const localRouteByKey = new Map<string, RouteItem>();
+  for (const day of local.itinerary) {
+    for (const route of day.routes) {
+      if (route.apiPlanPlaceId) {
+        localRouteByKey.set(route.apiPlanPlaceId, route);
+      }
+      localRouteByKey.set(route.itemId, route);
+    }
+  }
+
+  return {
+    ...synced,
+    planId: local.planId,
+    apiTravelId: local.apiTravelId ?? synced.apiTravelId,
+    title: local.title || synced.title,
+    status: local.status,
+    createdAt: local.createdAt,
+    aiPromptContext: local.aiPromptContext,
+    constraints: local.constraints,
+    itinerary: synced.itinerary.map(day => {
+      const localDay = localDayByNumber[day.dayNumber];
+      return {
+        ...day,
+        dailyId: localDay?.dailyId ?? day.dailyId,
+        date: localDay?.date ?? day.date,
+        routes: day.routes.map(route => {
+          const prev =
+            localRouteByKey.get(route.apiPlanPlaceId ?? route.itemId) ??
+            localRouteByKey.get(route.itemId);
+          if (!prev) {
+            return route;
+          }
+          return {
+            ...route,
+            legMode: prev.legMode,
+            placeInfo: prev.placeInfo ?? route.placeInfo,
+            type: prev.type,
+          };
+        }),
+      };
+    }),
   };
 }
 
