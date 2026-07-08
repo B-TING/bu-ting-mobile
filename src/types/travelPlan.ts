@@ -1,8 +1,8 @@
-import type { PlaceProviderDto } from './travelApi';
+import type { PlaceProviderDto, TravelTeamRoleDto } from './travelApi';
 
 export type PlanStatus = 'DRAFT' | 'CONFIRMED' | 'COMPLETED';
 
-export type MemberRole = 'OWNER' | 'EDITOR' | 'VIEWER';
+export type MemberRole = TravelTeamRoleDto;
 
 export type RouteItemType =
   | 'ATTRACTION'

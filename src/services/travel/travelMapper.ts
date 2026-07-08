@@ -9,6 +9,7 @@ import type {
   TravelResponse,
   TravelStyleDto,
   MyTravelResponse,
+  TravelMemberResponse,
   TravelTeamRoleDto,
 } from '../../types/travelApi';
 import type {
@@ -81,8 +82,19 @@ function mapTravelStatus(status: TravelResponse['status']): TravelPlan['status']
   return 'CONFIRMED';
 }
 
-export function myTravelMemberRole(role: TravelTeamRoleDto): PlanMember['role'] {
-  return role === 'LEADER' ? 'OWNER' : 'EDITOR';
+export function travelTeamMemberRole(role: TravelTeamRoleDto): PlanMember['role'] {
+  return role;
+}
+
+/** @deprecated use travelTeamMemberRole */
+export const myTravelMemberRole = travelTeamMemberRole;
+
+export function travelMembersToPlanMembers(members: TravelMemberResponse[]): PlanMember[] {
+  return members.map(member => ({
+    userId: member.userId,
+    nickname: member.nickname,
+    role: travelTeamMemberRole(member.role),
+  }));
 }
 
 export function myTravelResponseToPlanShell(

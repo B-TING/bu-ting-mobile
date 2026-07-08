@@ -222,7 +222,7 @@ export function buildPlanFromTravelogue(
     endDate,
     status: 'DRAFT',
     constraints: linkedPlan?.constraints ?? {},
-    members: [{ userId: member.userId, nickname: member.displayName, role: 'OWNER' }],
+    members: [{ userId: member.userId, nickname: member.displayName, role: 'LEADER' }],
     itinerary: snapshot.map(day => ({
       dailyId: idFactory('day-'),
       dayNumber: day.dayNumber,

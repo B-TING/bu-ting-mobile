@@ -22,9 +22,8 @@ export const PLAN_DETAIL_COPY: Record<
     mapDragLabel: string;
     mapClosedHint: string;
     membersTitle: string;
-    roleOwner: string;
-    roleEditor: string;
-    roleViewer: string;
+    roleLeader: string;
+    roleMember: string;
     visited: string;
     markVisited: string;
     closedHint: string;
@@ -43,6 +42,15 @@ export const PLAN_DETAIL_COPY: Record<
     recordsPublished: string;
     recordsHint: string;
     inviteMembers: string;
+    inviteModalTitle: string;
+    inviteModalSubtitle: string;
+    inviteCopyLink: string;
+    inviteCopied: string;
+    inviteLinkLoading: string;
+    inviteLinkError: string;
+    inviteRetry: string;
+    inviteExpiresAt: (date: string) => string;
+    inviteLeaderOnly: string;
     tripPeriod: string;
     nights: (n: number) => string;
     dayLabel: (n: number) => string;
@@ -138,9 +146,8 @@ export const PLAN_DETAIL_COPY: Record<
     mapDragLabel: '일정 크기 조절',
     mapClosedHint: '위로 당겨 일정 열기',
     membersTitle: '함께하는 일행',
-    roleOwner: '방장',
-    roleEditor: '편집',
-    roleViewer: '보기',
+    roleLeader: '방장',
+    roleMember: '일행',
     visited: '방문 완료',
     markVisited: '방문 체크',
     closedHint: '해당 요일 휴무일 수 있어요',
@@ -159,6 +166,15 @@ export const PLAN_DETAIL_COPY: Record<
     recordsPublished: '여행기 게시 완료',
     recordsHint: '방문한 여행지마다 후기를 남겨 보세요',
     inviteMembers: '일행 초대하기',
+    inviteModalTitle: '일행 초대 링크',
+    inviteModalSubtitle: '아래 링크를 복사해 일행에게 공유하세요.',
+    inviteCopyLink: '링크 복사',
+    inviteCopied: '복사됨',
+    inviteLinkLoading: '초대 링크를 불러오는 중…',
+    inviteLinkError: '초대 링크를 불러오지 못했습니다.',
+    inviteRetry: '다시 시도',
+    inviteExpiresAt: date => `만료: ${date}`,
+    inviteLeaderOnly: '방장만 초대 링크를 생성할 수 있습니다.',
     tripPeriod: '여행 기간',
     nights: n => `${n}박`,
     dayLabel: n => `Day ${n}`,
@@ -257,9 +273,8 @@ export const PLAN_DETAIL_COPY: Record<
     mapDragLabel: 'Resize schedule panel',
     mapClosedHint: 'Drag up to open schedule',
     membersTitle: 'Travel companions',
-    roleOwner: 'Owner',
-    roleEditor: 'Editor',
-    roleViewer: 'Viewer',
+    roleLeader: 'Leader',
+    roleMember: 'Member',
     visited: 'Visited',
     markVisited: 'Mark visited',
     closedHint: 'May be closed on this weekday',
@@ -278,6 +293,15 @@ export const PLAN_DETAIL_COPY: Record<
     recordsPublished: 'Travelogue published',
     recordsHint: 'Leave a review for each place you visit',
     inviteMembers: 'Invite companions',
+    inviteModalTitle: 'Invite link',
+    inviteModalSubtitle: 'Copy the link below and share it with your travel companions.',
+    inviteCopyLink: 'Copy link',
+    inviteCopied: 'Copied',
+    inviteLinkLoading: 'Loading invite link…',
+    inviteLinkError: 'Could not load the invite link.',
+    inviteRetry: 'Try again',
+    inviteExpiresAt: date => `Expires: ${date}`,
+    inviteLeaderOnly: 'Only the trip leader can create an invite link.',
     tripPeriod: 'Trip dates',
     nights: n => `${n} night${n === 1 ? '' : 's'}`,
     dayLabel: n => `Day ${n}`,
@@ -377,9 +401,8 @@ export const PLAN_DETAIL_COPY: Record<
     mapDragLabel: '日程サイズ調整',
     mapClosedHint: '上にドラッグして日程を開く',
     membersTitle: '同行者',
-    roleOwner: 'オーナー',
-    roleEditor: '編集',
-    roleViewer: '閲覧',
+    roleLeader: 'リーダー',
+    roleMember: '同行者',
     visited: '訪問済み',
     markVisited: '訪問チェック',
     closedHint: 'この曜日は休みの可能性',
@@ -398,6 +421,15 @@ export const PLAN_DETAIL_COPY: Record<
     recordsPublished: '旅行記を公開済み',
     recordsHint: '訪問した各スポットにレビューを書きましょう',
     inviteMembers: '同行者を招待',
+    inviteModalTitle: '招待リンク',
+    inviteModalSubtitle: '下のリンクをコピーして同行者に共有してください。',
+    inviteCopyLink: 'リンクをコピー',
+    inviteCopied: 'コピーしました',
+    inviteLinkLoading: '招待リンクを読み込み中…',
+    inviteLinkError: '招待リンクを読み込めませんでした。',
+    inviteRetry: '再試行',
+    inviteExpiresAt: date => `有効期限: ${date}`,
+    inviteLeaderOnly: 'リーダーのみ招待リンクを作成できます。',
     tripPeriod: '旅行期間',
     nights: n => `${n}泊`,
     dayLabel: n => `Day ${n}`,
@@ -497,9 +529,8 @@ export const PLAN_DETAIL_COPY: Record<
     mapDragLabel: '调整行程大小',
     mapClosedHint: '向上拖动打开行程',
     membersTitle: '同行伙伴',
-    roleOwner: '房主',
-    roleEditor: '可编辑',
-    roleViewer: '仅查看',
+    roleLeader: '房主',
+    roleMember: '同行',
     visited: '已到访',
     markVisited: '标记到访',
     closedHint: '该日可能休息',
@@ -518,6 +549,15 @@ export const PLAN_DETAIL_COPY: Record<
     recordsPublished: '游记已发布',
     recordsHint: '为每个到访地点写点评',
     inviteMembers: '邀请同行',
+    inviteModalTitle: '邀请链接',
+    inviteModalSubtitle: '复制下方链接并分享给同行伙伴。',
+    inviteCopyLink: '复制链接',
+    inviteCopied: '已复制',
+    inviteLinkLoading: '正在加载邀请链接…',
+    inviteLinkError: '无法加载邀请链接。',
+    inviteRetry: '重试',
+    inviteExpiresAt: date => `过期时间: ${date}`,
+    inviteLeaderOnly: '仅旅行房主可创建邀请链接。',
     tripPeriod: '行程日期',
     nights: n => `${n}晚`,
     dayLabel: n => `第 ${n} 天`,

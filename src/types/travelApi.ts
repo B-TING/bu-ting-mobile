@@ -49,6 +49,24 @@ export type MyTravelResponse = {
   createdAt?: string | null;
 };
 
+export type TravelMemberResponse = {
+  memberId: string;
+  userId: string;
+  email?: string | null;
+  nickname: string;
+  profileImageUrl?: string | null;
+  role: TravelTeamRoleDto;
+};
+
+export type TravelInviteLinkResponse = {
+  inviteLink: string;
+};
+
+export type TravelInviteLinkInfoResponse = {
+  inviteLink: string;
+  expiredAt?: string | null;
+};
+
 export type PlanCreateRequest = {
   dayNumber: number;
   visitDate: string;

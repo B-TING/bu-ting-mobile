@@ -219,7 +219,7 @@ export function PlanWizardScreen({ navigation }: Props) {
             {
               userId: user?.userId ?? 'local-user',
               nickname: user?.nickname ?? 'Traveler',
-              role: 'OWNER',
+              role: 'LEADER',
             },
           ],
         });

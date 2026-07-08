@@ -21,9 +21,11 @@ import { type PlanDetailTab } from '../../constants/plan/planDetail';
 import { useAppLanguage, useCopy } from '../../i18n';
 import { useAppAlert } from '../../components/shared/modals';
 import { usePlanRoutePlaceDetails } from '../../hooks/usePlanRoutePlaceDetails';
-import { useApiTravelPlanSync } from '../../hooks/useApiTravelPlanSync';
+import { TravelInviteLinkModal } from '../../components/plan/modals/TravelInviteLinkModal';
+import { useTravelMembersSync } from '../../hooks/useTravelMembersSync';
 import type { RootStackParamList } from '../../navigation/types';
 import { addPlanPlaceFromCandidate, findDayRoute, getDayRoutesFromPlan, removePlanPlaceFromApi, replacePlanPlaceFromCandidate, routesInItemOrder, updatePlanPlaceMemoOnApi, updatePlanPlaceOrderOnApi } from '../../services/travel/planPlaceSync';
+import { resolveTravelInviteLink } from '../../services/travel/travelTeamService';
 import { updateTravelStatus } from '../../services/travel/travelService';
 import {
   EMPTY_REVIEWS,
@@ -34,6 +36,7 @@ import {
   useTravelogueStore,
 } from '../../stores';
 import { selectReusableAccessToken } from '../../stores/useAuthStore';
+import { useApiTravelPlanSync } from '../../hooks/useApiTravelPlanSync';
 import type { BudgetEntry, RouteItem, TravelLegMode } from '../../types/travelPlan';
 import { sortedRoutes } from '../../utils/plan/planItinerary';
 import { optimizeRouteOrder } from '../../utils/plan/routeOptimize';
@@ -67,6 +70,7 @@ export function PlanDetailScreen({ navigation, route }: Props) {
   const upsertPlaceReview = useTravelogueStore(s => s.upsertPlaceReview);
   const displayName = useAppStore(s => s.auth.displayName) ?? 'Traveler';
   const accessToken = useAuthStore(selectReusableAccessToken);
+  const authUser = useAuthStore(s => s.user);
 
   const plan = useMemo(() => {
     if (paramPlanId) {
@@ -83,11 +87,18 @@ export function PlanDetailScreen({ navigation, route }: Props) {
 
   const planId = plan?.planId ?? '';
   const isApiPlan = plan?.source === 'api';
+  const travelId = plan?.apiTravelId ?? plan?.planId;
 
   const { syncFromServer } = useApiTravelPlanSync({
     planId,
     enabled: isApiPlan,
     accessToken,
+  });
+  useTravelMembersSync({
+    planId,
+    travelId,
+    accessToken,
+    enabled: isApiPlan,
   });
   const planReviews =
     useTravelogueStore(s => (planId ? s.reviewsByPlan[planId] : undefined)) ??
@@ -111,6 +122,55 @@ export function PlanDetailScreen({ navigation, route }: Props) {
   const [scheduleReorderActive, setScheduleReorderActive] = useState(false);
   const [reviewFormRoute, setReviewFormRoute] = useState<RouteItem | null>(null);
   const [budgetModalOpen, setBudgetModalOpen] = useState(false);
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [inviteExpiredAt, setInviteExpiredAt] = useState<string | null>(null);
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteError, setInviteError] = useState<string | null>(null);
+
+  const canInvite = useMemo(() => {
+    if (!isApiPlan || !authUser?.userId || !plan) {
+      return false;
+    }
+    return plan.members.some(
+      member => member.userId === authUser.userId && member.role === 'LEADER',
+    );
+  }, [authUser?.userId, isApiPlan, plan]);
+
+  const loadInviteLink = useCallback(async () => {
+    if (!accessToken || !travelId) {
+      return;
+    }
+    setInviteLoading(true);
+    setInviteError(null);
+    try {
+      const result = await resolveTravelInviteLink(accessToken, travelId);
+      setInviteLink(result.inviteLink);
+      setInviteExpiredAt(result.expiredAt ?? null);
+    } catch (error) {
+      setInviteError(error instanceof Error ? error.message : copy.inviteLinkError);
+      setInviteLink(null);
+      setInviteExpiredAt(null);
+    } finally {
+      setInviteLoading(false);
+    }
+  }, [accessToken, copy.inviteLinkError, travelId]);
+
+  const handleInvite = useCallback(() => {
+    if (!canInvite) {
+      alert({ title: copy.inviteMembers, message: copy.inviteLeaderOnly });
+      return;
+    }
+    setInviteModalOpen(true);
+    void loadInviteLink();
+  }, [alert, canInvite, copy.inviteLeaderOnly, copy.inviteMembers, loadInviteLink]);
+
+  const closeInviteModal = useCallback(() => {
+    setInviteModalOpen(false);
+    setInviteLink(null);
+    setInviteExpiredAt(null);
+    setInviteError(null);
+  }, []);
 
   const scheduleRef = useRef<PlanScheduleTabHandle>(null);
   const openRebootPendingRef = useRef(route.params?.openReboot === true);
@@ -499,9 +559,8 @@ export function PlanDetailScreen({ navigation, route }: Props) {
   }
 
   const roleLabels = {
-    OWNER: copy.roleOwner,
-    EDITOR: copy.roleEditor,
-    VIEWER: copy.roleViewer,
+    LEADER: copy.roleLeader,
+    MEMBER: copy.roleMember,
   };
 
   const budgetTotal = budgetEntries.reduce((s, e) => s + e.amount, 0);
@@ -549,6 +608,8 @@ export function PlanDetailScreen({ navigation, route }: Props) {
               onNavigateToTab={setTab}
               recordsProgress={recordsProgress}
               isTraveloguePublished={isPlanPublished}
+              showInvite={isApiPlan && canInvite}
+              onInvite={handleInvite}
             />
           ),
           schedule: (
@@ -684,6 +745,17 @@ export function PlanDetailScreen({ navigation, route }: Props) {
         planId={planId}
         onClose={() => setReviewFormRoute(null)}
         onSave={payload => upsertPlaceReview(planId, payload)}
+      />
+
+      <TravelInviteLinkModal
+        visible={inviteModalOpen}
+        copy={copy}
+        inviteLink={inviteLink}
+        expiredAt={inviteExpiredAt}
+        loading={inviteLoading}
+        errorMessage={inviteError}
+        onClose={closeInviteModal}
+        onRetry={() => void loadInviteLink()}
       />
     </View>
   );

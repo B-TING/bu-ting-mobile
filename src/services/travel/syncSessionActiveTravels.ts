@@ -26,7 +26,7 @@ export async function syncSessionActiveTravels(): Promise<void> {
     const active = await syncMyActiveTravelsFromApi(accessToken, {
       userId: user.userId,
       nickname: displayName,
-      role: 'OWNER',
+      role: 'LEADER',
     });
     logTravelPlanApi('my-travels.sync.done', '참여 중 여행 동기화 완료', {
       detail: { activePlanId: active?.planId, activeTitle: active?.title },

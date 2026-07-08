@@ -1,6 +1,5 @@
 import { View } from 'react-native';
 
-import { useAppAlert } from '../../shared/modals';
 import { MemberList } from '../overview/MemberList';
 import { OverviewMiniWidgets } from '../overview/OverviewMiniWidgets';
 import { ScheduleOverviewSection } from '../overview/ScheduleOverviewSection';
@@ -8,7 +7,7 @@ import { TripPeriodCard } from '../overview/TripPeriodCard';
 import type { PlanDetailTab } from '../../../constants/plan/planDetail';
 import type { CopyFor } from '../../../i18n';
 import type { AppLanguage } from '../../../types/user';
-import type { BudgetEntry, TravelPlan } from '../../../types/travelPlan';
+import type { BudgetEntry, MemberRole, TravelPlan } from '../../../types/travelPlan';
 
 type Copy = CopyFor<'planDetail'>;
 
@@ -16,12 +15,14 @@ type PlanOverviewTabProps = {
   plan: TravelPlan;
   language: AppLanguage;
   copy: Copy;
-  roleLabels: Record<'OWNER' | 'EDITOR' | 'VIEWER', string>;
+  roleLabels: Record<MemberRole, string>;
   budgetEntries: BudgetEntry[];
   budgetTotal: number;
   onNavigateToTab: (tab: PlanDetailTab) => void;
   recordsProgress?: { completed: number; total: number; allDone: boolean };
   isTraveloguePublished?: boolean;
+  showInvite?: boolean;
+  onInvite?: () => void;
 };
 
 export function PlanOverviewTab({
@@ -34,19 +35,9 @@ export function PlanOverviewTab({
   onNavigateToTab,
   recordsProgress,
   isTraveloguePublished,
+  showInvite = false,
+  onInvite,
 }: PlanOverviewTabProps) {
-  const { alert } = useAppAlert();
-
-  const handleInvite = () => {
-    alert({
-      title: copy.inviteMembers,
-      message:
-        language === 'ko'
-          ? '초대 링크 공유 기능은 곧 제공됩니다.'
-          : 'Invite link sharing is coming soon.',
-    });
-  };
-
   return (
     <View className="px-4 py-4">
       <TripPeriodCard
@@ -69,8 +60,8 @@ export function PlanOverviewTab({
         members={plan.members}
         title={copy.membersTitle}
         roleLabels={roleLabels}
-        inviteLabel={copy.inviteMembers}
-        onInvite={handleInvite}
+        inviteLabel={showInvite ? copy.inviteMembers : undefined}
+        onInvite={showInvite ? onInvite : undefined}
       />
 
       <OverviewMiniWidgets

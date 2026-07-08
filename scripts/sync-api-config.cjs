@@ -96,6 +96,8 @@ export const TRAVEL_ENDPOINTS = {
 
 export const TRAVEL_TEAM_ENDPOINTS = {
   myTravels: '/api/v1/travel/team/my-travels',
+  travelMembers: (travelId: string) => \`/api/v1/travel/team/\${travelId}/members\`,
+  travelInvite: (travelId: string) => \`/api/v1/travel/team/\${travelId}/invite\`,
 } as const;
 
 export type OAuthClientConfig = {
