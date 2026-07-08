@@ -10,6 +10,7 @@ import type {
   TravelCreateRequest,
   TravelPlansResponse,
   TravelResponse,
+  TravelStatusUpdateRequest,
 } from '../../types/travelApi';
 import {
   logTravelPlanApiError,
@@ -127,6 +128,23 @@ export async function fetchTravelPlans(
   });
   if (!data?.travelId) {
     throw new TravelServiceError('Travel plans response missing travelId');
+  }
+  return data;
+}
+
+export async function updateTravelStatus(
+  accessToken: string,
+  travelId: string,
+  body: TravelStatusUpdateRequest,
+): Promise<TravelResponse> {
+  const url = travelUrl(TRAVEL_ENDPOINTS.travelStatus(travelId));
+  const data = await apiPatch<TravelResponse>(url, {
+    ...authOpts(accessToken),
+    body,
+    ...travelPlanLogHooks('PATCH', url, accessToken, { travelId, requestBody: body }),
+  });
+  if (!data?.id) {
+    throw new TravelServiceError('Travel status response missing id');
   }
   return data;
 }

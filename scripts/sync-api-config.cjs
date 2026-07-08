@@ -87,10 +87,15 @@ export const CHAT_ENDPOINTS = {
 export const TRAVEL_ENDPOINTS = {
   travels: '/api/v1/travels',
   travelPlans: (travelId: string) => \`/api/v1/travels/\${travelId}/plans\`,
+  travelStatus: (travelId: string) => \`/api/v1/travels/\${travelId}/status\`,
   planPlaces: (planId: string) => \`/api/v1/plans/\${planId}/places\`,
   planPlaceSequence: (planId: string) => \`/api/v1/plans/\${planId}/places/sequence\`,
   planPlaceById: (planPlaceId: string) => \`/api/v1/plans/places/\${planPlaceId}\`,
   planPlacePlace: (planPlaceId: string) => \`/api/v1/plans/places/\${planPlaceId}/place\`,
+} as const;
+
+export const TRAVEL_TEAM_ENDPOINTS = {
+  myTravels: '/api/v1/travel/team/my-travels',
 } as const;
 
 export type OAuthClientConfig = {

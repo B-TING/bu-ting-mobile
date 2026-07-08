@@ -8,6 +8,7 @@ import type {
   TravelCreateRequest,
   TravelPlansResponse,
   TravelResponse,
+  TravelStatusUpdateRequest,
 } from '../../types/travelApi';
 
 type TravelPlanApiLogLevel = 'info' | 'warn' | 'error';
@@ -68,6 +69,12 @@ function summarizeTravelCreateRequest(body: TravelCreateRequest): Record<string,
     preferredFoods: body.preferredFoods,
     accommodationArea: body.accommodationArea,
   };
+}
+
+function summarizeTravelStatusUpdateRequest(
+  body: TravelStatusUpdateRequest,
+): Record<string, unknown> {
+  return { status: body.status };
 }
 
 function summarizePlanCreateRequest(body: PlanCreateRequest): Record<string, unknown> {
@@ -135,17 +142,52 @@ function summarizePlanPlaceItem(item: PlanPlaceResponse): Record<string, unknown
   };
 }
 
+function isMyTravelArray(items: unknown[]): boolean {
+  const first = items[0];
+  return (
+    !!first &&
+    typeof first === 'object' &&
+    'travelId' in first &&
+    'status' in first &&
+    'role' in first
+  );
+}
+
+function summarizeMyTravelArray(items: unknown[]): Record<string, unknown> {
+  return {
+    itemCount: items.length,
+    travels: items.slice(0, 10).map(item => {
+      const t = item as Record<string, unknown>;
+      return {
+        travelId: t.travelId,
+        title: t.title,
+        status: t.status,
+        role: t.role,
+        startDate: t.startDate,
+        endDate: t.endDate,
+      };
+    }),
+  };
+}
+
+function summarizeArrayBody(items: unknown[]): Record<string, unknown> {
+  if (isMyTravelArray(items)) {
+    return summarizeMyTravelArray(items);
+  }
+  const places = items as PlanPlaceResponse[];
+  return {
+    itemCount: places.length,
+    sample: places[0] ? summarizePlanPlaceItem(places[0]) : undefined,
+  };
+}
+
 function summarizeResponseBody(body: unknown): Record<string, unknown> | undefined {
   if (body == null) {
     return undefined;
   }
 
   if (Array.isArray(body)) {
-    const places = body as PlanPlaceResponse[];
-    return {
-      itemCount: places.length,
-      sample: places[0] ? summarizePlanPlaceItem(places[0]) : undefined,
-    };
+    return summarizeArrayBody(body);
   }
 
   if (typeof body !== 'object') {
@@ -153,6 +195,9 @@ function summarizeResponseBody(body: unknown): Record<string, unknown> | undefin
   }
 
   const record = body as Record<string, unknown>;
+  if ('data' in record && Array.isArray(record.data)) {
+    return summarizeArrayBody(record.data);
+  }
   const data =
     'data' in record && record.data && typeof record.data === 'object'
       ? (record.data as Record<string, unknown>)
@@ -213,6 +258,9 @@ function summarizeRequestBody(body: unknown): Record<string, unknown> | undefine
     return undefined;
   }
 
+  if ('status' in body && !('startDate' in body)) {
+    return summarizeTravelStatusUpdateRequest(body as TravelStatusUpdateRequest);
+  }
   if ('startDate' in body && 'endDate' in body && !('dayNumber' in body)) {
     return summarizeTravelCreateRequest(body as TravelCreateRequest);
   }

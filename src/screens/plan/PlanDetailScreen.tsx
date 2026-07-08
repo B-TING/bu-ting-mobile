@@ -24,6 +24,7 @@ import { usePlanRoutePlaceDetails } from '../../hooks/usePlanRoutePlaceDetails';
 import { useApiTravelPlanSync } from '../../hooks/useApiTravelPlanSync';
 import type { RootStackParamList } from '../../navigation/types';
 import { addPlanPlaceFromCandidate, findDayRoute, getDayRoutesFromPlan, removePlanPlaceFromApi, replacePlanPlaceFromCandidate, routesInItemOrder, updatePlanPlaceMemoOnApi, updatePlanPlaceOrderOnApi } from '../../services/travel/planPlaceSync';
+import { updateTravelStatus } from '../../services/travel/travelService';
 import {
   EMPTY_REVIEWS,
   hydrateRoutePlaceInfo,
@@ -403,6 +404,45 @@ export function PlanDetailScreen({ navigation, route }: Props) {
     ],
   );
 
+  const handleCompletePlan = useCallback(async () => {
+    if (!planId) {
+      return;
+    }
+
+    if (isApiPlan && accessToken && plan) {
+      try {
+        await updateTravelStatus(accessToken, plan.apiTravelId ?? plan.planId, {
+          status: 'COMPLETED',
+        });
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : '여행 완료 처리에 실패했습니다.';
+        Alert.alert('여행 완료 실패', message);
+        return;
+      }
+    }
+
+    completePlan(planId);
+    navigation.navigate('MainHome');
+  }, [planId, isApiPlan, accessToken, plan, completePlan, navigation]);
+
+  const requestCompletePlan = useCallback(() => {
+    alert({
+      title: reviewCopy.completeTripConfirmTitle,
+      message: reviewCopy.completeTripConfirmMessage,
+      buttons: [
+        { label: reviewCopy.cancel, variant: 'secondary', onPress: () => {} },
+        {
+          label: reviewCopy.completeTripConfirm,
+          variant: 'primary',
+          onPress: () => {
+            void handleCompletePlan();
+          },
+        },
+      ],
+    });
+  }, [alert, reviewCopy, handleCompletePlan]);
+
   const handleQuickRating = useCallback(
     (routeItem: RouteItem, rating: number) => {
       if (!planId) {
@@ -552,13 +592,9 @@ export function PlanDetailScreen({ navigation, route }: Props) {
               destinationLabel={enrichedPlan.title}
               isTripActive={enrichedPlan.status !== 'COMPLETED'}
               onPublished={() => {
-                completePlan(planId);
-                navigation.navigate('MainHome');
+                void handleCompletePlan();
               }}
-              onEndTrip={() => {
-                completePlan(planId);
-                navigation.navigate('MainHome');
-              }}
+              onEndTrip={requestCompletePlan}
               onViewFeed={() => navigation.navigate('TravelogueFeed')}
               onViewTravelogue={travelogueId =>
                 navigation.navigate('TravelogueDetail', { travelogueId })

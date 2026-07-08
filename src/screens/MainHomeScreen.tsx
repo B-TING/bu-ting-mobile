@@ -26,6 +26,7 @@ import { PLACE_CONTENT_TYPE } from '../types/placesApi';
 import { upcomingFestivalDateRangeYyyymmdd } from '../utils/places/festivalApiMapper';
 import { showTravelSurveyOnboardingPrompt } from '../services/setup/travelSurveyOnboardingPrompt';
 import { selectActivePlan, useAppStore, useFestivalStore, usePlanStore, useTravelogueStore } from '../stores';
+import { useSessionActiveTravelsSyncOnFocus } from '../hooks/useSessionActiveTravelsSync';
 import { isTraveloguePublic } from '../utils/review/travelReview';
 import { getNearestUpcomingStop } from '../utils/plan/planSchedule';
 import { getChatRoomByZoneId } from '../constants/eventZone/eventZone';
@@ -47,6 +48,8 @@ export function MainHomeScreen({ navigation }: Props) {
     s => s.setPendingTravelSurveyPrompt,
   );
   const activePlan = usePlanStore(selectActivePlan);
+  useSessionActiveTravelsSyncOnFocus();
+
   const publishedTravelogues = useTravelogueStore(s => s.publishedTravelogues);
   const latestTravelogue = useMemo(
     () => publishedTravelogues.find(isTraveloguePublic),

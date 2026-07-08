@@ -8,6 +8,8 @@ import type {
   TravelPlansResponse,
   TravelResponse,
   TravelStyleDto,
+  MyTravelResponse,
+  TravelTeamRoleDto,
 } from '../../types/travelApi';
 import type {
   DailyItinerary,
@@ -77,6 +79,41 @@ function mapTravelStatus(status: TravelResponse['status']): TravelPlan['status']
     return 'COMPLETED';
   }
   return 'CONFIRMED';
+}
+
+export function myTravelMemberRole(role: TravelTeamRoleDto): PlanMember['role'] {
+  return role === 'LEADER' ? 'OWNER' : 'EDITOR';
+}
+
+export function myTravelResponseToPlanShell(
+  travel: MyTravelResponse,
+  member: PlanMember,
+  existing?: TravelPlan | null,
+): TravelPlan {
+  const visitDates = enumerateVisitDates(travel.startDate, travel.endDate);
+  return {
+    planId: existing?.planId ?? travel.travelId,
+    apiTravelId: travel.travelId,
+    title: travel.title?.trim() || existing?.title || '부산 여행',
+    startDate: travel.startDate,
+    endDate: travel.endDate,
+    status: mapTravelStatus(travel.status),
+    constraints: existing?.constraints ?? {},
+    members: existing?.members?.length ? existing.members : [member],
+    itinerary: visitDates.map((date, index) => {
+      const existingDay = existing?.itinerary.find(d => d.dayNumber === index + 1);
+      return {
+        dailyId: existingDay?.dailyId ?? createId('day'),
+        apiPlanId: existingDay?.apiPlanId,
+        dayNumber: index + 1,
+        date,
+        routes: existingDay?.routes ?? [],
+      };
+    }),
+    createdAt: travel.createdAt ?? existing?.createdAt ?? new Date().toISOString(),
+    source: 'api',
+    aiPromptContext: existing?.aiPromptContext,
+  };
 }
 
 export function emptyDailyItineraryFromPlans(

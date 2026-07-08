@@ -33,6 +33,22 @@ export type TravelResponse = TravelCreateRequest & {
   createdAt?: string | null;
 };
 
+export type TravelStatusUpdateRequest = {
+  status: TravelStatusDto;
+};
+
+export type TravelTeamRoleDto = 'LEADER' | 'MEMBER';
+
+export type MyTravelResponse = {
+  travelId: string;
+  title?: string | null;
+  startDate: string;
+  endDate: string;
+  status: TravelStatusDto;
+  role: TravelTeamRoleDto;
+  createdAt?: string | null;
+};
+
 export type PlanCreateRequest = {
   dayNumber: number;
   visitDate: string;

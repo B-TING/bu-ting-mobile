@@ -11,6 +11,7 @@ import type { Travelogue } from '../types/travelReview';
 import { createId } from '../utils/common/id';
 import { buildPlanFromTravelogue } from '../utils/review/travelReview';
 import { optimizeRouteOrder } from '../utils/plan/routeOptimize';
+import { isServerBackedPlan } from '../utils/plan/serverBackedPlan';
 
 type PlanState = {
   plans: TravelPlan[];
@@ -18,7 +19,9 @@ type PlanState = {
   planCandidates: TravelPlan[] | null;
   budgetByPlan: Record<string, BudgetEntry[]>;
   addPlan: (plan: TravelPlan) => void;
+  upsertPlan: (plan: TravelPlan) => void;
   setActivePlan: (planId: string) => void;
+  clearActivePlan: () => void;
   confirmPlan: (planId: string) => void;
   setPlanCandidates: (candidates: TravelPlan[] | null) => void;
   clearCandidates: () => void;
@@ -52,7 +55,17 @@ export const usePlanStore = create<PlanState>()(
           plans: [...state.plans.filter(p => p.planId !== plan.planId), plan],
           activePlanId: plan.planId,
         })),
+      upsertPlan: plan =>
+        set(state => {
+          const exists = state.plans.some(p => p.planId === plan.planId);
+          return {
+            plans: exists
+              ? state.plans.map(p => (p.planId === plan.planId ? plan : p))
+              : [...state.plans, plan],
+          };
+        }),
       setActivePlan: planId => set({ activePlanId: planId }),
+      clearActivePlan: () => set({ activePlanId: null }),
       confirmPlan: planId =>
         set(state => ({
           plans: state.plans.map(p =>
@@ -271,16 +284,14 @@ export const usePlanStore = create<PlanState>()(
 );
 
 export function selectActivePlan(state: PlanState): TravelPlan | null {
-  if (state.activePlanId) {
-    const active = state.plans.find(p => p.planId === state.activePlanId);
-    if (active && active.status !== 'COMPLETED') {
-      return active;
-    }
+  if (!state.activePlanId) {
+    return null;
   }
-  return (
-    state.plans.find(p => p.status === 'DRAFT' || p.status === 'CONFIRMED') ??
-    null
-  );
+  const active = state.plans.find(p => p.planId === state.activePlanId);
+  if (!active || active.status === 'COMPLETED' || !isServerBackedPlan(active)) {
+    return null;
+  }
+  return active;
 }
 
 export function selectPlanById(planId: string) {

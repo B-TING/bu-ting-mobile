@@ -17,7 +17,7 @@ export function useApiTravelPlanSync({
   enabled,
   accessToken,
 }: UseApiTravelPlanSyncOptions) {
-  const replacePlan = usePlanStore(s => s.replacePlan);
+  const upsertPlan = usePlanStore(s => s.upsertPlan);
   const syncingRef = useRef(false);
 
   const syncFromServer = useCallback(async (): Promise<TravelPlan | null> => {
@@ -33,12 +33,12 @@ export function useApiTravelPlanSync({
     syncingRef.current = true;
     try {
       const synced = await syncTravelPlanFromApi(accessToken, localPlan);
-      replacePlan(synced);
+      upsertPlan(synced);
       return synced;
     } finally {
       syncingRef.current = false;
     }
-  }, [enabled, accessToken, planId, replacePlan]);
+  }, [enabled, accessToken, planId, upsertPlan]);
 
   useFocusEffect(
     useCallback(() => {
