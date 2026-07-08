@@ -11,6 +11,11 @@ import {
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import {
+  ICON_COLOR_MUTED,
+  ICON_COLOR_PRIMARY,
+} from '../../../constants/icons';
+import { AppIcon } from '../../shared/icons/AppIcon';
 import { routeFabScrollPadding } from '../fab/RouteOptimizeFab';
 import { ScheduleMapView } from '../../../kakaoMap';
 import { APP_MODAL } from '../../shared/modals/appModalStyles';
@@ -196,7 +201,7 @@ export function ScheduleMapSplit({
                     accessibilityRole="button"
                     accessibilityLabel={detailCloseLabel}
                     className="rounded-full border border-brand-border bg-brand-surface px-3 py-1.5 active:opacity-80">
-                    <Text className="text-xs font-bold text-brand-primary">✕</Text>
+                    <AppIcon name="x" size={14} color={ICON_COLOR_PRIMARY} strokeWidth={2.5} />
                   </Pressable>
                 ) : null}
               </View>

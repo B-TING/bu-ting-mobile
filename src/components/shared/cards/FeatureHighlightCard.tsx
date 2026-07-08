@@ -1,16 +1,18 @@
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
+import type { LucideIconName } from '../../../constants/icons';
+import { AppIcon } from '../icons/AppIcon';
 import { cn } from '../../../utils/common/cn';
 
 type FeatureHighlightCardProps = {
-  emoji: string;
+  icon: LucideIconName;
   title: string;
   description: string;
   emphasized?: boolean;
 };
 
 export function FeatureHighlightCard({
-  emoji,
+  icon,
   title,
   description,
   emphasized = false,
@@ -21,7 +23,9 @@ export function FeatureHighlightCard({
         'mb-3 rounded-2xl border-2 border-brand-border bg-brand-surface px-5 py-4',
         emphasized && 'border-brand-primary bg-brand-selected',
       )}>
-      <Text className="mb-2 text-2xl">{emoji}</Text>
+      <View className="mb-2">
+        <AppIcon name={icon} size={28} />
+      </View>
       <Text
         className={cn(
           'mb-1.5 text-[17px] font-semibold text-brand-text',

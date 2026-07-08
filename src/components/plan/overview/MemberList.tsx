@@ -1,6 +1,8 @@
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import type { MemberRole, PlanMember } from '../../../types/travelPlan';
+import { ICON_COLOR_PRIMARY } from '../../../constants/icons';
+import { AppIcon } from '../../shared/icons/AppIcon';
 
 type MemberListProps = {
   members: PlanMember[];
@@ -71,7 +73,7 @@ export function MemberList({
             className="items-center justify-center rounded-xl border border-dashed border-brand-primary/40 bg-brand-primary/5 px-2 py-2.5 active:opacity-80"
             accessibilityRole="button"
             accessibilityLabel={inviteLabel}>
-            <Text className="text-lg text-brand-primary">+</Text>
+            <AppIcon name="plus" size={20} color={ICON_COLOR_PRIMARY} />
             <Text className="mt-0.5 text-[10px] font-semibold text-brand-primary" numberOfLines={2}>
               {inviteLabel}
             </Text>

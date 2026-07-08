@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { ICON_COLOR_MUTED, ICON_COLOR_PRIMARY } from '../../../constants/icons';
 import { StarRating } from '../../shared/rating/StarRating';
+import { AppIcon } from '../../shared/icons/AppIcon';
 import { catalogThumbnail } from '../../../constants/places/placeCatalog';
 import { usePlaceDetailCacheStore } from '../../../stores/usePlaceDetailCacheStore';
 import type { RouteItem } from '../../../types/travelPlan';
@@ -107,14 +109,22 @@ export function RouteItemCard({
           </>
         ) : null}
         <Pressable onPress={onToggleVisited} className="mt-2 self-start active:opacity-80">
-          <Text
-            className={
-              route.isVisited
-                ? 'text-xs font-semibold text-brand-primary'
-                : 'text-xs font-semibold text-brand-muted'
-            }>
-            {route.isVisited ? `✓ ${visitedLabel}` : `○ ${visitedLabel}`}
-          </Text>
+          <View className="flex-row items-center gap-1">
+            <AppIcon
+              name={route.isVisited ? 'check' : 'circle'}
+              size={14}
+              color={route.isVisited ? ICON_COLOR_PRIMARY : ICON_COLOR_MUTED}
+              strokeWidth={route.isVisited ? 2.5 : 2}
+            />
+            <Text
+              className={
+                route.isVisited
+                  ? 'text-xs font-semibold text-brand-primary'
+                  : 'text-xs font-semibold text-brand-muted'
+              }>
+              {visitedLabel}
+            </Text>
+          </View>
         </Pressable>
         {route.isVisited && onWriteReview && recordReviewLabel ? (
           <View className="mt-2 flex-row flex-wrap items-center gap-2">

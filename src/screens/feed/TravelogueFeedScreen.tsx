@@ -8,7 +8,9 @@ import { ImportPlanModal } from '../../components/feed/modals/ImportPlanModal';
 import { TravelogueCommentModal } from '../../components/feed/modals/TravelogueCommentModal';
 import { useTravelogueSocialActions } from '../../components/feed/useTravelogueSocialActions';
 import { BackButton } from '../../components/shared/buttons/BackButton';
+import { AppIcon } from '../../components/shared/icons/AppIcon';
 import { useAppLanguage, useCopy } from '../../i18n';
+import { ICON_COLOR_MUTED } from '../../constants/icons';
 import type { RootStackParamList } from '../../navigation/types';
 import { useAppStore, useTravelogueStore } from '../../stores';
 import type { Travelogue } from '../../types/travelReview';
@@ -104,7 +106,7 @@ export function TravelogueFeedScreen({ navigation }: Props) {
       {travelogues.length === 0 ? (
         <View className="flex-1 items-center justify-center px-6">
           <View className="items-center rounded-2xl border-2 border-dashed border-brand-border bg-brand-surface px-6 py-12">
-            <Text className="text-4xl">📝</Text>
+            <AppIcon name="fileText" size={40} color={ICON_COLOR_MUTED} />
             <Text className="mt-3 text-base font-semibold text-brand-text">
               {copy.feedEmpty}
             </Text>

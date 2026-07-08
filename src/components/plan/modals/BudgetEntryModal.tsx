@@ -4,7 +4,9 @@ import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import type { CopyFor } from '../../../i18n';
 import type { AppLanguage } from '../../../types/user';
 import type { BudgetCategory, BudgetEntry, PlanMember } from '../../../types/travelPlan';
+import { ICON_COLOR_PRIMARY } from '../../../constants/icons';
 import { cn } from '../../../utils/common/cn';
+import { AppIcon } from '../../shared/icons/AppIcon';
 import { AppModal, AppModalPrimaryFooter, useAppAlert } from '../../shared/modals';
 
 type Copy = CopyFor<'planDetail'>;
@@ -178,14 +180,18 @@ export function BudgetEntryModal({
                     ? 'border-brand-primary bg-brand-selected'
                     : 'border-brand-border bg-brand-surface',
                 )}>
-                <Text
-                  className={cn(
-                    'text-sm font-semibold',
-                    selected ? 'text-brand-primary' : 'text-brand-muted',
-                  )}>
-                  {selected ? '✓ ' : ''}
-                  {m.nickname}
-                </Text>
+                <View className="flex-row items-center gap-1">
+                  {selected ? (
+                    <AppIcon name="check" size={12} color={ICON_COLOR_PRIMARY} strokeWidth={2.5} />
+                  ) : null}
+                  <Text
+                    className={cn(
+                      'text-sm font-semibold',
+                      selected ? 'text-brand-primary' : 'text-brand-muted',
+                    )}>
+                    {m.nickname}
+                  </Text>
+                </View>
               </Pressable>
             );
           })}
@@ -259,7 +265,7 @@ export function BudgetEntryModal({
         <Pressable
           onPress={handleOcr}
           className="mb-4 flex-row items-center justify-center gap-2 rounded-2xl border border-dashed border-brand-border bg-brand-surface py-3 active:opacity-90">
-          <Text className="text-base">📷</Text>
+          <AppIcon name="camera" size={20} color={ICON_COLOR_PRIMARY} />
           <View>
             <Text className="text-sm font-bold text-brand-text">{copy.budgetOcrScan}</Text>
             <Text className="text-xs text-brand-muted">{copy.budgetOcrSoon}</Text>

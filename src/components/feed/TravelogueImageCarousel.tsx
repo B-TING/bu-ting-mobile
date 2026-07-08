@@ -9,8 +9,10 @@ import {
   View,
 } from 'react-native';
 
+import { ICON_COLOR_PRIMARY } from '../../constants/icons';
 import type { ReviewMedia, Travelogue } from '../../types/travelReview';
-import { travelogueThumbnailEmoji } from '../../utils/review/travelReview';
+import { travelogueThumbnailIcon } from '../../utils/review/travelReview';
+import { AppIcon } from '../shared/icons/AppIcon';
 
 type TravelogueImageCarouselProps = {
   travelogue: Travelogue;
@@ -27,14 +29,14 @@ export function TravelogueImageCarousel({
   const imageWidth = screenWidth;
   const imageHeight = Math.round(screenWidth * 0.85);
   const [activeIndex, setActiveIndex] = useState(0);
-  const emoji = travelogueThumbnailEmoji(travelogue);
+  const icon = travelogueThumbnailIcon(travelogue);
 
   const content =
     images.length === 0 ? (
       <View
         style={[styles.placeholder, { width: imageWidth, height: imageHeight }]}
         className="items-center justify-center bg-brand-selected">
-        <Text className="text-6xl">{emoji}</Text>
+        <AppIcon name={icon} size={56} color={ICON_COLOR_PRIMARY} />
         <Text className="mt-3 px-6 text-center text-sm font-semibold text-brand-text">
           {travelogue.title}
         </Text>

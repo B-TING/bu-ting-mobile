@@ -407,7 +407,7 @@ export function OnboardingScreen({ navigation, route }: Props) {
         {featureContent.features.map(feature => (
           <FeatureHighlightCard
             key={feature.title.en}
-            emoji={feature.emoji}
+            icon={feature.icon}
             title={feature.title[language]}
             description={feature.description[language]}
             emphasized={feature.emphasized}

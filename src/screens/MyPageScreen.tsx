@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { NicknameEditModal } from '../components/mypage/NicknameEditModal';
 import { PrimaryButton } from '../components/shared/buttons/PrimaryButton';
+import { AppIcon } from '../components/shared/icons/AppIcon';
 import { AppBar } from '../components/shared/navigation/AppBar';
 import { AppMenuDrawer } from '../components/shared/navigation/AppMenuDrawer';
 import { Navbar, type NavbarTab } from '../components/shared/navigation/Navbar';
@@ -12,6 +13,7 @@ import { useAppAlert } from '../components/shared/modals';
 import { useAppLanguage, useCopy } from '../i18n';
 import { summarizeOnboardingPreferences } from '../constants/setup/onboarding';
 import { layout } from '../constants/common/layout';
+import { ICON_COLOR_WHITE } from '../constants/icons';
 import { selectActivePlan, selectOnboardingForUser, useAppStore, useAuthStore, usePlanStore } from '../stores';
 import { selectAuthUser, selectIsAuthenticated, selectReusableAccessToken } from '../stores/useAuthStore';
 import type { RootStackParamList } from '../navigation/types';
@@ -85,7 +87,7 @@ function SettingToggle({
           'mr-3 h-5 w-5 items-center justify-center rounded border-2 border-brand-border',
           checked && 'border-brand-primary bg-brand-primary',
         )}>
-        {checked ? <Text className="text-xs text-white">✓</Text> : null}
+        {checked ? <AppIcon name="check" size={12} color={ICON_COLOR_WHITE} strokeWidth={3} /> : null}
       </View>
       <Text className="text-sm text-brand-text">{label}</Text>
     </Pressable>

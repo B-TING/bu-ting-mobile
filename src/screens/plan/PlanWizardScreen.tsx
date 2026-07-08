@@ -13,6 +13,8 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { WizardStepLayout } from '../../components/shared/layout/WizardStepLayout';
 import { OptionCard } from '../../components/shared/cards/OptionCard';
 import { PrimaryButton } from '../../components/shared/buttons/PrimaryButton';
+import { AppIcon } from '../../components/shared/icons/AppIcon';
+import { ICON_COLOR_WHITE } from '../../constants/icons';
 import {
   TRAVEL_CONSTRAINT_OPTIONS,
   TRAVEL_CONSTRAINT_NONE_ID,
@@ -312,7 +314,7 @@ export function PlanWizardScreen({ navigation }: Props) {
                     companionCount: Math.max(1, p.companionCount - 1),
                   }))
                 }>
-                <Text className="text-2xl font-bold text-white">−</Text>
+                <AppIcon name="minus" size={24} color={ICON_COLOR_WHITE} strokeWidth={2.5} />
               </Pressable>
               <Pressable
                 className="h-14 w-14 items-center justify-center rounded-full bg-brand-primary active:opacity-90"
@@ -322,7 +324,7 @@ export function PlanWizardScreen({ navigation }: Props) {
                     companionCount: Math.min(20, p.companionCount + 1),
                   }))
                 }>
-                <Text className="text-2xl font-bold text-white">+</Text>
+                <AppIcon name="plus" size={24} color={ICON_COLOR_WHITE} strokeWidth={2.5} />
               </Pressable>
             </View>
           </View>

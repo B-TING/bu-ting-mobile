@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { Image, Pressable, Text, View } from 'react-native';
 
 import { catalogThumbnail } from '../../constants/places/placeCatalog';
+import { ICON_COLOR_PRIMARY } from '../../constants/icons';
 import type { BusanPlace } from '../../types/placeSearch';
+import { AppIcon } from '../shared/icons/AppIcon';
 import { cn } from '../../utils/common/cn';
 
 type PlaceSearchListItemProps = {
@@ -43,7 +45,7 @@ export function PlaceSearchListItem({
         <Text className="text-base font-bold text-brand-text">{place.name}</Text>
         {meta ? <Text className="mt-0.5 text-xs text-brand-muted">{meta}</Text> : null}
       </View>
-      {selected ? <Text className="text-lg font-bold text-brand-primary">✓</Text> : null}
+      {selected ? <AppIcon name="check" size={20} color={ICON_COLOR_PRIMARY} strokeWidth={2.5} /> : null}
     </Pressable>
   );
 }

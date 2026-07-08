@@ -10,6 +10,8 @@ import {
   type BusanFestival,
 } from '../../constants/festival/festivalCalendar';
 import { useCopy } from '../../i18n';
+import { ICON_COLOR_WHITE } from '../../constants/icons';
+import { AppIcon } from '../shared/icons/AppIcon';
 import type { AppLanguage } from '../../types/user';
 import { FestivalTagBadges } from './FestivalTagBadges';
 
@@ -80,7 +82,7 @@ export function FestivalDetailHero({
         accessibilityRole="button"
         accessibilityLabel={commentsAccessibilityLabel}
         className="absolute bottom-3 right-3 z-10 flex-row items-center gap-1.5 rounded-full bg-black/55 px-3 py-2 active:opacity-80">
-        <Text className="text-base">💬</Text>
+        <AppIcon name="messageCircle" size={18} color={ICON_COLOR_WHITE} />
         <Text className="text-sm font-bold text-white">{commentCount}</Text>
       </Pressable>
     ) : null;
@@ -90,7 +92,9 @@ export function FestivalDetailHero({
   if (imageFailed) {
     return (
       <View style={[cardStyle, { backgroundColor: festival.imageColor }]}>
-        <Text className="absolute right-4 top-4 text-5xl opacity-30">{festival.imageEmoji}</Text>
+        <View className="absolute right-4 top-4 opacity-30">
+          <AppIcon name={festival.imageIcon} size={48} color={ICON_COLOR_WHITE} />
+        </View>
         {overlay}
         {commentButton}
       </View>

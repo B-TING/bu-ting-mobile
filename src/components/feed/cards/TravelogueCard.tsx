@@ -1,7 +1,9 @@
 import { Pressable, Text, View } from 'react-native';
 
+import { ICON_COLOR_PRIMARY } from '../../../constants/icons';
 import type { Travelogue } from '../../../types/travelReview';
-import { travelogueThumbnailEmoji } from '../../../utils/review/travelReview';
+import { travelogueThumbnailIcon } from '../../../utils/review/travelReview';
+import { AppIcon } from '../../shared/icons/AppIcon';
 import { StarRating } from '../../shared/rating/StarRating';
 
 type TravelogueCardProps = {
@@ -10,7 +12,7 @@ type TravelogueCardProps = {
 };
 
 export function TravelogueCard({ travelogue, onPress }: TravelogueCardProps) {
-  const emoji = travelogueThumbnailEmoji(travelogue);
+  const icon = travelogueThumbnailIcon(travelogue);
   const date = new Date(travelogue.publishedAt).toLocaleDateString();
 
   return (
@@ -18,7 +20,7 @@ export function TravelogueCard({ travelogue, onPress }: TravelogueCardProps) {
       onPress={onPress}
       className="mb-3 flex-row overflow-hidden rounded-2xl border border-brand-border bg-brand-surface p-3 active:opacity-90">
       <View className="mr-3 h-20 w-20 items-center justify-center rounded-xl bg-brand-selected">
-        <Text className="text-3xl">{emoji}</Text>
+        <AppIcon name={icon} size={32} color={ICON_COLOR_PRIMARY} />
       </View>
       <View className="flex-1 justify-center">
         <Text className="mb-1 text-[10px] font-bold tracking-wide text-brand-primary">

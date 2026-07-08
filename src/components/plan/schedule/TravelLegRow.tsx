@@ -1,5 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 
+import { ICON_COLOR_MUTED, TRANSPORT_MODE_ICONS } from '../../../constants/icons';
+import { AppIcon } from '../../shared/icons/AppIcon';
 import { ScheduleTimelineRail } from './ScheduleTimelineRail';
 import type { TravelLeg } from '../../../types/travelPlan';
 
@@ -21,13 +23,7 @@ function modeLabel(leg: TravelLeg, copy: TravelLegRowProps['copy']) {
 }
 
 function modeIcon(mode: TravelLeg['mode']) {
-  if (mode === 'walk') {
-    return '🚶';
-  }
-  if (mode === 'drive') {
-    return '🚗';
-  }
-  return '🚌';
+  return TRANSPORT_MODE_ICONS[mode];
 }
 
 export function TravelLegRow({
@@ -45,7 +41,7 @@ export function TravelLegRow({
         dashed
         node={
           <View className="h-8 w-8 items-center justify-center rounded-full border border-brand-border bg-brand-surface">
-            <Text>{modeIcon(leg.mode)}</Text>
+            <AppIcon name={modeIcon(leg.mode)} size={16} color={ICON_COLOR_MUTED} />
           </View>
         }
       />

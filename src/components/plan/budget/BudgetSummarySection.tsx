@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Animated, Pressable, Text, View } from 'react-native';
 
 import { getBudgetCategoryStyle } from '../../../constants/plan/budgetCategoryStyle';
+import { ICON_COLOR_WHITE } from '../../../constants/icons';
+import { AppIcon } from '../../shared/icons/AppIcon';
 import type { CopyFor } from '../../../i18n';
 import type { AppLanguage } from '../../../types/user';
 import type { BudgetCategory } from '../../../types/travelPlan';
@@ -184,7 +186,10 @@ export function BudgetSummarySection({
         <Pressable
           onPress={onAddExpense}
           className="rounded-xl bg-brand-primary px-3 py-2 active:opacity-90">
-          <Text className="text-xs font-bold text-white">+ {copy.budgetAdd}</Text>
+          <View className="flex-row items-center gap-1">
+            <AppIcon name="plus" size={12} color={ICON_COLOR_WHITE} strokeWidth={2.5} />
+            <Text className="text-xs font-bold text-white">{copy.budgetAdd}</Text>
+          </View>
         </Pressable>
       </View>
 

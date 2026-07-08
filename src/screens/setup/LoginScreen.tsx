@@ -10,7 +10,9 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { OAuthProviderList } from '../../components/setup/OAuthProviderButton';
 import { BrandLogo } from '../../components/shared/brand/BrandLogo';
+import { AppIcon } from '../../components/shared/icons/AppIcon';
 import { layout } from '../../constants/common/layout';
+import { ICON_COLOR_WHITE } from '../../constants/icons';
 import { useAppLanguage, useCopy } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
 import { completeProviderLogin } from '../../services/auth/authSession';
@@ -112,7 +114,9 @@ export function LoginScreen({ navigation }: Props) {
               'mr-3 h-5 w-5 items-center justify-center rounded border-2 border-brand-border',
               rememberMe && 'border-brand-primary bg-brand-primary',
             )}>
-            {rememberMe ? <Text className="text-xs text-white">✓</Text> : null}
+            {rememberMe ? (
+              <AppIcon name="check" size={12} color={ICON_COLOR_WHITE} strokeWidth={3} />
+            ) : null}
           </View>
           <Text className="text-sm text-brand-text">
             {language === 'ko' ? '자동 로그인' : 'Keep me signed in'}

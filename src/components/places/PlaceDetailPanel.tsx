@@ -2,8 +2,12 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Image, Linking, Pressable, Text, View } from 'react-native';
 
 import { catalogThumbnail } from '../../constants/places/placeCatalog';
+import {
+  ICON_COLOR_STAR_EMPTY,
+} from '../../constants/icons';
 import { isFestivalPlaceSearch } from '../../constants/places/placeSearch';
 import { useCopy } from '../../i18n';
+import { AppIcon } from '../shared/icons/AppIcon';
 import type { CopyFor } from '../../i18n';
 import { buildGoogleMapsUrl } from '../../utils/places/googleMapsUrl';
 import type { BusanPlace } from '../../types/placeSearch';
@@ -100,7 +104,12 @@ export function PlaceDetailPanel({
                 className={`flex-row items-center gap-1 rounded-full px-3 py-1 active:opacity-80 ${
                   bookmarked ? 'bg-amber-100' : 'bg-brand-selected'
                 }`}>
-                <Text className="text-xs">{bookmarked ? '📌' : '☆'}</Text>
+                <AppIcon
+                  name={bookmarked ? 'mapPin' : 'star'}
+                  size={14}
+                  color={bookmarked ? '#B45309' : ICON_COLOR_STAR_EMPTY}
+                  filled={bookmarked}
+                />
                 <Text
                   className={`text-xs font-bold ${
                     bookmarked ? 'text-amber-700' : 'text-brand-primary'

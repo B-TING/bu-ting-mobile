@@ -1,8 +1,10 @@
 import type { AppLanguage } from '../../types/user';
+import type { LucideIconName } from '../icons';
+import { QUICK_ACCESS_ICONS } from '../icons';
 
 export type QuickAccessItem = {
   id: string;
-  icon: string;
+  icon: LucideIconName;
   labelKo: string;
   labelEn: string;
 };
@@ -23,7 +25,7 @@ export type MockEvent = {
   dateJa: string;
   dateZh: string;
   imageColor: string;
-  imageEmoji: string;
+  imageIcon: LucideIconName;
   imageUri?: string;
 };
 
@@ -33,7 +35,7 @@ export type MockTravelogue = {
   subtitleKo: string;
   subtitleEn: string;
   thumbnailColor: string;
-  thumbnailEmoji: string;
+  thumbnailIcon: LucideIconName;
 };
 
 export type MockSpecialOffer = {
@@ -158,32 +160,32 @@ export const HOME_EVENT_ZONE_COPY: Record<
 export const QUICK_ACCESS_ITEMS: QuickAccessItem[] = [
   {
     id: 'hotels',
-    icon: '🏨',
+    icon: QUICK_ACCESS_ICONS.hotels,
     labelKo: '숙소 정보',
     labelEn: 'Hotels',
   },
 
   {
     id: 'attractions',
-    icon: '🏛️',
+    icon: QUICK_ACCESS_ICONS.attractions,
     labelKo: '관광지',
     labelEn: 'Attractions',
   },
   {
     id: 'festivals',
-    icon: '📅',
+    icon: QUICK_ACCESS_ICONS.festivals,
     labelKo: '축제 캘린더',
     labelEn: 'Festivals',
   },
   {
     id: 'eventZone',
-    icon: '🗺️',
+    icon: QUICK_ACCESS_ICONS.eventZone,
     labelKo: '이벤트 존',
     labelEn: 'Event Zone',
   },
   {
     id: 'luggage',
-    icon: '🧳',
+    icon: QUICK_ACCESS_ICONS.luggage,
     labelKo: '짐 보관소',
     labelEn: 'Luggage',
   },
@@ -207,7 +209,7 @@ export const MOCK_EVENTS: MockEvent[] = [
     dateJa: '10/4 - 10/6',
     dateZh: '10/4 - 10/6',
     imageColor: '#1e3a5f',
-    imageEmoji: '🎆',
+    imageIcon: 'sparkles',
   },
   {
     id: 'drone-show',
@@ -225,7 +227,7 @@ export const MOCK_EVENTS: MockEvent[] = [
     dateJa: '毎週土曜日',
     dateZh: '每周六',
     imageColor: '#0f766e',
-    imageEmoji: '🛸',
+    imageIcon: 'satellite',
   },
 ];
 
@@ -235,7 +237,7 @@ export const MOCK_TRAVELOGUE: MockTravelogue = {
   subtitleKo: '로컬들이 사랑하는 비밀 명소 5곳',
   subtitleEn: '5 secret spots locals love',
   thumbnailColor: '#7dd3fc',
-  thumbnailEmoji: '🏖️',
+  thumbnailIcon: 'waves',
 };
 
 export const MOCK_SPECIAL_OFFER: MockSpecialOffer = {

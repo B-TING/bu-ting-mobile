@@ -1,4 +1,10 @@
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+
+import {
+  ICON_COLOR_STAR,
+  ICON_COLOR_STAR_EMPTY,
+} from '../../../constants/icons';
+import { AppIcon } from '../icons/AppIcon';
 
 type StarRatingProps = {
   value: number;
@@ -15,7 +21,7 @@ export function StarRating({
   size = 'md',
   readonly = false,
 }: StarRatingProps) {
-  const starSize = size === 'sm' ? 'text-lg' : 'text-2xl';
+  const starSize = size === 'sm' ? 18 : 24;
 
   return (
     <View className="flex-row gap-1">
@@ -30,9 +36,12 @@ export function StarRating({
             className="active:opacity-70"
             accessibilityRole="button"
             accessibilityLabel={`${star} stars`}>
-            <Text className={`${starSize} ${filled ? 'text-amber-400' : 'text-brand-border'}`}>
-              ★
-            </Text>
+            <AppIcon
+              name="star"
+              size={starSize}
+              color={filled ? ICON_COLOR_STAR : ICON_COLOR_STAR_EMPTY}
+              filled={filled}
+            />
           </Pressable>
         );
       })}

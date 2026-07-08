@@ -1,4 +1,5 @@
 import type { MockEvent } from '../home/mainHome';
+import type { LucideIconName } from '../icons';
 import { getCopyForLanguage } from '../../i18n';
 import type { AppLanguage } from '../../types/user';
 import type { RouteItem } from '../../types/travelPlan';
@@ -36,7 +37,7 @@ export type BusanFestival = {
   summaryZh: string;
   imageUri: string;
   imageColor: string;
-  imageEmoji: string;
+  imageIcon: LucideIconName;
   location: { lat: number; lng: number };
 };
 
@@ -243,7 +244,7 @@ export const MOCK_BUSAN_FESTIVALS: BusanFestival[] = [
     startDate: '2026-06-01',
     endDate: '2026-06-15',
     imageColor: '#f59e0b',
-    imageEmoji: '🏖️',
+    imageIcon: 'waves',
     location: { lat: 35.1587, lng: 129.1604 },
   },
   {
@@ -281,7 +282,7 @@ export const MOCK_BUSAN_FESTIVALS: BusanFestival[] = [
     startDate: '2026-06-05',
     endDate: '2026-06-07',
     imageColor: '#7c3aed',
-    imageEmoji: '💃',
+    imageIcon: 'music2',
     location: { lat: 35.1578, lng: 129.0595 },
   },
   {
@@ -320,7 +321,7 @@ export const MOCK_BUSAN_FESTIVALS: BusanFestival[] = [
     endDate: '2026-12-31',
     recurringWeekday: 6,
     imageColor: '#0f766e',
-    imageEmoji: '🛸',
+    imageIcon: 'satellite',
     location: { lat: 35.1532, lng: 129.1186 },
   },
   {
@@ -358,7 +359,7 @@ export const MOCK_BUSAN_FESTIVALS: BusanFestival[] = [
     startDate: '2026-06-18',
     endDate: '2026-06-22',
     imageColor: '#dc2626',
-    imageEmoji: '🍜',
+    imageIcon: 'utensils',
     location: { lat: 35.155, lng: 129.127 },
   },
   {
@@ -396,7 +397,7 @@ export const MOCK_BUSAN_FESTIVALS: BusanFestival[] = [
     startDate: '2026-10-04',
     endDate: '2026-10-06',
     imageColor: '#1e3a5f',
-    imageEmoji: '🎆',
+    imageIcon: 'sparkles',
     location: { lat: 35.1045, lng: 128.9743 },
   },
   {
@@ -434,7 +435,7 @@ export const MOCK_BUSAN_FESTIVALS: BusanFestival[] = [
     startDate: '2026-09-24',
     endDate: '2026-10-03',
     imageColor: '#312e81',
-    imageEmoji: '🎬',
+    imageIcon: 'film',
     location: { lat: 35.1712, lng: 129.1315 },
   },
   {
@@ -472,7 +473,7 @@ export const MOCK_BUSAN_FESTIVALS: BusanFestival[] = [
     startDate: '2026-11-07',
     endDate: '2026-11-08',
     imageColor: '#be123c',
-    imageEmoji: '🎇',
+    imageIcon: 'sparkles',
     location: { lat: 35.1532, lng: 129.1186 },
   },
 ];
@@ -617,7 +618,7 @@ export function festivalToHomeEvent(festival: BusanFestival): MockEvent {
     dateJa: festivalPeriodLabel(festival, 'ja'),
     dateZh: festivalPeriodLabel(festival, 'zh'),
     imageColor: festival.imageColor,
-    imageEmoji: festival.imageEmoji,
+    imageIcon: festival.imageIcon,
     imageUri: festival.imageUri || undefined,
   };
 }

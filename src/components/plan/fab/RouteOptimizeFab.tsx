@@ -1,4 +1,7 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+
+import { ICON_COLOR_WHITE } from '../../../constants/icons';
+import { AppIcon } from '../../shared/icons/AppIcon';
 
 const FAB_SIZE = 56;
 const FAB_GAP = 12;
@@ -43,7 +46,7 @@ export function RouteOptimizeFab({
         accessibilityLabel={label}
         style={({ pressed }) => [styles.pressable, pressed && styles.pressed]}>
         <View style={[styles.fab, styles.optimizeFab]}>
-          <Text style={styles.icon}>↻</Text>
+          <AppIcon name="rotateCw" size={26} color={ICON_COLOR_WHITE} strokeWidth={2.5} />
         </View>
       </Pressable>
 
@@ -58,7 +61,7 @@ export function RouteOptimizeFab({
             pressed && styles.pressed,
           ]}>
           <View style={[styles.fab, styles.addFabBg]}>
-            <Text style={styles.addIcon}>+</Text>
+            <AppIcon name="plus" size={28} color={ICON_COLOR_WHITE} strokeWidth={2.5} />
           </View>
         </Pressable>
       ) : null}
@@ -96,16 +99,5 @@ const styles = StyleSheet.create({
   },
   addFabBg: {
     backgroundColor: '#0077B6',
-  },
-  icon: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
-  addIcon: {
-    fontSize: 30,
-    fontWeight: '300',
-    color: '#FFFFFF',
-    marginTop: -2,
   },
 });

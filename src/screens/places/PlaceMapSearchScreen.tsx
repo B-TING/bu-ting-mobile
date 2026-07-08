@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PlaceDetailSheet } from '../../components/places/PlaceDetailSheet';
 import { PlaceMapView } from '../../components/places/PlaceMapView';
 import { BackButton } from '../../components/shared/buttons/BackButton';
+import { AppIcon } from '../../components/shared/icons/AppIcon';
 import {
   defaultPlaceContentTypeId,
   isFestivalPlaceSearch,
@@ -13,6 +14,7 @@ import {
   PLACE_SEARCH_RADIUS_M,
   buildPlaceListMetaLine,
 } from '../../constants/places/placeSearch';
+import { ICON_COLOR_PRIMARY } from '../../constants/icons';
 import { useAppLanguage, useCopy } from '../../i18n';
 import { useCurrentEventZone } from '../../hooks/useCurrentEventZone';
 import type { RootStackParamList } from '../../navigation/types';
@@ -421,7 +423,9 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
                               : 'border-brand-border bg-brand-background'
                         }`}>
                         <View className="flex-row items-center gap-1">
-                          {bookmarked ? <Text className="text-xs">📌</Text> : null}
+                          {bookmarked ? (
+                            <AppIcon name="mapPin" size={12} color={ICON_COLOR_PRIMARY} filled />
+                          ) : null}
                           <Text className="text-sm font-bold text-brand-text">{place.name}</Text>
                         </View>
                         <Text className="mt-0.5 text-xs text-brand-muted">

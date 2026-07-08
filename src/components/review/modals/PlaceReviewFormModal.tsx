@@ -2,12 +2,15 @@ import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { REVIEW_TAG_PRESETS } from '../../../constants/review/travelReview';
+import type { LucideIconName } from '../../../constants/icons';
+import { LUCIDE_ICONS } from '../../../constants/icons';
 import type { CopyFor } from '../../../i18n';
 import type { AppLanguage } from '../../../types/user';
 import type { PlaceReview, ReviewMedia } from '../../../types/travelReview';
 import type { RouteItem } from '../../../types/travelPlan';
 import { createId } from '../../../utils/common/id';
 import { StarRating } from '../../shared/rating/StarRating';
+import { AppIcon } from '../../shared/icons/AppIcon';
 import { AppModal, AppModalActions } from '../../shared/modals';
 
 type Copy = CopyFor<'travelReview'>;
@@ -25,8 +28,15 @@ type PlaceReviewFormModalProps = {
   }) => void;
 };
 
-const MOCK_PHOTO_EMOJIS = ['📷', '🌊', '🍜', '🌸', '🏙️'];
-const MOCK_VIDEO_EMOJI = '🎬';
+const MOCK_PHOTO_ICONS: LucideIconName[] = ['camera', 'waves', 'utensils', 'flower2', 'building2'];
+const MOCK_VIDEO_ICON: LucideIconName = 'film';
+
+function mockMediaIcon(thumbnailUri?: string): LucideIconName {
+  if (thumbnailUri && thumbnailUri in LUCIDE_ICONS) {
+    return thumbnailUri as LucideIconName;
+  }
+  return 'paperclip';
+}
 
 export function PlaceReviewFormModal({
   visible,
@@ -82,7 +92,7 @@ export function PlaceReviewFormModal({
         mediaId: createId('med-'),
         type: 'image',
         uri: `local://photo-${Date.now()}`,
-        thumbnailUri: MOCK_PHOTO_EMOJIS[idx % MOCK_PHOTO_EMOJIS.length],
+        thumbnailUri: MOCK_PHOTO_ICONS[idx % MOCK_PHOTO_ICONS.length],
       },
     ]);
   };
@@ -94,7 +104,7 @@ export function PlaceReviewFormModal({
         mediaId: createId('med-'),
         type: 'video',
         uri: `local://video-${Date.now()}`,
-        thumbnailUri: MOCK_VIDEO_EMOJI,
+        thumbnailUri: MOCK_VIDEO_ICON,
       },
     ]);
   };
@@ -224,7 +234,7 @@ export function PlaceReviewFormModal({
                 key={item.mediaId}
                 onPress={() => removeMedia(item.mediaId)}
                 className="h-16 w-16 items-center justify-center rounded-xl bg-brand-selected">
-                <Text className="text-2xl">{item.thumbnailUri ?? '📎'}</Text>
+                <AppIcon name={mockMediaIcon(item.thumbnailUri)} size={24} />
                 <Text className="text-[8px] text-brand-muted">
                   {item.type === 'video' ? 'VIDEO' : 'PHOTO'}
                 </Text>

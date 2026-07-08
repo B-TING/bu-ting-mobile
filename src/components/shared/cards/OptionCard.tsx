@@ -1,6 +1,10 @@
 import { Pressable, Text, View } from 'react-native';
 
+import {
+  ICON_COLOR_PRIMARY,
+} from '../../../constants/icons';
 import { cn } from '../../../utils/common/cn';
+import { AppIcon } from '../icons/AppIcon';
 
 type OptionCardProps = {
   label: string;
@@ -25,12 +29,13 @@ export function OptionCard({
       )}
       accessibilityRole="button"
       accessibilityState={{ selected }}>
-      <View
-        className={cn(
-          'mr-3.5 h-[22px] w-[22px] rounded-full border-2 border-brand-border',
-          selected && 'border-brand-primary bg-brand-primary',
+      <View className="mr-3.5 h-[22px] w-[22px] items-center justify-center">
+        {selected ? (
+          <AppIcon name="circleDot" size={22} color={ICON_COLOR_PRIMARY} />
+        ) : (
+          <AppIcon name="circle" size={22} color={ICON_COLOR_PRIMARY} />
         )}
-      />
+      </View>
       <Text
         className={cn(
           'flex-1 text-[17px] font-medium text-brand-text',

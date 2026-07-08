@@ -10,6 +10,8 @@ import {
   EventZoneZoneDetailPanel,
 } from '../../components/eventZone/EventZoneSections';
 import { BackButton } from '../../components/shared/buttons/BackButton';
+import { AppIcon } from '../../components/shared/icons/AppIcon';
+import { ICON_COLOR_WHITE } from '../../constants/icons';
 import {
   EVENT_ZONE_BY_ID,
   allZoneChatRooms,
@@ -177,8 +179,9 @@ export function EventZoneScreen({ navigation }: Props) {
             className="absolute left-0 right-0 items-center"
             style={{ top: insets.top + 56, opacity: toastOpacity }}
             pointerEvents="none">
-            <View className="rounded-full bg-black/80 px-5 py-3">
-              <Text className="text-xs font-semibold text-white">🎉 {toastText}</Text>
+            <View className="flex-row items-center gap-2 rounded-full bg-black/80 px-5 py-3">
+              <AppIcon name="partyPopper" size={14} color={ICON_COLOR_WHITE} />
+              <Text className="text-xs font-semibold text-white">{toastText}</Text>
             </View>
           </Animated.View>
         ) : null}

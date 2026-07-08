@@ -6,6 +6,7 @@ import type {
   TravelogueRouteSnapshot,
   TravelogueSocial,
 } from '../../types/travelReview';
+import type { LucideIconName } from '../../constants/icons';
 import type { RouteItem, TravelPlan } from '../../types/travelPlan';
 import { sortedRoutes } from '../plan/planItinerary';
 
@@ -175,12 +176,24 @@ export function authorInitial(name: string): string {
   return trimmed.charAt(0).toUpperCase();
 }
 
-export function travelogueThumbnailEmoji(travelogue: Travelogue): string {
+export function travelogueThumbnailIcon(travelogue: Travelogue): LucideIconName {
   const top = travelogue.placeReviews.find(r => r.rating >= 4);
   if (top?.tags.includes('맛집') || top?.tags.includes('food')) {
-    return '🍽️';
+    return 'utensils';
   }
   if (top?.tags.includes('뷰맛집') || top?.tags.includes('view')) {
+    return 'sunset';
+  }
+  return 'map';
+}
+
+/** @deprecated Use travelogueThumbnailIcon */
+export function travelogueThumbnailEmoji(travelogue: Travelogue): string {
+  const icon = travelogueThumbnailIcon(travelogue);
+  if (icon === 'utensils') {
+    return '🍽️';
+  }
+  if (icon === 'sunset') {
     return '🌅';
   }
   return '🗺️';

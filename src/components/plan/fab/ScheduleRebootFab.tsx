@@ -1,4 +1,7 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+
+import { ICON_COLOR_WHITE } from '../../../constants/icons';
+import { AppIcon } from '../../shared/icons/AppIcon';
 
 const FAB_SIZE = 56;
 const GLOW_RING = 12;
@@ -23,7 +26,7 @@ export function ScheduleRebootFab({ onPress, bottom }: ScheduleRebootFabProps) {
           style={({ pressed }) => [styles.pressable, pressed && styles.pressed]}>
           <View style={styles.fab}>
             <View style={styles.shine} />
-            <Text style={styles.label}>R</Text>
+            <AppIcon name="rotateCcw" size={24} color={ICON_COLOR_WHITE} strokeWidth={2.5} />
           </View>
         </Pressable>
       </View>
@@ -81,14 +84,5 @@ const styles = StyleSheet.create({
     height: FAB_SIZE * 0.28,
     borderRadius: FAB_SIZE / 2,
     backgroundColor: 'rgba(255, 255, 255, 0.22)',
-  },
-  label: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    marginTop: -1,
-    textShadowColor: 'rgba(0, 60, 100, 0.45)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
   },
 });

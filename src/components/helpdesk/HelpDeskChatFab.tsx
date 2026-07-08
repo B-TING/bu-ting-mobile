@@ -1,4 +1,7 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+
+import { ICON_COLOR_WHITE } from '../../constants/icons';
+import { AppIcon } from '../shared/icons/AppIcon';
 
 const FAB_SIZE = 56;
 const GLOW_RING = 12;
@@ -24,7 +27,7 @@ export function HelpDeskChatFab({ onPress, bottom, accessibilityLabel }: HelpDes
           style={({ pressed }) => [styles.pressable, pressed && styles.pressed]}>
           <View style={styles.fab}>
             <View style={styles.shine} />
-            <Text style={styles.icon}>💬</Text>
+            <AppIcon name="messageCircle" size={24} color={ICON_COLOR_WHITE} />
           </View>
         </Pressable>
       </View>
@@ -82,8 +85,5 @@ const styles = StyleSheet.create({
     height: FAB_SIZE * 0.28,
     borderRadius: FAB_SIZE / 2,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  icon: {
-    fontSize: 24,
   },
 });

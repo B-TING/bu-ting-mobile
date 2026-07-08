@@ -3,8 +3,10 @@ import { ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from '
 
 import { festivalTagLabel } from '../../../constants/festival/festivalCalendar';
 import type { MockEvent } from '../../../constants/home/mainHome';
+import { ICON_COLOR_PRIMARY } from '../../../constants/icons';
 import type { AppLanguage } from '../../../types/user';
 import { cn } from '../../../utils/common/cn';
+import { AppIcon } from '../../shared/icons/AppIcon';
 
 type EventsSectionMockProps = {
   title: string;
@@ -109,7 +111,7 @@ function EventCard({
           <View
             className="h-32 items-center justify-center"
             style={{ backgroundColor: event.imageColor }}>
-            <Text className="text-4xl">{event.imageEmoji}</Text>
+            <AppIcon name={event.imageIcon} size={40} color={ICON_COLOR_PRIMARY} />
           </View>
           {body}
         </>
