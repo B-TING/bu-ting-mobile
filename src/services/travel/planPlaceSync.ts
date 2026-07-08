@@ -1,5 +1,5 @@
 import type { RebootPlaceCandidate } from '../../utils/places/rebootPlaces';
-import type { PlanPlaceCreateRequest, PlanPlaceResponse, PlaceProviderDto } from '../../types/travelApi';
+import type { PlanPlaceCreateRequest, PlanPlaceResponse, PlanPlaceUpdatePlaceRequest, PlaceProviderDto } from '../../types/travelApi';
 import type { RouteItem, TravelPlan } from '../../types/travelPlan';
 import { sortedRoutes } from '../../utils/plan/planItinerary';
 import {
@@ -7,6 +7,7 @@ import {
   deletePlanPlace,
   fetchPlanPlaces,
   updatePlanPlace,
+  updatePlanPlacePlace,
   updatePlanPlaceSequence,
 } from './travelService';
 import { planPlaceToRouteItem } from './travelMapper';
@@ -104,7 +105,7 @@ function inferPlaceProvider(placeId: string): PlaceProviderDto {
   return 'GOOGLE';
 }
 
-/** POST 시 sequence는 보내지 않음 — 서버가 맨 뒤에 배정, 순서 변경은 PATCH로만 */
+/** POST·PATCH /place 공통 — 후보 장소를 API 요청 본문으로 변환 */
 export function rebootCandidateToPlanPlaceRequest(
   candidate: RebootPlaceCandidate,
 ): PlanPlaceCreateRequest {
@@ -117,6 +118,14 @@ export function rebootCandidateToPlanPlaceRequest(
     providerPlaceId: candidate.placeId,
     visited: false,
   };
+}
+
+export function rebootCandidateToPlanPlaceUpdatePlaceRequest(
+  candidate: RebootPlaceCandidate,
+): PlanPlaceUpdatePlaceRequest {
+  const { placeName, address, latitude, longitude, provider, providerPlaceId } =
+    rebootCandidateToPlanPlaceRequest(candidate);
+  return { placeName, address, latitude, longitude, provider, providerPlaceId };
 }
 
 export async function addPlanPlaceFromCandidate(
@@ -160,41 +169,26 @@ export async function updatePlanPlaceMemoOnApi(
 }
 
 /**
- *
- * 백엔드에 plan place의 장소 자체를 바꾸는 API가 없다.
- * `PATCH /api/v1/plans/places/{planPlaceId}`는 메모·예정 시간·소요 시간만 수정한다.
- *
- * 장소 변경 API가 추가되기 전까지 아래 방식으로 우회한다:
- * 1. 새 장소 POST (sequence 미지정 → 서버가 맨 뒤에 추가)
- * 2. PATCH .../places/sequence — 새 장소와 교체 대상의 순서를 맞바꿈 (교체 대상은 맨 뒤로)
- * 3. 교체 대상 DELETE
- *
- * TODO: 장소 변경(교체) 전용 API 연동 후 이 함수를 교체할 것
+ * 인근 장소로 대체(reboot) — PATCH /api/v1/plans/places/{planPlaceId}/place
  */
 export async function replacePlanPlaceFromCandidate(
   accessToken: string,
-  apiPlanId: string,
   route: RouteItem,
   candidate: RebootPlaceCandidate,
-  allDayRoutes: RouteItem[],
 ): Promise<RouteItem> {
-  const sorted = sortedRoutes(allDayRoutes);
-  const replaceIndex = sorted.findIndex(
-    r => resolveApiPlanPlaceId(r) === resolveApiPlanPlaceId(route),
+  const body = rebootCandidateToPlanPlaceUpdatePlaceRequest(candidate);
+  const updated = await updatePlanPlacePlace(
+    accessToken,
+    resolveApiPlanPlaceId(route),
+    body,
   );
-  if (replaceIndex < 0) {
-    throw new Error('교체할 일정을 찾을 수 없습니다.');
-  }
-
-  const oldRoute = sorted[replaceIndex];
-  const prefix = sorted.slice(0, replaceIndex);
-  const suffix = sorted.slice(replaceIndex + 1);
-
-  const created = await addPlanPlaceFromCandidate(accessToken, apiPlanId, candidate);
-
-  const orderedRoutes = [...prefix, created, ...suffix, oldRoute];
-  await updatePlanPlaceOrderOnApi(accessToken, apiPlanId, orderedRoutes);
-  await deletePlanPlace(accessToken, resolveApiPlanPlaceId(oldRoute));
-
-  return created;
+  const replaced = planPlaceToRouteItem(updated);
+  return {
+    ...replaced,
+    itemId: route.itemId,
+    legMode: route.legMode,
+    memo: route.memo,
+    placeInfo: route.placeInfo,
+    type: route.type,
+  };
 }

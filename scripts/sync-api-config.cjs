@@ -90,6 +90,7 @@ export const TRAVEL_ENDPOINTS = {
   planPlaces: (planId: string) => \`/api/v1/plans/\${planId}/places\`,
   planPlaceSequence: (planId: string) => \`/api/v1/plans/\${planId}/places/sequence\`,
   planPlaceById: (planPlaceId: string) => \`/api/v1/plans/places/\${planPlaceId}\`,
+  planPlacePlace: (planPlaceId: string) => \`/api/v1/plans/places/\${planPlaceId}/place\`,
 } as const;
 
 export type OAuthClientConfig = {

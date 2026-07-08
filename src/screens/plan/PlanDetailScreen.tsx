@@ -227,23 +227,19 @@ export function PlanDetailScreen({ navigation, route }: Props) {
 
       const apiPlanId = scheduleDay.apiPlanId;
       if (isApiPlan && accessToken && apiPlanId) {
-        // [임시] 장소 변경 API 없음 → POST 추가 → sequence 교환 → DELETE
         try {
           const synced = await syncFromServer();
-          const freshRoutes = getDayRoutesFromPlan(synced, scheduleDay.dayNumber);
           const freshRoute =
             findDayRoute(synced, scheduleDay.dayNumber, pickRoute) ?? pickRoute;
 
-          const created = await replacePlanPlaceFromCandidate(
+          const replaced = await replacePlanPlaceFromCandidate(
             accessToken,
-            apiPlanId,
             freshRoute,
             candidate,
-            freshRoutes,
           );
           await syncFromServer();
           if (legMode && legMode !== pickRoute.legMode) {
-            usePlanStore.getState().updateRouteLegMode(planId, created.itemId, legMode);
+            usePlanStore.getState().updateRouteLegMode(planId, replaced.itemId, legMode);
           }
           closeScheduleModal();
         } catch (error) {

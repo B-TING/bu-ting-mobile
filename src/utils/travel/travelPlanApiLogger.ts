@@ -3,6 +3,7 @@ import type {
   PlanPlaceCreateRequest,
   PlanPlaceResponse,
   PlanPlaceSequenceUpdateRequest,
+  PlanPlaceUpdatePlaceRequest,
   PlanPlaceUpdateRequest,
   TravelCreateRequest,
   TravelPlansResponse,
@@ -108,6 +109,19 @@ function summarizePlanPlaceUpdateRequest(body: PlanPlaceUpdateRequest): Record<s
   };
 }
 
+function summarizePlanPlaceUpdatePlaceRequest(
+  body: PlanPlaceUpdatePlaceRequest,
+): Record<string, unknown> {
+  return {
+    placeName: body.placeName,
+    address: body.address,
+    latitude: body.latitude,
+    longitude: body.longitude,
+    provider: body.provider,
+    providerPlaceId: body.providerPlaceId,
+  };
+}
+
 function summarizePlanPlaceItem(item: PlanPlaceResponse): Record<string, unknown> {
   return {
     planPlaceId: item.planPlaceId,
@@ -206,7 +220,16 @@ function summarizeRequestBody(body: unknown): Record<string, unknown> | undefine
     return summarizePlanCreateRequest(body as PlanCreateRequest);
   }
   if ('providerPlaceId' in body && 'placeName' in body) {
-    return summarizePlanPlaceCreateRequest(body as PlanPlaceCreateRequest);
+    if (
+      'visited' in body ||
+      'memo' in body ||
+      'durationMinutes' in body ||
+      'scheduledTime' in body ||
+      'sequence' in body
+    ) {
+      return summarizePlanPlaceCreateRequest(body as PlanPlaceCreateRequest);
+    }
+    return summarizePlanPlaceUpdatePlaceRequest(body as PlanPlaceUpdatePlaceRequest);
   }
   if ('planPlaceIds' in body) {
     return summarizePlanPlaceSequenceRequest(body as PlanPlaceSequenceUpdateRequest);

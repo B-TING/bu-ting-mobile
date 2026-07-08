@@ -85,6 +85,15 @@ export type PlanPlaceUpdateRequest = {
   visited?: boolean | null;
 };
 
+export type PlanPlaceUpdatePlaceRequest = {
+  placeName: string;
+  address: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  provider: PlaceProviderDto;
+  providerPlaceId: string;
+};
+
 export type TravelPlanPlaceDto = {
   planPlaceId: string;
   sequence: number;
