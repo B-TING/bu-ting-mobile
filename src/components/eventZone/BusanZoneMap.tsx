@@ -8,6 +8,7 @@ import {
   EVENT_ZONE_DISTRICT_IDS,
 } from '../../constants/eventZone/busanMapPaths';
 import { EVENT_ZONES, EVENT_ZONE_BY_ID, landmarkName } from '../../constants/eventZone/eventZone';
+import { PRETENDARD } from '../../constants/fonts/pretendard';
 import type { AppLanguage } from '../../types/user';
 import type { EventZoneId } from '../../types/eventZone';
 import { resolveLandmarkMapPoint } from '../../utils/eventZone/landmarkMapPoint';
@@ -96,7 +97,7 @@ function LandmarkNamePill({ x, y, label }: LandmarkNamePillProps) {
         x={x}
         y={y + 22}
         fontSize={9}
-        fontWeight="600"
+        fontFamily={PRETENDARD.semibold}
         textAnchor="middle"
         fill="#0F172A">
         {text}
@@ -252,6 +253,7 @@ export function BusanZoneMap({
               x={point.x}
               y={point.y + (selectedZoneId ? 3.5 : 5)}
               fontSize={selectedZoneId ? 10 : 13}
+              fontFamily={PRETENDARD.regular}
               textAnchor="middle"
               fill="#0F172A">
               {landmark.emoji}

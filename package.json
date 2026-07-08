@@ -24,7 +24,8 @@
     "zone-boundaries:sync": "node scripts/build-busan-district-boundaries.cjs",
     "oauth:sync": "node scripts/sync-oauth-config.cjs",
     "hooks:install": "node scripts/install-git-hooks.cjs",
-    "postinstall": "node scripts/sync-kakao-map-key.cjs && node scripts/sync-api-config.cjs && node scripts/sync-oauth-config.cjs && patch-package && node scripts/install-git-hooks.cjs",
+    "fonts:sync": "node scripts/sync-pretendard-fonts.cjs",
+    "postinstall": "node scripts/sync-kakao-map-key.cjs && node scripts/sync-api-config.cjs && node scripts/sync-oauth-config.cjs && node scripts/sync-pretendard-fonts.cjs && patch-package && node scripts/install-git-hooks.cjs",
     "test": "jest",
     "icons:generate": "node scripts/generate-app-icons.cjs"
   },
