@@ -3,9 +3,12 @@ import { Alert, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { PlanSyncStatusDot } from '../../components/plan/PlanSyncStatusDot';
+import { TransientBottomToast } from '../../components/shared/feedback/TransientBottomToast';
 import { BackButton } from '../../components/shared/buttons/BackButton';
 import { BudgetEntryModal } from '../../components/plan/modals/BudgetEntryModal';
 import { PlacePickModal } from '../../components/plan/modals/PlacePickModal';
+import { TravelInviteLinkModal } from '../../components/plan/modals/TravelInviteLinkModal';
 import { RouteOptimizeFab, routeFabBottom } from '../../components/plan/fab/RouteOptimizeFab';
 import { PlanBudgetTab } from '../../components/plan/tabs/PlanBudgetTab';
 import { PlanOverviewTab } from '../../components/plan/tabs/PlanOverviewTab';
@@ -21,7 +24,6 @@ import { type PlanDetailTab } from '../../constants/plan/planDetail';
 import { useAppLanguage, useCopy } from '../../i18n';
 import { useAppAlert } from '../../components/shared/modals';
 import { usePlanRoutePlaceDetails } from '../../hooks/usePlanRoutePlaceDetails';
-import { TravelInviteLinkModal } from '../../components/plan/modals/TravelInviteLinkModal';
 import { useTravelMembersSync } from '../../hooks/useTravelMembersSync';
 import type { RootStackParamList } from '../../navigation/types';
 import { addPlanPlaceFromCandidate, findDayRoute, getDayRoutesFromPlan, removePlanPlaceFromApi, replacePlanPlaceFromCandidate, routesInItemOrder, updatePlanPlaceMemoOnApi, updatePlanPlaceOrderOnApi } from '../../services/travel/planPlaceSync';
@@ -35,8 +37,10 @@ import {
   usePlanStore,
   useTravelogueStore,
 } from '../../stores';
+import { selectIsPlanOfflineSync } from '../../stores/usePlanStore';
 import { selectReusableAccessToken } from '../../stores/useAuthStore';
 import { useApiTravelPlanSync } from '../../hooks/useApiTravelPlanSync';
+import { usePlanOfflineSyncFeedback } from '../../hooks/usePlanOfflineSyncFeedback';
 import type { BudgetEntry, RouteItem, TravelLegMode } from '../../types/travelPlan';
 import { sortedRoutes } from '../../utils/plan/planItinerary';
 import { optimizeRouteOrder } from '../../utils/plan/routeOptimize';
@@ -87,7 +91,16 @@ export function PlanDetailScreen({ navigation, route }: Props) {
 
   const planId = plan?.planId ?? '';
   const isApiPlan = plan?.source === 'api';
+  const isPlanOfflineSync = usePlanStore(selectIsPlanOfflineSync(planId));
+  const scheduleReadOnly = isApiPlan && isPlanOfflineSync;
   const travelId = plan?.apiTravelId ?? plan?.planId;
+
+  const copy = useCopy('planDetail');
+  const { toastText, toastOpacity } = usePlanOfflineSyncFeedback({
+    planId,
+    enabled: isApiPlan,
+    message: copy.offlineSyncNotice,
+  });
 
   const { syncFromServer } = useApiTravelPlanSync({
     planId,
@@ -112,7 +125,6 @@ export function PlanDetailScreen({ navigation, route }: Props) {
     [budgetByPlan, planId],
   );
 
-  const copy = useCopy('planDetail');
   const reviewCopy = useCopy('travelReview');
   const { alert } = useAppAlert();
 
@@ -235,7 +247,7 @@ export function PlanDetailScreen({ navigation, route }: Props) {
 
   const handleDeleteRoute = useCallback(
     async (route: RouteItem) => {
-      if (!planId) {
+      if (!planId || scheduleReadOnly) {
         return;
       }
 
@@ -254,12 +266,12 @@ export function PlanDetailScreen({ navigation, route }: Props) {
 
       removeRoute(planId, route.itemId);
     },
-    [planId, isApiPlan, accessToken, removeRoute, syncFromServer],
+    [planId, scheduleReadOnly, isApiPlan, accessToken, removeRoute, syncFromServer],
   );
 
   const handleSaveRouteMemo = useCallback(
     async (route: RouteItem, memo: string | undefined) => {
-      if (!planId) {
+      if (!planId || scheduleReadOnly) {
         return;
       }
 
@@ -277,12 +289,12 @@ export function PlanDetailScreen({ navigation, route }: Props) {
         }
       }
     },
-    [planId, isApiPlan, accessToken, updateRouteMemo],
+    [planId, scheduleReadOnly, isApiPlan, accessToken, updateRouteMemo],
   );
 
   const handlePickReplacement = useCallback(
     async (candidate: RebootPlaceCandidate, legMode?: TravelLegMode) => {
-      if (!pickRoute || !planId || !scheduleDay) {
+      if (!pickRoute || !planId || !scheduleDay || scheduleReadOnly) {
         return;
       }
 
@@ -331,13 +343,14 @@ export function PlanDetailScreen({ navigation, route }: Props) {
       accessToken,
       replaceRoute,
       closeScheduleModal,
+      scheduleReadOnly,
       syncFromServer,
     ],
   );
 
   const handleReorderRoutes = useCallback(
     async (dayNumber: number, orderedItemIds: string[]) => {
-      if (!planId) {
+      if (!planId || scheduleReadOnly) {
         return;
       }
 
@@ -367,12 +380,12 @@ export function PlanDetailScreen({ navigation, route }: Props) {
         await syncFromServer();
       }
     },
-    [planId, enrichedPlan, isApiPlan, accessToken, reorderRoutes, syncFromServer],
+    [planId, scheduleReadOnly, enrichedPlan, isApiPlan, accessToken, reorderRoutes, syncFromServer],
   );
 
   const handleOptimizeDayRoute = useCallback(
     async (dayNumber: number) => {
-      if (!planId) {
+      if (!planId || scheduleReadOnly) {
         return;
       }
 
@@ -408,12 +421,12 @@ export function PlanDetailScreen({ navigation, route }: Props) {
         await syncFromServer();
       }
     },
-    [planId, enrichedPlan, isApiPlan, accessToken, reorderRoutes, syncFromServer, alert, copy],
+    [planId, scheduleReadOnly, enrichedPlan, isApiPlan, accessToken, reorderRoutes, syncFromServer, alert, copy],
   );
 
   const handleAddPlace = useCallback(
     async (candidate: RebootPlaceCandidate, legMode?: TravelLegMode) => {
-      if (!scheduleDay || !planId || !enrichedPlan) {
+      if (!scheduleDay || !planId || !enrichedPlan || scheduleReadOnly) {
         return;
       }
 
@@ -456,6 +469,7 @@ export function PlanDetailScreen({ navigation, route }: Props) {
       language,
       planId,
       enrichedPlan,
+      scheduleReadOnly,
       isApiPlan,
       accessToken,
       addRoute,
@@ -587,6 +601,7 @@ export function PlanDetailScreen({ navigation, route }: Props) {
         <Text className="flex-1 text-lg font-bold text-brand-text" numberOfLines={1}>
           {enrichedPlan.title}
         </Text>
+        {isApiPlan ? <PlanSyncStatusDot offline={isPlanOfflineSync} /> : null}
       </View>
 
       <PlanTabPager
@@ -626,9 +641,9 @@ export function PlanDetailScreen({ navigation, route }: Props) {
               onWriteReview={setReviewFormRoute}
               onQuickRating={handleQuickRating}
               onDeleteRoute={handleDeleteRoute}
-              onSaveRouteMemo={handleSaveRouteMemo}
-              onReorderRoutes={isApiPlan ? handleReorderRoutes : undefined}
-              onOptimizeDayRoute={isApiPlan ? handleOptimizeDayRoute : undefined}
+              onSaveRouteMemo={scheduleReadOnly ? undefined : handleSaveRouteMemo}
+              onReorderRoutes={scheduleReadOnly ? undefined : isApiPlan ? handleReorderRoutes : undefined}
+              onOptimizeDayRoute={scheduleReadOnly ? undefined : isApiPlan ? handleOptimizeDayRoute : undefined}
               onScheduleModalChange={setScheduleModal}
               onReorderActiveChange={setScheduleReorderActive}
             />
@@ -665,7 +680,7 @@ export function PlanDetailScreen({ navigation, route }: Props) {
         }}
       />
 
-      {tab === 'schedule' && (
+      {tab === 'schedule' && !scheduleReadOnly ? (
         <RouteOptimizeFab
           bottom={routeFabBottom(insets.bottom)}
           label={copy.routeOptimize}
@@ -673,7 +688,7 @@ export function PlanDetailScreen({ navigation, route }: Props) {
           onPress={() => scheduleRef.current?.handleRouteOptimize()}
           onAddPlace={() => scheduleRef.current?.handleAddPlacePress()}
         />
-      )}
+      ) : null}
 
       <BudgetEntryModal
         visible={budgetModalOpen}
@@ -756,6 +771,12 @@ export function PlanDetailScreen({ navigation, route }: Props) {
         errorMessage={inviteError}
         onClose={closeInviteModal}
         onRetry={() => void loadInviteLink()}
+      />
+
+      <TransientBottomToast
+        text={toastText}
+        opacity={toastOpacity}
+        bottom={insets.bottom + 16}
       />
     </View>
   );

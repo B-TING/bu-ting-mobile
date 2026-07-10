@@ -5,7 +5,7 @@ import { isServerBackedPlan } from '../../utils/plan/serverBackedPlan';
 import { logTravelPlanApi } from '../../utils/travel/travelPlanApiLogger';
 import { fetchMyActiveTravels } from './travelTeamService';
 import { myTravelMemberRole, myTravelResponseToPlanShell } from './travelMapper';
-import { syncTravelPlanFromApi } from './syncTravelPlanFromApi';
+import { trySyncTravelPlanFromApi } from './trySyncTravelPlanFromApi';
 
 function findLocalPlanForTravel(plans: TravelPlan[], travelId: string): TravelPlan | undefined {
   return plans.find(plan => plan.apiTravelId === travelId || plan.planId === travelId);
@@ -89,14 +89,20 @@ export async function syncMyActiveTravelsFromApi(
     };
     const shell = myTravelResponseToPlanShell(travel, memberForTravel, existing);
 
-    try {
-      const synced = await syncTravelPlanFromApi(accessToken, shell);
-      usePlanStore.getState().upsertPlan(synced);
-      syncedPlans.push(synced);
-    } catch {
-      usePlanStore.getState().upsertPlan(shell);
-      syncedPlans.push(shell);
+    const { plan, usedOfflineFallback } = await trySyncTravelPlanFromApi(accessToken, shell);
+    if (usedOfflineFallback) {
+      const existingPlan = findLocalPlanForTravel(usePlanStore.getState().plans, travel.travelId);
+      const offlinePlanId = existingPlan?.planId ?? plan.planId;
+      usePlanStore.getState().setPlanOfflineSync(offlinePlanId, true);
+      if (existingPlan) {
+        syncedPlans.push(existingPlan);
+        continue;
+      }
+    } else {
+      usePlanStore.getState().setPlanOfflineSync(plan.planId, false);
     }
+    usePlanStore.getState().upsertPlan(plan);
+    syncedPlans.push(plan);
   }
 
   const activePlanId = pickActiveTravelId(travels, usePlanStore.getState().activePlanId);

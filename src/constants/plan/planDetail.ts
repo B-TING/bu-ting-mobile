@@ -134,6 +134,7 @@ export const PLAN_DETAIL_COPY: Record<
     budgetCancel: string;
     dayDuration: (m: string) => string;
     dayZoneCount: (n: number) => string;
+    offlineSyncNotice: string;
   }
 > = {
   ko: {
@@ -262,6 +263,8 @@ export const PLAN_DETAIL_COPY: Record<
     budgetCancel: '취소',
     dayDuration: m => `예상 소요 ${m}`,
     dayZoneCount: n => `방문 영역 ${n}곳`,
+    offlineSyncNotice:
+      '동기화가 되지 않아 오프라인에 저장된 정보를 가져옵니다. 오프라인 상태에서 일정 수정은 불가능합니다.',
   },
   en: {
     routeOptimize: 'Optimize route',
@@ -390,6 +393,8 @@ export const PLAN_DETAIL_COPY: Record<
     budgetCancel: 'Cancel',
     dayDuration: m => `Est. ${m}`,
     dayZoneCount: n => `${n} zone${n === 1 ? '' : 's'}`,
+    offlineSyncNotice:
+      'Sync failed. Loading offline saved data. Schedule edits are unavailable while offline.',
   },
   ja: {
     routeOptimize: 'ルート最適化',
@@ -518,6 +523,8 @@ export const PLAN_DETAIL_COPY: Record<
     budgetCancel: 'キャンセル',
     dayDuration: m => `所要約 ${m}`,
     dayZoneCount: n => `訪問エリア ${n}箇所`,
+    offlineSyncNotice:
+      '同期に失敗したため、オフラインに保存された情報を表示しています。オフライン中は日程の編集はできません。',
   },
   zh: {
     routeOptimize: '优化路线',
@@ -645,5 +652,7 @@ export const PLAN_DETAIL_COPY: Record<
     budgetCancel: '取消',
     dayDuration: m => `预计 ${m}`,
     dayZoneCount: n => `访问 ${n} 个区域`,
+    offlineSyncNotice:
+      '同步失败，正在加载离线保存的信息。离线状态下无法修改行程。',
   },
 };

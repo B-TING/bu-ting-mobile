@@ -1,7 +1,7 @@
 import { useCallback, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 
-import { syncTravelPlanFromApi } from '../services/travel/syncTravelPlanFromApi';
+import { trySyncTravelPlanFromApi } from '../services/travel/trySyncTravelPlanFromApi';
 import type { TravelPlan } from '../types/travelPlan';
 import { usePlanStore } from '../stores/usePlanStore';
 
@@ -18,6 +18,14 @@ export function useApiTravelPlanSync({
   accessToken,
 }: UseApiTravelPlanSyncOptions) {
   const upsertPlan = usePlanStore(s => s.upsertPlan);
+  const setPlanOfflineSync = usePlanStore(s => s.setPlanOfflineSync);
+
+  const markPlanOfflineSync = useCallback(
+    (targetPlanId: string, offline: boolean) => {
+      setPlanOfflineSync?.(targetPlanId, offline);
+    },
+    [setPlanOfflineSync],
+  );
   const syncingRef = useRef(false);
 
   const syncFromServer = useCallback(async (): Promise<TravelPlan | null> => {
@@ -27,18 +35,25 @@ export function useApiTravelPlanSync({
 
     const localPlan = usePlanStore.getState().plans.find(p => p.planId === planId);
     if (!localPlan || localPlan.source !== 'api') {
+      markPlanOfflineSync(planId, false);
       return localPlan ?? null;
     }
 
     syncingRef.current = true;
     try {
-      const synced = await syncTravelPlanFromApi(accessToken, localPlan);
-      upsertPlan(synced);
-      return synced;
+      const { plan, usedOfflineFallback } = await trySyncTravelPlanFromApi(
+        accessToken,
+        localPlan,
+      );
+      markPlanOfflineSync(planId, usedOfflineFallback);
+      if (!usedOfflineFallback) {
+        upsertPlan(plan);
+      }
+      return plan;
     } finally {
       syncingRef.current = false;
     }
-  }, [enabled, accessToken, planId, upsertPlan]);
+  }, [enabled, accessToken, planId, upsertPlan, markPlanOfflineSync]);
 
   useFocusEffect(
     useCallback(() => {

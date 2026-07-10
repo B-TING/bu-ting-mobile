@@ -18,6 +18,9 @@ type PlanState = {
   activePlanId: string | null;
   planCandidates: TravelPlan[] | null;
   budgetByPlan: Record<string, BudgetEntry[]>;
+  /** GET 동기화 실패로 오프라인 캐시를 쓰는 플랜 ID */
+  offlineSyncPlanIds: Record<string, true>;
+  setPlanOfflineSync: (planId: string, offline: boolean) => void;
   addPlan: (plan: TravelPlan) => void;
   upsertPlan: (plan: TravelPlan) => void;
   setActivePlan: (planId: string) => void;
@@ -50,6 +53,25 @@ export const usePlanStore = create<PlanState>()(
       activePlanId: null,
       planCandidates: null,
       budgetByPlan: {},
+      offlineSyncPlanIds: {},
+      setPlanOfflineSync: (planId, offline) =>
+        set(state => {
+          const offlineSyncPlanIds = state.offlineSyncPlanIds ?? {};
+          if (!offline) {
+            if (!offlineSyncPlanIds[planId]) {
+              return state;
+            }
+            const next = { ...offlineSyncPlanIds };
+            delete next[planId];
+            return { offlineSyncPlanIds: next };
+          }
+          if (offlineSyncPlanIds[planId]) {
+            return state;
+          }
+          return {
+            offlineSyncPlanIds: { ...offlineSyncPlanIds, [planId]: true },
+          };
+        }),
       addPlan: plan =>
         set(state => ({
           plans: [...state.plans.filter(p => p.planId !== plan.planId), plan],
@@ -297,6 +319,10 @@ export function selectActivePlan(state: PlanState): TravelPlan | null {
 export function selectPlanById(planId: string) {
   return (state: PlanState) =>
     state.plans.find(p => p.planId === planId) ?? null;
+}
+
+export function selectIsPlanOfflineSync(planId: string) {
+  return (state: PlanState) => Boolean(state.offlineSyncPlanIds?.[planId]);
 }
 
 /** 기존 플랜에 placeInfo가 없을 때 런타임 보강 */

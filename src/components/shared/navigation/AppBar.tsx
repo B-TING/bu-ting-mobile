@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Platform, Pressable, StatusBar, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -13,6 +14,7 @@ const BAR_HEIGHT = 48;
 type AppBarProps = {
   onMenuPress?: () => void;
   onProfilePress?: () => void;
+  topRightAccessory?: ReactNode;
 };
 
 /** 전면 카메라·노치 아래로 내리기 위한 상단 inset (px) */
@@ -23,7 +25,7 @@ export function useAppBarTopInset(): number {
   return Math.max(insets.top, statusBarHeight) + TOP_GAP;
 }
 
-export function AppBar({ onMenuPress, onProfilePress }: AppBarProps) {
+export function AppBar({ onMenuPress, onProfilePress, topRightAccessory }: AppBarProps) {
   const topPadding = useAppBarTopInset();
 
   return (
@@ -44,16 +46,19 @@ export function AppBar({ onMenuPress, onProfilePress }: AppBarProps) {
 
         <BrandLogo height={26} />
 
-        <Pressable
-          onPress={onProfilePress}
-          hitSlop={12}
-          className="active:opacity-70"
-          accessibilityRole="button"
-          accessibilityLabel="프로필">
-          <View className="h-8 w-8 items-center justify-center overflow-hidden rounded-full border-2 border-brand-border bg-brand-selected">
-            <AppIcon name="user" size={16} color={ICON_COLOR_DEFAULT} />
-          </View>
-        </Pressable>
+        <View className="flex-row items-center gap-2">
+          {topRightAccessory}
+          <Pressable
+            onPress={onProfilePress}
+            hitSlop={12}
+            className="active:opacity-70"
+            accessibilityRole="button"
+            accessibilityLabel="프로필">
+            <View className="h-8 w-8 items-center justify-center overflow-hidden rounded-full border-2 border-brand-border bg-brand-selected">
+              <AppIcon name="user" size={16} color={ICON_COLOR_DEFAULT} />
+            </View>
+          </Pressable>
+        </View>
       </View>
     </View>
   );

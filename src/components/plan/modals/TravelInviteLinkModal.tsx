@@ -1,11 +1,33 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
-import Clipboard from '@react-native-clipboard/clipboard';
+import {
+  ActivityIndicator,
+  Pressable,
+  Share,
+  Text,
+  TextInput,
+  TurboModuleRegistry,
+  View,
+} from 'react-native';
 
 import type { CopyFor } from '../../../i18n';
 import { AppModal, AppModalActions } from '../../shared/modals';
 
 type Copy = CopyFor<'planDetail'>;
+
+type ClipboardTurboModule = {
+  setString: (text: string) => void;
+};
+
+const clipboardTurbo = TurboModuleRegistry.get('RNCClipboard') as ClipboardTurboModule | null;
+
+async function copyInviteLink(link: string): Promise<void> {
+  if (clipboardTurbo) {
+    clipboardTurbo.setString(link);
+    return;
+  }
+
+  await Share.share({ message: link });
+}
 
 type TravelInviteLinkModalProps = {
   visible: boolean;
@@ -40,8 +62,7 @@ export function TravelInviteLinkModal({
     if (!inviteLink) {
       return;
     }
-    Clipboard.setString(inviteLink);
-    setCopied(true);
+    void copyInviteLink(inviteLink).then(() => setCopied(true));
   };
 
   return (

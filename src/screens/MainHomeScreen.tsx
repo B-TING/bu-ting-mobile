@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
+import { PlanSyncStatusDot } from '../components/plan/PlanSyncStatusDot';
+import { TransientBottomToast } from '../components/shared/feedback/TransientBottomToast';
 import { ActivePlanHeroBanner } from '../components/home/banners/ActivePlanHeroBanner';
 import { HeroBanner } from '../components/home/banners/HeroBanner';
 import { EventsSectionMock } from '../components/home/sections/EventsSectionMock';
@@ -27,6 +29,8 @@ import { upcomingFestivalDateRangeYyyymmdd } from '../utils/places/festivalApiMa
 import { showTravelSurveyOnboardingPrompt } from '../services/setup/travelSurveyOnboardingPrompt';
 import { selectActivePlan, useAppStore, useFestivalStore, usePlanStore, useTravelogueStore } from '../stores';
 import { useSessionActiveTravelsSyncOnFocus } from '../hooks/useSessionActiveTravelsSync';
+import { usePlanOfflineSyncFeedback } from '../hooks/usePlanOfflineSyncFeedback';
+import { isServerBackedPlan } from '../utils/plan/serverBackedPlan';
 import { isTraveloguePublic } from '../utils/review/travelReview';
 import { getNearestUpcomingStop } from '../utils/plan/planSchedule';
 import { getChatRoomByZoneId } from '../constants/eventZone/eventZone';
@@ -42,12 +46,20 @@ export function MainHomeScreen({ navigation }: Props) {
   const { alert } = useAppAlert();
   const language = useAppLanguage();
   const copy = useCopy('mainHome');
+  const planDetailCopy = useCopy('planDetail');
   const helpCopy = useCopy('helpdesk');
   const pendingTravelSurveyPrompt = useAppStore(s => s.pendingTravelSurveyPrompt);
   const setPendingTravelSurveyPrompt = useAppStore(
     s => s.setPendingTravelSurveyPrompt,
   );
   const activePlan = usePlanStore(selectActivePlan);
+  const showSyncStatus = Boolean(activePlan && isServerBackedPlan(activePlan));
+  const { isOffline: isActivePlanOfflineSync, toastText, toastOpacity } =
+    usePlanOfflineSyncFeedback({
+      planId: activePlan?.planId ?? '',
+      enabled: showSyncStatus,
+      message: planDetailCopy.offlineSyncNotice,
+    });
   useSessionActiveTravelsSyncOnFocus();
 
   const publishedTravelogues = useTravelogueStore(s => s.publishedTravelogues);
@@ -146,6 +158,9 @@ export function MainHomeScreen({ navigation }: Props) {
       <AppBar
         onMenuPress={() => setMenuOpen(true)}
         onProfilePress={() => navigation.navigate('MyPage')}
+        topRightAccessory={
+          showSyncStatus ? <PlanSyncStatusDot offline={isActivePlanOfflineSync} /> : undefined
+        }
       />
 
       <AppMenuDrawer
@@ -264,6 +279,12 @@ export function MainHomeScreen({ navigation }: Props) {
         showReboot={!!activePlan}
         onHelpPress={goToHelpDesk}
         onRebootPress={goToReboot}
+      />
+
+      <TransientBottomToast
+        text={toastText}
+        opacity={toastOpacity}
+        bottom={insets.bottom + NAVBAR_HEIGHT + 12}
       />
     </View>
   );
