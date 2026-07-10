@@ -82,6 +82,10 @@ function mapTravelStatus(status: TravelResponse['status']): TravelPlan['status']
   return 'CONFIRMED';
 }
 
+function mapApiTravelStatus(status: TravelResponse['status']): TravelPlan['travelStatus'] {
+  return status;
+}
+
 export function travelTeamMemberRole(role: TravelTeamRoleDto): PlanMember['role'] {
   return role;
 }
@@ -110,6 +114,7 @@ export function myTravelResponseToPlanShell(
     startDate: travel.startDate,
     endDate: travel.endDate,
     status: mapTravelStatus(travel.status),
+    travelStatus: mapApiTravelStatus(travel.status),
     constraints: existing?.constraints ?? {},
     members: existing?.members?.length ? existing.members : [member],
     itinerary: visitDates.map((date, index) => {
@@ -158,6 +163,7 @@ export function travelResponseToPlan(
     startDate: travel.startDate,
     endDate: travel.endDate,
     status: mapTravelStatus(travel.status),
+    travelStatus: mapApiTravelStatus(travel.status),
     constraints: {
       ...constraints,
       companionCount: travel.companionCount ?? constraints.companionCount,
@@ -290,6 +296,7 @@ export function mergeApiTravelPlanWithLocal(
     apiTravelId: local.apiTravelId ?? synced.apiTravelId,
     title: local.title || synced.title,
     status: local.status,
+    travelStatus: local.travelStatus ?? synced.travelStatus,
     createdAt: local.createdAt,
     aiPromptContext: local.aiPromptContext,
     constraints: local.constraints,

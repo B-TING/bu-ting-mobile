@@ -274,10 +274,10 @@ export const usePlanStore = create<PlanState>()(
       completePlan: planId =>
         set(state => ({
           plans: state.plans.map(p =>
-            p.planId === planId ? { ...p, status: 'COMPLETED' } : p,
+            p.planId === planId
+              ? { ...p, status: 'COMPLETED', travelStatus: 'COMPLETED' }
+              : p,
           ),
-          activePlanId:
-            state.activePlanId === planId ? null : state.activePlanId,
         })),
       importPlanFromTravelogue: (travelogue, member) => {
         const linked = get().plans.find(p => p.planId === travelogue.planId) ?? null;
@@ -314,6 +314,18 @@ export function selectActivePlan(state: PlanState): TravelPlan | null {
     return null;
   }
   return active;
+}
+
+/** 메인 홈 히어로 배너용 — 완료 여행 포함 */
+export function selectHomeFeaturedPlan(state: PlanState): TravelPlan | null {
+  if (!state.activePlanId) {
+    return null;
+  }
+  const plan = state.plans.find(p => p.planId === state.activePlanId);
+  if (!plan || !isServerBackedPlan(plan)) {
+    return null;
+  }
+  return plan;
 }
 
 export function selectPlanById(planId: string) {

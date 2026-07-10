@@ -15,6 +15,7 @@ export {
   emptyWizardAnswers,
   hydrateRoutePlaceInfo,
   selectActivePlan,
+  selectHomeFeaturedPlan,
   selectPlanById,
   usePlanStore,
 } from './usePlanStore';

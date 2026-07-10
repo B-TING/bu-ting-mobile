@@ -1,4 +1,4 @@
-import type { PlaceProviderDto, TravelTeamRoleDto } from './travelApi';
+import type { PlaceProviderDto, TravelStatusDto, TravelTeamRoleDto } from './travelApi';
 
 export type PlanStatus = 'DRAFT' | 'CONFIRMED' | 'COMPLETED';
 
@@ -117,6 +117,8 @@ export type TravelPlan = {
   source?: 'local' | 'api';
   /** 백엔드 travel UUID (`planId`와 동일할 수 있음) */
   apiTravelId?: string;
+  /** 백엔드 Travel.status (PLANNED · IN_PROGRESS · COMPLETED) */
+  travelStatus?: TravelStatusDto;
 };
 
 /** API 응답 형태와 동일한 직렬화 뷰 */

@@ -27,12 +27,13 @@ import type { RootStackParamList } from '../navigation/types';
 import { PLACE_CONTENT_TYPE } from '../types/placesApi';
 import { upcomingFestivalDateRangeYyyymmdd } from '../utils/places/festivalApiMapper';
 import { showTravelSurveyOnboardingPrompt } from '../services/setup/travelSurveyOnboardingPrompt';
-import { selectActivePlan, useAppStore, useFestivalStore, usePlanStore, useTravelogueStore } from '../stores';
+import { selectActivePlan, selectHomeFeaturedPlan, useAppStore, useFestivalStore, usePlanStore, useTravelogueStore } from '../stores';
 import { useSessionActiveTravelsSyncOnFocus } from '../hooks/useSessionActiveTravelsSync';
 import { usePlanOfflineSyncFeedback } from '../hooks/usePlanOfflineSyncFeedback';
 import { isServerBackedPlan } from '../utils/plan/serverBackedPlan';
 import { isTraveloguePublic } from '../utils/review/travelReview';
 import { getNearestUpcomingStop } from '../utils/plan/planSchedule';
+import { resolvePlanTravelStatus } from '../utils/plan/planTravelStatus';
 import { getChatRoomByZoneId } from '../constants/eventZone/eventZone';
 import { useAppLanguage, useCopy } from '../i18n';
 import type { EventZoneId } from '../types/eventZone';
@@ -53,10 +54,16 @@ export function MainHomeScreen({ navigation }: Props) {
     s => s.setPendingTravelSurveyPrompt,
   );
   const activePlan = usePlanStore(selectActivePlan);
-  const showSyncStatus = Boolean(activePlan && isServerBackedPlan(activePlan));
+  const featuredPlan = usePlanStore(selectHomeFeaturedPlan);
+  const featuredTravelStatus = useMemo(
+    () => (featuredPlan ? resolvePlanTravelStatus(featuredPlan) : null),
+    [featuredPlan],
+  );
+  const showTripRebootFab = featuredTravelStatus === 'IN_PROGRESS';
+  const showSyncStatus = Boolean(featuredPlan && isServerBackedPlan(featuredPlan));
   const { isOffline: isActivePlanOfflineSync, toastText, toastOpacity } =
     usePlanOfflineSyncFeedback({
-      planId: activePlan?.planId ?? '',
+      planId: featuredPlan?.planId ?? '',
       enabled: showSyncStatus,
       message: planDetailCopy.offlineSyncNotice,
     });
@@ -97,14 +104,17 @@ export function MainHomeScreen({ navigation }: Props) {
   ]);
 
   const upcomingStop = useMemo(
-    () => (activePlan ? getNearestUpcomingStop(activePlan) : null),
-    [activePlan],
+    () =>
+      featuredPlan && featuredTravelStatus === 'IN_PROGRESS'
+        ? getNearestUpcomingStop(featuredPlan)
+        : null,
+    [featuredPlan, featuredTravelStatus],
   );
 
   const goToPlan = () => {
     navigation.navigate(
       'PlanDetail',
-      activePlan ? { planId: activePlan.planId } : undefined,
+      featuredPlan ? { planId: featuredPlan.planId } : undefined,
     );
   };
 
@@ -174,18 +184,23 @@ export function MainHomeScreen({ navigation }: Props) {
         className="flex-1 px-5"
         contentContainerStyle={{
           paddingBottom:
-            NAVBAR_HEIGHT + 16 + (activePlan ? FAB_SIZE + FAB_GAP : 0),
+            NAVBAR_HEIGHT + 16 + (showTripRebootFab ? FAB_SIZE + FAB_GAP : 0),
         }}
         showsVerticalScrollIndicator={false}>
-        {activePlan ? (
+        {featuredPlan && featuredTravelStatus ? (
           <ActivePlanHeroBanner
-            plan={activePlan}
+            plan={featuredPlan}
+            travelStatus={featuredTravelStatus}
             upcoming={upcomingStop}
             language={language}
             copy={{
-              ongoingLabel: copy.ongoingLabel,
+              plannedLabel: copy.plannedLabel,
+              inProgressLabel: copy.inProgressLabel,
+              completedLabel: copy.completedLabel,
               nextStop: copy.nextStop,
               viewItinerary: copy.viewItinerary,
+              viewCompletedItinerary: copy.viewCompletedItinerary,
+              completedTripHint: copy.completedTripHint,
               dday: copy.dday,
               ddayToday: copy.ddayToday,
               dayLabel: copy.dayLabel,
@@ -276,7 +291,7 @@ export function MainHomeScreen({ navigation }: Props) {
       <HomeActionFabs
         bottom={insets.bottom + NAVBAR_HEIGHT + 8}
         helpLabel={helpCopy.fabLabel}
-        showReboot={!!activePlan}
+        showReboot={showTripRebootFab}
         onHelpPress={goToHelpDesk}
         onRebootPress={goToReboot}
       />
