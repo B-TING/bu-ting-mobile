@@ -1,11 +1,9 @@
-import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
   Share,
   Text,
   TextInput,
-  TurboModuleRegistry,
   View,
 } from 'react-native';
 
@@ -13,21 +11,6 @@ import type { CopyFor } from '../../../i18n';
 import { AppModal, AppModalActions } from '../../shared/modals';
 
 type Copy = CopyFor<'planDetail'>;
-
-type ClipboardTurboModule = {
-  setString: (text: string) => void;
-};
-
-const clipboardTurbo = TurboModuleRegistry.get('RNCClipboard') as ClipboardTurboModule | null;
-
-async function copyInviteLink(link: string): Promise<void> {
-  if (clipboardTurbo) {
-    clipboardTurbo.setString(link);
-    return;
-  }
-
-  await Share.share({ message: link });
-}
 
 type TravelInviteLinkModalProps = {
   visible: boolean;
@@ -50,19 +33,11 @@ export function TravelInviteLinkModal({
   onClose,
   onRetry,
 }: TravelInviteLinkModalProps) {
-  const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    if (!visible) {
-      setCopied(false);
-    }
-  }, [visible, inviteLink]);
-
-  const handleCopy = () => {
+  const handleShare = () => {
     if (!inviteLink) {
       return;
     }
-    void copyInviteLink(inviteLink).then(() => setCopied(true));
+    void Share.share({ message: inviteLink });
   };
 
   return (
@@ -102,12 +77,12 @@ export function TravelInviteLinkModal({
               </Text>
             ) : null}
             <Pressable
-              onPress={handleCopy}
+              onPress={handleShare}
               disabled={!inviteLink}
+              accessibilityRole="button"
+              accessibilityLabel={copy.inviteShareLink}
               className="mt-3 items-center rounded-2xl bg-brand-primary py-3 active:opacity-90">
-              <Text className="text-sm font-bold text-white">
-                {copied ? copy.inviteCopied : copy.inviteCopyLink}
-              </Text>
+              <Text className="text-sm font-bold text-white">{copy.inviteShareLink}</Text>
             </Pressable>
           </>
         )}

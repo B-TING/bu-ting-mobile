@@ -44,8 +44,7 @@ export const PLAN_DETAIL_COPY: Record<
     inviteMembers: string;
     inviteModalTitle: string;
     inviteModalSubtitle: string;
-    inviteCopyLink: string;
-    inviteCopied: string;
+    inviteShareLink: string;
     inviteLinkLoading: string;
     inviteLinkError: string;
     inviteRetry: string;
@@ -175,9 +174,8 @@ export const PLAN_DETAIL_COPY: Record<
     recordsHint: '방문한 여행지마다 후기를 남겨 보세요',
     inviteMembers: '일행 초대하기',
     inviteModalTitle: '일행 초대 링크',
-    inviteModalSubtitle: '아래 링크를 복사해 일행에게 공유하세요.',
-    inviteCopyLink: '링크 복사',
-    inviteCopied: '복사됨',
+    inviteModalSubtitle: '아래 버튼으로 초대 링크를 공유하세요.',
+    inviteShareLink: '링크 공유하기',
     inviteLinkLoading: '초대 링크를 불러오는 중…',
     inviteLinkError: '초대 링크를 불러오지 못했습니다.',
     inviteRetry: '다시 시도',
@@ -312,9 +310,8 @@ export const PLAN_DETAIL_COPY: Record<
     recordsHint: 'Leave a review for each place you visit',
     inviteMembers: 'Invite companions',
     inviteModalTitle: 'Invite link',
-    inviteModalSubtitle: 'Copy the link below and share it with your travel companions.',
-    inviteCopyLink: 'Copy link',
-    inviteCopied: 'Copied',
+    inviteModalSubtitle: 'Tap below to share the invite link with your travel companions.',
+    inviteShareLink: 'Share link',
     inviteLinkLoading: 'Loading invite link…',
     inviteLinkError: 'Could not load the invite link.',
     inviteRetry: 'Try again',
@@ -450,9 +447,8 @@ export const PLAN_DETAIL_COPY: Record<
     recordsHint: '訪問した各スポットにレビューを書きましょう',
     inviteMembers: '同行者を招待',
     inviteModalTitle: '招待リンク',
-    inviteModalSubtitle: '下のリンクをコピーして同行者に共有してください。',
-    inviteCopyLink: 'リンクをコピー',
-    inviteCopied: 'コピーしました',
+    inviteModalSubtitle: '下のボタンから招待リンクを共有してください。',
+    inviteShareLink: 'リンクを共有',
     inviteLinkLoading: '招待リンクを読み込み中…',
     inviteLinkError: '招待リンクを読み込めませんでした。',
     inviteRetry: '再試行',
@@ -588,9 +584,8 @@ export const PLAN_DETAIL_COPY: Record<
     recordsHint: '为每个到访地点写点评',
     inviteMembers: '邀请同行',
     inviteModalTitle: '邀请链接',
-    inviteModalSubtitle: '复制下方链接并分享给同行伙伴。',
-    inviteCopyLink: '复制链接',
-    inviteCopied: '已复制',
+    inviteModalSubtitle: '点击下方按钮分享邀请链接。',
+    inviteShareLink: '分享链接',
     inviteLinkLoading: '正在加载邀请链接…',
     inviteLinkError: '无法加载邀请链接。',
     inviteRetry: '重试',
