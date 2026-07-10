@@ -87,6 +87,8 @@ export const CHAT_ENDPOINTS = {
 export const TRAVEL_ENDPOINTS = {
   travels: '/api/v1/travels',
   travelPlans: (travelId: string) => \`/api/v1/travels/\${travelId}/plans\`,
+  travelPlanById: (travelId: string, planId: string) =>
+    \`/api/v1/travels/\${travelId}/plans/\${planId}\`,
   travelStatus: (travelId: string) => \`/api/v1/travels/\${travelId}/status\`,
   planPlaces: (planId: string) => \`/api/v1/plans/\${planId}/places\`,
   planPlaceSequence: (planId: string) => \`/api/v1/plans/\${planId}/places/sequence\`,

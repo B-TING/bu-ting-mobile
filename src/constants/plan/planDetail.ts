@@ -54,6 +54,13 @@ export const PLAN_DETAIL_COPY: Record<
     tripPeriod: string;
     nights: (n: number) => string;
     dayLabel: (n: number) => string;
+    addDay: string;
+    removeDay: string;
+    removeDayConfirmTitle: string;
+    removeDayConfirmMessage: (date: string, dayNumber: number) => string;
+    removeDayConfirm: string;
+    cannotRemoveLastDay: string;
+    cannotAddMoreDays: string;
     schedulePreview: string;
     dailyHighlights: string;
     nextScheduleTitle: string;
@@ -179,6 +186,14 @@ export const PLAN_DETAIL_COPY: Record<
     tripPeriod: '여행 기간',
     nights: n => `${n}박`,
     dayLabel: n => `Day ${n}`,
+    addDay: '일자 추가',
+    removeDay: '일자 삭제',
+    removeDayConfirmTitle: '이 일자를 삭제할까요?',
+    removeDayConfirmMessage: (date, dayNumber) =>
+      `${date} · Day ${dayNumber} 일정과 포함된 장소가 모두 삭제됩니다.`,
+    removeDayConfirm: '삭제',
+    cannotRemoveLastDay: '최소 하루는 남겨야 해요.',
+    cannotAddMoreDays: '여행 기간 내에 추가할 수 있는 일자가 없어요.',
     schedulePreview: '일정',
     dailyHighlights: '일정 하이라이트',
     nextScheduleTitle: '다음 일정',
@@ -308,6 +323,14 @@ export const PLAN_DETAIL_COPY: Record<
     tripPeriod: 'Trip dates',
     nights: n => `${n} night${n === 1 ? '' : 's'}`,
     dayLabel: n => `Day ${n}`,
+    addDay: 'Add day',
+    removeDay: 'Remove day',
+    removeDayConfirmTitle: 'Remove this day?',
+    removeDayConfirmMessage: (date, dayNumber) =>
+      `${date} · Day ${dayNumber} and all places on this day will be removed.`,
+    removeDayConfirm: 'Remove',
+    cannotRemoveLastDay: 'At least one day must remain.',
+    cannotAddMoreDays: 'No more days can be added within the trip dates.',
     schedulePreview: 'Schedule',
     dailyHighlights: 'Daily highlights',
     nextScheduleTitle: 'Up next',
@@ -438,6 +461,14 @@ export const PLAN_DETAIL_COPY: Record<
     tripPeriod: '旅行期間',
     nights: n => `${n}泊`,
     dayLabel: n => `Day ${n}`,
+    addDay: '日程を追加',
+    removeDay: '日程を削除',
+    removeDayConfirmTitle: 'この日程を削除しますか？',
+    removeDayConfirmMessage: (date, dayNumber) =>
+      `${date} · Day ${dayNumber} の日程と含まれる場所がすべて削除されます。`,
+    removeDayConfirm: '削除',
+    cannotRemoveLastDay: '最低1日は残してください。',
+    cannotAddMoreDays: '旅行期間内に追加できる日程がありません。',
     schedulePreview: '日程',
     dailyHighlights: '日程ハイライト',
     nextScheduleTitle: '次の予定',
@@ -568,6 +599,14 @@ export const PLAN_DETAIL_COPY: Record<
     tripPeriod: '行程日期',
     nights: n => `${n}晚`,
     dayLabel: n => `第 ${n} 天`,
+    addDay: '添加日程',
+    removeDay: '删除日程',
+    removeDayConfirmTitle: '要删除这一天吗？',
+    removeDayConfirmMessage: (date, dayNumber) =>
+      `${date} · 第 ${dayNumber} 天的行程及所有地点将被删除。`,
+    removeDayConfirm: '删除',
+    cannotRemoveLastDay: '至少需要保留一天。',
+    cannotAddMoreDays: '旅行期间内没有可添加的日程。',
     schedulePreview: '行程',
     dailyHighlights: '每日亮点',
     nextScheduleTitle: '下一行程',

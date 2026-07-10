@@ -27,6 +27,13 @@ import { usePlanRoutePlaceDetails } from '../../hooks/usePlanRoutePlaceDetails';
 import { useTravelMembersSync } from '../../hooks/useTravelMembersSync';
 import type { RootStackParamList } from '../../navigation/types';
 import { addPlanPlaceFromCandidate, findDayRoute, getDayRoutesFromPlan, removePlanPlaceFromApi, replacePlanPlaceFromCandidate, routesInItemOrder, updatePlanPlaceMemoOnApi, updatePlanPlaceOrderOnApi } from '../../services/travel/planPlaceSync';
+import {
+  addPlanDayOnApi,
+  canAddPlanDay,
+  canRemovePlanDay,
+  computeNextPlanDay,
+  removePlanDayOnApi,
+} from '../../services/travel/planDaySync';
 import { resolveTravelInviteLink } from '../../services/travel/travelTeamService';
 import { updateTravelStatus } from '../../services/travel/travelService';
 import {
@@ -70,6 +77,8 @@ export function PlanDetailScreen({ navigation, route }: Props) {
   const removeRoute = usePlanStore(s => s.removeRouteFromPlan);
   const reorderRoutes = usePlanStore(s => s.reorderRoutesInPlan);
   const updateRouteMemo = usePlanStore(s => s.updateRouteMemo);
+  const addItineraryDay = usePlanStore(s => s.addItineraryDay);
+  const removeItineraryDay = usePlanStore(s => s.removeItineraryDay);
   const addBudgetEntry = usePlanStore(s => s.addBudgetEntry);
   const completePlan = usePlanStore(s => s.completePlan);
   const upsertPlaceReview = useTravelogueStore(s => s.upsertPlaceReview);
@@ -287,6 +296,155 @@ export function PlanDetailScreen({ navigation, route }: Props) {
     },
     [planId, scheduleReadOnly, isApiPlan, accessToken, removeRoute, syncFromServer, lockScheduleOnApiError, notifyScheduleReadOnly],
   );
+
+  const resolveSelectedDayAfterRemove = useCallback(
+    (removedDayNumber: number, previousSelected: number) => {
+      const itinerary =
+        usePlanStore.getState().plans.find(p => p.planId === planId)?.itinerary ?? [];
+      if (itinerary.length === 0) {
+        return 1;
+      }
+      if (itinerary.some(day => day.dayNumber === previousSelected)) {
+        return previousSelected;
+      }
+      if (previousSelected === removedDayNumber) {
+        return Math.max(1, removedDayNumber - 1);
+      }
+      if (previousSelected > removedDayNumber) {
+        const adjusted = previousSelected - 1;
+        if (itinerary.some(day => day.dayNumber === adjusted)) {
+          return adjusted;
+        }
+      }
+      return itinerary[itinerary.length - 1]?.dayNumber ?? 1;
+    },
+    [planId],
+  );
+
+  const handleAddDay = useCallback(async () => {
+    if (!planId || !enrichedPlan || scheduleReadOnly) {
+      if (scheduleReadOnly) {
+        notifyScheduleReadOnly();
+      }
+      return;
+    }
+
+    if (!canAddPlanDay(enrichedPlan)) {
+      alert({ title: copy.addDay, message: copy.cannotAddMoreDays });
+      return;
+    }
+
+    if (isApiPlan && accessToken) {
+      try {
+        const next = await addPlanDayOnApi(accessToken, enrichedPlan);
+        await syncFromServer();
+        setSelectedDay(next.dayNumber);
+      } catch (error) {
+        lockScheduleOnApiError(error);
+        const message =
+          error instanceof Error ? error.message : copy.cannotAddMoreDays;
+        Alert.alert(copy.addDay, message);
+      }
+      return;
+    }
+
+    const next = computeNextPlanDay(enrichedPlan);
+    if (!next) {
+      alert({ title: copy.addDay, message: copy.cannotAddMoreDays });
+      return;
+    }
+    addItineraryDay(planId, next.dayNumber, next.visitDate);
+    setSelectedDay(next.dayNumber);
+  }, [
+    planId,
+    enrichedPlan,
+    scheduleReadOnly,
+    isApiPlan,
+    accessToken,
+    alert,
+    copy,
+    addItineraryDay,
+    syncFromServer,
+    lockScheduleOnApiError,
+    notifyScheduleReadOnly,
+  ]);
+
+  const confirmRemoveDay = useCallback(async () => {
+    if (!planId || !enrichedPlan || !scheduleDay || scheduleReadOnly) {
+      return;
+    }
+
+    const removedDayNumber = scheduleDay.dayNumber;
+    const previousSelected = selectedDay;
+
+    if (isApiPlan && accessToken) {
+      try {
+        await removePlanDayOnApi(accessToken, enrichedPlan, scheduleDay);
+        await syncFromServer();
+        setSelectedDay(resolveSelectedDayAfterRemove(removedDayNumber, previousSelected));
+      } catch (error) {
+        lockScheduleOnApiError(error);
+        const message =
+          error instanceof Error ? error.message : copy.removeDayConfirmTitle;
+        Alert.alert(copy.removeDay, message);
+      }
+      return;
+    }
+
+    removeItineraryDay(planId, removedDayNumber);
+    setSelectedDay(resolveSelectedDayAfterRemove(removedDayNumber, previousSelected));
+  }, [
+    planId,
+    enrichedPlan,
+    scheduleDay,
+    scheduleReadOnly,
+    selectedDay,
+    isApiPlan,
+    accessToken,
+    copy,
+    removeItineraryDay,
+    syncFromServer,
+    lockScheduleOnApiError,
+    resolveSelectedDayAfterRemove,
+  ]);
+
+  const handleRemoveDay = useCallback(() => {
+    if (!planId || !enrichedPlan || !scheduleDay || scheduleReadOnly) {
+      if (scheduleReadOnly) {
+        notifyScheduleReadOnly();
+      }
+      return;
+    }
+
+    if (!canRemovePlanDay(enrichedPlan)) {
+      alert({ title: copy.removeDay, message: copy.cannotRemoveLastDay });
+      return;
+    }
+
+    alert({
+      title: copy.removeDayConfirmTitle,
+      message: copy.removeDayConfirmMessage(scheduleDay.date, scheduleDay.dayNumber),
+      buttons: [
+        { label: copy.rebootCancel, variant: 'secondary', onPress: () => {} },
+        {
+          label: copy.removeDayConfirm,
+          variant: 'primary',
+          onPress: () => {
+            void confirmRemoveDay();
+          },
+        },
+      ],
+    });
+  }, [
+    planId,
+    enrichedPlan,
+    scheduleDay,
+    scheduleReadOnly,
+    alert,
+    copy,
+    confirmRemoveDay,
+    notifyScheduleReadOnly,
+  ]);
 
   const handleSaveRouteMemo = useCallback(
     async (route: RouteItem, memo: string | undefined) => {
@@ -683,6 +841,12 @@ export function PlanDetailScreen({ navigation, route }: Props) {
               onOptimizeDayRoute={scheduleReadOnly ? undefined : isApiPlan ? handleOptimizeDayRoute : undefined}
               onScheduleModalChange={setScheduleModal}
               onReorderActiveChange={setScheduleReorderActive}
+              canAddDay={!scheduleReadOnly}
+              canRemoveDay={canRemovePlanDay(enrichedPlan)}
+              onAddDay={() => {
+                void handleAddDay();
+              }}
+              onRemoveDay={handleRemoveDay}
             />
           ),
           budget: (

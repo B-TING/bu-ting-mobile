@@ -36,6 +36,8 @@ type PlanState = {
   updateRouteLegMode: (planId: string, itemId: string, legMode: TravelLegMode) => void;
   updateRouteMemo: (planId: string, itemId: string, memo: string | undefined) => void;
   optimizeDayRoute: (planId: string, dayNumber: number) => void;
+  addItineraryDay: (planId: string, dayNumber: number, visitDate: string) => void;
+  removeItineraryDay: (planId: string, dayNumber: number) => void;
   addBudgetEntry: (entry: Omit<BudgetEntry, 'entryId'>) => void;
   getBudgetForPlan: (planId: string) => BudgetEntry[];
   completePlan: (planId: string) => void;
@@ -259,6 +261,42 @@ export const usePlanStore = create<PlanState>()(
                 return { ...day, routes: optimizeRouteOrder(day.routes) };
               }),
             };
+          }),
+        })),
+      addItineraryDay: (planId, dayNumber, visitDate) =>
+        set(state => ({
+          plans: state.plans.map(plan => {
+            if (plan.planId !== planId) {
+              return plan;
+            }
+            return {
+              ...plan,
+              itinerary: [
+                ...plan.itinerary,
+                {
+                  dailyId: createId('day'),
+                  dayNumber,
+                  date: visitDate,
+                  routes: [],
+                },
+              ],
+            };
+          }),
+        })),
+      removeItineraryDay: (planId, dayNumber) =>
+        set(state => ({
+          plans: state.plans.map(plan => {
+            if (plan.planId !== planId) {
+              return plan;
+            }
+            const filtered = plan.itinerary
+              .filter(day => day.dayNumber !== dayNumber)
+              .sort((a, b) => a.dayNumber - b.dayNumber)
+              .map((day, index) => ({
+                ...day,
+                dayNumber: index + 1,
+              }));
+            return { ...plan, itinerary: filtered };
           }),
         })),
       addBudgetEntry: entry => {

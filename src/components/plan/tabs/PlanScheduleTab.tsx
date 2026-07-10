@@ -7,9 +7,10 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { useAppAlert } from '../../shared/modals';
+import { AppIcon } from '../../shared/icons/AppIcon';
 import { DayChips } from '../schedule/DayChips';
 import { ScheduleMapSplit } from '../schedule/ScheduleMapSplit';
 import { ScheduleRouteDetailPanel } from '../schedule/ScheduleRouteDetailPanel';
@@ -17,6 +18,7 @@ import { TravelLegRow } from '../schedule/TravelLegRow';
 import { ScheduleRouteSlot, type RebootPhase } from '../schedule/ScheduleRouteSlot';
 import type { CopyFor } from '../../../i18n';
 import { EVENT_ZONE_BY_ID } from '../../../constants/eventZone/eventZone';
+import { ICON_COLOR_MUTED } from '../../../constants/icons';
 import { getScheduleDayColor } from '../../../constants/plan/scheduleDayColors';
 import { usePlanStore } from '../../../stores';
 import type { AppLanguage } from '../../../types/user';
@@ -71,6 +73,10 @@ type PlanScheduleTabProps = {
   onReorderActiveChange?: (active: boolean) => void;
   readOnly?: boolean;
   onReadOnlyPress?: () => void;
+  canAddDay?: boolean;
+  canRemoveDay?: boolean;
+  onAddDay?: () => void;
+  onRemoveDay?: () => void;
 };
 
 export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTabProps>(
@@ -95,6 +101,10 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
       onReorderActiveChange,
       readOnly = false,
       onReadOnlyPress,
+      canAddDay = false,
+      canRemoveDay = false,
+      onAddDay,
+      onRemoveDay,
     },
     ref,
   ) {
@@ -457,6 +467,9 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
             selectedDayNumber={day?.dayNumber ?? 1}
             onSelect={onSelectDay}
             language={language}
+            canAddDay={canAddDay && !readOnly}
+            addDayLabel={copy.addDay}
+            onAddDay={onAddDay}
           />
 
           <View className="mb-2 flex-row items-baseline justify-between">
@@ -468,6 +481,21 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
               <Text className="text-lg font-bold text-brand-text">
                 {day?.date} · Day {day?.dayNumber}
               </Text>
+              {canRemoveDay && !readOnly && onRemoveDay ? (
+                <Pressable
+                  onPress={() => {
+                    if (guardReadOnly()) {
+                      return;
+                    }
+                    onRemoveDay();
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={copy.removeDay}
+                  hitSlop={8}
+                  className="ml-1 rounded-full border border-brand-border bg-brand-surface p-1.5 active:bg-brand-selected">
+                  <AppIcon name="minus" size={14} color={ICON_COLOR_MUTED} strokeWidth={2.5} />
+                </Pressable>
+              ) : null}
             </View>
             <View className="items-end gap-0.5">
               {dayRoutes.length > 0 ? (

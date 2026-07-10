@@ -117,6 +117,18 @@ export async function createTravelPlan(
   return data;
 }
 
+export async function deleteTravelPlan(
+  accessToken: string,
+  travelId: string,
+  planId: string,
+): Promise<void> {
+  const url = travelUrl(TRAVEL_ENDPOINTS.travelPlanById(travelId, planId));
+  await apiDelete(url, {
+    ...authOpts(accessToken),
+    ...travelPlanLogHooks('DELETE', url, accessToken, { travelId, planId }),
+  });
+}
+
 export async function fetchTravelPlans(
   accessToken: string,
   travelId: string,
