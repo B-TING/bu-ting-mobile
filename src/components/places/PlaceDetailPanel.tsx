@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { Image, Linking, Pressable, Text, View } from 'react-native';
+import { Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { catalogThumbnail } from '../../constants/places/placeCatalog';
 import {
@@ -17,6 +17,8 @@ import { PlaceGoogleDetailBody } from './PlaceGoogleDetailBody';
 
 type Copy = CopyFor<'placeSearch'>;
 
+const SHEET_HERO_HEIGHT = 220;
+
 type PlaceDetailPanelProps = {
   place: BusanPlace;
   detail: PlaceDetailVO | null;
@@ -28,6 +30,8 @@ type PlaceDetailPanelProps = {
   headerExtra?: ReactNode;
   footerExtra?: ReactNode;
   close?: () => void;
+  /** 일정 상세 시트 — 상단 히어로 이미지 레이아웃 */
+  layout?: 'default' | 'sheetHeader';
 };
 
 export function PlaceDetailPanel({
@@ -41,6 +45,7 @@ export function PlaceDetailPanel({
   headerExtra,
   footerExtra,
   close,
+  layout = 'default',
 }: PlaceDetailPanelProps) {
   const defaultCopy = useCopy('placeSearch');
   const copy = copyProp ?? defaultCopy;
@@ -54,6 +59,7 @@ export function PlaceDetailPanel({
     : copy.ratingSummary(rating, reviewCount);
   const imageUrl = detail?.imageUrl ?? place.imageUrl;
   const thumbColor = catalogThumbnail(place.contentId);
+  const sheetHeader = layout === 'sheetHeader';
 
   useEffect(() => {
     setImageFailed(false);
@@ -92,7 +98,21 @@ export function PlaceDetailPanel({
   return (
     <View>
       {headerExtra}
-      <View className="flex-row items-start justify-between gap-3 px-5">
+      <View
+        className="w-full overflow-hidden bg-brand-surface"
+        style={sheetHeader ? styles.sheetHero : styles.compactHero}>
+        {imageUrl && !imageFailed ? (
+          <Image
+            source={{ uri: imageUrl }}
+            className="h-full w-full"
+            resizeMode="cover"
+            onError={() => setImageFailed(true)}
+          />
+        ) : sheetHeader ? (
+          <View className="h-full w-full" style={{ backgroundColor: thumbColor }} />
+        ) : null}
+      </View>
+      <View className="flex-row items-start justify-between gap-3 px-5 pt-5">
         <View className="flex-1">
           <View className="flex-row items-center gap-2 justify-between">
             <Text className="text-xl font-bold text-brand-text">{place.name}</Text>
@@ -101,7 +121,7 @@ export function PlaceDetailPanel({
                 onPress={onToggleBookmark}
                 accessibilityRole="button"
                 accessibilityLabel={bookmarked ? copy.unbookmark : copy.bookmark}
-                className={`flex-row items-center gap-1 rounded-full px-3 py-1 active:opacity-80 ${
+                className={`flex-row items-center gap-1 rounded-full px-1 py-1 active:opacity-80 ${
                   bookmarked ? 'bg-amber-100' : 'bg-brand-selected'
                 }`}>
                 <AppIcon
@@ -110,30 +130,26 @@ export function PlaceDetailPanel({
                   color={bookmarked ? '#B45309' : ICON_COLOR_STAR_EMPTY}
                   filled={bookmarked}
                 />
-                <Text
-                  className={`text-xs font-bold ${
-                    bookmarked ? 'text-amber-700' : 'text-brand-primary'
-                  }`}>
-                  {bookmarked ? copy.unbookmark : copy.bookmark}
-                </Text>
               </Pressable>
             ) : null}
-          </View>   
+          </View>
           <Text className="mt-1 text-[10px] font-semibold text-brand-primary">{categoryLabel}</Text>
           <Text className="mt-1 text-sm font-semibold text-brand-primary">{metaLine}</Text>
         </View>
-        <View
-          className="h-[64px] w-[64px] overflow-hidden rounded-xl bg-brand-surface"
-          style={!imageUrl || imageFailed ? { backgroundColor: thumbColor } : undefined}>
-          {imageUrl && !imageFailed ? (
-            <Image
-              source={{ uri: imageUrl }}
-              className="h-full w-full"
-              resizeMode="cover"
-              onError={() => setImageFailed(true)}
-            />
-          ) : null}
-        </View>
+        {!sheetHeader ? (
+          <View
+            className="h-[64px] w-[64px] overflow-hidden rounded-xl bg-brand-surface"
+            style={!imageUrl || imageFailed ? { backgroundColor: thumbColor } : undefined}>
+            {imageUrl && !imageFailed ? (
+              <Image
+                source={{ uri: imageUrl }}
+                className="h-full w-full"
+                resizeMode="cover"
+                onError={() => setImageFailed(true)}
+              />
+            ) : null}
+          </View>
+        ) : null}
       </View>
 
       
@@ -159,3 +175,12 @@ export function PlaceDetailPanel({
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  compactHero: {
+    height: 100,
+  },
+  sheetHero: {
+    height: SHEET_HERO_HEIGHT,
+  },
+});

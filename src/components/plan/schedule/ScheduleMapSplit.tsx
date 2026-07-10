@@ -194,19 +194,16 @@ export function ScheduleMapSplit({
 
           {detailActive ? (
             <View className="absolute inset-0 bg-brand-background">
-              <View className="flex-row items-center bg-brand-background justify-end px-5 py-2 border-b border-brand-border">
-                {onDetailClose && detailCloseLabel ? (
-                  <Pressable
-                    onPress={onDetailClose}
-                    accessibilityRole="button"
-                    accessibilityLabel={detailCloseLabel}
-                    className="rounded-full border border-brand-border bg-brand-surface px-3 py-1.5 active:opacity-80">
-                    <AppIcon name="x" size={14} color={ICON_COLOR_PRIMARY} strokeWidth={2.5} />
-                  </Pressable>
-                ) : null}
-              </View>
-              <View className="py-2">
-              </View>
+              {onDetailClose && detailCloseLabel ? (
+                <Pressable
+                  onPress={onDetailClose}
+                  accessibilityRole="button"
+                  accessibilityLabel={detailCloseLabel}
+                  style={styles.detailCloseBtn}
+                  hitSlop={8}>
+                  <AppIcon name="x" size={16} color={ICON_COLOR_PRIMARY} strokeWidth={2.5} />
+                </Pressable>
+              ) : null}
               <ScrollView
                 className="flex-1"
                 contentContainerStyle={{ paddingBottom: routeFabScrollPadding(insets.bottom) }}
@@ -225,6 +222,23 @@ export function ScheduleMapSplit({
 const styles = StyleSheet.create({
   hiddenList: {
     opacity: 0,
+  },
+  detailCloseBtn: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    zIndex: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 4,
   },
   detailSheet: {
     borderTopLeftRadius: APP_MODAL.sheetRadius,

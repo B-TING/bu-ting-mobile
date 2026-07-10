@@ -427,6 +427,7 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
         route={focusedRoute}
         language={language}
         copy={copy}
+        layout="sheetHeader"
         placeReview={getReviewForRoute(planReviews, focusedRoute.itemId)}
         onToggleVisited={() => {
           if (guardReadOnly()) {

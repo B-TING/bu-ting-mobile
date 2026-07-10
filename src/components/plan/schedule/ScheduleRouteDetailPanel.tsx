@@ -22,6 +22,7 @@ type ScheduleRouteDetailPanelProps = {
   onToggleVisited: () => void;
   onWriteReview?: () => void;
   onSaveMemo?: (memo: string | undefined) => void | Promise<void>;
+  layout?: 'default' | 'sheetHeader';
 };
 
 export function ScheduleRouteDetailPanel({
@@ -32,6 +33,7 @@ export function ScheduleRouteDetailPanel({
   onToggleVisited,
   onWriteReview,
   onSaveMemo,
+  layout = 'default',
 }: ScheduleRouteDetailPanelProps) {
   const searchCopy = useCopy('placeSearch');
   const showPlaceSearchDetail = shouldFetchRoutePlaceDetail(route.type);
@@ -104,6 +106,7 @@ export function ScheduleRouteDetailPanel({
         language={language}
         copy={searchCopy}
         loading={loadingDetail}
+        layout={layout}
         footerExtra={scheduleActions}
       />
     );
@@ -111,9 +114,9 @@ export function ScheduleRouteDetailPanel({
 
   if (info) {
     return (
-      <View>
+      <View className={layout === 'sheetHeader' ? 'px-5 pt-12' : undefined}>
         {scheduleActions}
-        <View className="mx-5 mt-4 rounded-2xl border border-brand-border bg-brand-surface p-4">
+        <View className="mt-4 rounded-2xl border border-brand-border bg-brand-surface p-4">
           <Text className="mb-2 text-sm leading-5 text-brand-text">{info.description}</Text>
           {info.dwellMinutes ? (
             <Text className="mb-1 text-xs text-brand-muted">{copy.dwell(info.dwellMinutes)}</Text>
@@ -125,5 +128,7 @@ export function ScheduleRouteDetailPanel({
     );
   }
 
-  return <View>{scheduleActions}</View>;
+  return (
+    <View className={layout === 'sheetHeader' ? 'px-5 pt-12' : undefined}>{scheduleActions}</View>
+  );
 }
