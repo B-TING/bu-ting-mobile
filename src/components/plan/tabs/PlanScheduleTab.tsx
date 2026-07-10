@@ -7,15 +7,18 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { useAppAlert } from '../../shared/modals';
+import { AppIcon } from '../../shared/icons/AppIcon';
 import { DayChips } from '../schedule/DayChips';
 import { ScheduleMapSplit } from '../schedule/ScheduleMapSplit';
+import { ScheduleRouteDetailPanel } from '../schedule/ScheduleRouteDetailPanel';
 import { TravelLegRow } from '../schedule/TravelLegRow';
 import { ScheduleRouteSlot, type RebootPhase } from '../schedule/ScheduleRouteSlot';
-import type { PLAN_DETAIL_COPY } from '../../../constants/plan/planDetail';
+import type { CopyFor } from '../../../i18n';
 import { EVENT_ZONE_BY_ID } from '../../../constants/eventZone/eventZone';
+import { ICON_COLOR_MUTED } from '../../../constants/icons';
 import { getScheduleDayColor } from '../../../constants/plan/scheduleDayColors';
 import { usePlanStore } from '../../../stores';
 import type { AppLanguage } from '../../../types/user';
@@ -32,7 +35,7 @@ import { estimateTravelLeg } from '../../../utils/geo/geo';
 import { computeDayTotalMinutes, formatDurationMinutes } from '../../../utils/geo/tripDuration';
 import { getReviewForRoute } from '../../../utils/review/travelReview';
 
-type Copy = (typeof PLAN_DETAIL_COPY)[AppLanguage];
+type Copy = CopyFor<'planDetail'>;
 
 type RebootState = {
   itemId: string;
@@ -58,13 +61,22 @@ type PlanScheduleTabProps = {
   selectedDay: number;
   planReviews: PlaceReview[];
   onSelectDay: (day: number) => void;
-  onSelectRoute: (route: RouteItem) => void;
   onToggleVisited: (itemId: string) => void;
   onWriteReview: (route: RouteItem) => void;
   onQuickRating: (route: RouteItem, rating: number) => void;
+  onDeleteRoute: (route: RouteItem) => void;
+  onSaveRouteMemo?: (route: RouteItem, memo: string | undefined) => void | Promise<void>;
+  onReorderRoutes?: (dayNumber: number, orderedItemIds: string[]) => void | Promise<void>;
+  onOptimizeDayRoute?: (dayNumber: number) => void | Promise<void>;
   onRouteRemoved?: (itemId: string) => void;
   onScheduleModalChange: (modal: ScheduleModalState) => void;
   onReorderActiveChange?: (active: boolean) => void;
+  readOnly?: boolean;
+  onReadOnlyPress?: () => void;
+  canAddDay?: boolean;
+  canRemoveDay?: boolean;
+  onAddDay?: () => void;
+  onRemoveDay?: () => void;
 };
 
 export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTabProps>(
@@ -77,30 +89,49 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
       selectedDay,
       planReviews,
       onSelectDay,
-      onSelectRoute,
       onToggleVisited,
       onWriteReview,
       onQuickRating,
+      onDeleteRoute,
+      onSaveRouteMemo,
+      onReorderRoutes,
+      onOptimizeDayRoute,
       onRouteRemoved,
       onScheduleModalChange,
       onReorderActiveChange,
+      readOnly = false,
+      onReadOnlyPress,
+      canAddDay = false,
+      canRemoveDay = false,
+      onAddDay,
+      onRemoveDay,
     },
     ref,
   ) {
     const { alert } = useAppAlert();
-    const removeRoute = usePlanStore(s => s.removeRouteFromPlan);
     const reorderRoutes = usePlanStore(s => s.reorderRoutesInPlan);
     const updateLegMode = usePlanStore(s => s.updateRouteLegMode);
-    const optimizeDayRoute = usePlanStore(s => s.optimizeDayRoute);
+    const optimizeDayRouteLocal = usePlanStore(s => s.optimizeDayRoute);
 
     const [reboot, setReboot] = useState<RebootState>(null);
+    const [focusedRoute, setFocusedRoute] = useState<RouteItem | null>(null);
     const [orderedIds, setOrderedIds] = useState<string[]>([]);
     const [swapPickId, setSwapPickId] = useState<string | null>(null);
     const onModalChangeRef = useRef(onScheduleModalChange);
     onModalChangeRef.current = onScheduleModalChange;
     const onReorderActiveRef = useRef(onReorderActiveChange);
     onReorderActiveRef.current = onReorderActiveChange;
+    const onReadOnlyPressRef = useRef(onReadOnlyPress);
+    onReadOnlyPressRef.current = onReadOnlyPress;
     const dayRoutesRef = useRef<RouteItem[]>([]);
+
+    const guardReadOnly = useCallback(() => {
+      if (!readOnly) {
+        return false;
+      }
+      onReadOnlyPressRef.current?.();
+      return true;
+    }, [readOnly]);
 
     const day =
       plan.itinerary.find(d => d.dayNumber === selectedDay) ?? plan.itinerary[0];
@@ -162,6 +193,8 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
         rebootCancel: copy.rebootCancel,
         recordReview: copy.recordReview,
         quickRatingHint: copy.quickRatingHint,
+        scheduleDetailLoading: copy.scheduleDetailLoading,
+        placeRatingSummary: copy.placeRatingSummary,
         transportModeTitle: copy.transportModeTitle,
         legWalk: copy.legWalk,
         legDrive: copy.legDrive,
@@ -173,8 +206,22 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
     useEffect(() => {
       setReboot(null);
       setSwapPickId(null);
+      setFocusedRoute(null);
       onModalChangeRef.current({ kind: 'none' });
     }, [selectedDay]);
+
+    useEffect(() => {
+      const itemId = focusedRoute?.itemId;
+      if (!itemId) {
+        return;
+      }
+      const updated = dayRoutes.find(route => route.itemId === itemId);
+      if (!updated) {
+        setFocusedRoute(null);
+        return;
+      }
+      setFocusedRoute(prev => (prev?.itemId === itemId ? updated : prev));
+    }, [dayRoutes, focusedRoute?.itemId]);
 
     useEffect(() => {
       onReorderActiveRef.current?.(swapPickId != null);
@@ -193,6 +240,9 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
     };
 
     const openPickModal = (itemId: string) => {
+      if (guardReadOnly()) {
+        return;
+      }
       onScheduleModalChange({ kind: 'pick', itemId });
     };
 
@@ -204,10 +254,23 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
     };
 
     const handleDelete = (route: RouteItem) => {
-      removeRoute(planId, route.itemId);
+      if (guardReadOnly()) {
+        return;
+      }
+      onDeleteRoute(route);
       onRouteRemoved?.(route.itemId);
+      if (focusedRoute?.itemId === route.itemId) {
+        setFocusedRoute(null);
+      }
       clearReboot();
     };
+
+    const openRouteDetail = useCallback((route: RouteItem) => {
+      setReboot(null);
+      setSwapPickId(null);
+      onModalChangeRef.current({ kind: 'none' });
+      setFocusedRoute(route);
+    }, []);
 
     const swapRoutes = useCallback(
       (idA: string, idB: string) => {
@@ -227,13 +290,20 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
         next[indexA] = idB;
         next[indexB] = idA;
         setOrderedIds(next);
-        reorderRoutes(planId, day.dayNumber, next);
+        if (onReorderRoutes) {
+          onReorderRoutes(day.dayNumber, next);
+        } else {
+          reorderRoutes(planId, day.dayNumber, next);
+        }
       },
-      [day, orderedIds, planId, reorderRoutes],
+      [day, orderedIds, planId, reorderRoutes, onReorderRoutes],
     );
 
     const handleIndexPress = useCallback(
       (itemId: string) => {
+        if (guardReadOnly()) {
+          return;
+        }
         if (reboot?.itemId === itemId && reboot.phase === 'choose') {
           return;
         }
@@ -251,10 +321,13 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
         swapRoutes(swapPickId, itemId);
         setSwapPickId(null);
       },
-      [swapPickId, swapRoutes, reboot],
+      [swapPickId, swapRoutes, reboot, guardReadOnly],
     );
 
     const openNearestReboot = useCallback(() => {
+      if (guardReadOnly()) {
+        return;
+      }
       if (dayRoutes.length === 0) {
         return;
       }
@@ -264,22 +337,32 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
         setReboot(null);
         onScheduleModalChange({ kind: 'pick', itemId: nearest.itemId });
       }
-    }, [dayRoutes, onScheduleModalChange]);
+    }, [dayRoutes, onScheduleModalChange, guardReadOnly]);
 
     const handleRouteOptimize = useCallback(() => {
+      if (guardReadOnly()) {
+        return;
+      }
       if (!day || dayRoutes.length < 2) {
         return;
       }
       clearReboot();
       onModalChangeRef.current({ kind: 'none' });
-      optimizeDayRoute(planId, day.dayNumber);
-      alert({ title: copy.routeOptimize, message: copy.routeOptimized });
-    }, [day, dayRoutes.length, optimizeDayRoute, planId, copy, alert]);
+      if (onOptimizeDayRoute) {
+        onOptimizeDayRoute(day.dayNumber);
+      } else {
+        optimizeDayRouteLocal(planId, day.dayNumber);
+        alert({ title: copy.routeOptimize, message: copy.routeOptimized });
+      }
+    }, [day, dayRoutes.length, optimizeDayRouteLocal, onOptimizeDayRoute, planId, copy, alert, guardReadOnly]);
 
     const handleAddPlacePress = useCallback(() => {
+      if (guardReadOnly()) {
+        return;
+      }
       clearReboot();
       onScheduleModalChange({ kind: 'add' });
-    }, [onScheduleModalChange]);
+    }, [onScheduleModalChange, guardReadOnly]);
 
     useImperativeHandle(
       ref,
@@ -297,6 +380,7 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
 
     const renderRouteSlot = (r: RouteItem, index: number) => {
       const indexSelected = swapPickId === r.itemId;
+      const isFocused = focusedRoute?.itemId === r.itemId;
       const indexHint = indexSelected
         ? copy.reorderHandleHintSelected
         : copy.reorderHandleHint;
@@ -315,8 +399,12 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
           phase={phaseFor(r.itemId)}
           copy={slotCopy}
           reviewRating={review?.rating ?? 0}
-          onPress={() => onSelectRoute(r)}
+          isFocused={isFocused}
+          onPress={() => openRouteDetail(r)}
           onEdit={() => {
+            if (guardReadOnly()) {
+              return;
+            }
             setSwapPickId(null);
             onModalChangeRef.current({ kind: 'none' });
             setReboot({ itemId: r.itemId, phase: 'choose' });
@@ -325,13 +413,18 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
           indexHint={indexHint}
           onIndexPress={() => handleIndexPress(r.itemId)}
           onToggleVisited={() => {
+            if (guardReadOnly()) {
+              return;
+            }
             clearReboot();
             onModalChangeRef.current({ kind: 'none' });
             onToggleVisited(r.itemId);
           }}
           onWriteReview={() => onWriteReview(r)}
           onQuickRating={rating => onQuickRating(r, rating)}
-          onLegModeChange={mode => updateLegMode(planId, r.itemId, mode)}
+          onLegModeChange={
+            readOnly ? undefined : mode => updateLegMode(planId, r.itemId, mode)
+          }
           onDelete={() => handleDelete(r)}
           onReplace={() => openPickModal(r.itemId)}
           onCancel={clearReboot}
@@ -339,19 +432,44 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
       );
     };
 
+    const detailPanel = focusedRoute ? (
+      <ScheduleRouteDetailPanel
+        route={focusedRoute}
+        language={language}
+        copy={copy}
+        layout="sheetHeader"
+        placeReview={getReviewForRoute(planReviews, focusedRoute.itemId)}
+        onToggleVisited={() => {
+          if (guardReadOnly()) {
+            return;
+          }
+          onToggleVisited(focusedRoute.itemId);
+        }}
+        onWriteReview={() => onWriteReview(focusedRoute)}
+        onSaveMemo={readOnly ? undefined : memo => onSaveRouteMemo?.(focusedRoute, memo)}
+      />
+    ) : null;
+
     return (
       <ScheduleMapSplit
-        planId={planId}
+        itinerary={plan.itinerary}
         selectedDayNumber={day?.dayNumber ?? 1}
+        highlightItemId={focusedRoute?.itemId ?? null}
         mapTitle={copy.mapPlaceholder}
         mapSubtitle={copy.mapPlaceholderSub}
         dragLabel={copy.mapDragLabel}
-        mapClosedHint={copy.mapClosedHint}>
+        mapClosedHint={copy.mapClosedHint}
+        detailCloseLabel={copy.close}
+        onDetailClose={() => setFocusedRoute(null)}
+        detailContent={detailPanel}>
           <DayChips
             days={plan.itinerary}
             selectedDayNumber={day?.dayNumber ?? 1}
             onSelect={onSelectDay}
             language={language}
+            canAddDay={canAddDay && !readOnly}
+            addDayLabel={copy.addDay}
+            onAddDay={onAddDay}
           />
 
           <View className="mb-2 flex-row items-baseline justify-between">
@@ -363,6 +481,21 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
               <Text className="text-lg font-bold text-brand-text">
                 {day?.date} · Day {day?.dayNumber}
               </Text>
+              {canRemoveDay && !readOnly && onRemoveDay ? (
+                <Pressable
+                  onPress={() => {
+                    if (guardReadOnly()) {
+                      return;
+                    }
+                    onRemoveDay();
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={copy.removeDay}
+                  hitSlop={8}
+                  className="ml-1 rounded-full border border-brand-border bg-brand-surface p-1.5 active:bg-brand-selected">
+                  <AppIcon name="minus" size={14} color={ICON_COLOR_MUTED} strokeWidth={2.5} />
+                </Pressable>
+              ) : null}
             </View>
             <View className="items-end gap-0.5">
               {dayRoutes.length > 0 ? (
@@ -394,6 +527,8 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
                     route.legMode,
                   )
                 : null;
+            const zoneColor =
+              EVENT_ZONE_BY_ID[resolveEventZoneForRoute(route)].baseColor;
 
             return (
               <View key={route.itemId}>
@@ -402,6 +537,7 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
                     leg={leg}
                     directionsLabel={copy.directions}
                     copy={legCopy}
+                    lineColor={zoneColor}
                   />
                 ) : null}
                 {renderRouteSlot(route, index)}

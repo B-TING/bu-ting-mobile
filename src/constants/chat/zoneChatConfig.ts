@@ -1,8 +1,8 @@
 import { CHAT_ENDPOINTS } from '../api/apiConfig';
 import { API_BASE_URL } from '../api/apiBaseUrl';
 
+import { ZONE_CHAT_WS_HANDSHAKE_ORIGIN } from './zoneChatWsEnv';
 import type { ZoneChatIdentityField } from '../../types/zoneChatWebSocket';
-
 /**
  * 구역 채팅 WebSocket 설정 (백엔드 STOMP 스펙).
  * wss://{API_HOST}/ws-stomp
@@ -37,6 +37,11 @@ export const ZONE_CHAT_WS_CONFIG = {
 
 export function isZoneChatWebSocketEnabled(): boolean {
   return ZONE_CHAT_WS_CONFIG.enabled;
+}
+
+/** .env ZONE_CHAT_WS_HANDSHAKE_ORIGIN → sync-api-config */
+export function getZoneChatWsHandshakeOrigin(): string | null {
+  return ZONE_CHAT_WS_HANDSHAKE_ORIGIN;
 }
 
 /** REST base URL → WebSocket URL (http→ws, https→wss) */

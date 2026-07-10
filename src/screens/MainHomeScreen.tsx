@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
+import { PlanSyncStatusDot } from '../components/plan/PlanSyncStatusDot';
+import { TransientBottomToast } from '../components/shared/feedback/TransientBottomToast';
 import { ActivePlanHeroBanner } from '../components/home/banners/ActivePlanHeroBanner';
 import { HeroBanner } from '../components/home/banners/HeroBanner';
 import { EventsSectionMock } from '../components/home/sections/EventsSectionMock';
@@ -13,9 +15,7 @@ import { AppBar } from '../components/shared/navigation/AppBar';
 import { AppMenuDrawer } from '../components/shared/navigation/AppMenuDrawer';
 import { Navbar, type NavbarTab } from '../components/shared/navigation/Navbar';
 import { useAppAlert } from '../components/shared/modals';
-import { HELP_DESK_COPY } from '../constants/helpdesk/helpDesk';
 import {
-  MAIN_HOME_COPY,
   MOCK_SPECIAL_OFFER,
   MOCK_TRAVELOGUE,
   QUICK_ACCESS_ITEMS,
@@ -27,10 +27,15 @@ import type { RootStackParamList } from '../navigation/types';
 import { PLACE_CONTENT_TYPE } from '../types/placesApi';
 import { upcomingFestivalDateRangeYyyymmdd } from '../utils/places/festivalApiMapper';
 import { showTravelSurveyOnboardingPrompt } from '../services/setup/travelSurveyOnboardingPrompt';
-import { selectActivePlan, useAppStore, useFestivalStore, usePlanStore, useTravelogueStore } from '../stores';
+import { selectActivePlan, selectHomeFeaturedPlan, useAppStore, useFestivalStore, usePlanStore, useTravelogueStore } from '../stores';
+import { useSessionActiveTravelsSyncOnFocus } from '../hooks/useSessionActiveTravelsSync';
+import { usePlanOfflineSyncFeedback } from '../hooks/usePlanOfflineSyncFeedback';
+import { isServerBackedPlan } from '../utils/plan/serverBackedPlan';
 import { isTraveloguePublic } from '../utils/review/travelReview';
 import { getNearestUpcomingStop } from '../utils/plan/planSchedule';
+import { resolvePlanTravelStatus } from '../utils/plan/planTravelStatus';
 import { getChatRoomByZoneId } from '../constants/eventZone/eventZone';
+import { useAppLanguage, useCopy } from '../i18n';
 import type { EventZoneId } from '../types/eventZone';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MainHome'>;
@@ -40,14 +45,30 @@ const NAVBAR_HEIGHT = 72;
 export function MainHomeScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const { alert } = useAppAlert();
-  const language = useAppStore(s => s.language) ?? 'ko';
+  const language = useAppLanguage();
+  const copy = useCopy('mainHome');
+  const planDetailCopy = useCopy('planDetail');
+  const helpCopy = useCopy('helpdesk');
   const pendingTravelSurveyPrompt = useAppStore(s => s.pendingTravelSurveyPrompt);
   const setPendingTravelSurveyPrompt = useAppStore(
     s => s.setPendingTravelSurveyPrompt,
   );
-  const copy = MAIN_HOME_COPY[language];
-  const helpCopy = HELP_DESK_COPY[language];
   const activePlan = usePlanStore(selectActivePlan);
+  const featuredPlan = usePlanStore(selectHomeFeaturedPlan);
+  const featuredTravelStatus = useMemo(
+    () => (featuredPlan ? resolvePlanTravelStatus(featuredPlan) : null),
+    [featuredPlan],
+  );
+  const showTripRebootFab = featuredTravelStatus === 'IN_PROGRESS';
+  const showSyncStatus = Boolean(featuredPlan && isServerBackedPlan(featuredPlan));
+  const { isOffline: isActivePlanOfflineSync, toastText, toastOpacity } =
+    usePlanOfflineSyncFeedback({
+      planId: featuredPlan?.planId ?? '',
+      enabled: showSyncStatus,
+      message: planDetailCopy.offlineSyncNotice,
+    });
+  useSessionActiveTravelsSyncOnFocus();
+
   const publishedTravelogues = useTravelogueStore(s => s.publishedTravelogues);
   const latestTravelogue = useMemo(
     () => publishedTravelogues.find(isTraveloguePublic),
@@ -83,14 +104,17 @@ export function MainHomeScreen({ navigation }: Props) {
   ]);
 
   const upcomingStop = useMemo(
-    () => (activePlan ? getNearestUpcomingStop(activePlan) : null),
-    [activePlan],
+    () =>
+      featuredPlan && featuredTravelStatus === 'IN_PROGRESS'
+        ? getNearestUpcomingStop(featuredPlan)
+        : null,
+    [featuredPlan, featuredTravelStatus],
   );
 
   const goToPlan = () => {
     navigation.navigate(
       'PlanDetail',
-      activePlan ? { planId: activePlan.planId } : undefined,
+      featuredPlan ? { planId: featuredPlan.planId } : undefined,
     );
   };
 
@@ -144,6 +168,9 @@ export function MainHomeScreen({ navigation }: Props) {
       <AppBar
         onMenuPress={() => setMenuOpen(true)}
         onProfilePress={() => navigation.navigate('MyPage')}
+        topRightAccessory={
+          showSyncStatus ? <PlanSyncStatusDot offline={isActivePlanOfflineSync} /> : undefined
+        }
       />
 
       <AppMenuDrawer
@@ -157,18 +184,23 @@ export function MainHomeScreen({ navigation }: Props) {
         className="flex-1 px-5"
         contentContainerStyle={{
           paddingBottom:
-            NAVBAR_HEIGHT + 16 + (activePlan ? FAB_SIZE + FAB_GAP : 0),
+            NAVBAR_HEIGHT + 16 + (showTripRebootFab ? FAB_SIZE + FAB_GAP : 0),
         }}
         showsVerticalScrollIndicator={false}>
-        {activePlan ? (
+        {featuredPlan && featuredTravelStatus ? (
           <ActivePlanHeroBanner
-            plan={activePlan}
+            plan={featuredPlan}
+            travelStatus={featuredTravelStatus}
             upcoming={upcomingStop}
             language={language}
             copy={{
-              ongoingLabel: copy.ongoingLabel,
+              plannedLabel: copy.plannedLabel,
+              inProgressLabel: copy.inProgressLabel,
+              completedLabel: copy.completedLabel,
               nextStop: copy.nextStop,
               viewItinerary: copy.viewItinerary,
+              viewCompletedItinerary: copy.viewCompletedItinerary,
+              completedTripHint: copy.completedTripHint,
               dday: copy.dday,
               ddayToday: copy.ddayToday,
               dayLabel: copy.dayLabel,
@@ -214,7 +246,6 @@ export function MainHomeScreen({ navigation }: Props) {
         />
 
         <HomeEventZoneSection
-          language={language}
           onMapPress={goToEventZone}
           onEnterChat={goToEventZoneChat}
         />
@@ -260,9 +291,15 @@ export function MainHomeScreen({ navigation }: Props) {
       <HomeActionFabs
         bottom={insets.bottom + NAVBAR_HEIGHT + 8}
         helpLabel={helpCopy.fabLabel}
-        showReboot={!!activePlan}
+        showReboot={showTripRebootFab}
         onHelpPress={goToHelpDesk}
         onRebootPress={goToReboot}
+      />
+
+      <TransientBottomToast
+        text={toastText}
+        opacity={toastOpacity}
+        bottom={insets.bottom + NAVBAR_HEIGHT + 12}
       />
     </View>
   );

@@ -147,6 +147,8 @@ export type PlaceDetailVO = {
   postalCode?: string;
   administrativeArea?: string;
   locality?: string;
+  /** 관광공사·목록 API 대표 이미지 */
+  imageUrl?: string;
 };
 
 /** 숙소 상세 — internalPlaceId 필수 */

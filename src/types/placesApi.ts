@@ -127,6 +127,9 @@ export type PlaceDetailResponseDto = {
   contentTypeId: string;
   title?: string;
   address?: string;
+  imageUrl?: string;
+  thumbnailUrl?: string;
+  firstImage?: string;
   lat?: number;
   lng?: number;
   latitude?: number;

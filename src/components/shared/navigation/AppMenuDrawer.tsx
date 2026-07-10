@@ -14,7 +14,9 @@ import { APP_MENU_ITEMS } from '../../../constants/common/appMenu';
 import { APP_MODAL } from '../modals';
 import type { AppLanguage } from '../../../types/user';
 import type { RootStackParamList } from '../../../navigation/types';
+import { ICON_COLOR_PRIMARY } from '../../../constants/icons';
 import { BrandLogo } from '../brand/BrandLogo';
+import { AppIcon } from '../icons/AppIcon';
 import { useAppBarTopInset } from './AppBar';
 
 const DRAWER_WIDTH = 280;
@@ -152,7 +154,7 @@ export function AppMenuDrawer({
             className="items-center justify-center rounded-full border border-brand-border bg-brand-surface shadow-md active:opacity-80"
             accessibilityRole="button"
             accessibilityLabel={language === 'ko' ? '메뉴 접기' : 'Close menu'}>
-            <Text className="text-lg font-bold text-brand-primary">‹</Text>
+            <AppIcon name="chevronLeft" size={22} color={ICON_COLOR_PRIMARY} />
           </Pressable>
         </Animated.View>
       </View>

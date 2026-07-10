@@ -303,6 +303,7 @@ export const EVENT_ZONE_BY_ID: Record<EventZoneId, EventZoneDefinition> = EVENT_
   {} as Record<EventZoneId, EventZoneDefinition>,
 );
 
+/** @deprecated Use useCopy('eventZoneMapLayer') from src/i18n */
 export const EVENT_ZONE_MAP_LAYER_COPY: Record<
   AppLanguage,
   { showZones: string; hideZones: string }
@@ -397,6 +398,7 @@ export const MOCK_ZONE_CHAT_MESSAGES: EventZoneChatMessage[] = [
   },
 ];
 
+/** @deprecated Use useCopy('eventZone') from src/i18n */
 export const EVENT_ZONE_COPY: Record<
   AppLanguage,
   {
@@ -416,6 +418,11 @@ export const EVENT_ZONE_COPY: Record<
     closePanel: string;
     eventEndsIn: (remaining: string) => string;
     eventEnded: string;
+    eventActiveBadge: string;
+    surpriseMissionBadge: string;
+    devEventTrigger: string;
+    devEventTriggerA11y: string;
+    eventToast: (zoneName: string, eventTitle: string) => string;
   }
 > = {
   ko: {
@@ -435,6 +442,11 @@ export const EVENT_ZONE_COPY: Record<
     closePanel: '닫기',
     eventEndsIn: remaining => `남은 시간 ${remaining}`,
     eventEnded: '이벤트가 종료되었습니다',
+    eventActiveBadge: '🔥 이벤트',
+    surpriseMissionBadge: '🔥 깜짝 미션 중!',
+    devEventTrigger: '🎲 이벤트 발생',
+    devEventTriggerA11y: '개발용 번개 이벤트 발생',
+    eventToast: (zoneName, eventTitle) => `${zoneName}에 ${eventTitle} 이벤트 발생!`,
   },
   en: {
     screenTitle: 'Event Zone',
@@ -453,6 +465,11 @@ export const EVENT_ZONE_COPY: Record<
     closePanel: 'Close',
     eventEndsIn: remaining => `${remaining} remaining`,
     eventEnded: 'This event has ended',
+    eventActiveBadge: '🔥 Event',
+    surpriseMissionBadge: '🔥 Surprise mission!',
+    devEventTrigger: '🎲 Trigger event',
+    devEventTriggerA11y: 'Dev random event trigger',
+    eventToast: (zoneName, eventTitle) => `${eventTitle} started in ${zoneName}!`,
   },
   ja: {
     screenTitle: 'イベントゾーン',
@@ -471,6 +488,11 @@ export const EVENT_ZONE_COPY: Record<
     closePanel: '閉じる',
     eventEndsIn: remaining => remaining,
     eventEnded: 'イベントは終了しました',
+    eventActiveBadge: '🔥 イベント',
+    surpriseMissionBadge: '🔥 サプライズミッション中!',
+    devEventTrigger: '🎲 イベント発生',
+    devEventTriggerA11y: '開発用ランダムイベント',
+    eventToast: (zoneName, eventTitle) => `${zoneName}で${eventTitle}が始まりました!`,
   },
   zh: {
     screenTitle: '活动区域',
@@ -489,9 +511,15 @@ export const EVENT_ZONE_COPY: Record<
     closePanel: '关闭',
     eventEndsIn: remaining => `剩余 ${remaining}`,
     eventEnded: '活动已结束',
+    eventActiveBadge: '🔥 活动',
+    surpriseMissionBadge: '🔥 惊喜任务进行中!',
+    devEventTrigger: '🎲 触发活动',
+    devEventTriggerA11y: '开发用随机活动',
+    eventToast: (zoneName, eventTitle) => `${zoneName}开始了${eventTitle}!`,
   },
 };
 
+/** @deprecated Use useCopy('zoneChat') from src/i18n */
 export const ZONE_CHAT_COPY: Record<
   AppLanguage,
   {

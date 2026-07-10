@@ -23,10 +23,6 @@ export type RootStackParamList = {
     festivalEventStartDate?: string;
     festivalEventEndDate?: string;
   } | undefined;
-  /** @deprecated PlaceMapSearch 사용 */
-  BusanAccommodation: undefined;
-  /** @deprecated PlaceMapSearch 사용 */
-  BusanAttraction: undefined;
   HelpDeskChat: undefined;
   EventZone: undefined;
   EventZoneChat: { roomId: string };

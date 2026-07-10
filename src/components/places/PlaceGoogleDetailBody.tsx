@@ -14,7 +14,7 @@ import type { PlaceDetailVO } from '../../types/googlePlaces';
 import type { AppLanguage } from '../../types/user';
 import { PLACE_CONTENT_TYPE } from '../../types/placesApi';
 import { formatTourismInfoRows } from '../../utils/places/tourismDetailFormatter';
-import { GoogleReviewCard } from '../accommodation/GoogleReviewCard';
+import { GoogleReviewCard } from './GoogleReviewCard';
 
 export type PlaceGoogleDetailCopy = {
   detailLoading: string;

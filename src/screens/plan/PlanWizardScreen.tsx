@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   ScrollView,
   Text,
@@ -12,6 +13,8 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { WizardStepLayout } from '../../components/shared/layout/WizardStepLayout';
 import { OptionCard } from '../../components/shared/cards/OptionCard';
 import { PrimaryButton } from '../../components/shared/buttons/PrimaryButton';
+import { AppIcon } from '../../components/shared/icons/AppIcon';
+import { ICON_COLOR_WHITE } from '../../constants/icons';
 import {
   TRAVEL_CONSTRAINT_OPTIONS,
   TRAVEL_CONSTRAINT_NONE_ID,
@@ -23,14 +26,15 @@ import {
   COMPANION_TYPE_OPTIONS,
   dayCountBetween,
   isValidIsoDate,
-  PLAN_WIZARD_COPY,
   PLAN_WIZARD_STEP_COUNT,
   PLAN_WIZARD_STEPS,
 } from '../../constants/plan/planWizard';
+import { useAppLanguage, useCopy } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
 import { requestAutoPlan, requestPlanCandidates } from '../../services/plan/planAiService';
+import { createManualTravelPlan } from '../../services/travel/createManualTravelPlan';
 import { selectOnboardingForUser, useAppStore, useAuthStore, usePlanStore, emptyWizardAnswers } from '../../stores';
-import { selectAuthUser } from '../../stores/useAuthStore';
+import { selectAuthUser, selectReusableAccessToken } from '../../stores/useAuthStore';
 import type { CompanionGroupType } from '../../types/planWizard';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PlanWizard'>;
@@ -47,14 +51,14 @@ function defaultDates() {
 }
 
 export function PlanWizardScreen({ navigation }: Props) {
-  const language = useAppStore(s => s.language) ?? 'ko';
+  const language = useAppLanguage();
+  const copy = useCopy('planWizard');
   const user = useAuthStore(selectAuthUser);
+  const accessToken = useAuthStore(selectReusableAccessToken);
   const onboarding = useAppStore(selectOnboardingForUser(user?.userId));
   const addPlan = usePlanStore(s => s.addPlan);
   const confirmPlan = usePlanStore(s => s.confirmPlan);
   const setPlanCandidates = usePlanStore(s => s.setPlanCandidates);
-
-  const copy = PLAN_WIZARD_COPY[language];
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState(() => ({
     ...emptyWizardAnswers(),
@@ -203,6 +207,31 @@ export function PlanWizardScreen({ navigation }: Props) {
   const finish = async () => {
     setLoading(true);
     try {
+      if (answers.generationMode === 'manual') {
+        if (!accessToken) {
+          Alert.alert(copy.createManualError);
+          return;
+        }
+        const plan = await createManualTravelPlan({
+          accessToken,
+          answers,
+          members: [
+            {
+              userId: user?.userId ?? 'local-user',
+              nickname: user?.nickname ?? 'Traveler',
+              role: 'LEADER',
+            },
+          ],
+        });
+        addPlan(plan);
+        confirmPlan(plan.planId);
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'PlanDetail', params: { planId: plan.planId } }],
+        });
+        return;
+      }
+
       if (answers.generationMode === 'auto') {
         const plan = await requestAutoPlan(answers, onboarding);
         addPlan(plan);
@@ -216,6 +245,10 @@ export function PlanWizardScreen({ navigation }: Props) {
         setPlanCandidates(candidates);
         navigation.replace('PlanCandidates');
       }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : copy.createManualError;
+      Alert.alert(copy.createManualError, message);
     } finally {
       setLoading(false);
     }
@@ -281,7 +314,7 @@ export function PlanWizardScreen({ navigation }: Props) {
                     companionCount: Math.max(1, p.companionCount - 1),
                   }))
                 }>
-                <Text className="text-2xl font-bold text-white">−</Text>
+                <AppIcon name="minus" size={24} color={ICON_COLOR_WHITE} strokeWidth={2.5} />
               </Pressable>
               <Pressable
                 className="h-14 w-14 items-center justify-center rounded-full bg-brand-primary active:opacity-90"
@@ -291,7 +324,7 @@ export function PlanWizardScreen({ navigation }: Props) {
                     companionCount: Math.min(20, p.companionCount + 1),
                   }))
                 }>
-                <Text className="text-2xl font-bold text-white">+</Text>
+                <AppIcon name="plus" size={24} color={ICON_COLOR_WHITE} strokeWidth={2.5} />
               </Pressable>
             </View>
           </View>
@@ -452,6 +485,14 @@ export function PlanWizardScreen({ navigation }: Props) {
             <Text className="-mt-1 mb-3 ml-1 text-xs text-brand-muted">
               {copy.modeCandidatesSub}
             </Text>
+            <OptionCard
+              label={copy.modeManual}
+              selected={answers.generationMode === 'manual'}
+              onPress={() => setAnswers(p => ({ ...p, generationMode: 'manual' }))}
+            />
+            <Text className="-mt-1 mb-3 ml-1 text-xs text-brand-muted">
+              {copy.modeManualSub}
+            </Text>
           </>
         );
       default:
@@ -463,7 +504,9 @@ export function PlanWizardScreen({ navigation }: Props) {
     return (
       <View className="flex-1 items-center justify-center bg-brand-background px-6">
         <ActivityIndicator size="large" color="#0077B6" />
-        <Text className="mt-4 text-base text-brand-muted">{copy.generating}</Text>
+        <Text className="mt-4 text-base text-brand-muted">
+          {answers.generationMode === 'manual' ? copy.creatingManual : copy.generating}
+        </Text>
       </View>
     );
   }

@@ -5,11 +5,11 @@ import {
   AppModal,
   AppModalActions,
 } from '../../shared/modals';
-import type { TRAVEL_REVIEW_COPY } from '../../../constants/review/travelReview';
+import type { CopyFor } from '../../../i18n';
 import type { AppLanguage } from '../../../types/user';
 import { authorInitial } from '../../../utils/review/travelReview';
 
-type Copy = (typeof TRAVEL_REVIEW_COPY)[AppLanguage];
+type Copy = CopyFor<'travelReview'>;
 
 type TravelogueCommentModalProps = {
   visible: boolean;

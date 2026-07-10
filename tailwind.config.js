@@ -1,9 +1,14 @@
 /** @type {import('tailwindcss').Config} */
+const plugin = require('tailwindcss/plugin');
+
 module.exports = {
   content: ['./App.tsx', './src/**/*.{js,jsx,ts,tsx}'],
   presets: [require('nativewind/preset')],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Pretendard-Regular'],
+      },
       colors: {
         brand: {
           primary: '#0077B6',
@@ -23,5 +28,16 @@ module.exports = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    plugin(({ addUtilities }) => {
+      addUtilities({
+        '.font-sans': { fontFamily: 'Pretendard-Regular' },
+        '.font-medium': { fontFamily: 'Pretendard-Medium', fontWeight: 'normal' },
+        '.font-semibold': { fontFamily: 'Pretendard-SemiBold', fontWeight: 'normal' },
+        '.font-bold': { fontFamily: 'Pretendard-Bold', fontWeight: 'normal' },
+        '.font-extrabold': { fontFamily: 'Pretendard-ExtraBold', fontWeight: 'normal' },
+        '.font-black': { fontFamily: 'Pretendard-Black', fontWeight: 'normal' },
+      });
+    }),
+  ],
 };

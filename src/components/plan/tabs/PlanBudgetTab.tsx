@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Animated, Pressable, ScrollView, Text, View } from 'react-native';
 
+import { ICON_COLOR_WHITE } from '../../../constants/icons';
+import { AppIcon } from '../../shared/icons/AppIcon';
+
 import { BudgetDateChips } from '../budget/BudgetDateChips';
 import { BudgetCategoryBadge } from '../budget/BudgetCategoryBadge';
 import { BudgetSummarySection } from '../budget/BudgetSummarySection';
@@ -9,7 +12,7 @@ import {
   memberNickname,
   splitSummary,
 } from '../modals/BudgetEntryModal';
-import type { PLAN_DETAIL_COPY } from '../../../constants/plan/planDetail';
+import type { CopyFor } from '../../../i18n';
 import type { AppLanguage } from '../../../types/user';
 import type { BudgetEntry, PlanMember } from '../../../types/travelPlan';
 import {
@@ -17,7 +20,7 @@ import {
   sumBudgetByCategory,
 } from '../../../utils/plan/budgetTotals';
 
-type Copy = (typeof PLAN_DETAIL_COPY)[AppLanguage];
+type Copy = CopyFor<'planDetail'>;
 
 type PlanBudgetTabProps = {
   copy: Copy;
@@ -279,7 +282,10 @@ export function PlanBudgetTab({
               <Pressable
                 onPress={onAddExpense}
                 className="mt-4 items-center rounded-2xl bg-brand-primary py-3 active:opacity-90">
-                <Text className="font-bold text-white">+ {copy.budgetAdd}</Text>
+                <View className="flex-row items-center gap-1.5">
+                  <AppIcon name="plus" size={14} color={ICON_COLOR_WHITE} strokeWidth={2.5} />
+                  <Text className="font-bold text-white">{copy.budgetAdd}</Text>
+                </View>
               </Pressable>
             </View>
           ) : selectedEntries.length === 0 ? (

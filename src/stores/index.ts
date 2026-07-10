@@ -15,6 +15,7 @@ export {
   emptyWizardAnswers,
   hydrateRoutePlaceInfo,
   selectActivePlan,
+  selectHomeFeaturedPlan,
   selectPlanById,
   usePlanStore,
 } from './usePlanStore';
@@ -34,3 +35,4 @@ export {
   type PlaceSearchCacheEntry,
 } from './usePlaceSearchStore';
 export { useFestivalStore } from './useFestivalStore';
+export { usePlaceDetailCacheStore } from './usePlaceDetailCacheStore';

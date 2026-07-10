@@ -1,11 +1,15 @@
 import { Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 
-import type { LUGGAGE_STORAGE_COPY } from '../../constants/locker/luggageStorage';
+import type { CopyFor } from '../../i18n';
 import type { SubwayLockerStation } from '../../types/subwayLocker';
+import {
+  ICON_COLOR_STAR_EMPTY,
+} from '../../constants/icons';
+import { AppIcon } from '../shared/icons/AppIcon';
 import { AppModal, AppModalActions } from '../shared/modals';
 import { LockerInventoryTable } from './LockerInventoryTable';
 
-type Copy = (typeof LUGGAGE_STORAGE_COPY)['ko'];
+type Copy = CopyFor<'luggageStorage'>;
 
 const SHEET_HEIGHT_RATIO = 0.55;
 
@@ -79,7 +83,12 @@ export function SubwayLockerDetailSheet({
               className={`flex-row items-center gap-1 rounded-full px-3 py-2 active:opacity-80 ${
                 bookmarked ? 'bg-amber-100' : 'bg-brand-selected'
               }`}>
-              <Text className="text-sm">{bookmarked ? '📌' : '☆'}</Text>
+              <AppIcon
+                name={bookmarked ? 'mapPin' : 'star'}
+                size={16}
+                color={bookmarked ? '#B45309' : ICON_COLOR_STAR_EMPTY}
+                filled={bookmarked}
+              />
               <Text
                 className={`text-xs font-bold ${
                   bookmarked ? 'text-amber-700' : 'text-brand-primary'

@@ -1,8 +1,10 @@
 import { Pressable, Text, View } from 'react-native';
 
+import { ICON_COLOR_PRIMARY } from '../../../constants/icons';
 import type { MockTravelogue, MockSpecialOffer } from '../../../constants/home/mainHome';
 import type { Travelogue } from '../../../types/travelReview';
-import { travelogueThumbnailEmoji } from '../../../utils/review/travelReview';
+import { travelogueThumbnailIcon } from '../../../utils/review/travelReview';
+import { AppIcon } from '../../shared/icons/AppIcon';
 import { StarRating } from '../../shared/rating/StarRating';
 
 type TraveloguePreviewMockProps = {
@@ -36,9 +38,9 @@ export function TraveloguePreviewMock({
     : language === 'ko'
       ? travelogue.subtitleKo
       : travelogue.subtitleEn;
-  const tEmoji = latestTravelogue
-    ? travelogueThumbnailEmoji(latestTravelogue)
-    : travelogue.thumbnailEmoji;
+  const tIcon = latestTravelogue
+    ? travelogueThumbnailIcon(latestTravelogue)
+    : travelogue.thumbnailIcon;
   const oTitle = language === 'ko' ? specialOffer.titleKo : specialOffer.titleEn;
   const oSub = language === 'ko' ? specialOffer.subtitleKo : specialOffer.subtitleEn;
 
@@ -64,7 +66,7 @@ export function TraveloguePreviewMock({
           style={{
             backgroundColor: latestTravelogue ? '#E0F2FE' : travelogue.thumbnailColor,
           }}>
-          <Text className="text-3xl">{tEmoji}</Text>
+          <AppIcon name={tIcon} size={32} color={ICON_COLOR_PRIMARY} />
         </View>
         <View className="flex-1 justify-center">
           <Text className="mb-1 text-[10px] font-bold tracking-wide text-brand-primary">
@@ -89,7 +91,7 @@ export function TraveloguePreviewMock({
         className="flex-row items-center rounded-2xl border border-brand-border bg-brand-selected p-4 active:opacity-90"
         accessibilityRole="button">
         <View className="mr-3 h-12 w-12 items-center justify-center rounded-xl bg-brand-primary/15">
-          <Text className="text-2xl">🎫</Text>
+          <AppIcon name="ticket" size={24} color={ICON_COLOR_PRIMARY} />
         </View>
         <View className="flex-1">
           <Text className="mb-1 text-[10px] font-bold tracking-wide text-brand-primary">

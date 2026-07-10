@@ -7,6 +7,7 @@ export const REVIEW_TAG_PRESETS: Record<AppLanguage, string[]> = {
   zh: ['美食', '风景', '拍照', '放松', '家庭', '约会', '再访', '推荐'],
 };
 
+/** @deprecated Use useCopy('travelReview') from src/i18n */
 export const TRAVEL_REVIEW_COPY: Record<
   AppLanguage,
   {
@@ -60,6 +61,9 @@ export const TRAVEL_REVIEW_COPY: Record<
     mediaMockHint: string;
     publishedSuccess: string;
     completeTrip: string;
+    completeTripConfirmTitle: string;
+    completeTripConfirmMessage: string;
+    completeTripConfirm: string;
     composePartialHint: string;
     detailBy: (name: string) => string;
     overallSummary: string;
@@ -148,6 +152,10 @@ export const TRAVEL_REVIEW_COPY: Record<
     mediaMockHint: '실제 업로드는 API 연동 후 제공됩니다',
     publishedSuccess: '여행기가 게시됐어요!',
     completeTrip: '여행 완료 처리',
+    completeTripConfirmTitle: '여행 완료 처리',
+    completeTripConfirmMessage:
+      '이 여행을 완료 처리할까요? 완료 후에는 활성 여행에서 제외됩니다.',
+    completeTripConfirm: '완료 처리',
     composePartialHint: '후기를 모두 작성하지 않아도 여행기를 등록할 수 있어요',
     detailBy: name => `${name}님의 여행기`,
     overallSummary: '종합 후기',
@@ -237,6 +245,10 @@ export const TRAVEL_REVIEW_COPY: Record<
     mediaMockHint: 'Real uploads will arrive with API integration',
     publishedSuccess: 'Travelogue published!',
     completeTrip: 'Mark trip complete',
+    completeTripConfirmTitle: 'Mark trip complete',
+    completeTripConfirmMessage:
+      'Mark this trip as complete? It will no longer appear as your active trip.',
+    completeTripConfirm: 'Complete',
     composePartialHint: 'You can publish a travelogue without completing every review',
     detailBy: name => `Travelogue by ${name}`,
     overallSummary: 'Overall review',
@@ -326,6 +338,10 @@ export const TRAVEL_REVIEW_COPY: Record<
     mediaMockHint: '実際のアップロードはAPI連携後に提供されます',
     publishedSuccess: '旅行記を公開しました！',
     completeTrip: '旅行完了にする',
+    completeTripConfirmTitle: '旅行完了',
+    completeTripConfirmMessage:
+      'この旅行を完了にしますか？完了後はアクティブな旅行から外れます。',
+    completeTripConfirm: '完了にする',
     composePartialHint: 'すべてのレビューがなくても旅行記を登録できます',
     detailBy: name => `${name}さんの旅行記`,
     overallSummary: '総合レビュー',
@@ -415,6 +431,9 @@ export const TRAVEL_REVIEW_COPY: Record<
     mediaMockHint: '实际上传将在 API 接入后提供',
     publishedSuccess: '游记已发布！',
     completeTrip: '标记行程完成',
+    completeTripConfirmTitle: '标记行程完成',
+    completeTripConfirmMessage: '要将此行程标记为已完成吗？完成后将不再显示为进行中的行程。',
+    completeTripConfirm: '完成',
     composePartialHint: '无需完成全部点评即可发布游记',
     detailBy: name => `${name}的游记`,
     overallSummary: '综合点评',

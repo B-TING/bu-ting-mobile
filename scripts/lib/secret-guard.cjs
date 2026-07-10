@@ -38,6 +38,7 @@ function isBlockedPath(file) {
     base === 'oauthConfig.ts' ||
     base === 'apiConfig.ts' ||
     base === 'apiBaseUrl.ts' ||
+    base === 'zoneChatWsEnv.ts' ||
     (base === 'config.ts' && p.includes('kakaoMap/')) ||
     base === 'oauth_strings.xml' ||
     base === 'kakao_map_key.xml'

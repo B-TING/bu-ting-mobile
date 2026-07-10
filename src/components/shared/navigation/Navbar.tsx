@@ -1,7 +1,9 @@
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ICON_COLOR_MUTED, ICON_COLOR_PRIMARY, NAVBAR_TAB_ICONS } from '../../../constants/icons';
 import { cn } from '../../../utils/common/cn';
+import { AppIcon } from '../icons/AppIcon';
 
 export type NavbarTab = 'home' | 'route' | 'feed' | 'my';
 
@@ -9,14 +11,13 @@ type TabConfig = {
   id: NavbarTab;
   labelKo: string;
   labelEn: string;
-  icon: string;
 };
 
 const TABS: TabConfig[] = [
-  { id: 'home', labelKo: '홈', labelEn: 'Home', icon: '🏠' },
-  { id: 'route', labelKo: '일정', labelEn: 'Itinerary', icon: '📅' },
-  { id: 'feed', labelKo: '피드', labelEn: 'Feed', icon: '🧭' },
-  { id: 'my', labelKo: '마이', labelEn: 'My', icon: '👤' },
+  { id: 'home', labelKo: '홈', labelEn: 'Home' },
+  { id: 'route', labelKo: '일정', labelEn: 'Itinerary' },
+  { id: 'feed', labelKo: '피드', labelEn: 'Feed' },
+  { id: 'my', labelKo: '마이', labelEn: 'My' },
 ];
 
 type NavbarProps = {
@@ -43,9 +44,11 @@ export function Navbar({ activeTab, language = 'ko', onTabPress }: NavbarProps) 
               className="min-w-[56px] flex-1 items-center py-1 active:opacity-70"
               accessibilityRole="button"
               accessibilityState={{ selected: active }}>
-              <Text className={cn('text-lg', active ? 'opacity-100' : 'opacity-50')}>
-                {tab.icon}
-              </Text>
+              <AppIcon
+                name={NAVBAR_TAB_ICONS[tab.id]}
+                size={22}
+                color={active ? ICON_COLOR_PRIMARY : ICON_COLOR_MUTED}
+              />
               <Text
                 className={cn(
                   'mt-0.5 text-[11px] font-semibold',

@@ -5,23 +5,25 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FestivalCard } from '../../components/festival/FestivalCard';
 import { BackButton } from '../../components/shared/buttons/BackButton';
+import { AppIcon } from '../../components/shared/icons/AppIcon';
+import { ICON_COLOR_MUTED, ICON_COLOR_PRIMARY } from '../../constants/icons';
 import {
-  FESTIVAL_CALENDAR_COPY,
   festivalsInMonth,
   parseIsoDate,
   todayIso,
 } from '../../constants/festival/festivalCalendar';
+import { useAppLanguage, useCopy } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
 import { PLACE_CONTENT_TYPE } from '../../types/placesApi';
-import { useAppStore, useFestivalStore } from '../../stores';
+import { useFestivalStore } from '../../stores';
 import { monthDateRangeYyyymmdd, monthKey } from '../../utils/places/festivalApiMapper';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FestivalCalendar'>;
 
 export function FestivalCalendarScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
-  const language = useAppStore(s => s.language) ?? 'ko';
-  const copy = FESTIVAL_CALENDAR_COPY[language];
+  const language = useAppLanguage();
+  const copy = useCopy('festivalCalendar');
 
   const initialDate = route.params?.initialDate ?? todayIso();
   const initialParsed = parseIsoDate(initialDate);
@@ -90,7 +92,7 @@ export function FestivalCalendarScreen({ navigation, route }: Props) {
           className="h-9 w-9 items-center justify-center rounded-full active:bg-brand-selected"
           accessibilityRole="button"
           accessibilityLabel={copy.prevMonth}>
-          <Text className="text-xl font-bold text-brand-primary">‹</Text>
+          <AppIcon name="chevronLeft" size={24} color={ICON_COLOR_PRIMARY} />
         </Pressable>
         <View className="items-center">
           <Text className="text-base font-bold text-brand-text">
@@ -108,7 +110,7 @@ export function FestivalCalendarScreen({ navigation, route }: Props) {
           className="h-9 w-9 items-center justify-center rounded-full active:bg-brand-selected"
           accessibilityRole="button"
           accessibilityLabel={copy.nextMonth}>
-          <Text className="text-xl font-bold text-brand-primary">›</Text>
+          <AppIcon name="chevronRight" size={24} color={ICON_COLOR_PRIMARY} />
         </Pressable>
       </View>
 
@@ -123,7 +125,7 @@ export function FestivalCalendarScreen({ navigation, route }: Props) {
           showsVerticalScrollIndicator={false}>
           {monthFestivals.length === 0 ? (
             <View className="items-center rounded-2xl border border-dashed border-brand-border bg-brand-surface px-6 py-12">
-              <Text className="text-4xl">🎪</Text>
+              <AppIcon name="tent" size={40} color={ICON_COLOR_MUTED} />
               <Text className="mt-3 text-sm font-semibold text-brand-text">{emptyMessage}</Text>
               {!monthError ? (
                 <Text className="mt-1 text-xs text-brand-muted">{copy.emptyMonthListSub}</Text>

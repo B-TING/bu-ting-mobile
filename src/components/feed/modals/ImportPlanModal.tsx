@@ -1,12 +1,18 @@
 import { Text, View } from 'react-native';
 
-import type { TRAVEL_REVIEW_COPY } from '../../../constants/review/travelReview';
+import {
+  ICON_COLOR_MUTED,
+  ICON_COLOR_PRIMARY,
+  type LucideIconName,
+} from '../../../constants/icons';
+import type { CopyFor } from '../../../i18n';
+import { AppIcon } from '../../shared/icons/AppIcon';
 import type { Travelogue } from '../../../types/travelReview';
 import type { TravelPlan } from '../../../types/travelPlan';
 import type { AppLanguage } from '../../../types/user';
 import { AppModal, AppModalActions } from '../../shared/modals';
 
-type Copy = (typeof TRAVEL_REVIEW_COPY)[AppLanguage];
+type Copy = CopyFor<'travelReview'>;
 
 export type ImportPlanModalPhase = 'confirm' | 'activePlanConfirm' | 'success' | 'error';
 
@@ -52,14 +58,20 @@ export function ImportPlanModal({
       ? copy.tripPeriod(activePlan.startDate, activePlan.endDate)
       : null;
 
-  const icon =
+  const iconName: LucideIconName =
     phase === 'success'
-      ? '✅'
+      ? 'checkCircle'
       : phase === 'error'
-        ? '⚠️'
+        ? 'alertTriangle'
         : phase === 'activePlanConfirm'
-          ? '🧳'
-          : '📋';
+          ? 'luggage'
+          : 'clipboardList';
+  const iconColor =
+    phase === 'success'
+      ? ICON_COLOR_PRIMARY
+      : phase === 'error'
+        ? '#F59E0B'
+        : ICON_COLOR_MUTED;
   const title =
     phase === 'success'
       ? copy.importPlanSuccess
@@ -107,7 +119,7 @@ export function ImportPlanModal({
       footer={<AppModalActions className="mt-6" actions={footerActions} />}>
       <View className="items-center px-5 pt-2">
         <View className="mb-4 h-16 w-16 items-center justify-center rounded-2xl bg-brand-selected">
-          <Text className="text-3xl">{icon}</Text>
+          <AppIcon name={iconName} size={36} color={iconColor} />
         </View>
         <Text className="text-center text-xl font-bold text-brand-text">{title}</Text>
         <Text className="mt-2 text-center text-sm leading-6 text-brand-muted">{message}</Text>

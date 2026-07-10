@@ -10,9 +10,10 @@ import {
   EventZoneZoneDetailPanel,
 } from '../../components/eventZone/EventZoneSections';
 import { BackButton } from '../../components/shared/buttons/BackButton';
+import { AppIcon } from '../../components/shared/icons/AppIcon';
+import { ICON_COLOR_WHITE } from '../../constants/icons';
 import {
   EVENT_ZONE_BY_ID,
-  EVENT_ZONE_COPY,
   allZoneChatRooms,
   eventZoneName,
   getChatRoomByZoneId,
@@ -23,7 +24,8 @@ import {
   useAllZoneChatMemberCounts,
 } from '../../hooks/useZoneChatRoomSummary';
 import type { RootStackParamList } from '../../navigation/types';
-import { useAppStore, useZoneEventStore } from '../../stores';
+import { useAppLanguage, useCopy } from '../../i18n';
+import { useZoneEventStore } from '../../stores';
 import type { EventZoneId } from '../../types/eventZone';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EventZone'>;
@@ -33,8 +35,8 @@ const MAP_HEIGHT_RATIO = 0.5;
 
 export function EventZoneScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
-  const language = useAppStore(s => s.language) ?? 'ko';
-  const copy = EVENT_ZONE_COPY[language];
+  const language = useAppLanguage();
+  const copy = useCopy('eventZone');
   const { zoneId: currentZoneId, usedFallback } = useCurrentEventZone();
   const [selectedZoneId, setSelectedZoneId] = useState<EventZoneId | null>(null);
   const isExpanded = selectedZoneId != null;
@@ -82,7 +84,10 @@ export function EventZoneScreen({ navigation }: Props) {
     const event = buildRandomMockZoneEvent();
     triggerEvent(event);
     showToast(
-      `${eventZoneName(EVENT_ZONE_BY_ID[event.zoneId], language)}에 ${event.titleKo} 이벤트 발생!`,
+      copy.eventToast(
+        eventZoneName(EVENT_ZONE_BY_ID[event.zoneId], language),
+        event.titleKo,
+      ),
     );
   };
 
@@ -160,10 +165,10 @@ export function EventZoneScreen({ navigation }: Props) {
             {__DEV__ ? (
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="개발용 번개 이벤트 발생"
+                accessibilityLabel={copy.devEventTriggerA11y}
                 className="rounded-full bg-pink-600 px-3 py-1.5 shadow-sm active:opacity-80"
                 onPress={handleTriggerEvent}>
-                <Text className="text-[11px] font-bold text-white">🎲 이벤트 발생</Text>
+                <Text className="text-[11px] font-bold text-white">{copy.devEventTrigger}</Text>
               </Pressable>
             ) : null}
           </View>
@@ -174,8 +179,9 @@ export function EventZoneScreen({ navigation }: Props) {
             className="absolute left-0 right-0 items-center"
             style={{ top: insets.top + 56, opacity: toastOpacity }}
             pointerEvents="none">
-            <View className="rounded-full bg-black/80 px-5 py-3">
-              <Text className="text-xs font-semibold text-white">🎉 {toastText}</Text>
+            <View className="flex-row items-center gap-2 rounded-full bg-black/80 px-5 py-3">
+              <AppIcon name="partyPopper" size={14} color={ICON_COLOR_WHITE} />
+              <Text className="text-xs font-semibold text-white">{toastText}</Text>
             </View>
           </Animated.View>
         ) : null}
@@ -199,6 +205,7 @@ export function EventZoneScreen({ navigation }: Props) {
                 activeEvent={selectedZoneId ? activeEventsByZone[selectedZoneId] : undefined}
                 eventEndsInLabel={copy.eventEndsIn}
                 eventEndedLabel={copy.eventEnded}
+                surpriseMissionBadge={copy.surpriseMissionBadge}
                 onClose={handleCloseExpanded}
                 onEnterChat={() => {
                   if (selectedZoneId) {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
-import type { TRAVEL_REVIEW_COPY } from '../../../constants/review/travelReview';
+import type { CopyFor } from '../../../i18n';
 import type { AppLanguage } from '../../../types/user';
 import type { PlaceReview } from '../../../types/travelReview';
 import {
@@ -12,7 +12,7 @@ import {
 import { StarRating } from '../../shared/rating/StarRating';
 import { AppModal, AppModalActions } from '../../shared/modals';
 
-type Copy = (typeof TRAVEL_REVIEW_COPY)[AppLanguage];
+type Copy = CopyFor<'travelReview'>;
 
 type TravelogueComposeModalProps = {
   visible: boolean;

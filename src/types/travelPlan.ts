@@ -1,6 +1,8 @@
+import type { PlaceProviderDto, TravelStatusDto, TravelTeamRoleDto } from './travelApi';
+
 export type PlanStatus = 'DRAFT' | 'CONFIRMED' | 'COMPLETED';
 
-export type MemberRole = 'OWNER' | 'EDITOR' | 'VIEWER';
+export type MemberRole = TravelTeamRoleDto;
 
 export type RouteItemType =
   | 'ATTRACTION'
@@ -30,6 +32,8 @@ export type PlanConstraints = {
   preferredFoods?: string[];
   accommodationArea?: string;
   accommodationName?: string;
+  /** 직접 일정 만들기 — 첫 장소 추천 기준 좌표 */
+  initialAnchor?: { lat: number; lng: number };
 };
 
 export type PlanMember = {
@@ -46,16 +50,23 @@ export type PlaceInfo = {
   rating?: number;
   reviewCount?: number;
   dwellMinutes?: number;
+  imageUrl?: string;
 };
 
 export type RouteItem = {
   itemId: string;
+  /** 백엔드 plan_place UUID */
+  apiPlanPlaceId?: string;
+  /** 백엔드 place provider (동기화용) */
+  apiProvider?: PlaceProviderDto;
   sequence: number;
   placeId: string;
   placeName: string;
   type: RouteItemType;
   location: { lat: number; lng: number };
   isVisited: boolean;
+  /** 장소별 메모 (서버 plan_place.memo) */
+  memo?: string;
   /** 이전 장소에서 이동할 때 사용하는 교통수단 */
   legMode?: TravelLegMode;
   placeInfo?: PlaceInfo;
@@ -86,6 +97,8 @@ export type DailyItinerary = {
   dailyId: string;
   dayNumber: number;
   date: string;
+  /** 백엔드 plan UUID (API 연동 플랜) */
+  apiPlanId?: string;
   routes: RouteItem[];
 };
 
@@ -100,6 +113,12 @@ export type TravelPlan = {
   itinerary: DailyItinerary[];
   createdAt: string;
   aiPromptContext?: string;
+  /** local = 목 AI·로컬 only, api = 백엔드 Travel API 연동 */
+  source?: 'local' | 'api';
+  /** 백엔드 travel UUID (`planId`와 동일할 수 있음) */
+  apiTravelId?: string;
+  /** 백엔드 Travel.status (PLANNED · IN_PROGRESS · COMPLETED) */
+  travelStatus?: TravelStatusDto;
 };
 
 /** API 응답 형태와 동일한 직렬화 뷰 */

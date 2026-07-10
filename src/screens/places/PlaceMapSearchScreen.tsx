@@ -6,16 +6,19 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PlaceDetailSheet } from '../../components/places/PlaceDetailSheet';
 import { PlaceMapView } from '../../components/places/PlaceMapView';
 import { BackButton } from '../../components/shared/buttons/BackButton';
+import { AppIcon } from '../../components/shared/icons/AppIcon';
 import {
   defaultPlaceContentTypeId,
   isFestivalPlaceSearch,
   PLACE_SEARCH_CENTER_THRESHOLD_M,
-  PLACE_SEARCH_COPY,
   PLACE_SEARCH_RADIUS_M,
+  buildPlaceListMetaLine,
 } from '../../constants/places/placeSearch';
+import { ICON_COLOR_PRIMARY } from '../../constants/icons';
+import { useAppLanguage, useCopy } from '../../i18n';
 import { useCurrentEventZone } from '../../hooks/useCurrentEventZone';
 import type { RootStackParamList } from '../../navigation/types';
-import { useAppStore, usePlaceBookmarkStore, usePlaceSearchStore } from '../../stores';
+import { useAppStore, usePlaceBookmarkStore, usePlaceDetailCacheStore, usePlaceSearchStore } from '../../stores';
 import type { EventZoneCoordinate } from '../../types/eventZone';
 import type { BusanPlace } from '../../types/placeSearch';
 import { PLACE_MAP_SEARCH_TYPES } from '../../types/placesApi';
@@ -55,8 +58,8 @@ function resolveFestivalDateRange(
 
 export function PlaceMapSearchScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
-  const language = useAppStore(s => s.language) ?? 'ko';
-  const copy = PLACE_SEARCH_COPY[language];
+  const language = useAppLanguage();
+  const copy = useCopy('placeSearch');
   const radiusKm = PLACE_SEARCH_RADIUS_M / 1000;
 
   const initialType = defaultPlaceContentTypeId(route.params?.contentTypeId);
@@ -88,6 +91,7 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
 
   const places = useMemo(() => cacheEntry?.places ?? [], [cacheEntry]);
   const placeDetailsById = cacheEntry?.placeDetailsById ?? {};
+  const globalPlaceDetails = usePlaceDetailCacheStore(s => s.detailsByPlaceId);
   const error = cacheEntry?.error ?? null;
 
   useEffect(() => {
@@ -419,14 +423,13 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
                               : 'border-brand-border bg-brand-background'
                         }`}>
                         <View className="flex-row items-center gap-1">
-                          {bookmarked ? <Text className="text-xs">📌</Text> : null}
+                          {bookmarked ? (
+                            <AppIcon name="mapPin" size={12} color={ICON_COLOR_PRIMARY} filled />
+                          ) : null}
                           <Text className="text-sm font-bold text-brand-text">{place.name}</Text>
                         </View>
                         <Text className="mt-0.5 text-xs text-brand-muted">
-                          {copy.categoryLabels[place.contentTypeId]} ·{' '}
-                          {isFestivalPlaceSearch(place.contentTypeId)
-                            ? copy.festivalListMeta(place.address)
-                            : copy.ratingSummary(place.rating, place.userRatingsTotal)}
+                          {buildPlaceListMetaLine(place, copy)}
                         </Text>
                       </Pressable>
                     );
@@ -441,7 +444,13 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
       <PlaceDetailSheet
         visible={detailOpen}
         place={selectedPlace}
-        detail={selectedPlace ? (placeDetailsById[selectedPlace.contentId] ?? null) : null}
+        detail={
+          selectedPlace
+            ? (placeDetailsById[selectedPlace.contentId] ??
+              globalPlaceDetails[selectedPlace.contentId] ??
+              null)
+            : null
+        }
         language={language}
         copy={copy}
         bookmarked={

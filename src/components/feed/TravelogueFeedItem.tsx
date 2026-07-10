@@ -1,6 +1,6 @@
 import { Pressable, Text, View } from 'react-native';
 
-import type { TRAVEL_REVIEW_COPY } from '../../constants/review/travelReview';
+import type { CopyFor } from '../../i18n';
 import type { Travelogue, TravelogueSocial } from '../../types/travelReview';
 import type { AppLanguage } from '../../types/user';
 import {
@@ -12,7 +12,7 @@ import { TravelogueCommentsSection } from './TravelogueCommentsSection';
 import { TravelogueImageCarousel } from './TravelogueImageCarousel';
 import { TravelogueSocialBar } from './TravelogueSocialBar';
 
-type Copy = (typeof TRAVEL_REVIEW_COPY)[AppLanguage];
+type Copy = CopyFor<'travelReview'>;
 
 type TravelogueFeedItemProps = {
   travelogue: Travelogue;

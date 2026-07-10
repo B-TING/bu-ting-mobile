@@ -2,21 +2,29 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
+import { getCopyForLanguage } from '../i18n';
 import { enrichPlaceInfo } from '../constants/places/placeCatalog';
+import { isTourApiContentId, routeTypeToContentTypeId } from '../utils/places/routePlaceDetail';
 import type { PlanWizardAnswers } from '../types/planWizard';
 import type { BudgetEntry, RouteItem, TravelLegMode, TravelPlan } from '../types/travelPlan';
 import type { Travelogue } from '../types/travelReview';
 import { createId } from '../utils/common/id';
 import { buildPlanFromTravelogue } from '../utils/review/travelReview';
 import { optimizeRouteOrder } from '../utils/plan/routeOptimize';
+import { isServerBackedPlan } from '../utils/plan/serverBackedPlan';
 
 type PlanState = {
   plans: TravelPlan[];
   activePlanId: string | null;
   planCandidates: TravelPlan[] | null;
   budgetByPlan: Record<string, BudgetEntry[]>;
+  /** GET 동기화 실패로 오프라인 캐시를 쓰는 플랜 ID */
+  offlineSyncPlanIds: Record<string, true>;
+  setPlanOfflineSync: (planId: string, offline: boolean) => void;
   addPlan: (plan: TravelPlan) => void;
+  upsertPlan: (plan: TravelPlan) => void;
   setActivePlan: (planId: string) => void;
+  clearActivePlan: () => void;
   confirmPlan: (planId: string) => void;
   setPlanCandidates: (candidates: TravelPlan[] | null) => void;
   clearCandidates: () => void;
@@ -26,7 +34,10 @@ type PlanState = {
   addRouteToPlan: (planId: string, dayNumber: number, route: RouteItem) => void;
   reorderRoutesInPlan: (planId: string, dayNumber: number, orderedItemIds: string[]) => void;
   updateRouteLegMode: (planId: string, itemId: string, legMode: TravelLegMode) => void;
+  updateRouteMemo: (planId: string, itemId: string, memo: string | undefined) => void;
   optimizeDayRoute: (planId: string, dayNumber: number) => void;
+  addItineraryDay: (planId: string, dayNumber: number, visitDate: string) => void;
+  removeItineraryDay: (planId: string, dayNumber: number) => void;
   addBudgetEntry: (entry: Omit<BudgetEntry, 'entryId'>) => void;
   getBudgetForPlan: (planId: string) => BudgetEntry[];
   completePlan: (planId: string) => void;
@@ -34,6 +45,7 @@ type PlanState = {
     travelogue: Travelogue,
     member: { userId: string; displayName: string },
   ) => TravelPlan | null;
+  replacePlan: (plan: TravelPlan) => void;
 };
 
 export const usePlanStore = create<PlanState>()(
@@ -43,12 +55,41 @@ export const usePlanStore = create<PlanState>()(
       activePlanId: null,
       planCandidates: null,
       budgetByPlan: {},
+      offlineSyncPlanIds: {},
+      setPlanOfflineSync: (planId, offline) =>
+        set(state => {
+          const offlineSyncPlanIds = state.offlineSyncPlanIds ?? {};
+          if (!offline) {
+            if (!offlineSyncPlanIds[planId]) {
+              return state;
+            }
+            const next = { ...offlineSyncPlanIds };
+            delete next[planId];
+            return { offlineSyncPlanIds: next };
+          }
+          if (offlineSyncPlanIds[planId]) {
+            return state;
+          }
+          return {
+            offlineSyncPlanIds: { ...offlineSyncPlanIds, [planId]: true },
+          };
+        }),
       addPlan: plan =>
         set(state => ({
           plans: [...state.plans.filter(p => p.planId !== plan.planId), plan],
           activePlanId: plan.planId,
         })),
+      upsertPlan: plan =>
+        set(state => {
+          const exists = state.plans.some(p => p.planId === plan.planId);
+          return {
+            plans: exists
+              ? state.plans.map(p => (p.planId === plan.planId ? plan : p))
+              : [...state.plans, plan],
+          };
+        }),
       setActivePlan: planId => set({ activePlanId: planId }),
+      clearActivePlan: () => set({ activePlanId: null }),
       confirmPlan: planId =>
         set(state => ({
           plans: state.plans.map(p =>
@@ -87,7 +128,7 @@ export const usePlanStore = create<PlanState>()(
                 const filtered = day.routes.filter(r => r.itemId !== itemId);
                 return {
                   ...day,
-                  routes: filtered.map((r, i) => ({ ...r, sequence: i })),
+                  routes: filtered.map((r, i) => ({ ...r, sequence: i + 1 })),
                 };
               }),
             };
@@ -129,10 +170,19 @@ export const usePlanStore = create<PlanState>()(
                 if (day.dayNumber !== dayNumber) {
                   return day;
                 }
-                const sequence = day.routes.length;
                 return {
                   ...day,
-                  routes: [...day.routes, { ...route, sequence }],
+                  routes: [
+                    ...day.routes,
+                    {
+                      ...route,
+                      sequence:
+                        route.sequence ??
+                        (day.routes.length === 0
+                          ? 1
+                          : Math.max(...day.routes.map(r => r.sequence)) + 1),
+                    },
+                  ],
                 };
               }),
             };
@@ -154,7 +204,7 @@ export const usePlanStore = create<PlanState>()(
                 const routes = orderedItemIds
                   .map((id, i) => {
                     const r = byId[id];
-                    return r ? { ...r, sequence: i } : null;
+                    return r ? { ...r, sequence: i + 1 } : null;
                   })
                   .filter((r): r is RouteItem => r != null);
                 return { ...day, routes };
@@ -179,6 +229,23 @@ export const usePlanStore = create<PlanState>()(
             };
           }),
         })),
+      updateRouteMemo: (planId, itemId, memo) =>
+        set(state => ({
+          plans: state.plans.map(plan => {
+            if (plan.planId !== planId) {
+              return plan;
+            }
+            return {
+              ...plan,
+              itinerary: plan.itinerary.map(day => ({
+                ...day,
+                routes: day.routes.map(r =>
+                  r.itemId === itemId ? { ...r, memo } : r,
+                ),
+              })),
+            };
+          }),
+        })),
       optimizeDayRoute: (planId, dayNumber) =>
         set(state => ({
           plans: state.plans.map(plan => {
@@ -196,6 +263,42 @@ export const usePlanStore = create<PlanState>()(
             };
           }),
         })),
+      addItineraryDay: (planId, dayNumber, visitDate) =>
+        set(state => ({
+          plans: state.plans.map(plan => {
+            if (plan.planId !== planId) {
+              return plan;
+            }
+            return {
+              ...plan,
+              itinerary: [
+                ...plan.itinerary,
+                {
+                  dailyId: createId('day'),
+                  dayNumber,
+                  date: visitDate,
+                  routes: [],
+                },
+              ],
+            };
+          }),
+        })),
+      removeItineraryDay: (planId, dayNumber) =>
+        set(state => ({
+          plans: state.plans.map(plan => {
+            if (plan.planId !== planId) {
+              return plan;
+            }
+            const filtered = plan.itinerary
+              .filter(day => day.dayNumber !== dayNumber)
+              .sort((a, b) => a.dayNumber - b.dayNumber)
+              .map((day, index) => ({
+                ...day,
+                dayNumber: index + 1,
+              }));
+            return { ...plan, itinerary: filtered };
+          }),
+        })),
       addBudgetEntry: entry => {
         const full: BudgetEntry = { ...entry, entryId: createId('exp-') };
         set(state => ({
@@ -209,10 +312,10 @@ export const usePlanStore = create<PlanState>()(
       completePlan: planId =>
         set(state => ({
           plans: state.plans.map(p =>
-            p.planId === planId ? { ...p, status: 'COMPLETED' } : p,
+            p.planId === planId
+              ? { ...p, status: 'COMPLETED', travelStatus: 'COMPLETED' }
+              : p,
           ),
-          activePlanId:
-            state.activePlanId === planId ? null : state.activePlanId,
         })),
       importPlanFromTravelogue: (travelogue, member) => {
         const linked = get().plans.find(p => p.planId === travelogue.planId) ?? null;
@@ -223,6 +326,10 @@ export const usePlanStore = create<PlanState>()(
         get().addPlan(plan);
         return plan;
       },
+      replacePlan: plan =>
+        set(state => ({
+          plans: state.plans.map(p => (p.planId === plan.planId ? plan : p)),
+        })),
     }),
     {
       name: '@buting/plans',
@@ -237,16 +344,26 @@ export const usePlanStore = create<PlanState>()(
 );
 
 export function selectActivePlan(state: PlanState): TravelPlan | null {
-  if (state.activePlanId) {
-    const active = state.plans.find(p => p.planId === state.activePlanId);
-    if (active && active.status !== 'COMPLETED') {
-      return active;
-    }
+  if (!state.activePlanId) {
+    return null;
   }
-  return (
-    state.plans.find(p => p.status === 'DRAFT' || p.status === 'CONFIRMED') ??
-    null
-  );
+  const active = state.plans.find(p => p.planId === state.activePlanId);
+  if (!active || active.status === 'COMPLETED' || !isServerBackedPlan(active)) {
+    return null;
+  }
+  return active;
+}
+
+/** 메인 홈 히어로 배너용 — 완료 여행 포함 */
+export function selectHomeFeaturedPlan(state: PlanState): TravelPlan | null {
+  if (!state.activePlanId) {
+    return null;
+  }
+  const plan = state.plans.find(p => p.planId === state.activePlanId);
+  if (!plan || !isServerBackedPlan(plan)) {
+    return null;
+  }
+  return plan;
 }
 
 export function selectPlanById(planId: string) {
@@ -254,18 +371,30 @@ export function selectPlanById(planId: string) {
     state.plans.find(p => p.planId === planId) ?? null;
 }
 
+export function selectIsPlanOfflineSync(planId: string) {
+  return (state: PlanState) => Boolean(state.offlineSyncPlanIds?.[planId]);
+}
+
 /** 기존 플랜에 placeInfo가 없을 때 런타임 보강 */
 export function hydrateRoutePlaceInfo(
   route: RouteItem,
   lang: 'ko' | 'en' | 'ja' | 'zh',
 ): RouteItem {
+  const placeInfo =
+    route.placeInfo ?? enrichPlaceInfo(route.placeId, route.placeName, route.type, lang);
+
+  if (isTourApiContentId(route.placeId)) {
+    const categoryLabel =
+      getCopyForLanguage('placeSearch', lang).categoryLabels[routeTypeToContentTypeId(route.type)];
+    if (placeInfo.category !== categoryLabel) {
+      return { ...route, placeInfo: { ...placeInfo, category: categoryLabel } };
+    }
+  }
+
   if (route.placeInfo) {
     return route;
   }
-  return {
-    ...route,
-    placeInfo: enrichPlaceInfo(route.placeId, route.placeName, route.type, lang),
-  };
+  return { ...route, placeInfo };
 }
 
 export const emptyWizardAnswers = (): PlanWizardAnswers => ({

@@ -20,9 +20,9 @@ import {
   ONBOARDING_QUESTION_FLOW,
   PURPOSE_OPTIONS,
   SCHEDULE_PACE_OPTIONS,
-  SETUP_COPY,
   TRAVEL_STYLE_OPTIONS,
 } from '../../constants/setup/onboarding';
+import { useAppLanguage, useCopy } from '../../i18n';
 import type { OnboardingFlowStep, OnboardingStepId } from '../../constants/setup/onboarding';
 import type { RootStackParamList } from '../../navigation/types';
 import { buildUserPromptContext } from '../../services/setup/promptBuilder';
@@ -89,7 +89,8 @@ export function OnboardingScreen({ navigation, route }: Props) {
   const isAccountMode = mode === 'account';
   const isQuestionOnlyFlow = isEditMode || isAccountMode;
   const { alert } = useAppAlert();
-  const language = useAppStore(state => state.language) ?? 'en';
+  const language = useAppLanguage();
+  const copy = useCopy('setup');
   const isAuthenticated = useAuthStore(selectIsAuthenticated);
   const userId = useAuthStore(state => state.user?.userId ?? null);
   const accessToken = useAuthStore(state => state.accessToken);
@@ -111,7 +112,6 @@ export function OnboardingScreen({ navigation, route }: Props) {
     null,
   );
 
-  const copy = SETUP_COPY[language];
   const stepConfig = flowSteps[step];
   const isWelcomeStep = stepConfig.kind === 'welcome';
   const isFeatureStep = stepConfig.kind === 'feature';
@@ -126,8 +126,6 @@ export function OnboardingScreen({ navigation, route }: Props) {
         aiPromptContext: '',
       };
       profile.aiPromptContext = buildUserPromptContext(profile);
-
-      const copy = SETUP_COPY[language];
 
       if (isAuthenticated && userId && accessToken) {
         try {
@@ -160,6 +158,7 @@ export function OnboardingScreen({ navigation, route }: Props) {
     },
     [
       language,
+      copy,
       navigation,
       completeOnboardingStore,
       isEditMode,
@@ -408,7 +407,7 @@ export function OnboardingScreen({ navigation, route }: Props) {
         {featureContent.features.map(feature => (
           <FeatureHighlightCard
             key={feature.title.en}
-            emoji={feature.emoji}
+            icon={feature.icon}
             title={feature.title[language]}
             description={feature.description[language]}
             emphasized={feature.emphasized}

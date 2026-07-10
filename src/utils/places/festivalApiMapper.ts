@@ -2,10 +2,13 @@ import type { BusanFestival } from '../../constants/festival/festivalCalendar';
 import type { FestivalSearchItemDto, PlaceDetailResponseDto } from '../../types/placesApi';
 import { PLACE_CONTENT_TYPE } from '../../types/placesApi';
 import type { BusanPlace } from '../../types/placeSearch';
+import { resolvePlaceDetailImageUrl } from './placesApiMapper';
 import { tourApiDistrictLabelKo } from './tourApiDistrict';
 
+import type { LucideIconName } from '../../constants/icons';
+
 const DEFAULT_FESTIVAL_COLOR = '#6366f1';
-const DEFAULT_FESTIVAL_EMOJI = '🎪';
+const DEFAULT_FESTIVAL_ICON: LucideIconName = 'tent';
 const BUSAN_CENTER = { lat: 35.1796, lng: 129.0756 };
 
 export function toYyyymmdd(isoDate: string): string {
@@ -126,7 +129,7 @@ export function mapFestivalSearchItemToBusanFestival(
     summaryZh: summary,
     imageUri: item.imageUrl ?? item.thumbnailUrl ?? '',
     imageColor: DEFAULT_FESTIVAL_COLOR,
-    imageEmoji: DEFAULT_FESTIVAL_EMOJI,
+    imageIcon: DEFAULT_FESTIVAL_ICON,
     location,
   };
 }
@@ -191,5 +194,6 @@ export function enrichFestivalFromDetail(
     summaryJa: summary,
     summaryZh: summary,
     location,
+    imageUri: resolvePlaceDetailImageUrl(detail) || festival.imageUri,
   };
 }

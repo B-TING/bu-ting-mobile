@@ -1,10 +1,5 @@
-import { localizedAreaName } from '../../constants/places/accommodation';
-import { localizedAttractionCategory } from '../../constants/places/attractions';
 import { getScheduleDayColor } from '../../constants/plan/scheduleDayColors';
-import type { BusanAccommodation } from '../../types/accommodation';
-import type { BusanAttraction } from '../../types/attraction';
 import type { SubwayLockerStation } from '../../types/subwayLocker';
-import type { AppLanguage } from '../../types/user';
 import type { RouteItem } from '../../types/travelPlan';
 import type { KakaoMapOverlay } from './types';
 import type {
@@ -23,6 +18,7 @@ function parseStrokeColor(hex: string): { color: string; opacity: number } {
 export function kakaoOverlaysFromSchedule(
   lines: ScheduleMapLineOverlay[],
   markers: ScheduleMapMarkerOverlay[],
+  highlightItemId?: string | null,
 ): KakaoMapOverlay[] {
   const overlays: KakaoMapOverlay[] = [];
 
@@ -47,16 +43,17 @@ export function kakaoOverlaysFromSchedule(
 
   for (const marker of markers) {
     const dayColor = getScheduleDayColor(marker.dayNumber);
+    const active = highlightItemId != null && highlightItemId === marker.itemId;
     overlays.push({
       kind: 'numbered',
       id: marker.key,
       lat: marker.coordinate.latitude,
       lng: marker.coordinate.longitude,
       order: marker.order,
-      color: dayColor.main,
+      color: active ? '#0077B6' : dayColor.main,
       opacity: marker.isSelectedDay ? 1 : 0.72,
-      size: marker.isActiveDay ? 30 : 26,
-      zIndex: marker.isActiveDay ? 10 : 5,
+      size: active ? 34 : marker.isActiveDay ? 30 : 26,
+      zIndex: active ? 12 : marker.isActiveDay ? 10 : 5,
     });
   }
 
@@ -108,38 +105,6 @@ export function kakaoOverlaysFromRoutes(
   return overlays;
 }
 
-export function kakaoOverlaysFromStays(
-  stays: BusanAccommodation[],
-  selectedId: string | null | undefined,
-  bookmarkedIds: readonly string[],
-  options: {
-    language: AppLanguage;
-    areaLabel: (area: string) => string;
-  },
-): KakaoMapOverlay[] {
-  const bookmarkSet = new Set(bookmarkedIds);
-
-  return stays.map(stay => {
-    const active = stay.id === selectedId;
-    const bookmarked = bookmarkSet.has(stay.id);
-    const pinColor = bookmarked ? '#F59E0B' : '#4285F4';
-
-    return {
-      kind: 'rating',
-      id: stay.id,
-      lat: stay.location.lat,
-      lng: stay.location.lng,
-      rating: stay.rating > 0 ? stay.rating.toFixed(1) : '—',
-      color: pinColor,
-      active,
-      bookmarked,
-      caption: active
-        ? `${stay.name} · ${options.areaLabel(localizedAreaName(stay, options.language))}`
-        : undefined,
-    };
-  });
-}
-
 export function kakaoOverlaysFromPlaces(
   places: Array<{
     id: string;
@@ -171,40 +136,6 @@ export function kakaoOverlaysFromPlaces(
       active,
       bookmarked,
       caption: active ? (suffix ? `${place.name} · ${suffix}` : place.name) : undefined,
-    };
-  });
-}
-
-export function kakaoOverlaysFromAttractions(
-  attractions: BusanAttraction[],
-  selectedId: string | null | undefined,
-  bookmarkedIds: readonly string[],
-  options: {
-    language: AppLanguage;
-    categoryLabel: (category: string) => string;
-  },
-): KakaoMapOverlay[] {
-  const bookmarkSet = new Set(bookmarkedIds);
-
-  return attractions.map(attraction => {
-    const active = attraction.id === selectedId;
-    const bookmarked = bookmarkSet.has(attraction.id);
-    const pinColor = bookmarked ? '#F59E0B' : '#4285F4';
-
-    return {
-      kind: 'rating',
-      id: attraction.id,
-      lat: attraction.location.lat,
-      lng: attraction.location.lng,
-      rating: attraction.rating > 0 ? attraction.rating.toFixed(1) : '—',
-      color: pinColor,
-      active,
-      bookmarked,
-      caption: active
-        ? `${attraction.name} · ${options.categoryLabel(
-            localizedAttractionCategory(attraction, options.language),
-          )}`
-        : undefined,
     };
   });
 }

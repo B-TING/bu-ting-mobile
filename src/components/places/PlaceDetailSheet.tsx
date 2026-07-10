@@ -1,16 +1,31 @@
-import { Linking, Pressable, Text, useWindowDimensions, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Modal,
+  PanResponder,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { PLACE_SEARCH_COPY, isFestivalPlaceSearch } from '../../constants/places/placeSearch';
-import { buildGoogleMapsUrl } from '../../kakaoMap';
+import { ICON_COLOR_PRIMARY } from '../../constants/icons';
+import type { CopyFor } from '../../i18n';
 import type { BusanPlace } from '../../types/placeSearch';
 import type { PlaceDetailVO } from '../../types/googlePlaces';
 import type { AppLanguage } from '../../types/user';
-import { AppModal, AppModalActions } from '../shared/modals';
-import { PlaceGoogleDetailBody } from './PlaceGoogleDetailBody';
+import { AppIcon } from '../shared/icons/AppIcon';
+import { appModalStyles } from '../shared/modals/appModalStyles';
+import { PlaceDetailPanel } from './PlaceDetailPanel';
 
-type Copy = (typeof PLACE_SEARCH_COPY)['ko'];
+type Copy = CopyFor<'placeSearch'>;
 
-const SHEET_HEIGHT_RATIO = 0.62;
+const DEFAULT_SHEET_RATIO = 0.88;
+const MIN_SHEET_RATIO = 0.62;
+const MAX_SHEET_RATIO = 0.96;
+const SNAP_CLOSE_THRESHOLD = 96;
+const HANDLE_AREA_HEIGHT = 28;
 
 type PlaceDetailSheetProps = {
   visible: boolean;
@@ -23,6 +38,32 @@ type PlaceDetailSheetProps = {
   onClose: () => void;
 };
 
+function snapSheetHeight(
+  height: number,
+  minHeight: number,
+  defaultHeight: number,
+  maxHeight: number,
+): number | null {
+  if (height < SNAP_CLOSE_THRESHOLD) {
+    return null;
+  }
+
+  const clamped = Math.max(minHeight, Math.min(height, maxHeight));
+  const candidates = [minHeight, defaultHeight, maxHeight];
+  let nearest = defaultHeight;
+  let minDist = Math.abs(clamped - defaultHeight);
+
+  for (const candidate of candidates) {
+    const dist = Math.abs(clamped - candidate);
+    if (dist < minDist) {
+      minDist = dist;
+      nearest = candidate;
+    }
+  }
+
+  return nearest;
+}
+
 export function PlaceDetailSheet({
   visible,
   place,
@@ -34,108 +75,164 @@ export function PlaceDetailSheet({
   onClose,
 }: PlaceDetailSheetProps) {
   const { height: screenHeight } = useWindowDimensions();
-  const sheetMaxHeight = Math.round(screenHeight * SHEET_HEIGHT_RATIO);
+  const insets = useSafeAreaInsets();
+  const maxSheetHeight = Math.round(screenHeight * MAX_SHEET_RATIO) - insets.top;
+  const defaultSheetHeight = Math.min(
+    Math.round(screenHeight * DEFAULT_SHEET_RATIO),
+    maxSheetHeight,
+  );
+  const minSheetHeight = Math.min(
+    Math.round(screenHeight * MIN_SHEET_RATIO),
+    defaultSheetHeight,
+  );
+
+  const [sheetHeight, setSheetHeight] = useState(defaultSheetHeight);
+  const sheetHeightRef = useRef(defaultSheetHeight);
+  const dragStartHeightRef = useRef(defaultSheetHeight);
+
+  const applySheetHeight = useCallback(
+    (height: number) => {
+      const clamped = Math.max(0, Math.min(height, maxSheetHeight));
+      sheetHeightRef.current = clamped;
+      setSheetHeight(clamped);
+    },
+    [maxSheetHeight],
+  );
+
+  useEffect(() => {
+    if (!visible) {
+      return;
+    }
+    applySheetHeight(defaultSheetHeight);
+  }, [visible, defaultSheetHeight, applySheetHeight]);
+
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: (_, gesture) => Math.abs(gesture.dy) > 4,
+        onPanResponderGrant: () => {
+          dragStartHeightRef.current = sheetHeightRef.current;
+        },
+        onPanResponderMove: (_, gesture) => {
+          applySheetHeight(dragStartHeightRef.current - gesture.dy);
+        },
+        onPanResponderRelease: () => {
+          const snapped = snapSheetHeight(
+            sheetHeightRef.current,
+            minSheetHeight,
+            defaultSheetHeight,
+            maxSheetHeight,
+          );
+          if (snapped == null) {
+            onClose();
+            return;
+          }
+          applySheetHeight(snapped);
+        },
+        onPanResponderTerminationRequest: () => false,
+      }),
+    [
+      applySheetHeight,
+      defaultSheetHeight,
+      maxSheetHeight,
+      minSheetHeight,
+      onClose,
+    ],
+  );
 
   if (!place || !visible) {
     return null;
   }
 
-  const categoryLabel = copy.categoryLabels[place.contentTypeId];
-  const isFestival = isFestivalPlaceSearch(place.contentTypeId);
-  const rating = detail?.rating ?? place.rating;
-  const reviewCount = detail?.userRatingCount ?? place.userRatingsTotal;
-  const metaLine = isFestival
-    ? copy.festivalDetailMeta
-    : copy.ratingSummary(rating, reviewCount);
-
-  const openGoogleMaps = () => {
-    if (detail) {
-      Linking.openURL(buildGoogleMapsUrl(detail)).catch(() => {});
-      return;
-    }
-    const query = encodeURIComponent(place.name);
-    Linking.openURL(
-      `https://www.google.com/maps/search/?api=1&query=${query}`,
-    ).catch(() => {});
-  };
-
-  const googleDetailCopy = {
-    detailLoading: copy.detailLoading,
-    notFound: copy.notFound,
-    addressLabel: copy.addressLabel,
-    phoneLabel: copy.phoneLabel,
-    hoursLabel: copy.hoursLabel,
-    openNow: copy.openNow,
-    closedNow: copy.closedNow,
-    reviewsTitle: copy.reviewsTitle,
-    reviewsSource: copy.reviewsSource,
-    priceLevelLabel: copy.priceLevelLabel,
-    priceLevel: copy.priceLevel,
-    detailSectionInfo: copy.detailSectionInfo,
-    detailSectionFacility: copy.detailSectionFacility,
-    detailSectionReviews: copy.detailSectionReviews,
-    detailSectionEmpty: copy.detailSectionEmpty,
-    detailSectionEvent: copy.detailSectionEvent,
-  };
-
   return (
-    <AppModal
-      visible={visible}
-      onClose={onClose}
-      maxHeight={sheetMaxHeight}
-      closeAccessibilityLabel={copy.close}
-      
-      footer={
-        <View className="mt-1 px-5 pb-5">
-          <AppModalActions
-            actions={[{ label: copy.close, onPress: onClose, variant: 'primary' }]}
-          />
-        </View>
-      }>
-      
-        <View className="flex-row items-start justify-between gap-3 px-5">
-          <Text className="min-w-0 flex-1 pr-2 text-xl font-bold text-brand-text">{place.name}</Text>
-          <View className="shrink-0 items-end gap-2">
-            <View className="rounded-full bg-brand-selected px-2.5 py-1">
-              <Text className="text-[10px] font-semibold text-brand-primary">{categoryLabel}</Text>
-            </View>
-            {onToggleBookmark ? (
-              <Pressable
-                onPress={onToggleBookmark}
-                accessibilityRole="button"
-                accessibilityLabel={bookmarked ? copy.unbookmark : copy.bookmark}
-                className={`flex-row items-center gap-1 rounded-full px-3 py-2 active:opacity-80 ${
-                  bookmarked ? 'bg-amber-100' : 'bg-brand-selected'
-                }`}>
-                <Text className="text-sm">{bookmarked ? '📌' : '☆'}</Text>
-                <Text
-                  className={`text-xs font-bold ${
-                    bookmarked ? 'text-amber-700' : 'text-brand-primary'
-                  }`}>
-                  {bookmarked ? copy.unbookmark : copy.bookmark}
-                </Text>
-              </Pressable>
-            ) : null}
-          </View>
-        </View>
-
-        <Text className="mt-2 text-sm font-semibold text-brand-primary px-5">{metaLine}</Text>
-
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <View style={appModalStyles.overlay}>
         <Pressable
-          onPress={openGoogleMaps}
+          style={appModalStyles.backdrop}
+          onPress={onClose}
+          accessibilityLabel={copy.close}
           accessibilityRole="button"
-          className="mx-5 mt-3 items-center rounded-2xl border border-brand-primary bg-brand-selected py-3 active:opacity-90">
-          <Text className="text-[15px] font-bold text-brand-primary">{copy.openInGoogleMaps}</Text>
-        </Pressable>
-        <PlaceGoogleDetailBody
-          detail={detail}
-          loading={false}
-          fallbackAddress={place.address}
-          copy={googleDetailCopy}
-          showPriceLevel={place.contentTypeId === '32'}
-          language={language}
-          contentTypeId={place.contentTypeId}
         />
-    </AppModal>
+
+        <View
+          style={[
+            appModalStyles.sheet,
+            styles.sheet,
+            {
+              height: sheetHeight,
+              paddingBottom: Math.max(insets.bottom, 16),
+            },
+          ]}>
+          <View
+            {...panResponder.panHandlers}
+            accessibilityRole="adjustable"
+            accessibilityLabel={copy.close}
+            style={styles.handleArea}>
+            <View style={appModalStyles.handle} />
+          </View>
+
+          <Pressable
+            onPress={onClose}
+            accessibilityRole="button"
+            accessibilityLabel={copy.close}
+            style={styles.closeBtn}
+            hitSlop={8}>
+            <AppIcon name="x" size={16} color={ICON_COLOR_PRIMARY} strokeWidth={2.5} />
+          </Pressable>
+
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            nestedScrollEnabled>
+            <PlaceDetailPanel
+              place={place}
+              detail={detail}
+              language={language}
+              copy={copy}
+              bookmarked={bookmarked}
+              onToggleBookmark={onToggleBookmark}
+              layout="sheetHeader"
+            />
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
   );
 }
+
+const styles = StyleSheet.create({
+  sheet: {
+    position: 'relative',
+  },
+  handleArea: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: HANDLE_AREA_HEIGHT,
+    paddingBottom: 4,
+  },
+  closeBtn: {
+    position: 'absolute',
+    top: HANDLE_AREA_HEIGHT + 8,
+    right: 12,
+    zIndex: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 4,
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 8,
+  },
+});

@@ -167,13 +167,25 @@ export const useFestivalStore = create<FestivalState>()((set, get) => ({
         size: 20,
         arrange: 'C',
       });
-      const homeFestivals = sortFestivalsByStatus(result.festivals).slice(0, 6);
+      const homeFestivalsRaw = sortFestivalsByStatus(result.festivals).slice(0, 6);
+      const homeFestivals = await Promise.all(
+        homeFestivalsRaw.map(async festival => {
+          if (festival.imageUri) {
+            return festival;
+          }
+          try {
+            return await fetchFestivalDetail(festival);
+          } catch {
+            return festival;
+          }
+        }),
+      );
 
       set(state => ({
         homeFestivals,
         homeError: null,
         loadingHome: false,
-        festivalsById: mergeFestivalsById(state.festivalsById, result.festivals),
+        festivalsById: mergeFestivalsById(state.festivalsById, homeFestivals),
       }));
     } catch (fetchError) {
       const message =

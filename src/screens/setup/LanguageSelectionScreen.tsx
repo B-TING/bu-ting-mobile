@@ -7,7 +7,7 @@ import { PrimaryButton } from '../../components/shared/buttons/PrimaryButton';
 import { BrandLogo } from '../../components/shared/brand/BrandLogo';
 import { layout } from '../../constants/common/layout';
 import { LANGUAGE_OPTIONS } from '../../constants/setup/languages';
-import { SETUP_COPY } from '../../constants/setup/onboarding';
+import { getCopyForLanguage } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
 import { useAppStore } from '../../stores';
 import type { AppLanguage } from '../../types/user';
@@ -19,7 +19,7 @@ export function LanguageSelectionScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const setLanguage = useAppStore(state => state.setLanguage);
   const [selected, setSelected] = useState<AppLanguage | null>(null);
-  const copy = selected ? SETUP_COPY[selected] : SETUP_COPY.en;
+  const copy = getCopyForLanguage('setup', selected ?? 'en');
 
   const onContinue = () => {
     if (!selected) {

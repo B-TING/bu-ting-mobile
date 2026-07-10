@@ -4,17 +4,18 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '../../components/shared/buttons/PrimaryButton';
-import { PLAN_WIZARD_COPY, dayCountBetween } from '../../constants/plan/planWizard';
+import { dayCountBetween } from '../../constants/plan/planWizard';
+import { useAppLanguage, useCopy } from '../../i18n';
 import { layout } from '../../constants/common/layout';
 import type { RootStackParamList } from '../../navigation/types';
-import { useAppStore, usePlanStore } from '../../stores';
+import { usePlanStore } from '../../stores';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PlanCandidates'>;
 
 export function PlanCandidatesScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
-  const language = useAppStore(s => s.language) ?? 'ko';
-  const copy = PLAN_WIZARD_COPY[language];
+  const language = useAppLanguage();
+  const copy = useCopy('planWizard');
   const candidates = usePlanStore(s => s.planCandidates);
   const addPlan = usePlanStore(s => s.addPlan);
   const confirmPlan = usePlanStore(s => s.confirmPlan);

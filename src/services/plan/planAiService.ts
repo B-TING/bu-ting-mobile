@@ -186,14 +186,14 @@ function buildPlan(
   const displayName =
     onboarding?.language === 'ko' ? '???' : 'Traveler';
   const members: TravelPlan['members'] = [
-    { userId, nickname: displayName, role: 'OWNER' },
+    { userId, nickname: displayName, role: 'LEADER' },
   ];
   const extra = Math.min(4, Math.max(0, wizard.companionCount - 1));
   for (let i = 0; i < extra; i++) {
     members.push({
       userId: `member-${i + 1}`,
       nickname: onboarding?.language === 'ko' ? `?? ${i + 1}` : `Guest ${i + 1}`,
-      role: i === 0 ? 'EDITOR' : 'VIEWER',
+      role: 'MEMBER',
     });
   }
 

@@ -23,6 +23,8 @@ type ScheduleRouteSlotProps = {
     rebootCancel: string;
     recordReview?: string;
     quickRatingHint?: string;
+    scheduleDetailLoading?: string;
+    placeRatingSummary?: (rating: number, count: number) => string;
     transportModeTitle?: string;
     legWalk: string;
     legDrive: string;
@@ -35,6 +37,7 @@ type ScheduleRouteSlotProps = {
   onPress: () => void;
   onEdit: () => void;
   indexSelected: boolean;
+  isFocused?: boolean;
   indexHint: string;
   onIndexPress: () => void;
   onToggleVisited: () => void;
@@ -57,6 +60,7 @@ export function ScheduleRouteSlot({
   onPress,
   onEdit,
   indexSelected,
+  isFocused,
   indexHint,
   onIndexPress,
   onToggleVisited,
@@ -155,6 +159,7 @@ export function ScheduleRouteSlot({
             onPress={onPress}
             onEditPress={onEdit}
             indexSelected={indexSelected}
+            isFocused={isFocused}
             indexHint={indexHint}
             onIndexPress={onIndexPress}
             onToggleVisited={onToggleVisited}
@@ -162,6 +167,8 @@ export function ScheduleRouteSlot({
             editLabel={copy.editRoute}
             recordReviewLabel={copy.recordReview}
             quickRatingHint={copy.quickRatingHint}
+            detailLoadingLabel={copy.scheduleDetailLoading}
+            ratingSummary={copy.placeRatingSummary}
             reviewRating={reviewRating}
             onWriteReview={onWriteReview}
             onQuickRating={onQuickRating}

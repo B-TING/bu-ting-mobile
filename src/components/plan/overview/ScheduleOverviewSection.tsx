@@ -1,13 +1,13 @@
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
-import type { PLAN_DETAIL_COPY } from '../../../constants/plan/planDetail';
+import type { CopyFor } from '../../../i18n';
 import type { AppLanguage } from '../../../types/user';
 import type { TravelPlan } from '../../../types/travelPlan';
 import { formatWeekdayDate } from '../../../utils/geo/geo';
 import { representativeRoute, sortedRoutes } from '../../../utils/plan/planItinerary';
 import { getNearestUpcomingStop } from '../../../utils/plan/planSchedule';
 
-type Copy = (typeof PLAN_DETAIL_COPY)[AppLanguage];
+type Copy = CopyFor<'planDetail'>;
 
 type ScheduleOverviewSectionProps = {
   plan: TravelPlan;

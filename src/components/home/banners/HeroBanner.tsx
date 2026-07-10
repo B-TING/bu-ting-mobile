@@ -6,6 +6,9 @@ import {
   View,
 } from 'react-native';
 
+import { ICON_COLOR_WHITE } from '../../../constants/icons';
+import { AppIcon } from '../../shared/icons/AppIcon';
+
 const heroImage = require('../../../../assets/images/home-hero.jpg');
 
 type HeroBannerProps = {
@@ -26,7 +29,7 @@ export function HeroBanner({ title, subtitle, ctaLabel, onCtaPress }: HeroBanner
             onPress={onCtaPress}
             className="flex-row items-center self-start rounded-xl bg-brand-primary px-4 py-2.5 active:opacity-90"
             accessibilityRole="button">
-            <Text className="mr-1.5 text-sm">✨</Text>
+            <AppIcon name="sparkles" size={16} color={ICON_COLOR_WHITE} />
             <Text className="text-sm font-bold text-white">{ctaLabel}</Text>
           </Pressable>
         </View>

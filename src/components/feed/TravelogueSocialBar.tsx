@@ -1,11 +1,17 @@
 import { Pressable, Text, View } from 'react-native';
 
-import type { TRAVEL_REVIEW_COPY } from '../../constants/review/travelReview';
+import {
+  ICON_COLOR_HEART,
+  ICON_COLOR_MUTED,
+  ICON_COLOR_PRIMARY,
+} from '../../constants/icons';
+import type { CopyFor } from '../../i18n';
+import { AppIcon } from '../shared/icons/AppIcon';
 import type { TravelogueSocial } from '../../types/travelReview';
 import type { AppLanguage } from '../../types/user';
 import { getHelpfulCount, isHelpfulByUser } from '../../utils/review/travelReview';
 
-type Copy = (typeof TRAVEL_REVIEW_COPY)[AppLanguage];
+type Copy = CopyFor<'travelReview'>;
 
 type TravelogueSocialBarProps = {
   copy: Copy;
@@ -34,7 +40,12 @@ export function TravelogueSocialBar({
         }`}
         accessibilityRole="button"
         accessibilityState={{ selected: isHelpful }}>
-        <Text className="text-base">{isHelpful ? '❤️' : '🤍'}</Text>
+        <AppIcon
+          name="heart"
+          size={18}
+          color={isHelpful ? ICON_COLOR_HEART : ICON_COLOR_MUTED}
+          filled={isHelpful}
+        />
         <Text
           className={`text-xs font-bold ${
             isHelpful ? 'text-brand-primary' : 'text-brand-text'
@@ -52,7 +63,7 @@ export function TravelogueSocialBar({
         onPress={onImportPlan}
         className="flex-row items-center gap-1.5 rounded-full bg-brand-selected px-3 py-2 active:opacity-80"
         accessibilityRole="button">
-        <Text className="text-base">📋</Text>
+        <AppIcon name="clipboardList" size={18} color={ICON_COLOR_PRIMARY} />
         <Text className="text-xs font-bold text-brand-text">{copy.importPlan}</Text>
       </Pressable>
     </View>

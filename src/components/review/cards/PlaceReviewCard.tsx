@@ -1,7 +1,9 @@
 import { Pressable, Text, View } from 'react-native';
 
 import type { PlaceReview } from '../../../types/travelReview';
+import { ICON_COLOR_PRIMARY } from '../../../constants/icons';
 import { StarRating } from '../../shared/rating/StarRating';
+import { AppIcon } from '../../shared/icons/AppIcon';
 
 type PlaceReviewCardProps = {
   placeName: string;
@@ -66,9 +68,11 @@ export function PlaceReviewCard({
         </View>
         {isVisited ? (
           <View className="rounded-full bg-brand-primary/10 px-3 py-1.5">
-            <Text className="text-xs font-bold text-brand-primary">
-              {review ? '✓' : '+'}
-            </Text>
+            {review ? (
+              <AppIcon name="check" size={14} color={ICON_COLOR_PRIMARY} strokeWidth={2.5} />
+            ) : (
+              <AppIcon name="plus" size={14} color={ICON_COLOR_PRIMARY} strokeWidth={2.5} />
+            )}
           </View>
         ) : null}
       </View>

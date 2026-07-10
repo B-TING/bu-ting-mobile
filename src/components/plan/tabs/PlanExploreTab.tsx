@@ -1,11 +1,11 @@
 import { Text, View } from 'react-native';
 
 import { RouteMapView } from '../../../kakaoMap';
-import type { PLAN_DETAIL_COPY } from '../../../constants/plan/planDetail';
+import type { CopyFor } from '../../../i18n';
 import type { AppLanguage } from '../../../types/user';
 import type { RouteItem } from '../../../types/travelPlan';
 
-type Copy = (typeof PLAN_DETAIL_COPY)[AppLanguage];
+type Copy = CopyFor<'planDetail'>;
 
 type PlanExploreTabProps = {
   copy: Copy;

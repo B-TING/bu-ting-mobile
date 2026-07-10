@@ -9,6 +9,7 @@ export const PLAN_DETAIL_TABS: { id: PlanDetailTab; label: Record<AppLanguage, s
   { id: 'records', label: { ko: '기록', en: 'Records', ja: '記録', zh: '记录' } },
 ];
 
+/** @deprecated Use useCopy('planDetail') from src/i18n */
 export const PLAN_DETAIL_COPY: Record<
   AppLanguage,
   {
@@ -21,9 +22,8 @@ export const PLAN_DETAIL_COPY: Record<
     mapDragLabel: string;
     mapClosedHint: string;
     membersTitle: string;
-    roleOwner: string;
-    roleEditor: string;
-    roleViewer: string;
+    roleLeader: string;
+    roleMember: string;
     visited: string;
     markVisited: string;
     closedHint: string;
@@ -42,9 +42,25 @@ export const PLAN_DETAIL_COPY: Record<
     recordsPublished: string;
     recordsHint: string;
     inviteMembers: string;
+    inviteModalTitle: string;
+    inviteModalSubtitle: string;
+    inviteCopyLink: string;
+    inviteCopied: string;
+    inviteLinkLoading: string;
+    inviteLinkError: string;
+    inviteRetry: string;
+    inviteExpiresAt: (date: string) => string;
+    inviteLeaderOnly: string;
     tripPeriod: string;
     nights: (n: number) => string;
     dayLabel: (n: number) => string;
+    addDay: string;
+    removeDay: string;
+    removeDayConfirmTitle: string;
+    removeDayConfirmMessage: (date: string, dayNumber: number) => string;
+    removeDayConfirm: string;
+    cannotRemoveLastDay: string;
+    cannotAddMoreDays: string;
     schedulePreview: string;
     dailyHighlights: string;
     nextScheduleTitle: string;
@@ -88,6 +104,7 @@ export const PLAN_DETAIL_COPY: Record<
     visitFirstReview: string;
     recordReview: string;
     quickRatingHint: string;
+    scheduleDetailLoading: string;
     detailLoading: string;
     notFound: string;
     addressLabel: string;
@@ -109,6 +126,8 @@ export const PLAN_DETAIL_COPY: Record<
     budgetAmount: string;
     budgetMemo: string;
     budgetMemoPlaceholder: string;
+    placeMemoTitle: string;
+    placeMemoPlaceholder: string;
     budgetCategoryFood: string;
     budgetCategoryShopping: string;
     budgetCategoryAccommodation: string;
@@ -122,6 +141,7 @@ export const PLAN_DETAIL_COPY: Record<
     budgetCancel: string;
     dayDuration: (m: string) => string;
     dayZoneCount: (n: number) => string;
+    offlineSyncNotice: string;
   }
 > = {
   ko: {
@@ -134,9 +154,8 @@ export const PLAN_DETAIL_COPY: Record<
     mapDragLabel: '일정 크기 조절',
     mapClosedHint: '위로 당겨 일정 열기',
     membersTitle: '함께하는 일행',
-    roleOwner: '방장',
-    roleEditor: '편집',
-    roleViewer: '보기',
+    roleLeader: '방장',
+    roleMember: '일행',
     visited: '방문 완료',
     markVisited: '방문 체크',
     closedHint: '해당 요일 휴무일 수 있어요',
@@ -155,9 +174,26 @@ export const PLAN_DETAIL_COPY: Record<
     recordsPublished: '여행기 게시 완료',
     recordsHint: '방문한 여행지마다 후기를 남겨 보세요',
     inviteMembers: '일행 초대하기',
+    inviteModalTitle: '일행 초대 링크',
+    inviteModalSubtitle: '아래 링크를 복사해 일행에게 공유하세요.',
+    inviteCopyLink: '링크 복사',
+    inviteCopied: '복사됨',
+    inviteLinkLoading: '초대 링크를 불러오는 중…',
+    inviteLinkError: '초대 링크를 불러오지 못했습니다.',
+    inviteRetry: '다시 시도',
+    inviteExpiresAt: date => `만료: ${date}`,
+    inviteLeaderOnly: '방장만 초대 링크를 생성할 수 있습니다.',
     tripPeriod: '여행 기간',
     nights: n => `${n}박`,
     dayLabel: n => `Day ${n}`,
+    addDay: '일자 추가',
+    removeDay: '일자 삭제',
+    removeDayConfirmTitle: '이 일자를 삭제할까요?',
+    removeDayConfirmMessage: (date, dayNumber) =>
+      `${date} · Day ${dayNumber} 일정과 포함된 장소가 모두 삭제됩니다.`,
+    removeDayConfirm: '삭제',
+    cannotRemoveLastDay: '최소 하루는 남겨야 해요.',
+    cannotAddMoreDays: '여행 기간 내에 추가할 수 있는 일자가 없어요.',
     schedulePreview: '일정',
     dailyHighlights: '일정 하이라이트',
     nextScheduleTitle: '다음 일정',
@@ -201,6 +237,7 @@ export const PLAN_DETAIL_COPY: Record<
     visitFirstReview: '방문 체크 후 후기를 남길 수 있어요',
     recordReview: '기록 남기기',
     quickRatingHint: '별점만 남기기',
+    scheduleDetailLoading: '세부 정보를 불러오는 중입니다...',
     detailLoading: '리뷰·평점을 불러오는 중…',
     notFound: '장소 정보를 찾을 수 없어요.',
     addressLabel: '주소',
@@ -211,8 +248,11 @@ export const PLAN_DETAIL_COPY: Record<
     reviewsTitle: 'Google 리뷰',
     reviewsSource: 'Google Maps에서 제공하는 리뷰입니다.',
     openInGoogleMaps: 'Google 지도에서 보기',
-    placeRatingSummary: (rating, count) =>
-      `★ ${rating.toFixed(1)} · 리뷰 ${count.toLocaleString()}개`,
+    placeRatingSummary: (rating, count) => {
+      const r = Number(rating) || 0;
+      const c = Number(count) || 0;
+      return `★ ${r.toFixed(1)} · 리뷰 ${c.toLocaleString()}개`;
+    },
     transportModeTitle: '이동 수단',
     routeOptimized: '경로를 최적화했어요',
     budgetPayer: '지불자',
@@ -223,6 +263,8 @@ export const PLAN_DETAIL_COPY: Record<
     budgetAmount: '금액',
     budgetMemo: '메모',
     budgetMemoPlaceholder: '세부 사항 (선택)',
+    placeMemoTitle: '장소 메모',
+    placeMemoPlaceholder: '이 장소에 대한 메모를 남겨 보세요',
     budgetCategoryFood: '식비',
     budgetCategoryShopping: '쇼핑',
     budgetCategoryAccommodation: '숙박비',
@@ -236,6 +278,8 @@ export const PLAN_DETAIL_COPY: Record<
     budgetCancel: '취소',
     dayDuration: m => `예상 소요 ${m}`,
     dayZoneCount: n => `방문 영역 ${n}곳`,
+    offlineSyncNotice:
+      '서버 동기화에 실패해 저장된 정보를 표시합니다. 이 상태에서는 일정 수정이 불가능합니다.',
   },
   en: {
     routeOptimize: 'Optimize route',
@@ -247,9 +291,8 @@ export const PLAN_DETAIL_COPY: Record<
     mapDragLabel: 'Resize schedule panel',
     mapClosedHint: 'Drag up to open schedule',
     membersTitle: 'Travel companions',
-    roleOwner: 'Owner',
-    roleEditor: 'Editor',
-    roleViewer: 'Viewer',
+    roleLeader: 'Leader',
+    roleMember: 'Member',
     visited: 'Visited',
     markVisited: 'Mark visited',
     closedHint: 'May be closed on this weekday',
@@ -268,9 +311,26 @@ export const PLAN_DETAIL_COPY: Record<
     recordsPublished: 'Travelogue published',
     recordsHint: 'Leave a review for each place you visit',
     inviteMembers: 'Invite companions',
+    inviteModalTitle: 'Invite link',
+    inviteModalSubtitle: 'Copy the link below and share it with your travel companions.',
+    inviteCopyLink: 'Copy link',
+    inviteCopied: 'Copied',
+    inviteLinkLoading: 'Loading invite link…',
+    inviteLinkError: 'Could not load the invite link.',
+    inviteRetry: 'Try again',
+    inviteExpiresAt: date => `Expires: ${date}`,
+    inviteLeaderOnly: 'Only the trip leader can create an invite link.',
     tripPeriod: 'Trip dates',
     nights: n => `${n} night${n === 1 ? '' : 's'}`,
     dayLabel: n => `Day ${n}`,
+    addDay: 'Add day',
+    removeDay: 'Remove day',
+    removeDayConfirmTitle: 'Remove this day?',
+    removeDayConfirmMessage: (date, dayNumber) =>
+      `${date} · Day ${dayNumber} and all places on this day will be removed.`,
+    removeDayConfirm: 'Remove',
+    cannotRemoveLastDay: 'At least one day must remain.',
+    cannotAddMoreDays: 'No more days can be added within the trip dates.',
     schedulePreview: 'Schedule',
     dailyHighlights: 'Daily highlights',
     nextScheduleTitle: 'Up next',
@@ -315,6 +375,7 @@ export const PLAN_DETAIL_COPY: Record<
     visitFirstReview: 'Mark visited before writing a review',
     recordReview: 'Leave a record',
     quickRatingHint: 'Quick rating',
+    scheduleDetailLoading: 'Loading place details…',
     detailLoading: 'Loading ratings and reviews…',
     notFound: 'Place not found.',
     addressLabel: 'Address',
@@ -325,8 +386,11 @@ export const PLAN_DETAIL_COPY: Record<
     reviewsTitle: 'Google reviews',
     reviewsSource: 'Reviews provided by Google Maps.',
     openInGoogleMaps: 'Open in Google Maps',
-    placeRatingSummary: (rating, count) =>
-      `★ ${rating.toFixed(1)} · ${count.toLocaleString()} reviews`,
+    placeRatingSummary: (rating, count) => {
+      const r = Number(rating) || 0;
+      const c = Number(count) || 0;
+      return `★ ${r.toFixed(1)} · ${c.toLocaleString()} reviews`;
+    },
     transportModeTitle: 'Transport mode',
     routeOptimized: 'Route optimized',
     budgetPayer: 'Paid by',
@@ -337,6 +401,8 @@ export const PLAN_DETAIL_COPY: Record<
     budgetAmount: 'Amount',
     budgetMemo: 'Memo',
     budgetMemoPlaceholder: 'Details (optional)',
+    placeMemoTitle: 'Place memo',
+    placeMemoPlaceholder: 'Notes about this stop (optional)',
     budgetCategoryFood: 'Food',
     budgetCategoryShopping: 'Shopping',
     budgetCategoryAccommodation: 'Lodging',
@@ -350,6 +416,8 @@ export const PLAN_DETAIL_COPY: Record<
     budgetCancel: 'Cancel',
     dayDuration: m => `Est. ${m}`,
     dayZoneCount: n => `${n} zone${n === 1 ? '' : 's'}`,
+    offlineSyncNotice:
+      'Server sync failed. Showing saved data. Schedule edits are unavailable until sync recovers.',
   },
   ja: {
     routeOptimize: 'ルート最適化',
@@ -361,9 +429,8 @@ export const PLAN_DETAIL_COPY: Record<
     mapDragLabel: '日程サイズ調整',
     mapClosedHint: '上にドラッグして日程を開く',
     membersTitle: '同行者',
-    roleOwner: 'オーナー',
-    roleEditor: '編集',
-    roleViewer: '閲覧',
+    roleLeader: 'リーダー',
+    roleMember: '同行者',
     visited: '訪問済み',
     markVisited: '訪問チェック',
     closedHint: 'この曜日は休みの可能性',
@@ -382,9 +449,26 @@ export const PLAN_DETAIL_COPY: Record<
     recordsPublished: '旅行記を公開済み',
     recordsHint: '訪問した各スポットにレビューを書きましょう',
     inviteMembers: '同行者を招待',
+    inviteModalTitle: '招待リンク',
+    inviteModalSubtitle: '下のリンクをコピーして同行者に共有してください。',
+    inviteCopyLink: 'リンクをコピー',
+    inviteCopied: 'コピーしました',
+    inviteLinkLoading: '招待リンクを読み込み中…',
+    inviteLinkError: '招待リンクを読み込めませんでした。',
+    inviteRetry: '再試行',
+    inviteExpiresAt: date => `有効期限: ${date}`,
+    inviteLeaderOnly: 'リーダーのみ招待リンクを作成できます。',
     tripPeriod: '旅行期間',
     nights: n => `${n}泊`,
     dayLabel: n => `Day ${n}`,
+    addDay: '日程を追加',
+    removeDay: '日程を削除',
+    removeDayConfirmTitle: 'この日程を削除しますか？',
+    removeDayConfirmMessage: (date, dayNumber) =>
+      `${date} · Day ${dayNumber} の日程と含まれる場所がすべて削除されます。`,
+    removeDayConfirm: '削除',
+    cannotRemoveLastDay: '最低1日は残してください。',
+    cannotAddMoreDays: '旅行期間内に追加できる日程がありません。',
     schedulePreview: '日程',
     dailyHighlights: '日程ハイライト',
     nextScheduleTitle: '次の予定',
@@ -429,6 +513,7 @@ export const PLAN_DETAIL_COPY: Record<
     visitFirstReview: '訪問チェック後にレビューを書けます',
     recordReview: '記録を残す',
     quickRatingHint: '星だけ付ける',
+    scheduleDetailLoading: '詳細情報を読み込み中です...',
     detailLoading: '評価・レビューを読み込み中…',
     notFound: '場所情報が見つかりません。',
     addressLabel: '住所',
@@ -439,8 +524,11 @@ export const PLAN_DETAIL_COPY: Record<
     reviewsTitle: 'Googleレビュー',
     reviewsSource: 'Google Mapsのレビューです。',
     openInGoogleMaps: 'Googleマップで見る',
-    placeRatingSummary: (rating, count) =>
-      `★ ${rating.toFixed(1)} · レビュー ${count.toLocaleString()}件`,
+    placeRatingSummary: (rating, count) => {
+      const r = Number(rating) || 0;
+      const c = Number(count) || 0;
+      return `★ ${r.toFixed(1)} · レビュー ${c.toLocaleString()}件`;
+    },
     transportModeTitle: '移動手段',
     routeOptimized: 'ルートを最適化しました',
     budgetPayer: '支払者',
@@ -451,6 +539,8 @@ export const PLAN_DETAIL_COPY: Record<
     budgetAmount: '金額',
     budgetMemo: 'メモ',
     budgetMemoPlaceholder: '詳細（任意）',
+    placeMemoTitle: '場所メモ',
+    placeMemoPlaceholder: 'この場所についてメモを残しましょう',
     budgetCategoryFood: '食費',
     budgetCategoryShopping: '買い物',
     budgetCategoryAccommodation: '宿泊',
@@ -464,6 +554,8 @@ export const PLAN_DETAIL_COPY: Record<
     budgetCancel: 'キャンセル',
     dayDuration: m => `所要約 ${m}`,
     dayZoneCount: n => `訪問エリア ${n}箇所`,
+    offlineSyncNotice:
+      'サーバー同期に失敗したため、保存済みの情報を表示しています。この状態では日程の編集はできません。',
   },
   zh: {
     routeOptimize: '优化路线',
@@ -475,9 +567,8 @@ export const PLAN_DETAIL_COPY: Record<
     mapDragLabel: '调整行程大小',
     mapClosedHint: '向上拖动打开行程',
     membersTitle: '同行伙伴',
-    roleOwner: '房主',
-    roleEditor: '可编辑',
-    roleViewer: '仅查看',
+    roleLeader: '房主',
+    roleMember: '同行',
     visited: '已到访',
     markVisited: '标记到访',
     closedHint: '该日可能休息',
@@ -496,9 +587,26 @@ export const PLAN_DETAIL_COPY: Record<
     recordsPublished: '游记已发布',
     recordsHint: '为每个到访地点写点评',
     inviteMembers: '邀请同行',
+    inviteModalTitle: '邀请链接',
+    inviteModalSubtitle: '复制下方链接并分享给同行伙伴。',
+    inviteCopyLink: '复制链接',
+    inviteCopied: '已复制',
+    inviteLinkLoading: '正在加载邀请链接…',
+    inviteLinkError: '无法加载邀请链接。',
+    inviteRetry: '重试',
+    inviteExpiresAt: date => `过期时间: ${date}`,
+    inviteLeaderOnly: '仅旅行房主可创建邀请链接。',
     tripPeriod: '行程日期',
     nights: n => `${n}晚`,
     dayLabel: n => `第 ${n} 天`,
+    addDay: '添加日程',
+    removeDay: '删除日程',
+    removeDayConfirmTitle: '要删除这一天吗？',
+    removeDayConfirmMessage: (date, dayNumber) =>
+      `${date} · 第 ${dayNumber} 天的行程及所有地点将被删除。`,
+    removeDayConfirm: '删除',
+    cannotRemoveLastDay: '至少需要保留一天。',
+    cannotAddMoreDays: '旅行期间内没有可添加的日程。',
     schedulePreview: '行程',
     dailyHighlights: '每日亮点',
     nextScheduleTitle: '下一行程',
@@ -542,6 +650,7 @@ export const PLAN_DETAIL_COPY: Record<
     visitFirstReview: '标记到访后可写点评',
     recordReview: '留下记录',
     quickRatingHint: '仅评分',
+    scheduleDetailLoading: '正在加载详细信息...',
     detailLoading: '正在加载评分与评价…',
     notFound: '未找到地点信息。',
     addressLabel: '地址',
@@ -552,8 +661,11 @@ export const PLAN_DETAIL_COPY: Record<
     reviewsTitle: 'Google 评价',
     reviewsSource: '评价来自 Google Maps。',
     openInGoogleMaps: '在 Google 地图中打开',
-    placeRatingSummary: (rating, count) =>
-      `★ ${rating.toFixed(1)} · ${count.toLocaleString()} 条评价`,
+    placeRatingSummary: (rating, count) => {
+      const r = Number(rating) || 0;
+      const c = Number(count) || 0;
+      return `★ ${r.toFixed(1)} · ${c.toLocaleString()} 条评价`;
+    },
     transportModeTitle: '交通方式',
     routeOptimized: '路线已优化',
     budgetPayer: '付款人',
@@ -564,6 +676,8 @@ export const PLAN_DETAIL_COPY: Record<
     budgetAmount: '金额',
     budgetMemo: '备注',
     budgetMemoPlaceholder: '详情（可选）',
+    placeMemoTitle: '地点备注',
+    placeMemoPlaceholder: '记录关于此地点的备注（可选）',
     budgetCategoryFood: '餐饮',
     budgetCategoryShopping: '购物',
     budgetCategoryAccommodation: '住宿',
@@ -577,5 +691,7 @@ export const PLAN_DETAIL_COPY: Record<
     budgetCancel: '取消',
     dayDuration: m => `预计 ${m}`,
     dayZoneCount: n => `访问 ${n} 个区域`,
+    offlineSyncNotice:
+      '服务器同步失败，正在显示已保存的信息。此状态下无法修改行程。',
   },
 };

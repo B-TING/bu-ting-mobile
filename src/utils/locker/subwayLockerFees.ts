@@ -1,7 +1,7 @@
+import type { CopyFor } from '../../i18n';
 import type { LockerFeeGroup, LockerSize, SubwayLockerStation } from '../../types/subwayLocker';
-import type { LUGGAGE_STORAGE_COPY } from '../../constants/locker/luggageStorage';
 
-type Copy = (typeof LUGGAGE_STORAGE_COPY)['ko'];
+type Copy = CopyFor<'luggageStorage'>;
 
 const SIZE_ORDER: LockerSize[] = ['extraLarge', 'large', 'medium', 'small'];
 

@@ -21,7 +21,11 @@ import {
 
 } from '../setup/travelSurveySync';
 
+import { syncSessionActiveTravels } from '../travel/syncSessionActiveTravels';
+
 import { useAppStore } from '../../stores/useAppStore';
+
+import { usePlanStore } from '../../stores/usePlanStore';
 
 import {
 
@@ -239,6 +243,8 @@ export async function completeProviderLogin(
 
   const needsOnboardingPrompt = applyTravelSurveySyncResult(syncResult);
 
+  await syncSessionActiveTravels();
+
 
 
   logAuth('login.complete', 'Provider login flow completed', {
@@ -353,6 +359,8 @@ export async function logoutSession(): Promise<void> {
 
   useAuthStore.getState().clearSession();
 
+  usePlanStore.getState().clearActivePlan();
+
 
 
   useAppStore.setState(current => ({
@@ -456,6 +464,8 @@ export async function bootstrapAuth(): Promise<void> {
     restorePersistedSession(state.user);
 
     await syncTravelSurveyForCurrentSession();
+
+    await syncSessionActiveTravels();
 
     logAuth('bootstrap.success', 'Auto login succeeded (stored access token)');
 

@@ -9,6 +9,7 @@ import type {
   TravelStyle,
   VisitPurpose,
 } from '../../types/user';
+import type { LucideIconName } from '../icons';
 
 export const ONBOARDING_QUESTION_COUNT = 6;
 
@@ -145,7 +146,7 @@ export const ONBOARDING_STEP_COUNT = ONBOARDING_FLOW.length;
 export const ONBOARDING_COMPLETE_DELAY_MS = 2400;
 
 export type FeatureHighlight = {
-  emoji: string;
+  icon: LucideIconName;
   title: Record<AppLanguage, string>;
   description: Record<AppLanguage, string>;
   emphasized?: boolean;
@@ -159,7 +160,7 @@ export type FeatureStepContent = {
 
 const featureCopy = {
   planner: {
-    emoji: '📅',
+    icon: 'calendar',
     title: {
       ko: '일정 플래너',
       en: 'Trip planner',
@@ -174,7 +175,7 @@ const featureCopy = {
     },
   },
   nearby: {
-    emoji: '📍',
+    icon: 'mapPin',
     title: {
       ko: '인근 장소 추천',
       en: 'Nearby suggestions',
@@ -189,7 +190,7 @@ const featureCopy = {
     },
   },
   sync: {
-    emoji: '🔄',
+    icon: 'refreshCw',
     title: {
       ko: '일정 동기화',
       en: 'Itinerary sync',
@@ -204,7 +205,7 @@ const featureCopy = {
     },
   },
   offline: {
-    emoji: '📴',
+    icon: 'wifiOff',
     title: {
       ko: '오프라인 모드',
       en: 'Offline mode',
@@ -219,7 +220,7 @@ const featureCopy = {
     },
   },
   locker: {
-    emoji: '🧳',
+    icon: 'luggage',
     title: {
       ko: '짐 보관 안내',
       en: 'Luggage storage',
@@ -234,7 +235,7 @@ const featureCopy = {
     },
   },
   amenities: {
-    emoji: '🏪',
+    icon: 'store',
     title: {
       ko: '편의 시설 위치',
       en: 'Amenities nearby',
@@ -249,7 +250,7 @@ const featureCopy = {
     },
   },
   restaurants: {
-    emoji: '🍽️',
+    icon: 'utensils',
     title: {
       ko: '맛집 리스트',
       en: 'Restaurant picks',
@@ -264,7 +265,7 @@ const featureCopy = {
     },
   },
   festivals: {
-    emoji: '🎉',
+    icon: 'partyPopper',
     title: {
       ko: '축제·이벤트',
       en: 'Festivals & events',
@@ -279,7 +280,7 @@ const featureCopy = {
     },
   },
   sceneryList: {
-    emoji: '🌊',
+    icon: 'waves',
     title: {
       ko: '명소·뷰포인트',
       en: 'Scenic spots',
@@ -294,7 +295,7 @@ const featureCopy = {
     },
   },
   gpsGuide: {
-    emoji: '🛰️',
+    icon: 'satellite',
     title: {
       ko: 'GPS 인근 안내',
       en: 'GPS nearby guide',
@@ -309,7 +310,7 @@ const featureCopy = {
     },
   },
   travelJournal: {
-    emoji: '📔',
+    icon: 'bookOpen',
     title: {
       ko: '여행기',
       en: 'Travel journal',
@@ -767,6 +768,7 @@ export function summarizeOnboardingPreferences(
   ];
 }
 
+/** @deprecated Use useCopy('setup') from src/i18n */
 export const SETUP_COPY: Record<
   AppLanguage,
   {

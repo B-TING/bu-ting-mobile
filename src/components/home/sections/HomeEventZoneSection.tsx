@@ -5,17 +5,15 @@ import { CompactBusanZoneMap } from '../../eventZone/CompactBusanZoneMap';
 import { MapEdgeFadeOverlay } from '../../eventZone/MapEdgeFadeOverlay';
 import {
   EVENT_ZONE_BY_ID,
-  EVENT_ZONE_COPY,
   eventZoneName,
   getChatRoomByZoneId,
   landmarkName,
 } from '../../../constants/eventZone/eventZone';
-import { HOME_EVENT_ZONE_COPY } from '../../../constants/home/mainHome';
+import { useAppLanguage, useCopy } from '../../../i18n';
 import { useCurrentEventZone } from '../../../hooks/useCurrentEventZone';
 import { useEventZoneCarousel } from '../../../hooks/useEventZoneCarousel';
 import { useZoneChatRoomSummary } from '../../../hooks/useZoneChatRoomSummary';
 import { useZoneEventStore } from '../../../stores';
-import type { AppLanguage } from '../../../types/user';
 import type { EventZoneId } from '../../../types/eventZone';
 import { isInsideBusanBounds } from '../../../utils/eventZone/zoneResolver';
 
@@ -23,7 +21,6 @@ const WIDGET_BODY_HEIGHT = 210;
 const CHAT_PANEL_WIDTH_RATIO = 0.54;
 
 type HomeEventZoneSectionProps = {
-  language: AppLanguage;
   onMapPress: () => void;
   onEnterChat: (zoneId: EventZoneId) => void;
 };
@@ -39,12 +36,12 @@ const panelShadow = StyleSheet.create({
 });
 
 export function HomeEventZoneSection({
-  language,
   onMapPress,
   onEnterChat,
 }: HomeEventZoneSectionProps) {
-  const copy = HOME_EVENT_ZONE_COPY[language];
-  const zoneCopy = EVENT_ZONE_COPY[language];
+  const language = useAppLanguage();
+  const copy = useCopy('homeEventZone');
+  const zoneCopy = useCopy('eventZone');
   const { zoneId: userZoneId, location, usedFallback } = useCurrentEventZone();
 
   const isOutsideBusan = useMemo(
@@ -112,7 +109,7 @@ export function HomeEventZoneSection({
               </Text>
               {activeEvent ? (
                 <View className="rounded-full bg-pink-600 px-1.5 py-0.5">
-                  <Text className="text-[9px] font-bold text-white">🔥 이벤트</Text>
+                  <Text className="text-[9px] font-bold text-white">{zoneCopy.eventActiveBadge}</Text>
                 </View>
               ) : null}
             </View>

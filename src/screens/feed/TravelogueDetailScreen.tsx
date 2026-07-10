@@ -11,8 +11,11 @@ import { TravelogueImageCarousel } from '../../components/feed/TravelogueImageCa
 import { TravelogueSocialBar } from '../../components/feed/TravelogueSocialBar';
 import { useTravelogueSocialActions } from '../../components/feed/useTravelogueSocialActions';
 import { BackButton } from '../../components/shared/buttons/BackButton';
+import { AppIcon } from '../../components/shared/icons/AppIcon';
 import { StarRating } from '../../components/shared/rating/StarRating';
-import { TRAVEL_REVIEW_COPY } from '../../constants/review/travelReview';
+import { ICON_COLOR_MUTED } from '../../constants/icons';
+import type { CopyFor } from '../../i18n';
+import { useAppLanguage, useCopy } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
 import { selectPlanById, useAppStore, usePlanStore, useTravelogueStore } from '../../stores';
 import type { PlaceReview, Travelogue } from '../../types/travelReview';
@@ -29,7 +32,7 @@ import { computeTripTotalMinutes, formatDurationMinutes } from '../../utils/geo/
 import { formatWeekdayDate } from '../../utils/geo/geo';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'TravelogueDetail'>;
-type Copy = (typeof TRAVEL_REVIEW_COPY)[AppLanguage];
+type Copy = CopyFor<'travelReview'>;
 
 function PlaceReviewBlock({
   review,
@@ -62,7 +65,11 @@ function PlaceReviewBlock({
             <View
               key={item.mediaId}
               className="h-12 w-12 items-center justify-center rounded-xl bg-brand-selected">
-              <Text className="text-lg">{item.thumbnailUri ?? '📎'}</Text>
+              {item.thumbnailUri ? (
+                <Text className="text-lg">{item.thumbnailUri}</Text>
+              ) : (
+                <AppIcon name="paperclip" size={18} color={ICON_COLOR_MUTED} />
+              )}
             </View>
           ))}
         </View>
@@ -344,8 +351,8 @@ function TravelogueDetailBody({
 
 export function TravelogueDetailScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
-  const language = useAppStore(s => s.language) ?? 'ko';
-  const copy = TRAVEL_REVIEW_COPY[language];
+  const language = useAppLanguage();
+  const copy = useCopy('travelReview');
   const travelogue = useTravelogueStore(s =>
     s.publishedTravelogues.find(t => t.travelogueId === route.params.travelogueId),
   );

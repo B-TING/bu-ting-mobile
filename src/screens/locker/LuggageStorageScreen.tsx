@@ -6,7 +6,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LockerMapView } from '../../components/locker/LockerMapView';
 import { SubwayLockerDetailSheet } from '../../components/locker/SubwayLockerDetailSheet';
 import { BackButton } from '../../components/shared/buttons/BackButton';
-import { LUGGAGE_STORAGE_COPY } from '../../constants/locker/luggageStorage';
+import { AppIcon } from '../../components/shared/icons/AppIcon';
+import { useAppLanguage, useCopy } from '../../i18n';
+import { ICON_COLOR_MUTED, ICON_COLOR_PRIMARY } from '../../constants/icons';
 import type { RootStackParamList } from '../../navigation/types';
 import { fetchSubwayLockerStations } from '../../services/locker/subwayLockerService';
 import { useAppStore, useLockerBookmarkStore } from '../../stores';
@@ -17,8 +19,8 @@ type Props = NativeStackScreenProps<RootStackParamList, 'LuggageStorage'>;
 
 export function LuggageStorageScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
-  const language = useAppStore(s => s.language) ?? 'ko';
-  const copy = LUGGAGE_STORAGE_COPY[language];
+  const language = useAppLanguage();
+  const copy = useCopy('luggageStorage');
 
   const bookmarkedStationIds = useLockerBookmarkStore(s => s.bookmarkedStationIds);
   const toggleBookmark = useLockerBookmarkStore(s => s.toggleBookmark);
@@ -145,12 +147,17 @@ export function LuggageStorageScreen({ navigation }: Props) {
                             : 'border-brand-border bg-brand-background'
                       }`}>
                       <View className="flex-row items-center gap-1">
-                        {bookmarked ? <Text className="text-xs">📌</Text> : null}
+                        {bookmarked ? (
+                          <AppIcon name="mapPin" size={12} color={ICON_COLOR_PRIMARY} filled />
+                        ) : null}
                         <Text className="text-sm font-bold text-brand-text">{station.name}</Text>
                       </View>
-                      <Text className="mt-0.5 text-xs text-brand-muted">
-                        {copy.lineLabel(station.line)} · 🧳 {station.lockers.total}
-                      </Text>
+                      <View className="mt-0.5 flex-row items-center gap-1">
+                        <AppIcon name="luggage" size={12} color={ICON_COLOR_MUTED} />
+                        <Text className="text-xs text-brand-muted">
+                          {copy.lineLabel(station.line)} · {station.lockers.total}
+                        </Text>
+                      </View>
                     </Pressable>
                   );
                 })}

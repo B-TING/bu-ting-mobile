@@ -46,6 +46,24 @@ const KO_LABELS: Record<string, string> = {
   sponsor1tel: '주최 문의',
   sponsor2tel: '주관 문의',
   spendtime: '소요 시간',
+  heritage1: '세계문화유산',
+  heritage2: '세계자연유산',
+  heritage3: '세계기록유산',
+  opendatefood: '개업일',
+  restdatefood: '쉬는 날',
+  packing: '포장',
+  reservationfood: '예약',
+  treatmenu: '대표 메뉴',
+  lcnsno: '인허가 번호',
+  firstmenu: '대표 메뉴',
+  opentimefood: '영업 시간',
+  scalefood: '규모',
+  seat: '좌석',
+  smoking: '흡연',
+  parkingfood: '주차',
+  chkbabycarriage: '유모차',
+  chkcreditcard: '신용카드',
+  chkpet: '반려동물',
 };
 
 const EN_LABELS: Record<string, string> = {
@@ -73,6 +91,24 @@ const EN_LABELS: Record<string, string> = {
   sponsor1tel: 'Organizer contact',
   sponsor2tel: 'Host contact',
   spendtime: 'Duration',
+  heritage1: 'World cultural heritage',
+  heritage2: 'World natural heritage',
+  heritage3: 'World documentary heritage',
+  opendatefood: 'Opened',
+  restdatefood: 'Closed',
+  packing: 'Takeout',
+  reservationfood: 'Reservation',
+  treatmenu: 'Signature menu',
+  lcnsno: 'License no.',
+  firstmenu: 'Signature menu',
+  opentimefood: 'Hours',
+  scalefood: 'Scale',
+  seat: 'Seating',
+  smoking: 'Smoking',
+  parkingfood: 'Parking',
+  chkbabycarriage: 'Stroller',
+  chkcreditcard: 'Credit card',
+  chkpet: 'Pets',
 };
 
 const JA_LABELS: Record<string, string> = {
@@ -100,6 +136,24 @@ const JA_LABELS: Record<string, string> = {
   sponsor1tel: '主催問い合わせ',
   sponsor2tel: '主管問い合わせ',
   spendtime: '所要時間',
+  heritage1: '世界文化遺産',
+  heritage2: '世界自然遺産',
+  heritage3: '世界記録遺産',
+  opendatefood: '開業日',
+  restdatefood: '休業日',
+  packing: 'テイクアウト',
+  reservationfood: '予約',
+  treatmenu: '代表メニュー',
+  lcnsno: '許可番号',
+  firstmenu: '代表メニュー',
+  opentimefood: '営業時間',
+  scalefood: '規模',
+  seat: '座席',
+  smoking: '喫煙',
+  parkingfood: '駐車',
+  chkbabycarriage: 'ベビーカー',
+  chkcreditcard: 'クレジットカード',
+  chkpet: 'ペット',
 };
 
 const ZH_LABELS: Record<string, string> = {
@@ -127,6 +181,24 @@ const ZH_LABELS: Record<string, string> = {
   sponsor1tel: '主办咨询',
   sponsor2tel: '承办咨询',
   spendtime: '所需时间',
+  heritage1: '世界文化遗产',
+  heritage2: '世界自然遗产',
+  heritage3: '世界记录遗产',
+  opendatefood: '开业日',
+  restdatefood: '休息日',
+  packing: '打包',
+  reservationfood: '预约',
+  treatmenu: '代表菜单',
+  lcnsno: '许可编号',
+  firstmenu: '代表菜单',
+  opentimefood: '营业时间',
+  scalefood: '规模',
+  seat: '座位',
+  smoking: '吸烟',
+  parkingfood: '停车',
+  chkbabycarriage: '婴儿车',
+  chkcreditcard: '信用卡',
+  chkpet: '宠物',
 };
 
 export const TOURISM_DETAIL_LABELS: Record<AppLanguage, Record<string, string>> = {
@@ -139,4 +211,19 @@ export const TOURISM_DETAIL_LABELS: Record<AppLanguage, Record<string, string>> 
 export function tourismDetailLabel(key: string, language: AppLanguage): string {
   const normalized = key.toLowerCase();
   return TOURISM_DETAIL_LABELS[language][normalized] ?? TOURISM_DETAIL_LABELS.ko[normalized] ?? key;
+}
+
+const AVAILABILITY_VALUE: Record<AppLanguage, string> = {
+  ko: '있음',
+  en: 'Available',
+  ja: 'あり',
+  zh: '有',
+};
+
+export function tourismAvailabilityValue(language: AppLanguage): string {
+  return AVAILABILITY_VALUE[language];
+}
+
+export function isTourismCheckFlagKey(key: string): boolean {
+  return key.toLowerCase().startsWith('chk');
 }

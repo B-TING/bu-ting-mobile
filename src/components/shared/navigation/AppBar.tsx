@@ -1,7 +1,10 @@
-import { Platform, Pressable, StatusBar, Text, View } from 'react-native';
+import type { ReactNode } from 'react';
+import { Platform, Pressable, StatusBar, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ICON_COLOR_DEFAULT } from '../../../constants/icons';
 import { BrandLogo } from '../brand/BrandLogo';
+import { AppIcon } from '../icons/AppIcon';
 
 /** 상태바·전면 카메라(펀치홀) 아래 여백 */
 const TOP_GAP = 10;
@@ -11,17 +14,8 @@ const BAR_HEIGHT = 48;
 type AppBarProps = {
   onMenuPress?: () => void;
   onProfilePress?: () => void;
+  topRightAccessory?: ReactNode;
 };
-
-function MenuIcon() {
-  return (
-    <View className="h-3.5 w-5 justify-between">
-      <View className="h-0.5 w-full rounded-full bg-brand-text" />
-      <View className="h-0.5 w-full rounded-full bg-brand-text" />
-      <View className="h-0.5 w-full rounded-full bg-brand-text" />
-    </View>
-  );
-}
 
 /** 전면 카메라·노치 아래로 내리기 위한 상단 inset (px) */
 export function useAppBarTopInset(): number {
@@ -31,7 +25,7 @@ export function useAppBarTopInset(): number {
   return Math.max(insets.top, statusBarHeight) + TOP_GAP;
 }
 
-export function AppBar({ onMenuPress, onProfilePress }: AppBarProps) {
+export function AppBar({ onMenuPress, onProfilePress, topRightAccessory }: AppBarProps) {
   const topPadding = useAppBarTopInset();
 
   return (
@@ -47,21 +41,24 @@ export function AppBar({ onMenuPress, onProfilePress }: AppBarProps) {
           className="h-10 w-10 items-center justify-center active:opacity-70"
           accessibilityRole="button"
           accessibilityLabel="메뉴">
-          <MenuIcon />
+          <AppIcon name="menu" size={22} color={ICON_COLOR_DEFAULT} />
         </Pressable>
 
         <BrandLogo height={26} />
 
-        <Pressable
-          onPress={onProfilePress}
-          hitSlop={12}
-          className="active:opacity-70"
-          accessibilityRole="button"
-          accessibilityLabel="프로필">
-          <View className="h-8 w-8 items-center justify-center overflow-hidden rounded-full border-2 border-brand-border bg-brand-selected">
-            <Text className="text-xs">👤</Text>
-          </View>
-        </Pressable>
+        <View className="flex-row items-center gap-2">
+          {topRightAccessory}
+          <Pressable
+            onPress={onProfilePress}
+            hitSlop={12}
+            className="active:opacity-70"
+            accessibilityRole="button"
+            accessibilityLabel="프로필">
+            <View className="h-8 w-8 items-center justify-center overflow-hidden rounded-full border-2 border-brand-border bg-brand-selected">
+              <AppIcon name="user" size={16} color={ICON_COLOR_DEFAULT} />
+            </View>
+          </Pressable>
+        </View>
       </View>
     </View>
   );

@@ -6,11 +6,11 @@ import {
 } from '../../constants/festival/festivalCalendar';
 import { PLACE_CATALOG } from '../../constants/places/placeCatalog';
 import type { HelpDeskIntent } from '../../constants/helpdesk/helpDesk';
-import { HELP_DESK_COPY } from '../../constants/helpdesk/helpDesk';
+import { getCopyForLanguage } from '../../i18n';
 import { BUSAN_ATTRACTIONS, BUSAN_FOODS } from '../../constants/plan/planWizard';
 import { searchFestivals } from '../places/placesApiService';
-import type { TravelPlan } from '../types/travelPlan';
-import type { AppLanguage } from '../types/user';
+import type { TravelPlan } from '../../types/travelPlan';
+import type { AppLanguage } from '../../types/user';
 import { toYyyymmdd } from '../../utils/places/festivalApiMapper';
 import { getNearestUpcomingStop } from '../../utils/plan/planSchedule';
 import { findNearbyRebootCandidates } from '../../utils/places/rebootPlaces';
@@ -164,7 +164,7 @@ async function buildFestivalsResponse(ctx: HelpDeskContext): Promise<string> {
     });
     festivals = result.festivals;
   } catch {
-    return HELP_DESK_COPY[language].noOngoingFestivals;
+    return getCopyForLanguage('helpdesk', language).noOngoingFestivals;
   }
 
   const ongoing = sortFestivalsByStatus(
@@ -172,7 +172,7 @@ async function buildFestivalsResponse(ctx: HelpDeskContext): Promise<string> {
   );
 
   if (ongoing.length === 0) {
-    return HELP_DESK_COPY[language].noOngoingFestivals;
+    return getCopyForLanguage('helpdesk', language).noOngoingFestivals;
   }
 
   const lines = ongoing
@@ -233,12 +233,12 @@ function buildScheduleResponse(ctx: HelpDeskContext): string {
   const { language, activePlan } = ctx;
 
   if (!activePlan) {
-    return HELP_DESK_COPY[language].noPlanSchedule;
+    return getCopyForLanguage('helpdesk', language).noPlanSchedule;
   }
 
   const upcoming = getNearestUpcomingStop(activePlan);
   if (!upcoming) {
-    return HELP_DESK_COPY[language].noPlanSchedule;
+    return getCopyForLanguage('helpdesk', language).noPlanSchedule;
   }
 
   const dayLabel =
@@ -349,6 +349,6 @@ export async function requestHelpDeskReply(
     case 'guide':
       return buildGuideResponse(ctx, message);
     default:
-      return HELP_DESK_COPY[ctx.language].fallback;
+      return getCopyForLanguage('helpdesk', ctx.language).fallback;
   }
 }

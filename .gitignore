@@ -52,6 +52,7 @@ src/constants/map/kakaoMapConfig.ts
 
 # API — npm run api:sync 로 .env → 생성
 src/constants/api/apiBaseUrl.ts
+src/constants/chat/zoneChatWsEnv.ts
 
 # OAuth — npm run oauth:sync 로 .env → 생성
 src/constants/auth/oauthConfig.ts
