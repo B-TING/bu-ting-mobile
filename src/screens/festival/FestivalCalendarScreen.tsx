@@ -15,7 +15,7 @@ import {
 import { useAppLanguage, useCopy } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
 import { PLACE_CONTENT_TYPE } from '../../types/placesApi';
-import { useAppStore, useFestivalStore } from '../../stores';
+import { useFestivalStore } from '../../stores';
 import { monthDateRangeYyyymmdd, monthKey } from '../../utils/places/festivalApiMapper';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FestivalCalendar'>;

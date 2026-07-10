@@ -13,13 +13,9 @@ function buildLeafProxy(
   }
 
   if (typeof value === 'function') {
-    return (...args: unknown[]) => {
-      const params: Record<string, unknown> = { defaultValue: value(...args) };
-      args.forEach((arg, index) => {
-        params[`arg${index}`] = arg;
-      });
-      return t(key, params);
-    };
+    // 언어별 COPY 함수는 이미 locale 로직을 포함하므로 i18n 템플릿 보간을 거치지 않음
+    // (배열 인덱스 등 2차 변환이 있는 함수는 프로브 값으로 깨진 템플릿이 생성될 수 있음)
+    return (...args: unknown[]) => value(...args);
   }
 
   return buildCopyProxy(t, value, key);

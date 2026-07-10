@@ -15,7 +15,6 @@ type EventsSectionMockProps = {
   language?: AppLanguage;
   onViewAllPress?: () => void;
   onEventPress?: (id: string) => void;
-  showMockHint?: boolean;
 };
 
 function pickLocalizedEventField(
@@ -142,7 +141,6 @@ export function EventsSectionMock({
   language = 'ko',
   onViewAllPress,
   onEventPress,
-  showMockHint = false,
 }: EventsSectionMockProps) {
   return (
     <View className="mb-6">
@@ -165,17 +163,6 @@ export function EventsSectionMock({
           />
         ))}
       </ScrollView>
-      {showMockHint ? (
-        <Text className="mt-2 text-[10px] text-brand-muted">
-          {language === 'ko'
-            ? '축제 API 연동 전 목업 데이터입니다.'
-            : language === 'ja'
-              ? '祭りAPI連携前のモックデータです。'
-              : language === 'zh'
-                ? '节庆 API 接入前的模拟数据。'
-                : 'Mock data until festival API is connected.'}
-        </Text>
-      ) : null}
     </View>
   );
 }
