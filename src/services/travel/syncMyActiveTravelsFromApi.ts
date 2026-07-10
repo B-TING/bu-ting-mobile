@@ -89,8 +89,8 @@ export async function syncMyActiveTravelsFromApi(
     };
     const shell = myTravelResponseToPlanShell(travel, memberForTravel, existing);
 
-    const { plan, usedOfflineFallback } = await trySyncTravelPlanFromApi(accessToken, shell);
-    if (usedOfflineFallback) {
+    const { plan, scheduleLocked } = await trySyncTravelPlanFromApi(accessToken, shell);
+    if (scheduleLocked) {
       const existingPlan = findLocalPlanForTravel(usePlanStore.getState().plans, travel.travelId);
       const offlinePlanId = existingPlan?.planId ?? plan.planId;
       usePlanStore.getState().setPlanOfflineSync(offlinePlanId, true);

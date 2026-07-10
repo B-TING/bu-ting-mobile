@@ -264,7 +264,7 @@ export const PLAN_DETAIL_COPY: Record<
     dayDuration: m => `예상 소요 ${m}`,
     dayZoneCount: n => `방문 영역 ${n}곳`,
     offlineSyncNotice:
-      '동기화가 되지 않아 오프라인에 저장된 정보를 가져옵니다. 오프라인 상태에서 일정 수정은 불가능합니다.',
+      '서버 동기화에 실패해 저장된 정보를 표시합니다. 이 상태에서는 일정 수정이 불가능합니다.',
   },
   en: {
     routeOptimize: 'Optimize route',
@@ -394,7 +394,7 @@ export const PLAN_DETAIL_COPY: Record<
     dayDuration: m => `Est. ${m}`,
     dayZoneCount: n => `${n} zone${n === 1 ? '' : 's'}`,
     offlineSyncNotice:
-      'Sync failed. Loading offline saved data. Schedule edits are unavailable while offline.',
+      'Server sync failed. Showing saved data. Schedule edits are unavailable until sync recovers.',
   },
   ja: {
     routeOptimize: 'ルート最適化',
@@ -524,7 +524,7 @@ export const PLAN_DETAIL_COPY: Record<
     dayDuration: m => `所要約 ${m}`,
     dayZoneCount: n => `訪問エリア ${n}箇所`,
     offlineSyncNotice:
-      '同期に失敗したため、オフラインに保存された情報を表示しています。オフライン中は日程の編集はできません。',
+      'サーバー同期に失敗したため、保存済みの情報を表示しています。この状態では日程の編集はできません。',
   },
   zh: {
     routeOptimize: '优化路线',
@@ -653,6 +653,6 @@ export const PLAN_DETAIL_COPY: Record<
     dayDuration: m => `预计 ${m}`,
     dayZoneCount: n => `访问 ${n} 个区域`,
     offlineSyncNotice:
-      '同步失败，正在加载离线保存的信息。离线状态下无法修改行程。',
+      '服务器同步失败，正在显示已保存的信息。此状态下无法修改行程。',
   },
 };

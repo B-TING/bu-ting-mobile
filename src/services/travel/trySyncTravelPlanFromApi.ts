@@ -1,13 +1,14 @@
 import type { TravelPlan } from '../../types/travelPlan';
 import { logTravelPlanApi } from '../../utils/travel/travelPlanApiLogger';
+import { shouldLockScheduleOnTravelApiError } from '../../utils/travel/scheduleApiLock';
 import { syncTravelPlanFromApi } from './syncTravelPlanFromApi';
 
 export type TravelPlanSyncResult = {
   plan: TravelPlan;
-  usedOfflineFallback: boolean;
+  scheduleLocked: boolean;
 };
 
-/** GET 동기화 실패 시 로컬 캐시를 유지하고 오프라인 fallback 여부를 반환합니다. */
+/** GET 동기화 실패 시 로컬 캐시를 유지하고, 잠금 필요 여부를 반환합니다. */
 export async function trySyncTravelPlanFromApi(
   accessToken: string,
   localPlan: TravelPlan,
@@ -16,13 +17,14 @@ export async function trySyncTravelPlanFromApi(
 
   try {
     const plan = await syncTravelPlanFromApi(accessToken, localPlan);
-    return { plan, usedOfflineFallback: false };
+    return { plan, scheduleLocked: false };
   } catch (error) {
-    logTravelPlanApi('sync.fallback', 'GET 동기화 실패 — 오프라인 캐시 사용', {
+    const scheduleLocked = shouldLockScheduleOnTravelApiError(error);
+    logTravelPlanApi('sync.fallback', 'GET 동기화 실패 — 로컬 캐시 사용', {
       level: 'warn',
       detail: error,
       travelId,
     });
-    return { plan: localPlan, usedOfflineFallback: true };
+    return { plan: localPlan, scheduleLocked };
   }
 }

@@ -3,6 +3,7 @@ import { useFocusEffect } from '@react-navigation/native';
 
 import { fetchTravelMembers } from '../services/travel/travelTeamService';
 import { travelMembersToPlanMembers } from '../services/travel/travelMapper';
+import { logTravelPlanApi } from '../utils/travel/travelPlanApiLogger';
 import { usePlanStore } from '../stores/usePlanStore';
 
 type UseTravelMembersSyncOptions = {
@@ -26,16 +27,23 @@ export function useTravelMembersSync({
       return;
     }
 
-    const members = await fetchTravelMembers(accessToken, travelId);
-    const plan = usePlanStore.getState().plans.find(p => p.planId === planId);
-    if (!plan) {
-      return;
-    }
+    try {
+      const members = await fetchTravelMembers(accessToken, travelId);
+      const plan = usePlanStore.getState().plans.find(p => p.planId === planId);
+      if (!plan) {
+        return;
+      }
 
-    upsertPlan({
-      ...plan,
-      members: travelMembersToPlanMembers(members),
-    });
+      upsertPlan({
+        ...plan,
+        members: travelMembersToPlanMembers(members),
+      });
+    } catch (error) {
+      logTravelPlanApi('members.sync.error', '여행 멤버 동기화 실패', {
+        level: 'warn',
+        detail: error,
+      });
+    }
   }, [accessToken, enabled, planId, travelId, upsertPlan]);
 
   useFocusEffect(

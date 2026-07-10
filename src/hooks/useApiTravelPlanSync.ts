@@ -2,6 +2,7 @@ import { useCallback, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 
 import { trySyncTravelPlanFromApi } from '../services/travel/trySyncTravelPlanFromApi';
+import { unlockPlanSchedule } from '../utils/travel/scheduleApiLock';
 import type { TravelPlan } from '../types/travelPlan';
 import { usePlanStore } from '../stores/usePlanStore';
 
@@ -35,18 +36,18 @@ export function useApiTravelPlanSync({
 
     const localPlan = usePlanStore.getState().plans.find(p => p.planId === planId);
     if (!localPlan || localPlan.source !== 'api') {
-      markPlanOfflineSync(planId, false);
+      unlockPlanSchedule(planId);
       return localPlan ?? null;
     }
 
     syncingRef.current = true;
     try {
-      const { plan, usedOfflineFallback } = await trySyncTravelPlanFromApi(
+      const { plan, scheduleLocked } = await trySyncTravelPlanFromApi(
         accessToken,
         localPlan,
       );
-      markPlanOfflineSync(planId, usedOfflineFallback);
-      if (!usedOfflineFallback) {
+      markPlanOfflineSync(planId, scheduleLocked);
+      if (!scheduleLocked) {
         upsertPlan(plan);
       }
       return plan;

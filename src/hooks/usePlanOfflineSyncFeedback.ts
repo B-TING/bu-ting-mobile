@@ -32,5 +32,5 @@ export function usePlanOfflineSyncFeedback({
     wasOfflineRef.current = isOffline;
   }, [enabled, isOffline, message, planId, showToast]);
 
-  return { isOffline, toastText: text, toastOpacity: opacity };
+  return { isOffline, toastText: text, toastOpacity: opacity, showToast };
 }

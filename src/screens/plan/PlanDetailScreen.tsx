@@ -50,6 +50,7 @@ import {
 } from '../../utils/places/rebootPlaces';
 import { mergeRouteWithPlaceDetail } from '../../utils/places/routePlaceDetail';
 import { getReviewForRoute, reviewProgress } from '../../utils/review/travelReview';
+import { lockPlanScheduleIfApiError } from '../../utils/travel/scheduleApiLock';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PlanDetail'>;
 
@@ -96,11 +97,15 @@ export function PlanDetailScreen({ navigation, route }: Props) {
   const travelId = plan?.apiTravelId ?? plan?.planId;
 
   const copy = useCopy('planDetail');
-  const { toastText, toastOpacity } = usePlanOfflineSyncFeedback({
+  const { toastText, toastOpacity, showToast } = usePlanOfflineSyncFeedback({
     planId,
     enabled: isApiPlan,
     message: copy.offlineSyncNotice,
   });
+
+  const notifyScheduleReadOnly = useCallback(() => {
+    showToast(copy.offlineSyncNotice);
+  }, [showToast, copy.offlineSyncNotice]);
 
   const { syncFromServer } = useApiTravelPlanSync({
     planId,
@@ -184,6 +189,16 @@ export function PlanDetailScreen({ navigation, route }: Props) {
     setInviteError(null);
   }, []);
 
+  const lockScheduleOnApiError = useCallback(
+    (error: unknown) => {
+      if (!isApiPlan) {
+        return;
+      }
+      lockPlanScheduleIfApiError(planId, error);
+    },
+    [isApiPlan, planId],
+  );
+
   const scheduleRef = useRef<PlanScheduleTabHandle>(null);
   const openRebootPendingRef = useRef(route.params?.openReboot === true);
 
@@ -248,6 +263,9 @@ export function PlanDetailScreen({ navigation, route }: Props) {
   const handleDeleteRoute = useCallback(
     async (route: RouteItem) => {
       if (!planId || scheduleReadOnly) {
+        if (scheduleReadOnly) {
+          notifyScheduleReadOnly();
+        }
         return;
       }
 
@@ -256,6 +274,7 @@ export function PlanDetailScreen({ navigation, route }: Props) {
           await removePlanPlaceFromApi(accessToken, route);
           await syncFromServer();
         } catch (error) {
+          lockScheduleOnApiError(error);
           const message =
             error instanceof Error ? error.message : '장소 삭제에 실패했습니다.';
           Alert.alert('장소 삭제 실패', message);
@@ -266,12 +285,15 @@ export function PlanDetailScreen({ navigation, route }: Props) {
 
       removeRoute(planId, route.itemId);
     },
-    [planId, scheduleReadOnly, isApiPlan, accessToken, removeRoute, syncFromServer],
+    [planId, scheduleReadOnly, isApiPlan, accessToken, removeRoute, syncFromServer, lockScheduleOnApiError, notifyScheduleReadOnly],
   );
 
   const handleSaveRouteMemo = useCallback(
     async (route: RouteItem, memo: string | undefined) => {
       if (!planId || scheduleReadOnly) {
+        if (scheduleReadOnly) {
+          notifyScheduleReadOnly();
+        }
         return;
       }
 
@@ -283,13 +305,14 @@ export function PlanDetailScreen({ navigation, route }: Props) {
           await updatePlanPlaceMemoOnApi(accessToken, route, memo ?? null);
         } catch (error) {
           updateRouteMemo(planId, route.itemId, previousMemo);
+          lockScheduleOnApiError(error);
           const message =
             error instanceof Error ? error.message : '메모 저장에 실패했습니다.';
           Alert.alert('메모 저장 실패', message);
         }
       }
     },
-    [planId, scheduleReadOnly, isApiPlan, accessToken, updateRouteMemo],
+    [planId, scheduleReadOnly, isApiPlan, accessToken, updateRouteMemo, lockScheduleOnApiError, notifyScheduleReadOnly],
   );
 
   const handlePickReplacement = useCallback(
@@ -316,6 +339,7 @@ export function PlanDetailScreen({ navigation, route }: Props) {
           }
           closeScheduleModal();
         } catch (error) {
+          lockScheduleOnApiError(error);
           const message =
             error instanceof Error ? error.message : '장소 변경에 실패했습니다.';
           Alert.alert('장소 변경 실패', message);
@@ -345,6 +369,7 @@ export function PlanDetailScreen({ navigation, route }: Props) {
       closeScheduleModal,
       scheduleReadOnly,
       syncFromServer,
+      lockScheduleOnApiError,
     ],
   );
 
@@ -374,13 +399,14 @@ export function PlanDetailScreen({ navigation, route }: Props) {
         await updatePlanPlaceOrderOnApi(accessToken, apiPlanId, orderedRoutes);
         await syncFromServer();
       } catch (error) {
+        lockScheduleOnApiError(error);
         const message =
           error instanceof Error ? error.message : '순서 변경에 실패했습니다.';
         Alert.alert('순서 변경 실패', message);
         await syncFromServer();
       }
     },
-    [planId, scheduleReadOnly, enrichedPlan, isApiPlan, accessToken, reorderRoutes, syncFromServer],
+    [planId, scheduleReadOnly, enrichedPlan, isApiPlan, accessToken, reorderRoutes, syncFromServer, lockScheduleOnApiError],
   );
 
   const handleOptimizeDayRoute = useCallback(
@@ -415,13 +441,14 @@ export function PlanDetailScreen({ navigation, route }: Props) {
         await syncFromServer();
         alert({ title: copy.routeOptimize, message: copy.routeOptimized });
       } catch (error) {
+        lockScheduleOnApiError(error);
         const message =
           error instanceof Error ? error.message : '경로 최적화에 실패했습니다.';
         Alert.alert('경로 최적화 실패', message);
         await syncFromServer();
       }
     },
-    [planId, scheduleReadOnly, enrichedPlan, isApiPlan, accessToken, reorderRoutes, syncFromServer, alert, copy],
+    [planId, scheduleReadOnly, enrichedPlan, isApiPlan, accessToken, reorderRoutes, syncFromServer, alert, copy, lockScheduleOnApiError],
   );
 
   const handleAddPlace = useCallback(
@@ -445,6 +472,7 @@ export function PlanDetailScreen({ navigation, route }: Props) {
           }
           closeScheduleModal();
         } catch (error) {
+          lockScheduleOnApiError(error);
           const message =
             error instanceof Error ? error.message : '장소 추가에 실패했습니다.';
           Alert.alert('장소 추가 실패', message);
@@ -475,6 +503,7 @@ export function PlanDetailScreen({ navigation, route }: Props) {
       addRoute,
       closeScheduleModal,
       syncFromServer,
+      lockScheduleOnApiError,
     ],
   );
 
@@ -634,10 +663,18 @@ export function PlanDetailScreen({ navigation, route }: Props) {
               plan={enrichedPlan}
               language={language}
               copy={copy}
+              readOnly={scheduleReadOnly}
+              onReadOnlyPress={scheduleReadOnly ? notifyScheduleReadOnly : undefined}
               selectedDay={selectedDay}
               planReviews={planReviews}
               onSelectDay={setSelectedDay}
-              onToggleVisited={itemId => toggleVisited(planId, itemId)}
+              onToggleVisited={itemId => {
+                if (scheduleReadOnly) {
+                  notifyScheduleReadOnly();
+                  return;
+                }
+                toggleVisited(planId, itemId);
+              }}
               onWriteReview={setReviewFormRoute}
               onQuickRating={handleQuickRating}
               onDeleteRoute={handleDeleteRoute}

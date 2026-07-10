@@ -69,6 +69,8 @@ type PlanScheduleTabProps = {
   onRouteRemoved?: (itemId: string) => void;
   onScheduleModalChange: (modal: ScheduleModalState) => void;
   onReorderActiveChange?: (active: boolean) => void;
+  readOnly?: boolean;
+  onReadOnlyPress?: () => void;
 };
 
 export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTabProps>(
@@ -91,6 +93,8 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
       onRouteRemoved,
       onScheduleModalChange,
       onReorderActiveChange,
+      readOnly = false,
+      onReadOnlyPress,
     },
     ref,
   ) {
@@ -107,7 +111,17 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
     onModalChangeRef.current = onScheduleModalChange;
     const onReorderActiveRef = useRef(onReorderActiveChange);
     onReorderActiveRef.current = onReorderActiveChange;
+    const onReadOnlyPressRef = useRef(onReadOnlyPress);
+    onReadOnlyPressRef.current = onReadOnlyPress;
     const dayRoutesRef = useRef<RouteItem[]>([]);
+
+    const guardReadOnly = useCallback(() => {
+      if (!readOnly) {
+        return false;
+      }
+      onReadOnlyPressRef.current?.();
+      return true;
+    }, [readOnly]);
 
     const day =
       plan.itinerary.find(d => d.dayNumber === selectedDay) ?? plan.itinerary[0];
@@ -216,6 +230,9 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
     };
 
     const openPickModal = (itemId: string) => {
+      if (guardReadOnly()) {
+        return;
+      }
       onScheduleModalChange({ kind: 'pick', itemId });
     };
 
@@ -227,6 +244,9 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
     };
 
     const handleDelete = (route: RouteItem) => {
+      if (guardReadOnly()) {
+        return;
+      }
       onDeleteRoute(route);
       onRouteRemoved?.(route.itemId);
       if (focusedRoute?.itemId === route.itemId) {
@@ -271,6 +291,9 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
 
     const handleIndexPress = useCallback(
       (itemId: string) => {
+        if (guardReadOnly()) {
+          return;
+        }
         if (reboot?.itemId === itemId && reboot.phase === 'choose') {
           return;
         }
@@ -288,10 +311,13 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
         swapRoutes(swapPickId, itemId);
         setSwapPickId(null);
       },
-      [swapPickId, swapRoutes, reboot],
+      [swapPickId, swapRoutes, reboot, guardReadOnly],
     );
 
     const openNearestReboot = useCallback(() => {
+      if (guardReadOnly()) {
+        return;
+      }
       if (dayRoutes.length === 0) {
         return;
       }
@@ -301,9 +327,12 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
         setReboot(null);
         onScheduleModalChange({ kind: 'pick', itemId: nearest.itemId });
       }
-    }, [dayRoutes, onScheduleModalChange]);
+    }, [dayRoutes, onScheduleModalChange, guardReadOnly]);
 
     const handleRouteOptimize = useCallback(() => {
+      if (guardReadOnly()) {
+        return;
+      }
       if (!day || dayRoutes.length < 2) {
         return;
       }
@@ -315,12 +344,15 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
         optimizeDayRouteLocal(planId, day.dayNumber);
         alert({ title: copy.routeOptimize, message: copy.routeOptimized });
       }
-    }, [day, dayRoutes.length, optimizeDayRouteLocal, onOptimizeDayRoute, planId, copy, alert]);
+    }, [day, dayRoutes.length, optimizeDayRouteLocal, onOptimizeDayRoute, planId, copy, alert, guardReadOnly]);
 
     const handleAddPlacePress = useCallback(() => {
+      if (guardReadOnly()) {
+        return;
+      }
       clearReboot();
       onScheduleModalChange({ kind: 'add' });
-    }, [onScheduleModalChange]);
+    }, [onScheduleModalChange, guardReadOnly]);
 
     useImperativeHandle(
       ref,
@@ -360,6 +392,9 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
           isFocused={isFocused}
           onPress={() => openRouteDetail(r)}
           onEdit={() => {
+            if (guardReadOnly()) {
+              return;
+            }
             setSwapPickId(null);
             onModalChangeRef.current({ kind: 'none' });
             setReboot({ itemId: r.itemId, phase: 'choose' });
@@ -368,13 +403,18 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
           indexHint={indexHint}
           onIndexPress={() => handleIndexPress(r.itemId)}
           onToggleVisited={() => {
+            if (guardReadOnly()) {
+              return;
+            }
             clearReboot();
             onModalChangeRef.current({ kind: 'none' });
             onToggleVisited(r.itemId);
           }}
           onWriteReview={() => onWriteReview(r)}
           onQuickRating={rating => onQuickRating(r, rating)}
-          onLegModeChange={mode => updateLegMode(planId, r.itemId, mode)}
+          onLegModeChange={
+            readOnly ? undefined : mode => updateLegMode(planId, r.itemId, mode)
+          }
           onDelete={() => handleDelete(r)}
           onReplace={() => openPickModal(r.itemId)}
           onCancel={clearReboot}
@@ -388,9 +428,14 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
         language={language}
         copy={copy}
         placeReview={getReviewForRoute(planReviews, focusedRoute.itemId)}
-        onToggleVisited={() => onToggleVisited(focusedRoute.itemId)}
+        onToggleVisited={() => {
+          if (guardReadOnly()) {
+            return;
+          }
+          onToggleVisited(focusedRoute.itemId);
+        }}
         onWriteReview={() => onWriteReview(focusedRoute)}
-        onSaveMemo={memo => onSaveRouteMemo?.(focusedRoute, memo)}
+        onSaveMemo={readOnly ? undefined : memo => onSaveRouteMemo?.(focusedRoute, memo)}
       />
     ) : null;
 
