@@ -70,6 +70,8 @@ jobs:
 
     - name: Install CocoaPods
       if: matrix.language == 'swift'
+      env:
+        USE_FRAMEWORKS: static
       run: bundle exec pod install --project-directory=ios
 
     - name: Prepare iOS configuration for CI
