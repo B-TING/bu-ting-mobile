@@ -1,0 +1,16 @@
+# CI-only Gradle settings (committed; copied to gradle.properties in GitHub Actions)
+# Local dev uses android/gradle.properties (gitignored).
+
+org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -Dfile.encoding=UTF-8
+org.gradle.parallel=false
+org.gradle.workers.max=2
+org.gradle.daemon=false
+
+android.useAndroidX=true
+
+# Single ABI keeps CI memory usage lower.
+reactNativeArchitectures=arm64-v8a
+
+newArchEnabled=true
+hermesEnabled=true
+edgeToEdgeEnabled=false
