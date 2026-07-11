@@ -62,7 +62,11 @@ jobs:
       if: matrix.language == 'swift'
       uses: ruby/setup-ruby@v1
       with:
-        bundler-cache: true
+        ruby-version: '3.2'
+
+    - name: Install Ruby gems
+      if: matrix.language == 'swift'
+      run: bundle install
 
     - name: Install CocoaPods
       if: matrix.language == 'swift'
