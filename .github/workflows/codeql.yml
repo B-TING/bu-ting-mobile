@@ -29,34 +29,48 @@ jobs:
         - language: ruby
           build-mode: none
         - language: swift
-          build-mode: autobuild
+          build-mode: manual
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
     - name: Setup Node.js
-      if: matrix.build-mode == 'manual'
+      if: matrix.language == 'java-kotlin' || matrix.language == 'swift'
       uses: actions/setup-node@v4
       with:
         node-version: 22
         cache: npm
 
     - name: Install npm dependencies
-      if: matrix.build-mode == 'manual'
+      if: matrix.language == 'java-kotlin' || matrix.language == 'swift'
       run: npm ci
 
     - name: Setup Java
-      if: matrix.build-mode == 'manual'
+      if: matrix.language == 'java-kotlin'
       uses: actions/setup-java@v4
       with:
         distribution: temurin
         java-version: 17
 
     - name: Prepare Gradle properties for CI
-      if: matrix.build-mode == 'manual'
+      if: matrix.language == 'java-kotlin'
       working-directory: android
       run: cp gradle.properties.ci gradle.properties
+
+    - name: Setup Ruby
+      if: matrix.language == 'swift'
+      uses: ruby/setup-ruby@v1
+      with:
+        bundler-cache: true
+
+    - name: Install CocoaPods
+      if: matrix.language == 'swift'
+      run: bundle exec pod install --project-directory=ios
+
+    - name: Prepare iOS configuration for CI
+      if: matrix.language == 'swift'
+      run: cp ios/BUTingMobile/Info.plist.example ios/BUTingMobile/Info.plist
 
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v4
@@ -65,11 +79,25 @@ jobs:
         build-mode: ${{ matrix.build-mode }}
 
     - name: Build Android for CodeQL
-      if: matrix.build-mode == 'manual'
+      if: matrix.language == 'java-kotlin'
       working-directory: android
       run: |
         chmod +x gradlew
         ./gradlew assembleDebug --no-daemon --stacktrace
+
+    - name: Build iOS for CodeQL
+      if: matrix.language == 'swift'
+      working-directory: ios
+      run: |
+        xcodebuild \
+          -workspace BUTingMobile.xcworkspace \
+          -scheme BUTingMobile \
+          -configuration Release \
+          -sdk iphoneos \
+          -destination 'generic/platform=iOS' \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO \
+          build
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v4
