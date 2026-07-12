@@ -4,8 +4,10 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BusanZoneMap } from '../../components/eventZone/BusanZoneMap';
+import { EventZoneActiveEventBanner } from '../../components/eventZone/EventZoneActiveEventBanner';
 import {
   EventZoneChatList,
+  EventZoneGameEventBanner,
   EventZoneMapBadge,
   EventZoneZoneDetailPanel,
 } from '../../components/eventZone/EventZoneSections';
@@ -18,7 +20,11 @@ import {
   eventZoneName,
   getChatRoomByZoneId,
 } from '../../constants/eventZone/eventZone';
-import { buildRandomMockZoneEvent } from '../../constants/eventZone/zoneEvents';
+import {
+  buildRandomMockGameEvent,
+  isEventGame,
+} from '../../constants/eventZone/eventGame';
+import { isZoneEventActive } from '../../constants/eventZone/zoneEvents';
 import { useCurrentEventZone } from '../../hooks/useCurrentEventZone';
 import {
   useAllZoneChatMemberCounts,
@@ -37,6 +43,7 @@ export function EventZoneScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const language = useAppLanguage();
   const copy = useCopy('eventZone');
+  const gameCopy = useCopy('eventGame');
   const { zoneId: currentZoneId, usedFallback } = useCurrentEventZone();
   const [selectedZoneId, setSelectedZoneId] = useState<EventZoneId | null>(null);
   const isExpanded = selectedZoneId != null;
@@ -81,7 +88,7 @@ export function EventZoneScreen({ navigation }: Props) {
   }, []);
 
   const handleTriggerEvent = () => {
-    const event = buildRandomMockZoneEvent();
+    const event = buildRandomMockGameEvent(currentZoneId);
     triggerEvent(event);
     showToast(
       copy.eventToast(
@@ -90,6 +97,25 @@ export function EventZoneScreen({ navigation }: Props) {
       ),
     );
   };
+
+  const currentZoneGameEvent = useMemo(() => {
+    const event = activeEventsByZone[currentZoneId];
+    if (!event || !isEventGame(event) || !isZoneEventActive(event)) {
+      return undefined;
+    }
+    return event;
+  }, [activeEventsByZone, currentZoneId]);
+
+  const selectedZoneGameEvent = useMemo(() => {
+    if (!selectedZoneId) {
+      return undefined;
+    }
+    const event = activeEventsByZone[selectedZoneId];
+    if (!event || !isEventGame(event) || !isZoneEventActive(event)) {
+      return undefined;
+    }
+    return event;
+  }, [activeEventsByZone, selectedZoneId]);
 
   const currentZone = EVENT_ZONE_BY_ID[currentZoneId];
   const selectedZone = selectedZoneId ? EVENT_ZONE_BY_ID[selectedZoneId] : null;
@@ -122,7 +148,7 @@ export function EventZoneScreen({ navigation }: Props) {
     <View className="flex-1 bg-[#EAEAEA]">
       <View
         className="relative"
-        style={isExpanded ? { flex: 1 } : { height: `${MAP_HEIGHT_RATIO * 100}%`, paddingTop: MAP_HEIGHT_RATIO * 150 }}>
+        style={isExpanded ? { flex: 1 } : { height: `${MAP_HEIGHT_RATIO * 100}%` }}>
         <BusanZoneMap
           selectedZoneId={selectedZoneId}
           currentZoneId={currentZoneId}
@@ -186,11 +212,37 @@ export function EventZoneScreen({ navigation }: Props) {
           </Animated.View>
         ) : null}
 
+        {isExpanded && selectedZoneGameEvent ? (
+          <View
+            className="absolute left-0 right-0"
+            style={{ top: insets.top + 56 }}
+            pointerEvents="box-none">
+            <EventZoneGameEventBanner
+              event={selectedZoneGameEvent}
+              language={language}
+              actionLabel={gameCopy.joinEvent}
+              endsInLabel={copy.eventEndsIn}
+              endedLabel={copy.eventEnded}
+              onPress={() =>
+                navigation.navigate('EventGameDetail', {
+                  eventId: selectedZoneGameEvent.id,
+                })
+              }
+            />
+          </View>
+        ) : null}
+
         {selectedZone ? (
           <View className="absolute inset-0" pointerEvents="box-none">
             <View
-              className="absolute right-3"
-              style={{ bottom: insets.bottom + 16 }}
+              className="absolute"
+              style={{
+                right: 12,
+                bottom: insets.bottom + 16,
+                width: '62%',
+                maxWidth: 340,
+                minWidth: 272,
+              }}
               pointerEvents="auto">
               <EventZoneZoneDetailPanel
                 zone={selectedZone}
@@ -202,10 +254,6 @@ export function EventZoneScreen({ navigation }: Props) {
                 closeLabel={copy.closePanel}
                 currentZoneLabel={copy.currentZoneLabel}
                 isCurrentZone={selectedZoneId === currentZoneId}
-                activeEvent={selectedZoneId ? activeEventsByZone[selectedZoneId] : undefined}
-                eventEndsInLabel={copy.eventEndsIn}
-                eventEndedLabel={copy.eventEnded}
-                surpriseMissionBadge={copy.surpriseMissionBadge}
                 onClose={handleCloseExpanded}
                 onEnterChat={() => {
                   if (selectedZoneId) {
@@ -220,7 +268,19 @@ export function EventZoneScreen({ navigation }: Props) {
       </View>
 
       {!isExpanded ? (
-        <EventZoneChatList
+        <>
+          {currentZoneGameEvent ? (
+            <EventZoneActiveEventBanner
+              message={gameCopy.nearbyEventBanner}
+              actionLabel={gameCopy.joinEvent}
+              onPress={() =>
+                navigation.navigate('EventGameDetail', {
+                  eventId: currentZoneGameEvent.id,
+                })
+              }
+            />
+          ) : null}
+          <EventZoneChatList
           rooms={chatRooms}
           language={language}
           title={copy.chatRoomsTitle}
@@ -232,6 +292,7 @@ export function EventZoneScreen({ navigation }: Props) {
           onRoomPress={zoneId => setSelectedZoneId(zoneId)}
           onJoinPress={roomId => navigation.navigate('EventZoneChat', { roomId })}
         />
+        </>
       ) : null}
     </View>
   );
