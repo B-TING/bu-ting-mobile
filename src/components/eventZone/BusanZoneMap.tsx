@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import Svg, { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
 
 import {
@@ -12,8 +12,9 @@ import { PRETENDARD } from '../../constants/fonts/pretendard';
 import type { AppLanguage } from '../../types/user';
 import type { EventZoneId } from '../../types/eventZone';
 import { resolveLandmarkMapPoint } from '../../utils/eventZone/landmarkMapPoint';
+import { svgPointToLayout } from '../../utils/eventZone/svgMapCoordinates';
 import { useZoneMapViewBox } from '../../utils/eventZone/useZoneMapViewBox';
-import { EventPulseMarker } from './EventPulseMarker';
+import { EventPulseMarkerOverlay } from './EventPulseMarkerOverlay';
 
 const EVENT_GLOW_COLOR = '#E91E63';
 
@@ -115,7 +116,16 @@ export function BusanZoneMap({
 }: BusanZoneMapProps) {
   const panelOpen = selectedZoneId != null;
   const { viewBox, panHandlers, onLayout } = useZoneMapViewBox(selectedZoneId, panelOpen);
+  const [layoutSize, setLayoutSize] = useState({ width: 0, height: 0 });
   const hasEvent = (zoneId: EventZoneId) => eventZoneIds.includes(zoneId);
+
+  const handleLayout = (event: LayoutChangeEvent) => {
+    onLayout(event);
+    const { width, height } = event.nativeEvent.layout;
+    if (width > 0 && height > 0) {
+      setLayoutSize({ width, height });
+    }
+  };
 
   const landmarkPoints = useMemo(() => {
     const zones =
@@ -141,8 +151,30 @@ export function BusanZoneMap({
         ),
     [eventZoneIds],
   );
+
+  const pulseMarkers = useMemo(() => {
+    if (layoutSize.width <= 0 || layoutSize.height <= 0) {
+      return [];
+    }
+    return eventCenters
+      .map(({ zoneId, center }) => {
+        const point = svgPointToLayout(
+          center.x,
+          center.y,
+          viewBox,
+          layoutSize.width,
+          layoutSize.height,
+        );
+        if (!point) {
+          return null;
+        }
+        return { zoneId, ...point };
+      })
+      .filter((item): item is { zoneId: EventZoneId; x: number; y: number } => item != null);
+  }, [eventCenters, layoutSize.height, layoutSize.width, viewBox]);
+
   return (
-    <View className="flex-1 bg-[#EAEAEA]" onLayout={onLayout} {...panHandlers}>
+    <View className="flex-1 bg-[#EAEAEA]" onLayout={handleLayout} {...panHandlers}>
       <Svg
         width="100%"
         height="100%"
@@ -268,10 +300,13 @@ export function BusanZoneMap({
           </G>
         ))}
 
-        {eventCenters.map(({ zoneId, center }) => (
-          <EventPulseMarker key={`event-pulse-${zoneId}`} x={center.x} y={center.y} />
-        ))}
       </Svg>
+
+      <View style={StyleSheet.absoluteFill} pointerEvents="none">
+        {pulseMarkers.map(({ zoneId, x, y }) => (
+          <EventPulseMarkerOverlay key={`event-pulse-${zoneId}`} left={x} top={y} />
+        ))}
+      </View>
     </View>
   );
 }

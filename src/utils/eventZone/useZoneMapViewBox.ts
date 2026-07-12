@@ -34,15 +34,57 @@ export function useZoneMapViewBox(
   const layoutRef = useRef({ width: 1, height: 1 });
   const pinchRef = useRef<{ startDist: number; startRect: MapFocusRect } | null>(null);
   const panStartRef = useRef<MapFocusRect | null>(null);
+  const pendingViewBoxRef = useRef<string | null>(null);
+  const rafRef = useRef<number | null>(null);
 
   const [viewBox, setViewBox] = useState(() =>
     focusRectToViewBox(resolveMapFocusRect(null)),
   );
 
-  const applyViewRect = useCallback((rect: MapFocusRect) => {
-    const clamped = clampFocusRect(rect);
-    viewRectRef.current = clamped;
-    setViewBox(focusRectToViewBox(clamped));
+  const flushViewBox = useCallback(() => {
+    rafRef.current = null;
+    const next = pendingViewBoxRef.current;
+    if (next != null) {
+      pendingViewBoxRef.current = null;
+      setViewBox(next);
+    }
+  }, []);
+
+  const scheduleViewBoxUpdate = useCallback(
+    (rect: MapFocusRect) => {
+      pendingViewBoxRef.current = focusRectToViewBox(rect);
+      if (rafRef.current != null) {
+        return;
+      }
+      rafRef.current = requestAnimationFrame(flushViewBox);
+    },
+    [flushViewBox],
+  );
+
+  const applyViewRect = useCallback(
+    (rect: MapFocusRect, immediate = false) => {
+      const clamped = clampFocusRect(rect);
+      viewRectRef.current = clamped;
+      if (immediate) {
+        if (rafRef.current != null) {
+          cancelAnimationFrame(rafRef.current);
+          rafRef.current = null;
+        }
+        pendingViewBoxRef.current = null;
+        setViewBox(focusRectToViewBox(clamped));
+        return;
+      }
+      scheduleViewBoxUpdate(clamped);
+    },
+    [scheduleViewBoxUpdate],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (rafRef.current != null) {
+        cancelAnimationFrame(rafRef.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -62,7 +104,7 @@ export function useZoneMapViewBox(
     focusProgress.setValue(0);
 
     const listenerId = focusProgress.addListener(({ value }) => {
-      applyViewRect(interpolateFocusRect(from, to, value));
+      scheduleViewBoxUpdate(interpolateFocusRect(from, to, value));
     });
 
     Animated.timing(focusProgress, {
@@ -72,14 +114,14 @@ export function useZoneMapViewBox(
       useNativeDriver: false,
     }).start(({ finished }) => {
       if (finished) {
-        applyViewRect(to);
+        applyViewRect(to, true);
       }
     });
 
     return () => {
       focusProgress.removeListener(listenerId);
     };
-  }, [applyViewRect, focusProgress, panelOpen, selectedZoneId]);
+  }, [applyViewRect, focusProgress, panelOpen, scheduleViewBoxUpdate, selectedZoneId]);
 
   const onLayout = useCallback((event: LayoutChangeEvent) => {
     const { width, height } = event.nativeEvent.layout;
@@ -145,10 +187,12 @@ export function useZoneMapViewBox(
         onPanResponderRelease: () => {
           pinchRef.current = null;
           panStartRef.current = null;
+          applyViewRect(viewRectRef.current, true);
         },
         onPanResponderTerminate: () => {
           pinchRef.current = null;
           panStartRef.current = null;
+          applyViewRect(viewRectRef.current, true);
         },
       }),
     [applyViewRect],
