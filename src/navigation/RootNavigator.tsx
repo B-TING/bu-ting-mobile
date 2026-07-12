@@ -12,6 +12,8 @@ import { PlaceMapSearchScreen } from '../screens/places/PlaceMapSearchScreen';
 import { HelpDeskChatScreen } from '../screens/helpdesk/HelpDeskChatScreen';
 import { EventZoneScreen } from '../screens/eventZone/EventZoneScreen';
 import { EventZoneChatScreen } from '../screens/eventZone/EventZoneChatScreen';
+import { EventGameDetailScreen } from '../screens/eventZone/EventGameDetailScreen';
+import { EventGameCameraScreen } from '../screens/eventZone/EventGameCameraScreen';
 import { LuggageStorageScreen } from '../screens/locker/LuggageStorageScreen';
 import { TravelogueDetailScreen } from '../screens/feed/TravelogueDetailScreen';
 import { TravelogueFeedScreen } from '../screens/feed/TravelogueFeedScreen';
@@ -121,6 +123,8 @@ export function RootNavigator() {
         <Stack.Screen name="HelpDeskChat" component={HelpDeskChatScreen} />
         <Stack.Screen name="EventZone" component={EventZoneScreen} />
         <Stack.Screen name="EventZoneChat" component={EventZoneChatScreen} />
+        <Stack.Screen name="EventGameDetail" component={EventGameDetailScreen} />
+        <Stack.Screen name="EventGameCamera" component={EventGameCameraScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

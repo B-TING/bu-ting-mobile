@@ -1,0 +1,257 @@
+import type { AppLanguage } from '../../types/user';
+import type { EventGameType, EventZoneId, ZoneEvent } from '../../types/eventZone';
+import { EVENT_ZONE_BY_ID } from './eventZone';
+import { buildMockZoneEvent } from './zoneEvents';
+
+export const EVENT_GAME_TYPES: EventGameType[] = ['place_auth', 'object_sight'];
+
+const MOCK_OBJECTS = [
+  {
+    labelKo: '핑크색 우체통',
+    labelEn: 'pink mailbox',
+    labelJa: 'ピンクのポスト',
+    labelZh: '粉色邮筒',
+  },
+  {
+    labelKo: '부산 시티 투어 버스',
+    labelEn: 'Busan city tour bus',
+    labelJa: '釜山シティツアーバス',
+    labelZh: '釜山城市观光巴士',
+  },
+  {
+    labelKo: '해운대 조형물',
+    labelEn: 'Haeundae sculpture',
+    labelJa: '海雲台のオブジェ',
+    labelZh: '海云台雕塑',
+  },
+] as const;
+
+export function isEventGameType(type: string): type is EventGameType {
+  return type === 'place_auth' || type === 'object_sight';
+}
+
+export function isEventGame(event: ZoneEvent): boolean {
+  return isEventGameType(event.type);
+}
+
+export function buildMockGameEvent(
+  zoneId: EventZoneId,
+  type: EventGameType,
+): ZoneEvent {
+  const zone = EVENT_ZONE_BY_ID[zoneId];
+  const landmark = zone.landmarks[0];
+  const base = buildMockZoneEvent(zoneId, type);
+
+  if (type === 'place_auth') {
+    return {
+      ...base,
+      targetLandmarkId: landmark?.id,
+    };
+  }
+
+  const object = MOCK_OBJECTS[Math.floor(Math.random() * MOCK_OBJECTS.length)];
+  return {
+    ...base,
+    targetObjectLabelKo: object.labelKo,
+    targetObjectLabelEn: object.labelEn,
+    targetObjectLabelJa: object.labelJa,
+    targetObjectLabelZh: object.labelZh,
+  };
+}
+
+export function buildRandomMockGameEvent(zoneId: EventZoneId): ZoneEvent {
+  const type = EVENT_GAME_TYPES[Math.floor(Math.random() * EVENT_GAME_TYPES.length)];
+  return buildMockGameEvent(zoneId, type);
+}
+
+export function eventGameObjectLabel(event: ZoneEvent, language: AppLanguage): string {
+  if (language === 'en') {
+    return event.targetObjectLabelEn ?? event.targetObjectLabelKo ?? '';
+  }
+  if (language === 'ja') {
+    return event.targetObjectLabelJa ?? event.targetObjectLabelKo ?? '';
+  }
+  if (language === 'zh') {
+    return event.targetObjectLabelZh ?? event.targetObjectLabelKo ?? '';
+  }
+  return event.targetObjectLabelKo ?? '';
+}
+
+/** 목업: 촬영 후 성공 여부 (90% 성공) */
+export function mockEvaluateGameCapture(_event: ZoneEvent): boolean {
+  return Math.random() < 0.9;
+}
+
+export const EVENT_GAME_COPY: Record<
+  AppLanguage,
+  {
+    nearbyEventBanner: string;
+    joinEvent: string;
+    detailTitle: string;
+    statusTitle: string;
+    statusNotJoined: string;
+    statusInProgress: string;
+    statusCompleted: string;
+    rulesTitle: string;
+    rewardTitle: string;
+    rewardHint: string;
+    participate: string;
+    placeAuthRules: string;
+    objectSightRules: string;
+    targetPlace: string;
+    targetObject: string;
+    remainingLabel: (remaining: string) => string;
+    cameraHintPlace: string;
+    cameraHintObject: (objectName: string) => string;
+    capture: string;
+    processing: string;
+    processingPlace: string;
+    processingObject: string;
+    successTitle: string;
+    successPlace: string;
+    successObject: (objectName: string) => string;
+    failTitle: string;
+    failPlace: string;
+    failObject: string;
+    retry: string;
+    done: string;
+    mockCameraLabel: string;
+  }
+> = {
+  ko: {
+    nearbyEventBanner: '현재 위치한 곳에 이벤트가 발생했습니다!',
+    joinEvent: '이벤트 참여하기',
+    detailTitle: '이벤트 안내',
+    statusTitle: '참여 현황',
+    statusNotJoined: '아직 참여하지 않았어요',
+    statusInProgress: '참여 중',
+    statusCompleted: '미션 완료',
+    rulesTitle: '참여 방법',
+    rewardTitle: '보상',
+    rewardHint: '미션 성공 시 구역 배지와 포인트가 지급됩니다. (목업)',
+    participate: '이벤트 참여',
+    placeAuthRules:
+      '목표 장소 근처에서 사진을 촬영하면 GPS 기반으로 장소 인증이 완료됩니다.',
+    objectSightRules:
+      '목표 사물을 찾아 촬영하면 AI 기반으로 사물 인증이 완료됩니다.',
+    targetPlace: '목표 장소',
+    targetObject: '목표 사물',
+    remainingLabel: remaining => `남은 시간 ${remaining}`,
+    cameraHintPlace: '목표 장소가 화면에 담기도록 촬영해 주세요',
+    cameraHintObject: objectName => `'${objectName}'을(를) 찾아 촬영해 주세요`,
+    capture: '촬영',
+    processing: '확인 중…',
+    processingPlace: '위치를 확인하고 있어요…',
+    processingObject: '사물 인증을 확인하고 있어요…',
+    successTitle: '미션 성공!',
+    successPlace: '장소 인증에 성공했어요!',
+    successObject: objectName => `'${objectName}' 인증 성공!`,
+    failTitle: '다시 시도해 주세요',
+    failPlace: '목표 장소와 거리가 멀거나 촬영이 불명확해요.',
+    failObject: '사물 인증에 실패했어요. 목표 사물이 화면에 잘 보이도록 다시 촬영해 주세요.',
+    retry: '다시 촬영',
+    done: '완료',
+    mockCameraLabel: '카메라 미리보기 (목업)',
+  },
+  en: {
+    nearbyEventBanner: 'An event is happening at your current location!',
+    joinEvent: 'Join event',
+    detailTitle: 'Event guide',
+    statusTitle: 'Your status',
+    statusNotJoined: 'Not joined yet',
+    statusInProgress: 'In progress',
+    statusCompleted: 'Completed',
+    rulesTitle: 'How to play',
+    rewardTitle: 'Reward',
+    rewardHint: 'Earn zone badges and points on success. (Mock)',
+    participate: 'Join event',
+    placeAuthRules:
+      'Take a photo near the target place to complete GPS place verification.',
+    objectSightRules:
+      'Find and photograph the target object. AI will verify your shot.',
+    targetPlace: 'Target place',
+    targetObject: 'Target object',
+    remainingLabel: remaining => `${remaining} left`,
+    cameraHintPlace: 'Frame the target place in your shot',
+    cameraHintObject: objectName => `Find and photograph the ${objectName}`,
+    capture: 'Capture',
+    processing: 'Checking…',
+    processingPlace: 'Verifying your location…',
+    processingObject: 'Recognizing the object…',
+    successTitle: 'Mission complete!',
+    successPlace: 'Place verified successfully!',
+    successObject: objectName => `Recognized: ${objectName}!`,
+    failTitle: 'Try again',
+    failPlace: 'You may be too far from the target or the photo is unclear.',
+    failObject: 'Make sure the target object is clearly visible and retry.',
+    retry: 'Retake',
+    done: 'Done',
+    mockCameraLabel: 'Camera preview (mock)',
+  },
+  ja: {
+    nearbyEventBanner: '現在地でイベントが発生しました！',
+    joinEvent: 'イベント参加',
+    detailTitle: 'イベント案内',
+    statusTitle: '参加状況',
+    statusNotJoined: 'まだ参加していません',
+    statusInProgress: '参加中',
+    statusCompleted: 'ミッション完了',
+    rulesTitle: '参加方法',
+    rewardTitle: '報酬',
+    rewardHint: '成功時にエリアバッジとポイントを獲得（モック）',
+    participate: 'イベント参加',
+    placeAuthRules: '目標スポット付近で撮影するとGPSで場所認証が完了します。',
+    objectSightRules: '案内された物体を撮影するとAIが認識して判定します。',
+    targetPlace: '目標スポット',
+    targetObject: '目標物体',
+    remainingLabel: remaining => `残り ${remaining}`,
+    cameraHintPlace: '目標スポットが写るように撮影してください',
+    cameraHintObject: objectName => `「${objectName}」を見つけて撮影してください`,
+    capture: '撮影',
+    processing: '確認中…',
+    processingPlace: '位置を確認しています…',
+    processingObject: '物体を認識しています…',
+    successTitle: 'ミッション成功！',
+    successPlace: '場所認証に成功しました！',
+    successObject: objectName => `「${objectName}」を認識しました！`,
+    failTitle: 'もう一度お試しください',
+    failPlace: '目標地点から離れているか、写真が不明瞭です。',
+    failObject: '目標物体がはっきり写るように再撮影してください。',
+    retry: '再撮影',
+    done: '完了',
+    mockCameraLabel: 'カメラプレビュー（モック）',
+  },
+  zh: {
+    nearbyEventBanner: '您当前位置发生了活动！',
+    joinEvent: '参与活动',
+    detailTitle: '活动说明',
+    statusTitle: '参与状态',
+    statusNotJoined: '尚未参与',
+    statusInProgress: '进行中',
+    statusCompleted: '任务完成',
+    rulesTitle: '参与方式',
+    rewardTitle: '奖励',
+    rewardHint: '成功后获得区域徽章和积分。（模拟）',
+    participate: '参与活动',
+    placeAuthRules: '在目标地点附近拍照，通过GPS完成地点认证。',
+    objectSightRules: '找到并拍摄指定物体，AI将识别并判定是否成功。',
+    targetPlace: '目标地点',
+    targetObject: '目标物体',
+    remainingLabel: remaining => `剩余 ${remaining}`,
+    cameraHintPlace: '请将目标地点拍入画面',
+    cameraHintObject: objectName => `找到并拍摄「${objectName}」`,
+    capture: '拍摄',
+    processing: '确认中…',
+    processingPlace: '正在验证位置…',
+    processingObject: '正在识别物体…',
+    successTitle: '任务成功！',
+    successPlace: '地点认证成功！',
+    successObject: objectName => `已识别：${objectName}！`,
+    failTitle: '请重试',
+    failPlace: '距离目标较远或照片不够清晰。',
+    failObject: '请确保目标物体清晰可见后重新拍摄。',
+    retry: '重新拍摄',
+    done: '完成',
+    mockCameraLabel: '相机预览（模拟）',
+  },
+};

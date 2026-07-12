@@ -81,7 +81,12 @@ export type ZoneEventType =
   | 'walk_conquest' // 부산 도보 정복전
   | 'receipt_auth' // 소울푸드 영수증 인증
   | 'qr_cross' // 핫플 QR 크로스
-  | 'zone_battle'; // 타 구역 유저와 대결
+  | 'zone_battle' // 타 구역 유저와 대결
+  | 'place_auth' // 장소 인증 (카메라 + GPS)
+  | 'object_sight'; // 사물 인증 (카메라 + 객체 인식)
+
+/** 카메라 기반 이벤트 게임 타입 */
+export type EventGameType = 'place_auth' | 'object_sight';
 
 /** 구역에 발생하는 이벤트 VO (목업) */
 export type ZoneEvent = {
@@ -94,4 +99,11 @@ export type ZoneEvent = {
   startsAt: string;
   /** 이벤트 지속 시간(분) */
   durationMinutes: number;
+  /** 장소 인증: 목표 랜드마크 ID */
+  targetLandmarkId?: string;
+  /** 사물 인증: 목표 사물 라벨 (i18n 키 대신 목업용 단일 필드) */
+  targetObjectLabelKo?: string;
+  targetObjectLabelEn?: string;
+  targetObjectLabelJa?: string;
+  targetObjectLabelZh?: string;
 };

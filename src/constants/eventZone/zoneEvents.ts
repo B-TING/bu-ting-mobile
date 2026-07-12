@@ -36,6 +36,18 @@ export const ZONE_EVENT_TYPE_META: Record<
     defaultDurationMinutes: 30,
     descriptionKo: '다른 구역 유저와 실시간 대결! 알림을 켠 유저 대상.',
   },
+  place_auth: {
+    labelKo: '장소 인증 미션',
+    emoji: '📍',
+    defaultDurationMinutes: 45,
+    descriptionKo: '목표 장소에서 사진을 촬영해 GPS 장소 인증을 완료하세요.',
+  },
+  object_sight: {
+    labelKo: '사물 인증 미션',
+    emoji: '🔍',
+    defaultDurationMinutes: 30,
+    descriptionKo: '목표 사물을 찾아 촬영하면 AI 사물 인증을 완료하세요.',
+  },
 };
 
 export const ZONE_EVENT_TYPES: ZoneEventType[] = Object.keys(

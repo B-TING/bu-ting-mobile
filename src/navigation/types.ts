@@ -26,6 +26,8 @@ export type RootStackParamList = {
   HelpDeskChat: undefined;
   EventZone: undefined;
   EventZoneChat: { roomId: string };
+  EventGameDetail: { eventId: string };
+  EventGameCamera: { eventId: string };
 };
 
 export type SetupPhase = 'language' | 'login' | 'onboarding' | 'main';
