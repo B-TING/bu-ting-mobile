@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { ScrollView, View } from 'react-native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { NavigationProp } from '@react-navigation/native';
 
-import { PlanSyncStatusDot } from '../components/plan/PlanSyncStatusDot';
 import { TransientBottomToast } from '../components/shared/feedback/TransientBottomToast';
 import { ActivePlanHeroBanner } from '../components/home/banners/ActivePlanHeroBanner';
 import { HeroBanner } from '../components/home/banners/HeroBanner';
@@ -11,9 +10,6 @@ import { HomeEventZoneSection } from '../components/home/sections/HomeEventZoneS
 import { QuickAccessRow } from '../components/home/sections/QuickAccessRow';
 import { TraveloguePreviewMock } from '../components/home/sections/TraveloguePreviewMock';
 import { HomeActionFabs, FAB_GAP, FAB_SIZE } from '../components/helpdesk/HomeActionFabs';
-import { AppBar } from '../components/shared/navigation/AppBar';
-import { AppMenuDrawer } from '../components/shared/navigation/AppMenuDrawer';
-import { Navbar, type NavbarTab } from '../components/shared/navigation/Navbar';
 import { useAppAlert } from '../components/shared/modals';
 import {
   MOCK_SPECIAL_OFFER,
@@ -21,8 +17,8 @@ import {
   QUICK_ACCESS_ITEMS,
 } from '../constants/home/mainHome';
 import { festivalToHomeEvent } from '../constants/festival/festivalCalendar';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { layout } from '../constants/common/layout';
+import { useMainTabNavigation } from '../navigation/mainTabNavigation';
 import type { RootStackParamList } from '../navigation/types';
 import { PLACE_CONTENT_TYPE } from '../types/placesApi';
 import { upcomingFestivalDateRangeYyyymmdd } from '../utils/places/festivalApiMapper';
@@ -38,12 +34,12 @@ import { getChatRoomByZoneId } from '../constants/eventZone/eventZone';
 import { useAppLanguage, useCopy } from '../i18n';
 import type { EventZoneId } from '../types/eventZone';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'MainHome'>;
-
-const NAVBAR_HEIGHT = 72;
+type Props = {
+  navigation: NavigationProp<RootStackParamList>;
+};
 
 export function MainHomeScreen({ navigation }: Props) {
-  const insets = useSafeAreaInsets();
+  const { goToTab } = useMainTabNavigation();
   const { alert } = useAppAlert();
   const language = useAppLanguage();
   const copy = useCopy('mainHome');
@@ -61,7 +57,7 @@ export function MainHomeScreen({ navigation }: Props) {
   );
   const showTripRebootFab = featuredTravelStatus === 'IN_PROGRESS';
   const showSyncStatus = Boolean(featuredPlan && isServerBackedPlan(featuredPlan));
-  const { isOffline: isActivePlanOfflineSync, toastText, toastOpacity } =
+  const { toastText, toastOpacity } =
     usePlanOfflineSyncFeedback({
       planId: featuredPlan?.planId ?? '',
       enabled: showSyncStatus,
@@ -74,8 +70,6 @@ export function MainHomeScreen({ navigation }: Props) {
     () => publishedTravelogues.find(isTraveloguePublic),
     [publishedTravelogues],
   );
-  const [activeTab, setActiveTab] = useState<NavbarTab>('home');
-  const [menuOpen, setMenuOpen] = useState(false);
   const homeFestivals = useFestivalStore(s => s.homeFestivals);
   const fetchHomeFestivals = useFestivalStore(s => s.fetchHomeFestivals);
   const homeEvents = useMemo(
@@ -112,10 +106,7 @@ export function MainHomeScreen({ navigation }: Props) {
   );
 
   const goToPlan = () => {
-    navigation.navigate(
-      'PlanDetail',
-      featuredPlan ? { planId: featuredPlan.planId } : undefined,
-    );
+    goToTab('route');
   };
 
   const goToReboot = () => {
@@ -144,47 +135,12 @@ export function MainHomeScreen({ navigation }: Props) {
     }
   };
 
-  const handleNavbarPress = (tab: NavbarTab) => {
-    setActiveTab(tab);
-    switch (tab) {
-      case 'home':
-        break;
-      case 'route':
-        navigation.navigate(activePlan ? 'PlanDetail' : 'PlanWizard');
-        break;
-      case 'feed':
-        navigation.navigate('TravelogueFeed');
-        break;
-      case 'my':
-        navigation.navigate('MyPage');
-        break;
-      default:
-        break;
-    }
-  };
-
   return (
     <View className="flex-1 bg-brand-background" style={layout.screen}>
-      <AppBar
-        onMenuPress={() => setMenuOpen(true)}
-        onProfilePress={() => navigation.navigate('MyPage')}
-        topRightAccessory={
-          showSyncStatus ? <PlanSyncStatusDot offline={isActivePlanOfflineSync} /> : undefined
-        }
-      />
-
-      <AppMenuDrawer
-        visible={menuOpen}
-        language={language}
-        navigation={navigation}
-        onClose={() => setMenuOpen(false)}
-      />
-
       <ScrollView
         className="flex-1 px-5"
         contentContainerStyle={{
-          paddingBottom:
-            NAVBAR_HEIGHT + 16 + (showTripRebootFab ? FAB_SIZE + FAB_GAP : 0),
+          paddingBottom: 16 + (showTripRebootFab ? FAB_SIZE + FAB_GAP : 0),
         }}
         showsVerticalScrollIndicator={false}>
         {featuredPlan && featuredTravelStatus ? (
@@ -212,7 +168,7 @@ export function MainHomeScreen({ navigation }: Props) {
             title={copy.heroTitle}
             subtitle={copy.heroSubtitle}
             ctaLabel={copy.heroCta}
-            onCtaPress={() => navigation.navigate('PlanWizard')}
+            onCtaPress={() => goToTab('route')}
           />
         )}
 
@@ -279,17 +235,15 @@ export function MainHomeScreen({ navigation }: Props) {
                 travelogueId: latestTravelogue.travelogueId,
               });
             } else {
-              navigation.navigate('TravelogueFeed');
+              goToTab('feed');
             }
           }}
-          onFeedPress={() => navigation.navigate('TravelogueFeed')}
+          onFeedPress={() => goToTab('feed')}
         />
       </ScrollView>
 
-      <Navbar activeTab={activeTab} language={language} onTabPress={handleNavbarPress} />
-
       <HomeActionFabs
-        bottom={insets.bottom + NAVBAR_HEIGHT + 8}
+        bottom={8}
         helpLabel={helpCopy.fabLabel}
         showReboot={showTripRebootFab}
         onHelpPress={goToHelpDesk}
@@ -299,7 +253,7 @@ export function MainHomeScreen({ navigation }: Props) {
       <TransientBottomToast
         text={toastText}
         opacity={toastOpacity}
-        bottom={insets.bottom + NAVBAR_HEIGHT + 12}
+        bottom={12}
       />
     </View>
   );

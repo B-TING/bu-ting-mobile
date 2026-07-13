@@ -77,6 +77,7 @@ type PlanScheduleTabProps = {
   canRemoveDay?: boolean;
   onAddDay?: () => void;
   onRemoveDay?: () => void;
+  scrollBottomInset?: number;
 };
 
 export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTabProps>(
@@ -105,6 +106,7 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
       canRemoveDay = false,
       onAddDay,
       onRemoveDay,
+      scrollBottomInset,
     },
     ref,
   ) {
@@ -461,6 +463,7 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
         mapClosedHint={copy.mapClosedHint}
         detailCloseLabel={copy.close}
         onDetailClose={() => setFocusedRoute(null)}
+        scrollBottomInset={scrollBottomInset}
         detailContent={detailPanel}>
           <DayChips
             days={plan.itinerary}

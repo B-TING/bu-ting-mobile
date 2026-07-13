@@ -8,7 +8,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { NavigationProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { WizardStepLayout } from '../../components/shared/layout/WizardStepLayout';
 import { OptionCard } from '../../components/shared/cards/OptionCard';
@@ -31,13 +32,18 @@ import {
 } from '../../constants/plan/planWizard';
 import { useAppLanguage, useCopy } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
+import { navigateToMainTab } from '../../navigation/navigateToMainTab';
+import { useMainTabNavigationOptional } from '../../navigation/mainTabNavigation';
 import { requestAutoPlan, requestPlanCandidates } from '../../services/plan/planAiService';
 import { createManualTravelPlan } from '../../services/travel/createManualTravelPlan';
 import { selectOnboardingForUser, useAppStore, useAuthStore, usePlanStore, emptyWizardAnswers } from '../../stores';
 import { selectAuthUser, selectReusableAccessToken } from '../../stores/useAuthStore';
 import type { CompanionGroupType } from '../../types/planWizard';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'PlanWizard'>;
+type Props = {
+  navigation: NativeStackNavigationProp<RootStackParamList>;
+  embeddedInMainTabs?: boolean;
+};
 
 function defaultDates() {
   const start = new Date();
@@ -50,8 +56,9 @@ function defaultDates() {
   };
 }
 
-export function PlanWizardScreen({ navigation }: Props) {
+export function PlanWizardScreen({ navigation, embeddedInMainTabs = false }: Props) {
   const language = useAppLanguage();
+  const mainTab = useMainTabNavigationOptional();
   const copy = useCopy('planWizard');
   const user = useAuthStore(selectAuthUser);
   const accessToken = useAuthStore(selectReusableAccessToken);
@@ -225,10 +232,17 @@ export function PlanWizardScreen({ navigation }: Props) {
         });
         addPlan(plan);
         confirmPlan(plan.planId);
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'PlanDetail', params: { planId: plan.planId } }],
-        });
+        if (embeddedInMainTabs) {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'MainTabs', params: { tab: 'route' } }],
+          });
+        } else {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'PlanDetail', params: { planId: plan.planId } }],
+          });
+        }
         return;
       }
 
@@ -236,10 +250,17 @@ export function PlanWizardScreen({ navigation }: Props) {
         const plan = await requestAutoPlan(answers, onboarding);
         addPlan(plan);
         confirmPlan(plan.planId);
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'PlanDetail', params: { planId: plan.planId } }],
-        });
+        if (embeddedInMainTabs) {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'MainTabs', params: { tab: 'route' } }],
+          });
+        } else {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'PlanDetail', params: { planId: plan.planId } }],
+          });
+        }
       } else {
         const candidates = await requestPlanCandidates(answers, onboarding);
         setPlanCandidates(candidates);
@@ -265,10 +286,12 @@ export function PlanWizardScreen({ navigation }: Props) {
   const goBack = () => {
     if (step > 0) {
       setStep(s => s - 1);
+    } else if (embeddedInMainTabs && mainTab) {
+      mainTab.goToTab('home');
     } else if (navigation.canGoBack()) {
       navigation.goBack();
     } else {
-      navigation.navigate('MainHome');
+      navigateToMainTab(navigation, 'home');
     }
   };
 
@@ -523,6 +546,7 @@ export function PlanWizardScreen({ navigation }: Props) {
       subtitle={stepConfig.subtitle[language]}
       backLabel={copy.back}
       onBack={goBack}
+      omitTopSafeArea={embeddedInMainTabs}
       footer={
         <PrimaryButton
           label={isLast ? copy.finish : copy.next}

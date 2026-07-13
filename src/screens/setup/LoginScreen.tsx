@@ -42,7 +42,7 @@ export function LoginScreen({ navigation }: Props) {
       try {
         const result = await signInWithProvider(provider);
         await completeProviderLogin(provider, result.providerToken, rememberMe);
-        navigation.replace('MainHome');
+        navigation.replace('MainTabs');
       } catch (error) {
         if (error instanceof OAuthSdkError && error.message.includes('cancelled')) {
           logAuth('login.cancelled', `${provider} sign-in cancelled by user`, {

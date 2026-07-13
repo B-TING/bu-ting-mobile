@@ -7,6 +7,8 @@ import { AppIcon } from '../icons/AppIcon';
 
 export type NavbarTab = 'home' | 'route' | 'feed' | 'my';
 
+export const NAVBAR_HEIGHT = 72;
+
 type TabConfig = {
   id: NavbarTab;
   labelKo: string;

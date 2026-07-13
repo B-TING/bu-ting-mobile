@@ -26,6 +26,7 @@ import { useAppAlert } from '../../components/shared/modals';
 import { usePlanRoutePlaceDetails } from '../../hooks/usePlanRoutePlaceDetails';
 import { useTravelMembersSync } from '../../hooks/useTravelMembersSync';
 import type { RootStackParamList } from '../../navigation/types';
+import { navigateToMainTab } from '../../navigation/navigateToMainTab';
 import { addPlanPlaceFromCandidate, findDayRoute, getDayRoutesFromPlan, removePlanPlaceFromApi, replacePlanPlaceFromCandidate, routesInItemOrder, updatePlanPlaceMemoOnApi, updatePlanPlaceOrderOnApi } from '../../services/travel/planPlaceSync';
 import {
   addPlanDayOnApi,
@@ -59,11 +60,13 @@ import { mergeRouteWithPlaceDetail } from '../../utils/places/routePlaceDetail';
 import { getReviewForRoute, reviewProgress } from '../../utils/review/travelReview';
 import { lockPlanScheduleIfApiError } from '../../utils/travel/scheduleApiLock';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'PlanDetail'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'PlanDetail'> & {
+  embeddedInMainTabs?: boolean;
+};
 
 const EMPTY_BUDGET: BudgetEntry[] = [];
 
-export function PlanDetailScreen({ navigation, route }: Props) {
+export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false }: Props) {
   const paramPlanId = route.params?.planId;
   const insets = useSafeAreaInsets();
   const language = useAppLanguage();
@@ -684,7 +687,7 @@ export function PlanDetailScreen({ navigation, route }: Props) {
     }
 
     completePlan(planId);
-    navigation.navigate('MainHome');
+    navigateToMainTab(navigation, 'home');
   }, [planId, isApiPlan, accessToken, plan, completePlan, navigation]);
 
   const requestCompletePlan = useCallback(() => {
@@ -777,14 +780,14 @@ export function PlanDetailScreen({ navigation, route }: Props) {
   };
 
   return (
-    <View
-      className="flex-1 bg-brand-background"
-      style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
+    <View className="flex-1 bg-brand-background">
       <View className="flex-row items-center border-b border-brand-border bg-brand-surface px-4 py-3">
-        <BackButton
-          accessibilityLabel={language === 'ko' ? '메인으로' : 'Back to home'}
-          onPress={() => navigation.navigate('MainHome')}
-        />
+        {!embeddedInMainTabs ? (
+          <BackButton
+            accessibilityLabel={language === 'ko' ? '메인으로' : 'Back to home'}
+            onPress={() => navigateToMainTab(navigation, 'home')}
+          />
+        ) : null}
         <Text className="flex-1 text-lg font-bold text-brand-text" numberOfLines={1}>
           {enrichedPlan.title}
         </Text>
@@ -847,6 +850,7 @@ export function PlanDetailScreen({ navigation, route }: Props) {
                 void handleAddDay();
               }}
               onRemoveDay={handleRemoveDay}
+              scrollBottomInset={embeddedInMainTabs ? 0 : undefined}
             />
           ),
           budget: (
@@ -872,7 +876,7 @@ export function PlanDetailScreen({ navigation, route }: Props) {
                 void handleCompletePlan();
               }}
               onEndTrip={requestCompletePlan}
-              onViewFeed={() => navigation.navigate('TravelogueFeed')}
+              onViewFeed={() => navigateToMainTab(navigation, 'feed')}
               onViewTravelogue={travelogueId =>
                 navigation.navigate('TravelogueDetail', { travelogueId })
               }
@@ -883,7 +887,7 @@ export function PlanDetailScreen({ navigation, route }: Props) {
 
       {tab === 'schedule' && !scheduleReadOnly ? (
         <RouteOptimizeFab
-          bottom={routeFabBottom(insets.bottom)}
+          bottom={routeFabBottom(embeddedInMainTabs ? 0 : insets.bottom)}
           label={copy.routeOptimize}
           addPlaceLabel={copy.addPlace}
           onPress={() => scheduleRef.current?.handleRouteOptimize()}
@@ -977,7 +981,7 @@ export function PlanDetailScreen({ navigation, route }: Props) {
       <TransientBottomToast
         text={toastText}
         opacity={toastOpacity}
-        bottom={insets.bottom + 16}
+        bottom={(embeddedInMainTabs ? 0 : insets.bottom) + 16}
       />
     </View>
   );
