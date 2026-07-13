@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, View, useWindowDimensions } from 'react-native';
 import type { NavigationProp } from '@react-navigation/native';
-import type { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { PlanSyncStatusDot } from '../components/plan/PlanSyncStatusDot';
 import { AppBar } from '../components/shared/navigation/AppBar';
@@ -12,11 +12,16 @@ import { useAppLanguage } from '../i18n';
 import { MainHomeScreen } from '../screens/MainHomeScreen';
 import { MyPageScreen } from '../screens/MyPageScreen';
 import { PlanDetailScreen } from '../screens/plan/PlanDetailScreen';
-import { PlanWizardScreen } from '../screens/plan/PlanWizardScreen';
 import { TravelogueFeedScreen } from '../screens/feed/TravelogueFeedScreen';
-import { selectActivePlan, selectHomeFeaturedPlan, selectIsPlanOfflineSync, usePlanStore } from '../stores/usePlanStore';
+import {
+  selectActivePlan,
+  selectHomeFeaturedPlan,
+  selectIsPlanOfflineSync,
+  usePlanStore,
+} from '../stores/usePlanStore';
 import { isServerBackedPlan } from '../utils/plan/serverBackedPlan';
 import { MainTabNavigationContext } from './mainTabNavigation';
+import { resolveItineraryPlan } from './navigateToMainTab';
 import type { RootStackParamList } from './types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MainTabs'>;
@@ -33,27 +38,22 @@ function MainRouteTabPanel({
 }: {
   navigation: NavigationProp<RootStackParamList>;
 }) {
-  const activePlan = usePlanStore(selectActivePlan);
+  const routePlan = usePlanStore(s => selectActivePlan(s) ?? selectHomeFeaturedPlan(s));
   const stackNavigation =
     navigation as NativeStackScreenProps<RootStackParamList, 'PlanDetail'>['navigation'];
 
-  if (activePlan) {
-    return (
-      <PlanDetailScreen
-        navigation={stackNavigation}
-        route={{
-          key: `main-tab-plan-${activePlan.planId}`,
-          name: 'PlanDetail',
-          params: { planId: activePlan.planId },
-        }}
-        embeddedInMainTabs
-      />
-    );
+  if (!routePlan) {
+    return <View className="flex-1 bg-brand-background" />;
   }
 
   return (
-    <PlanWizardScreen
-      navigation={navigation as NativeStackNavigationProp<RootStackParamList>}
+    <PlanDetailScreen
+      navigation={stackNavigation}
+      route={{
+        key: `main-tab-plan-${routePlan.planId}`,
+        name: 'PlanDetail',
+        params: { planId: routePlan.planId },
+      }}
       embeddedInMainTabs
     />
   );
@@ -84,13 +84,15 @@ export function MainTabNavigator({ navigation, route }: Props) {
   const { width } = useWindowDimensions();
   const language = useAppLanguage();
   const initialTab = route.params?.tab ?? 'home';
+  const safeInitialTab =
+    initialTab === 'route' && !resolveItineraryPlan() ? 'home' : initialTab;
 
-  const [activeTab, setActiveTab] = useState<NavbarTab>(initialTab);
+  const [activeTab, setActiveTab] = useState<NavbarTab>(safeInitialTab);
   const [mountedTabs, setMountedTabs] = useState<Set<NavbarTab>>(
-    () => new Set<NavbarTab>([initialTab]),
+    () => new Set<NavbarTab>([safeInitialTab]),
   );
   const [menuOpen, setMenuOpen] = useState(false);
-  const slideX = useRef(new Animated.Value(-tabIndex(initialTab) * width)).current;
+  const slideX = useRef(new Animated.Value(-tabIndex(safeInitialTab) * width)).current;
   const activeTabRef = useRef(activeTab);
   activeTabRef.current = activeTab;
 
@@ -136,6 +138,11 @@ export function MainTabNavigator({ navigation, route }: Props) {
         return;
       }
 
+      if (tab === 'route' && !resolveItineraryPlan()) {
+        navigation.navigate('PlanWizard');
+        return;
+      }
+
       navigation.setParams({ tab });
       switchToTab(tab);
     },
@@ -151,8 +158,15 @@ export function MainTabNavigator({ navigation, route }: Props) {
     if (!tab || tab === activeTabRef.current) {
       return;
     }
+
+    if (tab === 'route' && !resolveItineraryPlan()) {
+      navigation.setParams({ tab: activeTabRef.current });
+      navigation.navigate('PlanWizard');
+      return;
+    }
+
     switchToTab(tab);
-  }, [route.params?.tab, switchToTab]);
+  }, [navigation, route.params?.tab, switchToTab]);
 
   const contextValue = useMemo(
     () => ({

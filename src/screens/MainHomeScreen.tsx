@@ -19,6 +19,7 @@ import {
 import { festivalToHomeEvent } from '../constants/festival/festivalCalendar';
 import { layout } from '../constants/common/layout';
 import { useMainTabNavigation } from '../navigation/mainTabNavigation';
+import { openItineraryOrWizard } from '../navigation/navigateToMainTab';
 import type { RootStackParamList } from '../navigation/types';
 import { PLACE_CONTENT_TYPE } from '../types/placesApi';
 import { upcomingFestivalDateRangeYyyymmdd } from '../utils/places/festivalApiMapper';
@@ -106,7 +107,7 @@ export function MainHomeScreen({ navigation }: Props) {
   );
 
   const goToPlan = () => {
-    goToTab('route');
+    openItineraryOrWizard(navigation);
   };
 
   const goToReboot = () => {
@@ -168,7 +169,7 @@ export function MainHomeScreen({ navigation }: Props) {
             title={copy.heroTitle}
             subtitle={copy.heroSubtitle}
             ctaLabel={copy.heroCta}
-            onCtaPress={() => goToTab('route')}
+            onCtaPress={() => openItineraryOrWizard(navigation)}
           />
         )}
 
