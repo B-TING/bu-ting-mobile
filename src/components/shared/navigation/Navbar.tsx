@@ -1,4 +1,5 @@
 import { BlurView } from '@react-native-community/blur';
+import { useIsFocused } from '@react-navigation/native';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -34,7 +35,10 @@ type NavbarProps = {
 
 export function Navbar({ activeTab, language = 'ko', onTabPress }: NavbarProps) {
   const insets = useSafeAreaInsets();
+  const isFocused = useIsFocused();
   const bottomPad = Math.max(insets.bottom, 8);
+  /** Android BlurView는 스택 화면 위로 blur가 새어 전체 화면이 뿌옇게 보이는 버그가 있음 */
+  const useLiveBlur = Platform.OS === 'ios' && isFocused;
 
   return (
     <View
@@ -51,19 +55,26 @@ export function Navbar({ activeTab, language = 'ko', onTabPress }: NavbarProps) 
           android: { elevation: 16 },
         }),
       }}>
-      <BlurView
-        style={StyleSheet.absoluteFill}
-        blurType="light"
-        blurAmount={Platform.OS === 'ios' ? 55 : 32}
-        reducedTransparencyFallbackColor={GLASS_FALLBACK}
-        {...(Platform.OS === 'android'
-          ? {
-              overlayColor: GLASS_ANDROID_OVERLAY,
-              blurRadius: 25,
-              downsampleFactor: 12,
-            }
-          : {})}
-      />
+      {useLiveBlur ? (
+        <BlurView
+          style={StyleSheet.absoluteFill}
+          blurType="light"
+          blurAmount={Platform.OS === 'ios' ? 55 : 32}
+          reducedTransparencyFallbackColor={GLASS_FALLBACK}
+          {...(Platform.OS === 'android'
+            ? {
+                overlayColor: GLASS_ANDROID_OVERLAY,
+                blurRadius: 25,
+                downsampleFactor: 12,
+              }
+            : {})}
+        />
+      ) : (
+        <View
+          pointerEvents="none"
+          style={[StyleSheet.absoluteFill, { backgroundColor: GLASS_FALLBACK }]}
+        />
+      )}
       <View pointerEvents="none" className="absolute inset-0 bg-white/25" />
       <View pointerEvents="none" className="absolute inset-x-0 top-0 border-t border-white/60" />
       <View className="flex-row items-center justify-around px-2 pt-2">
