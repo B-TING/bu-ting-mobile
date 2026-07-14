@@ -8,7 +8,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { NavigationProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { WizardStepLayout } from '../../components/shared/layout/WizardStepLayout';
 import { OptionCard } from '../../components/shared/cards/OptionCard';
@@ -31,13 +32,16 @@ import {
 } from '../../constants/plan/planWizard';
 import { useAppLanguage, useCopy } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
+import { navigateToMainTab } from '../../navigation/navigateToMainTab';
 import { requestAutoPlan, requestPlanCandidates } from '../../services/plan/planAiService';
 import { createManualTravelPlan } from '../../services/travel/createManualTravelPlan';
 import { selectOnboardingForUser, useAppStore, useAuthStore, usePlanStore, emptyWizardAnswers } from '../../stores';
 import { selectAuthUser, selectReusableAccessToken } from '../../stores/useAuthStore';
 import type { CompanionGroupType } from '../../types/planWizard';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'PlanWizard'>;
+type Props = {
+  navigation: NativeStackNavigationProp<RootStackParamList>;
+};
 
 function defaultDates() {
   const start = new Date();
@@ -227,7 +231,7 @@ export function PlanWizardScreen({ navigation }: Props) {
         confirmPlan(plan.planId);
         navigation.reset({
           index: 0,
-          routes: [{ name: 'PlanDetail', params: { planId: plan.planId } }],
+          routes: [{ name: 'MainTabs', params: { tab: 'route' } }],
         });
         return;
       }
@@ -238,7 +242,7 @@ export function PlanWizardScreen({ navigation }: Props) {
         confirmPlan(plan.planId);
         navigation.reset({
           index: 0,
-          routes: [{ name: 'PlanDetail', params: { planId: plan.planId } }],
+          routes: [{ name: 'MainTabs', params: { tab: 'route' } }],
         });
       } else {
         const candidates = await requestPlanCandidates(answers, onboarding);
@@ -268,7 +272,7 @@ export function PlanWizardScreen({ navigation }: Props) {
     } else if (navigation.canGoBack()) {
       navigation.goBack();
     } else {
-      navigation.navigate('MainHome');
+      navigateToMainTab(navigation, 'home');
     }
   };
 

@@ -41,7 +41,7 @@ export function PlanCandidatesScreen({ navigation }: Props) {
     clearCandidates();
     navigation.reset({
       index: 0,
-      routes: [{ name: 'PlanDetail', params: { planId: plan.planId } }],
+      routes: [{ name: 'MainTabs', params: { tab: 'route' } }],
     });
   };
 

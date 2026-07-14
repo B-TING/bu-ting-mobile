@@ -39,6 +39,7 @@ type ScheduleMapSplitProps = {
   detailContent?: ReactNode;
   detailCloseLabel?: string;
   onDetailClose?: () => void;
+  scrollBottomInset?: number;
   children: ReactNode;
 };
 
@@ -81,9 +82,11 @@ export function ScheduleMapSplit({
   detailContent,
   detailCloseLabel,
   onDetailClose,
+  scrollBottomInset,
   children,
 }: ScheduleMapSplitProps) {
   const insets = useSafeAreaInsets();
+  const listBottomPadding = routeFabScrollPadding(scrollBottomInset ?? insets.bottom);
   const [scheduleHeight, setScheduleHeight] = useState(0);
   const scheduleHeightRef = useRef(0);
   const dragStartHeightRef = useRef(0);
@@ -184,7 +187,7 @@ export function ScheduleMapSplit({
         <View style={{ height: scheduleHeight }} className="relative min-h-0 bg-brand-background">
           <ScrollView
             className="flex-1 px-4"
-            contentContainerStyle={{ paddingBottom: routeFabScrollPadding(insets.bottom) }}
+            contentContainerStyle={{ paddingBottom: listBottomPadding }}
             showsVerticalScrollIndicator={false}
             nestedScrollEnabled
             pointerEvents={detailActive ? 'none' : 'auto'}
@@ -206,7 +209,7 @@ export function ScheduleMapSplit({
               ) : null}
               <ScrollView
                 className="flex-1"
-                contentContainerStyle={{ paddingBottom: routeFabScrollPadding(insets.bottom) }}
+                contentContainerStyle={{ paddingBottom: listBottomPadding }}
                 showsVerticalScrollIndicator={false}
                 nestedScrollEnabled>
                 {detailContent}
