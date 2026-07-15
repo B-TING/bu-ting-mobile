@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -129,54 +129,48 @@ export function MyPageScreen({ navigation }: Props) {
   const rememberMe = useAuthStore(s => s.rememberMe);
   const accessToken = useAuthStore(selectReusableAccessToken);
 
-  const localRecords = useTravelRecordStore(s => s.publishedTravelRecords);
   const upsertTravelRecords = useTravelRecordStore(s => s.upsertTravelRecords);
 
   const [nicknameModalOpen, setNicknameModalOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [savingNickname, setSavingNickname] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
-  const [apiRecords, setApiRecords] = useState<TravelRecord[] | null>(null);
+  const [records, setRecords] = useState<TravelRecord[]>([]);
   const [loadingRecords, setLoadingRecords] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const nickname = user?.nickname || user?.email?.split('@')[0] || 'User';
 
-  const myLocalRecords = useMemo(() => {
-    if (!user?.userId) {
-      return localRecords;
-    }
-    return localRecords.filter(r => r.authorId === user.userId);
-  }, [localRecords, user?.userId]);
-
   const loadMyRecords = useCallback(async () => {
     if (!accessToken) {
-      setApiRecords(null);
+      setRecords([]);
       return;
     }
-    try {
-      const list = await fetchMyTravelRecords(accessToken);
-      const mapped = list.map(item => mapTravelRecordManageItem(item, nickname));
-      setApiRecords(mapped);
-      upsertTravelRecords(mapped);
-    } catch (error) {
-      if (__DEV__) {
-        const message =
-          error instanceof TravelRecordServiceError ? error.message : String(error);
-        console.warn('[MyPage] fetchMyTravelRecords failed:', message);
-      }
-      setApiRecords(null);
-    }
+    const list = await fetchMyTravelRecords(accessToken);
+    const mapped = list.map(item => mapTravelRecordManageItem(item, nickname));
+    setRecords(mapped);
+    upsertTravelRecords(mapped);
   }, [accessToken, nickname, upsertTravelRecords]);
 
   useEffect(() => {
     let cancelled = false;
     setLoadingRecords(true);
-    void loadMyRecords().finally(() => {
-      if (!cancelled) {
-        setLoadingRecords(false);
-      }
-    });
+    void loadMyRecords()
+      .catch(error => {
+        if (__DEV__) {
+          const message =
+            error instanceof TravelRecordServiceError ? error.message : String(error);
+          console.warn('[MyPage] fetchMyTravelRecords failed:', message);
+        }
+        if (!cancelled) {
+          setRecords([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoadingRecords(false);
+        }
+      });
     return () => {
       cancelled = true;
     };
@@ -184,22 +178,18 @@ export function MyPageScreen({ navigation }: Props) {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await loadMyRecords();
-    setRefreshing(false);
-  }, [loadMyRecords]);
-
-  const records = useMemo(() => {
-    if (apiRecords != null) {
-      const byId = new Map(apiRecords.map(r => [r.travelRecordId, r]));
-      myLocalRecords.forEach(local => {
-        if (!byId.has(local.travelRecordId)) {
-          byId.set(local.travelRecordId, local);
-        }
-      });
-      return Array.from(byId.values());
+    try {
+      await loadMyRecords();
+    } catch (error) {
+      if (__DEV__) {
+        const message =
+          error instanceof TravelRecordServiceError ? error.message : String(error);
+        console.warn('[MyPage] refresh failed:', message);
+      }
+    } finally {
+      setRefreshing(false);
     }
-    return myLocalRecords;
-  }, [apiRecords, myLocalRecords]);
+  }, [loadMyRecords]);
 
   const goToLogin = () => {
     navigation.reset({

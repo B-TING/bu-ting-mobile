@@ -1,16 +1,28 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { PlaceReviewCard } from '../../review/cards/PlaceReviewCard';
 import { PlaceReviewFormModal } from '../../review/modals/PlaceReviewFormModal';
 import { TravelogueComposeModal } from '../../review/modals/TravelogueComposeModal';
+import { useAppAlert } from '../../shared/modals';
 import { useCopy } from '../../../i18n';
+import {
+  publishTravelRecordForTravel,
+  PublishTravelRecordError,
+} from '../../../services/travel/publishTravelRecordForTravel';
+import { savePlaceReviewForTravel } from '../../../services/travel/savePlaceReviewForTravel';
+import {
+  fetchMyTravelRecords,
+  TravelRecordServiceError,
+} from '../../../services/travel/travelRecordService';
+import { mapTravelRecordManageItem } from '../../../types/travelRecordApi';
 import { EMPTY_REVIEWS, useTravelRecordStore } from '../../../stores/useTravelRecordStore';
+import { useAuthStore } from '../../../stores';
+import { selectReusableAccessToken } from '../../../stores/useAuthStore';
 import type { AppLanguage } from '../../../types/user';
 import type { RouteItem, TravelPlan } from '../../../types/travelPlan';
-import type { TravelRecordStatus } from '../../../types/travelReview';
+import type { PlaceReview, TravelRecordStatus } from '../../../types/travelReview';
 import {
-  buildTravelRecordDays,
   collectPlanRoutes,
   getReviewForPlace,
   isTravelRecordPublic,
@@ -47,20 +59,54 @@ export function PlanRecordsTab({
   onViewFeed,
   onViewTravelRecord,
 }: PlanRecordsTabProps) {
+  const { alert } = useAppAlert();
   const copy = useCopy('travelReview');
+  const accessToken = useAuthStore(selectReusableAccessToken);
   const travelId = plan.apiTravelId ?? plan.planId;
   const reviews =
     useTravelRecordStore(s => s.reviewsByTravelId[travelId]) ?? EMPTY_REVIEWS;
-  const upsertReview = useTravelRecordStore(s => s.upsertPlaceReview);
-  const publishTravelRecord = useTravelRecordStore(s => s.publishTravelRecord);
-  const isPublished = useTravelRecordStore(s => s.publishedTravelIds.includes(travelId));
+  const upsertTravelRecords = useTravelRecordStore(s => s.upsertTravelRecords);
+  const isPublished = useTravelRecordStore(s => s.isTravelPublished(travelId));
   const publishedTravelRecord = useTravelRecordStore(s =>
-    s.publishedTravelRecords.find(t => t.originalTravelId === travelId),
+    s.publishedTravelRecords.find(
+      t =>
+        t.originalTravelId === travelId &&
+        (t.status === 'PUBLISHED' || t.status === 'HIDDEN'),
+    ),
   );
 
   const [reviewRoute, setReviewRoute] = useState<RouteItem | null>(null);
   const [composeOpen, setComposeOpen] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [savingReview, setSavingReview] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+
+  useEffect(() => {
+    if (!accessToken?.trim() || plan.source !== 'api') {
+      return;
+    }
+    let cancelled = false;
+    void fetchMyTravelRecords(accessToken)
+      .then(list => {
+        if (cancelled) {
+          return;
+        }
+        const mapped = list.map(item =>
+          mapTravelRecordManageItem(item, authorNickname),
+        );
+        upsertTravelRecords(mapped);
+      })
+      .catch(error => {
+        if (__DEV__) {
+          const message =
+            error instanceof TravelRecordServiceError ? error.message : String(error);
+          console.warn('[PlanRecordsTab] fetchMyTravelRecords failed:', message);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [accessToken, authorNickname, plan.source, upsertTravelRecords]);
 
   const eligibleRoutes = useMemo(() => collectPlanRoutes(allRoutes), [allRoutes]);
   const progress = useMemo(
@@ -76,31 +122,90 @@ export function PlanRecordsTab({
     return copy.totalDuration(formatDurationMinutes(minutes, language));
   }, [copy, plan.itinerary, language]);
 
-  const handlePublish = (payload: {
+  const handleSavePlaceReview = async (
+    payload: Omit<PlaceReview, 'placeReviewId' | 'createdAt' | 'updatedAt'> & {
+      placeReviewId?: string;
+    },
+  ) => {
+    if (!reviewRoute) {
+      return;
+    }
+    setSavingReview(true);
+    try {
+      await savePlaceReviewForTravel({
+        accessToken,
+        plan,
+        route: reviewRoute,
+        authorNickname,
+        payload: {
+          placeReviewId: payload.placeReviewId,
+          rating: payload.rating,
+          content: payload.content,
+          tags: payload.tags,
+          media: payload.media,
+        },
+      });
+    } catch (error) {
+      alert({
+        title:
+          error instanceof Error
+            ? error.message
+            : language === 'ko'
+              ? '후기 저장에 실패했습니다.'
+              : 'Failed to save review.',
+      });
+      throw error;
+    } finally {
+      setSavingReview(false);
+    }
+  };
+
+  const handlePublish = async (payload: {
     title: string;
     content: string;
     status: Extract<TravelRecordStatus, 'PUBLISHED' | 'HIDDEN'>;
   }) => {
-    const firstImage = reviews.flatMap(r => r.media ?? []).find(m => m.type === 'image');
-    publishTravelRecord({
-      originalTravelId: travelId,
-      authorId: plan.members[0]?.userId ?? 'local-user',
-      authorNickname,
-      title: payload.title,
-      content: payload.content || null,
-      coverImageUrl: firstImage?.uri ?? null,
-      travelStartDate: plan.startDate,
-      travelEndDate: plan.endDate,
-      status: payload.status,
-      days: buildTravelRecordDays(plan),
-      placeReviews: reviews,
-    });
-    setSuccessMsg(
-      payload.status === 'PUBLISHED'
-        ? copy.publishedSuccessPublic
-        : copy.publishedSuccessPrivate,
-    );
-    onPublished?.();
+    if (!accessToken?.trim()) {
+      alert({
+        title:
+          language === 'ko' ? '로그인이 필요합니다.' : 'Please sign in to publish.',
+      });
+      throw new Error('login required');
+    }
+
+    setPublishing(true);
+    try {
+      const firstImage = reviews.flatMap(r => r.media ?? []).find(m => m.type === 'image');
+      await publishTravelRecordForTravel({
+        accessToken,
+        plan,
+        authorNickname,
+        title: payload.title,
+        content: payload.content,
+        status: payload.status,
+        coverImageUrl: firstImage?.uri ?? null,
+      });
+      setSuccessMsg(
+        payload.status === 'PUBLISHED'
+          ? copy.publishedSuccessPublic
+          : copy.publishedSuccessPrivate,
+      );
+      onPublished?.();
+    } catch (error) {
+      alert({
+        title:
+          error instanceof PublishTravelRecordError
+            ? error.message
+            : error instanceof Error
+              ? error.message
+              : language === 'ko'
+                ? '여행기 게시에 실패했습니다.'
+                : 'Failed to publish travelogue.',
+      });
+      throw error;
+    } finally {
+      setPublishing(false);
+    }
   };
 
   return (
@@ -218,8 +323,13 @@ export function PlanRecordsTab({
         }
         copy={copy}
         language={language}
-        onClose={() => setReviewRoute(null)}
-        onSave={payload => upsertReview(travelId, payload)}
+        saving={savingReview}
+        onClose={() => {
+          if (!savingReview) {
+            setReviewRoute(null);
+          }
+        }}
+        onSave={handleSavePlaceReview}
       />
 
       <TravelogueComposeModal
@@ -231,7 +341,12 @@ export function PlanRecordsTab({
         placeReviews={reviews}
         defaultTitle={plan.title}
         totalDurationLabel={totalDurationLabel}
-        onClose={() => setComposeOpen(false)}
+        publishing={publishing}
+        onClose={() => {
+          if (!publishing) {
+            setComposeOpen(false);
+          }
+        }}
         onPublish={handlePublish}
       />
     </View>

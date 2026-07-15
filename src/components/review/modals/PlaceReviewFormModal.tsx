@@ -22,9 +22,12 @@ type PlaceReviewFormModalProps = {
   copy: Copy;
   language: AppLanguage;
   onClose: () => void;
-  onSave: (payload: Omit<PlaceReview, 'placeReviewId' | 'createdAt' | 'updatedAt'> & {
-    placeReviewId?: string;
-  }) => void;
+  onSave: (
+    payload: Omit<PlaceReview, 'placeReviewId' | 'createdAt' | 'updatedAt'> & {
+      placeReviewId?: string;
+    },
+  ) => void | Promise<void>;
+  saving?: boolean;
 };
 
 const MOCK_PHOTO_ICONS: LucideIconName[] = ['camera', 'waves', 'utensils', 'flower2', 'building2'];
@@ -45,6 +48,7 @@ export function PlaceReviewFormModal({
   language,
   onClose,
   onSave,
+  saving = false,
 }: PlaceReviewFormModalProps) {
   const [rating, setRating] = useState(5);
   const [tags, setTags] = useState<string[]>([]);
@@ -52,6 +56,7 @@ export function PlaceReviewFormModal({
   const [content, setContent] = useState('');
   /** Mock-only media until upload API exists */
   const [media, setMedia] = useState<ReviewMedia[]>([]);
+  const [submitting, setSubmitting] = useState(false);
 
   const presets = REVIEW_TAG_PRESETS[language];
 
@@ -112,18 +117,28 @@ export function PlaceReviewFormModal({
     setMedia(prev => prev.filter(m => m.mediaId !== mediaId));
   };
 
-  const handleSave = () => {
-    onSave({
-      placeReviewId: existing?.placeReviewId,
-      travelRecordPlaceId: route.apiPlanPlaceId ?? route.itemId,
-      placeName: route.placeName,
-      rating,
-      tags,
-      content: content.trim() || null,
-      media,
-    });
-    onClose();
+  const handleSave = async () => {
+    if (submitting || saving) {
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await onSave({
+        placeReviewId: existing?.placeReviewId,
+        travelRecordPlaceId: route.apiPlanPlaceId ?? route.itemId,
+        placeName: route.placeName,
+        rating,
+        tags,
+        content: content.trim() || null,
+        media,
+      });
+      onClose();
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  const busy = submitting || saving;
 
   return (
     <AppModal
@@ -135,8 +150,20 @@ export function PlaceReviewFormModal({
       footer={
         <AppModalActions
           actions={[
-            { label: copy.cancel, onPress: onClose, variant: 'secondary' },
-            { label: copy.save, onPress: handleSave, variant: 'primary' },
+            {
+              label: copy.cancel,
+              onPress: onClose,
+              variant: 'secondary',
+              disabled: busy,
+            },
+            {
+              label: copy.save,
+              onPress: () => {
+                void handleSave();
+              },
+              variant: 'primary',
+              disabled: busy,
+            },
           ]}
         />
       }>

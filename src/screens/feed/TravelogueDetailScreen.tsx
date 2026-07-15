@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -13,11 +13,13 @@ import { useTravelogueSocialActions } from '../../components/feed/useTravelogueS
 import { BackButton } from '../../components/shared/buttons/BackButton';
 import { AppIcon } from '../../components/shared/icons/AppIcon';
 import { StarRating } from '../../components/shared/rating/StarRating';
-import { ICON_COLOR_MUTED } from '../../constants/icons';
+import { ICON_COLOR_MUTED, ICON_COLOR_PRIMARY } from '../../constants/icons';
 import type { CopyFor } from '../../i18n';
 import { useAppLanguage, useCopy } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
-import { usePlanStore, useTravelRecordStore } from '../../stores';
+import { loadTravelRecordDetail } from '../../services/travel/loadTravelRecordDetail';
+import { useAuthStore, usePlanStore, useTravelRecordStore } from '../../stores';
+import { selectReusableAccessToken } from '../../stores/useAuthStore';
 import type { PlaceReview, TravelRecord } from '../../types/travelReview';
 import type { AppLanguage } from '../../types/user';
 import {
@@ -25,7 +27,7 @@ import {
   authorInitial,
   collectTravelRecordImages,
   flattenTravelRecordPlaces,
-  getReviewForPlace,
+  getReviewForTravelRecordPlace,
   resolveTravelRecordDays,
   snapshotToRouteItems,
   travelRecordDestinationLabel,
@@ -264,9 +266,9 @@ function TravelRecordDetailBody({
                   {day.places.map(place => {
                     globalOrder += 1;
                     const order = globalOrder;
-                    const review = getReviewForPlace(
+                    const review = getReviewForTravelRecordPlace(
                       travelRecord.placeReviews,
-                      place.travelRecordPlaceId,
+                      place,
                     );
                     const selected = selectedRouteId === place.travelRecordPlaceId;
 
@@ -369,15 +371,59 @@ export function TravelogueDetailScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const language = useAppLanguage();
   const copy = useCopy('travelReview');
+  const accessToken = useAuthStore(selectReusableAccessToken);
+  const travelRecordId = route.params.travelRecordId;
   const travelRecord = useTravelRecordStore(s =>
-    s.publishedTravelRecords.find(t => t.travelRecordId === route.params.travelRecordId),
+    s.publishedTravelRecords.find(t => t.travelRecordId === travelRecordId),
   );
+  const [loading, setLoading] = useState(!travelRecord);
+  const [loadError, setLoadError] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoadError(false);
+    setLoading(true);
+    void loadTravelRecordDetail({
+      travelRecordId,
+      accessToken,
+      seed: travelRecord ?? null,
+    })
+      .catch(() => {
+        if (!cancelled) {
+          setLoadError(true);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+    // seed만 최초 진입 시 사용 — travelRecord 변경으로 루프 방지
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [travelRecordId, accessToken]);
+
+  if (loading && !travelRecord) {
+    return (
+      <View className="flex-1 items-center justify-center bg-brand-background">
+        <ActivityIndicator color={ICON_COLOR_PRIMARY} />
+      </View>
+    );
+  }
 
   if (!travelRecord) {
     return (
       <View className="flex-1 items-center justify-center bg-brand-background px-6">
         <Text className="text-brand-muted">
-          {language === 'ko' ? '여행기를 찾을 수 없어요' : 'Travelogue not found'}
+          {loadError
+            ? language === 'ko'
+              ? '여행기를 불러오지 못했어요'
+              : 'Could not load travelogue'
+            : language === 'ko'
+              ? '여행기를 찾을 수 없어요'
+              : 'Travelogue not found'}
         </Text>
         <BackButton
           accessibilityLabel={language === 'ko' ? '뒤로' : 'Back'}

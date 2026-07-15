@@ -10,6 +10,7 @@ import { BudgetEntryModal } from '../../components/plan/modals/BudgetEntryModal'
 import { PlacePickModal } from '../../components/plan/modals/PlacePickModal';
 import { TravelInviteLinkModal } from '../../components/plan/modals/TravelInviteLinkModal';
 import { RouteOptimizeFab, routeFabBottom } from '../../components/plan/fab/RouteOptimizeFab';
+import { getNavbarOverlayHeight } from '../../components/shared/navigation/Navbar';
 import { PlanBudgetTab } from '../../components/plan/tabs/PlanBudgetTab';
 import { PlanOverviewTab } from '../../components/plan/tabs/PlanOverviewTab';
 import { PlanRecordsTab } from '../../components/plan/tabs/PlanRecordsTab';
@@ -37,6 +38,7 @@ import {
 } from '../../services/travel/planDaySync';
 import { resolveTravelInviteLink } from '../../services/travel/travelTeamService';
 import { updateTravelStatus } from '../../services/travel/travelService';
+import { savePlaceReviewForTravel } from '../../services/travel/savePlaceReviewForTravel';
 import {
   EMPTY_REVIEWS,
   hydrateRoutePlaceInfo,
@@ -50,6 +52,7 @@ import { selectReusableAccessToken } from '../../stores/useAuthStore';
 import { useApiTravelPlanSync } from '../../hooks/useApiTravelPlanSync';
 import { usePlanOfflineSyncFeedback } from '../../hooks/usePlanOfflineSyncFeedback';
 import type { BudgetEntry, RouteItem, TravelLegMode } from '../../types/travelPlan';
+import type { PlaceReview } from '../../types/travelReview';
 import { sortedRoutes } from '../../utils/plan/planItinerary';
 import { optimizeRouteOrder } from '../../utils/plan/routeOptimize';
 import {
@@ -84,7 +87,6 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
   const removeItineraryDay = usePlanStore(s => s.removeItineraryDay);
   const addBudgetEntry = usePlanStore(s => s.addBudgetEntry);
   const completePlan = usePlanStore(s => s.completePlan);
-  const upsertPlaceReview = useTravelRecordStore(s => s.upsertPlaceReview);
   const displayName = useAppStore(s => s.auth.displayName) ?? 'Traveler';
   const accessToken = useAuthStore(selectReusableAccessToken);
   const authUser = useAuthStore(s => s.user);
@@ -135,7 +137,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
       travelId ? s.reviewsByTravelId[travelId] : undefined,
     ) ?? EMPTY_REVIEWS;
   const isPlanPublished = useTravelRecordStore(s =>
-    travelId ? s.publishedTravelIds.includes(travelId) : false,
+    travelId ? s.isTravelPublished(travelId) : false,
   );
 
   const budgetEntries = useMemo(
@@ -151,6 +153,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
   const [scheduleModal, setScheduleModal] = useState<ScheduleModalState>({ kind: 'none' });
   const [scheduleReorderActive, setScheduleReorderActive] = useState(false);
   const [reviewFormRoute, setReviewFormRoute] = useState<RouteItem | null>(null);
+  const [savingReview, setSavingReview] = useState(false);
   const [budgetModalOpen, setBudgetModalOpen] = useState(false);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
@@ -710,19 +713,54 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
 
   const handleQuickRating = useCallback(
     (routeItem: RouteItem, rating: number) => {
-      if (!travelId) {
+      if (!plan) {
         return;
       }
-      upsertPlaceReview(travelId, {
-        travelRecordPlaceId: routeItem.apiPlanPlaceId ?? routeItem.itemId,
-        placeName: routeItem.placeName,
-        rating,
-        tags: [],
-        content: null,
-        media: [],
+      void savePlaceReviewForTravel({
+        accessToken,
+        plan,
+        route: routeItem,
+        authorNickname: displayName,
+        payload: {
+          rating,
+          tags: [],
+          content: null,
+          media: [],
+        },
       });
     },
-    [travelId, upsertPlaceReview],
+    [accessToken, plan, displayName],
+  );
+
+  const handleSavePlaceReview = useCallback(
+    async (
+      payload: Omit<PlaceReview, 'placeReviewId' | 'createdAt' | 'updatedAt'> & {
+        placeReviewId?: string;
+      },
+    ) => {
+      if (!plan || !reviewFormRoute) {
+        return;
+      }
+      setSavingReview(true);
+      try {
+        await savePlaceReviewForTravel({
+          accessToken,
+          plan,
+          route: reviewFormRoute,
+          authorNickname: displayName,
+          payload: {
+            placeReviewId: payload.placeReviewId,
+            rating: payload.rating,
+            content: payload.content,
+            tags: payload.tags,
+            media: payload.media,
+          },
+        });
+      } finally {
+        setSavingReview(false);
+      }
+    },
+    [accessToken, plan, reviewFormRoute, displayName],
   );
 
   useEffect(() => {
@@ -778,6 +816,14 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     legTransit: copy.legTransit,
   };
 
+  /** 메인 탭 absolute Navbar 위로 콘텐츠·FAB가 오도록 */
+  const mainTabBottomClearance = embeddedInMainTabs
+    ? getNavbarOverlayHeight(insets.bottom)
+    : 0;
+  const fabBottomInset = embeddedInMainTabs
+    ? mainTabBottomClearance
+    : insets.bottom;
+
   return (
     <View className="flex-1 bg-brand-background">
       <View className="flex-row items-center border-b border-brand-border bg-brand-surface px-4 py-3">
@@ -793,100 +839,112 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
         {isApiPlan ? <PlanSyncStatusDot offline={isPlanOfflineSync} /> : null}
       </View>
 
-      <PlanTabPager
-        active={tab}
-        onChange={setTab}
-        language={language}
-        horizontalScrollEnabled={
-          !scheduleReorderActive && tab !== 'schedule' && tab !== 'overview'
-        }
-        pages={{
-          overview: (
-            <PlanOverviewTab
-              plan={enrichedPlan}
-              language={language}
-              copy={copy}
-              roleLabels={roleLabels}
-              budgetEntries={budgetEntries}
-              budgetTotal={budgetTotal}
-              onNavigateToTab={setTab}
-              recordsProgress={recordsProgress}
-              isTravelRecordPublished={isPlanPublished}
-              showInvite={isApiPlan && canInvite}
-              onInvite={handleInvite}
-            />
-          ),
-          schedule: (
-            <PlanScheduleTab
-              ref={scheduleRef}
-              planId={planId}
-              plan={enrichedPlan}
-              language={language}
-              copy={copy}
-              readOnly={scheduleReadOnly}
-              onReadOnlyPress={scheduleReadOnly ? notifyScheduleReadOnly : undefined}
-              selectedDay={selectedDay}
-              planReviews={planReviews}
-              onSelectDay={setSelectedDay}
-              onToggleVisited={itemId => {
-                if (scheduleReadOnly) {
-                  notifyScheduleReadOnly();
-                  return;
+      <View
+        className="min-h-0 flex-1"
+        style={
+          mainTabBottomClearance > 0
+            ? { marginBottom: mainTabBottomClearance }
+            : undefined
+        }>
+        <PlanTabPager
+          active={tab}
+          onChange={setTab}
+          language={language}
+          horizontalScrollEnabled={
+            !scheduleReorderActive && tab !== 'schedule' && tab !== 'overview'
+          }
+          pages={{
+            overview: (
+              <PlanOverviewTab
+                plan={enrichedPlan}
+                language={language}
+                copy={copy}
+                roleLabels={roleLabels}
+                budgetEntries={budgetEntries}
+                budgetTotal={budgetTotal}
+                onNavigateToTab={setTab}
+                recordsProgress={recordsProgress}
+                isTravelRecordPublished={isPlanPublished}
+                showInvite={isApiPlan && canInvite}
+                onInvite={handleInvite}
+              />
+            ),
+            schedule: (
+              <PlanScheduleTab
+                ref={scheduleRef}
+                planId={planId}
+                plan={enrichedPlan}
+                language={language}
+                copy={copy}
+                readOnly={scheduleReadOnly}
+                onReadOnlyPress={scheduleReadOnly ? notifyScheduleReadOnly : undefined}
+                selectedDay={selectedDay}
+                planReviews={planReviews}
+                onSelectDay={setSelectedDay}
+                onToggleVisited={itemId => {
+                  if (scheduleReadOnly) {
+                    notifyScheduleReadOnly();
+                    return;
+                  }
+                  toggleVisited(planId, itemId);
+                }}
+                onWriteReview={setReviewFormRoute}
+                onQuickRating={handleQuickRating}
+                onDeleteRoute={handleDeleteRoute}
+                onSaveRouteMemo={scheduleReadOnly ? undefined : handleSaveRouteMemo}
+                onReorderRoutes={
+                  scheduleReadOnly ? undefined : isApiPlan ? handleReorderRoutes : undefined
                 }
-                toggleVisited(planId, itemId);
-              }}
-              onWriteReview={setReviewFormRoute}
-              onQuickRating={handleQuickRating}
-              onDeleteRoute={handleDeleteRoute}
-              onSaveRouteMemo={scheduleReadOnly ? undefined : handleSaveRouteMemo}
-              onReorderRoutes={scheduleReadOnly ? undefined : isApiPlan ? handleReorderRoutes : undefined}
-              onOptimizeDayRoute={scheduleReadOnly ? undefined : isApiPlan ? handleOptimizeDayRoute : undefined}
-              onScheduleModalChange={setScheduleModal}
-              onReorderActiveChange={setScheduleReorderActive}
-              canAddDay={!scheduleReadOnly}
-              canRemoveDay={canRemovePlanDay(enrichedPlan)}
-              onAddDay={() => {
-                void handleAddDay();
-              }}
-              onRemoveDay={handleRemoveDay}
-              scrollBottomInset={embeddedInMainTabs ? 0 : undefined}
-            />
-          ),
-          budget: (
-            <PlanBudgetTab
-              copy={copy}
-              language={language}
-              tripDates={tripDates}
-              budgetEntries={budgetEntries}
-              budgetTotal={budgetTotal}
-              members={enrichedPlan.members}
-              onAddExpense={() => setBudgetModalOpen(true)}
-            />
-          ),
-          records: (
-            <PlanRecordsTab
-              plan={enrichedPlan}
-              allRoutes={allRoutes}
-              language={language}
-              authorNickname={displayName}
-              destinationLabel={enrichedPlan.title}
-              isTripActive={enrichedPlan.status !== 'COMPLETED'}
-              onPublished={() => {
-                void handleCompletePlan();
-              }}
-              onEndTrip={requestCompletePlan}
-              onViewFeed={() => navigateToMainTab(navigation, 'feed')}
-              onViewTravelRecord={travelRecordId =>
-                navigation.navigate('TravelRecordDetail', { travelRecordId })
-              }
-            />
-          ),
-        }}
-      />
+                onOptimizeDayRoute={
+                  scheduleReadOnly ? undefined : isApiPlan ? handleOptimizeDayRoute : undefined
+                }
+                onScheduleModalChange={setScheduleModal}
+                onReorderActiveChange={setScheduleReorderActive}
+                canAddDay={!scheduleReadOnly}
+                canRemoveDay={canRemovePlanDay(enrichedPlan)}
+                onAddDay={() => {
+                  void handleAddDay();
+                }}
+                onRemoveDay={handleRemoveDay}
+                scrollBottomInset={embeddedInMainTabs ? 0 : undefined}
+              />
+            ),
+            budget: (
+              <PlanBudgetTab
+                copy={copy}
+                language={language}
+                tripDates={tripDates}
+                budgetEntries={budgetEntries}
+                budgetTotal={budgetTotal}
+                members={enrichedPlan.members}
+                onAddExpense={() => setBudgetModalOpen(true)}
+              />
+            ),
+            records: (
+              <PlanRecordsTab
+                plan={enrichedPlan}
+                allRoutes={allRoutes}
+                language={language}
+                authorNickname={displayName}
+                destinationLabel={enrichedPlan.title}
+                isTripActive={enrichedPlan.status !== 'COMPLETED'}
+                onPublished={() => {
+                  void handleCompletePlan();
+                }}
+                onEndTrip={requestCompletePlan}
+                onViewFeed={() => navigateToMainTab(navigation, 'feed')}
+                onViewTravelRecord={travelRecordId =>
+                  navigation.navigate('TravelRecordDetail', { travelRecordId })
+                }
+              />
+            ),
+          }}
+        />
+      </View>
 
       {tab === 'schedule' && !scheduleReadOnly ? (
         <RouteOptimizeFab
-          bottom={routeFabBottom(embeddedInMainTabs ? 0 : insets.bottom)}
+          bottom={routeFabBottom(fabBottomInset)}
           label={copy.routeOptimize}
           addPlaceLabel={copy.addPlace}
           onPress={() => scheduleRef.current?.handleRouteOptimize()}
@@ -964,13 +1022,13 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
         }
         copy={reviewCopy}
         language={language}
-        onClose={() => setReviewFormRoute(null)}
-        onSave={payload => {
-          if (!travelId) {
-            return;
+        saving={savingReview}
+        onClose={() => {
+          if (!savingReview) {
+            setReviewFormRoute(null);
           }
-          upsertPlaceReview(travelId, payload);
         }}
+        onSave={handleSavePlaceReview}
       />
 
       <TravelInviteLinkModal
@@ -987,7 +1045,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
       <TransientBottomToast
         text={toastText}
         opacity={toastOpacity}
-        bottom={(embeddedInMainTabs ? 0 : insets.bottom) + 16}
+        bottom={fabBottomInset + 16}
       />
     </View>
   );

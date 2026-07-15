@@ -23,12 +23,13 @@ type TravelogueComposeModalProps = {
   placeReviews: PlaceReview[];
   defaultTitle?: string;
   totalDurationLabel?: string | null;
+  publishing?: boolean;
   onClose: () => void;
   onPublish: (payload: {
     title: string;
     content: string;
     status: Extract<TravelRecordStatus, 'PUBLISHED' | 'HIDDEN'>;
-  }) => void;
+  }) => void | Promise<void>;
 };
 
 export function TravelogueComposeModal({
@@ -40,6 +41,7 @@ export function TravelogueComposeModal({
   placeReviews,
   defaultTitle,
   totalDurationLabel,
+  publishing = false,
   onClose,
   onPublish,
 }: TravelogueComposeModalProps) {
@@ -59,21 +61,26 @@ export function TravelogueComposeModal({
 
   const handlePublish = () => {
     const trimmedTitle = title.trim();
-    if (!trimmedTitle) {
+    if (!trimmedTitle || publishing) {
       return;
     }
-    onPublish({
-      title: trimmedTitle,
-      content: content.trim(),
-      status: isPublic ? 'PUBLISHED' : 'HIDDEN',
+    void Promise.resolve(
+      onPublish({
+        title: trimmedTitle,
+        content: content.trim(),
+        status: isPublic ? 'PUBLISHED' : 'HIDDEN',
+      }),
+    ).then(() => {
+      onClose();
+    }).catch(() => {
+      // 부모에서 에러 처리 — 모달은 열어 둔다
     });
-    onClose();
   };
 
   return (
     <AppModal
       visible={visible}
-      onClose={onClose}
+      onClose={publishing ? () => undefined : onClose}
       title={copy.composeTitle}
       subtitle={copy.composeSub}
       maxHeight="92%"
@@ -81,8 +88,22 @@ export function TravelogueComposeModal({
       footer={
         <AppModalActions
           actions={[
-            { label: copy.cancel, onPress: onClose, variant: 'secondary' },
-            { label: copy.publish, onPress: handlePublish, variant: 'primary' },
+            {
+              label: copy.cancel,
+              onPress: onClose,
+              variant: 'secondary',
+              disabled: publishing,
+            },
+            {
+              label: publishing
+                ? language === 'ko'
+                  ? '게시 중…'
+                  : 'Publishing…'
+                : copy.publish,
+              onPress: handlePublish,
+              variant: 'primary',
+              disabled: publishing,
+            },
           ]}
         />
       }>

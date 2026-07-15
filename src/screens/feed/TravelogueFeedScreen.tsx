@@ -1,5 +1,11 @@
-import { useMemo, useState } from 'react';
-import { FlatList, Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  Text,
+  View,
+} from 'react-native';
 import type { NavigationProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -10,9 +16,16 @@ import { useTravelogueSocialActions } from '../../components/feed/useTravelogueS
 import { BackButton } from '../../components/shared/buttons/BackButton';
 import { AppIcon } from '../../components/shared/icons/AppIcon';
 import { useAppLanguage, useCopy } from '../../i18n';
-import { ICON_COLOR_MUTED } from '../../constants/icons';
+import { ICON_COLOR_MUTED, ICON_COLOR_PRIMARY } from '../../constants/icons';
 import type { RootStackParamList } from '../../navigation/types';
-import { useAppStore, useTravelRecordStore } from '../../stores';
+import { fetchTravelRecordFeed } from '../../services/travel/travelRecordService';
+import { mapTravelRecordFeedItem } from '../../types/travelRecordApi';
+import {
+  useAppStore,
+  useAuthStore,
+  useTravelRecordStore,
+} from '../../stores';
+import { selectReusableAccessToken } from '../../stores/useAuthStore';
 import type { TravelRecord } from '../../types/travelReview';
 import type { AppLanguage } from '../../types/user';
 import { isTravelRecordPublic } from '../../utils/review/travelReview';
@@ -72,16 +85,55 @@ export function TravelogueFeedScreen({ navigation, embeddedInMainTabs = false }:
   const insets = useSafeAreaInsets();
   const language = useAppLanguage();
   const auth = useAppStore(s => s.auth);
+  const accessToken = useAuthStore(selectReusableAccessToken);
   const copy = useCopy('travelReview');
   const publishedTravelRecords = useTravelRecordStore(s => s.publishedTravelRecords);
+  const upsertTravelRecords = useTravelRecordStore(s => s.upsertTravelRecords);
   const addComment = useTravelRecordStore(s => s.addComment);
+
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [commentTarget, setCommentTarget] = useState<TravelRecord | null>(null);
+
   const travelRecords = useMemo(
     () => publishedTravelRecords.filter(isTravelRecordPublic),
     [publishedTravelRecords],
   );
   const bottomPadding = embeddedInMainTabs ? 16 : insets.bottom + 16;
 
-  const [commentTarget, setCommentTarget] = useState<TravelRecord | null>(null);
+  const loadFeed = useCallback(async () => {
+    const page = await fetchTravelRecordFeed(
+      { size: 20, sort: 'LATEST' },
+      accessToken,
+    );
+    const mapped = (page.items ?? []).map(mapTravelRecordFeedItem);
+    upsertTravelRecords(mapped);
+  }, [accessToken, upsertTravelRecords]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    void loadFeed()
+      .catch(error => {
+        if (__DEV__) {
+          console.warn('[TravelogueFeed] fetch failed', error);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [loadFeed]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadFeed();
+    setRefreshing(false);
+  }, [loadFeed]);
 
   const userId = auth.userId ?? 'local-user';
   const userName = auth.displayName ?? (language === 'ko' ? '여행자' : 'Traveler');
@@ -109,8 +161,14 @@ export function TravelogueFeedScreen({ navigation, embeddedInMainTabs = false }:
         <Text className="flex-1 text-lg font-bold text-brand-text">{copy.feedTitle}</Text>
       </View>
 
-      {travelRecords.length === 0 ? (
-        <View className="flex-1 items-center justify-center px-6" style={{ paddingBottom: bottomPadding }}>
+      {loading && travelRecords.length === 0 ? (
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator color={ICON_COLOR_PRIMARY} />
+        </View>
+      ) : travelRecords.length === 0 ? (
+        <View
+          className="flex-1 items-center justify-center px-6"
+          style={{ paddingBottom: bottomPadding }}>
           <View className="items-center rounded-2xl border-2 border-dashed border-brand-border bg-brand-surface px-6 py-12">
             <AppIcon name="fileText" size={40} color={ICON_COLOR_MUTED} />
             <Text className="mt-3 text-base font-semibold text-brand-text">
@@ -136,6 +194,15 @@ export function TravelogueFeedScreen({ navigation, embeddedInMainTabs = false }:
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: bottomPadding }}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => {
+                void onRefresh();
+              }}
+              tintColor={ICON_COLOR_PRIMARY}
+            />
+          }
         />
       )}
 

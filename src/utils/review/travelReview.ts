@@ -26,6 +26,19 @@ export function getReviewForPlace(
   return reviews.find(r => r.travelRecordPlaceId === travelRecordPlaceId);
 }
 
+/** 초안 장소 ↔ 로컬/서버 후기 키(travelerRecordPlaceId 또는 originalPlanPlaceId) 매칭 */
+export function getReviewForTravelRecordPlace(
+  reviews: PlaceReview[],
+  place: { travelRecordPlaceId: string; originalPlanPlaceId?: string | null },
+): PlaceReview | undefined {
+  return reviews.find(
+    r =>
+      r.travelRecordPlaceId === place.travelRecordPlaceId ||
+      (place.originalPlanPlaceId != null &&
+        r.travelRecordPlaceId === place.originalPlanPlaceId),
+  );
+}
+
 /** @deprecated Use getReviewForPlace */
 export const getReviewForRoute = getReviewForPlace;
 
