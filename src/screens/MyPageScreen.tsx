@@ -1,20 +1,46 @@
-import { useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
 import type { NavigationProp } from '@react-navigation/native';
 
 import { NicknameEditModal } from '../components/mypage/NicknameEditModal';
-import { PrimaryButton } from '../components/shared/buttons/PrimaryButton';
+import {
+  MyTravelRecordGrid,
+  MyTravelRecordGridEmpty,
+} from '../components/mypage/MyTravelRecordGrid';
 import { AppIcon } from '../components/shared/icons/AppIcon';
 import { useAppAlert } from '../components/shared/modals';
 import { useAppLanguage, useCopy } from '../i18n';
 import { summarizeOnboardingPreferences } from '../constants/setup/onboarding';
 import { layout } from '../constants/common/layout';
-import { ICON_COLOR_WHITE } from '../constants/icons';
-import { selectOnboardingForUser, useAppStore, useAuthStore } from '../stores';
-import { selectAuthUser, selectIsAuthenticated, selectReusableAccessToken } from '../stores/useAuthStore';
+import { ICON_COLOR_MUTED, ICON_COLOR_PRIMARY, ICON_COLOR_WHITE } from '../constants/icons';
+import {
+  selectOnboardingForUser,
+  useAppStore,
+  useAuthStore,
+  useTravelRecordStore,
+} from '../stores';
+import {
+  selectAuthUser,
+  selectIsAuthenticated,
+  selectReusableAccessToken,
+} from '../stores/useAuthStore';
 import type { RootStackParamList } from '../navigation/types';
 import { logoutSession } from '../services/auth/authSession';
+import {
+  fetchMyTravelRecords,
+  TravelRecordServiceError,
+} from '../services/travel/travelRecordService';
 import { deleteMyAccount, updateMyProfile, UserServiceError } from '../services/user/userService';
+import { mapTravelRecordManageItem } from '../types/travelRecordApi';
+import type { TravelRecord } from '../types/travelReview';
+import { authorInitial } from '../utils/review/travelReview';
 import { cn } from '../utils/common/cn';
 
 type Props = {
@@ -30,37 +56,6 @@ function InfoRow({ label, value }: { label: string; value: string }) {
       <Text className="text-base text-brand-text" selectable>
         {value}
       </Text>
-    </View>
-  );
-}
-
-function NicknameRow({
-  label,
-  value,
-  actionLabel,
-  onPressAction,
-}: {
-  label: string;
-  value: string;
-  actionLabel: string;
-  onPressAction: () => void;
-}) {
-  return (
-    <View className="mb-3">
-      <Text className="mb-1 text-xs font-semibold uppercase tracking-wide text-brand-muted">
-        {label}
-      </Text>
-      <View className="flex-row items-center">
-        <Text className="flex-1 text-base text-brand-text" selectable>
-          {value}
-        </Text>
-        <Pressable
-          onPress={onPressAction}
-          className="ml-2 rounded-lg px-2 py-1 active:opacity-70"
-          accessibilityRole="button">
-          <Text className="text-xs font-semibold text-brand-primary">{actionLabel}</Text>
-        </Pressable>
-      </View>
     </View>
   );
 }
@@ -83,9 +78,41 @@ function SettingToggle({
           'mr-3 h-5 w-5 items-center justify-center rounded border-2 border-brand-border',
           checked && 'border-brand-primary bg-brand-primary',
         )}>
-        {checked ? <AppIcon name="check" size={12} color={ICON_COLOR_WHITE} strokeWidth={3} /> : null}
+        {checked ? (
+          <AppIcon name="check" size={12} color={ICON_COLOR_WHITE} strokeWidth={3} />
+        ) : null}
       </View>
       <Text className="text-sm text-brand-text">{label}</Text>
+    </Pressable>
+  );
+}
+
+function HeaderActionButton({
+  label,
+  onPress,
+  primary,
+}: {
+  label: string;
+  onPress: () => void;
+  primary?: boolean;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      className={cn(
+        'flex-1 items-center rounded-xl border py-2.5 active:opacity-80',
+        primary
+          ? 'border-brand-primary bg-brand-primary'
+          : 'border-brand-border bg-brand-surface',
+      )}
+      accessibilityRole="button">
+      <Text
+        className={cn(
+          'text-sm font-bold',
+          primary ? 'text-white' : 'text-brand-text',
+        )}>
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -101,9 +128,78 @@ export function MyPageScreen({ navigation }: Props) {
   const isAuthenticated = useAuthStore(selectIsAuthenticated);
   const rememberMe = useAuthStore(s => s.rememberMe);
   const accessToken = useAuthStore(selectReusableAccessToken);
+
+  const localRecords = useTravelRecordStore(s => s.publishedTravelRecords);
+  const upsertTravelRecords = useTravelRecordStore(s => s.upsertTravelRecords);
+
   const [nicknameModalOpen, setNicknameModalOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const [savingNickname, setSavingNickname] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [apiRecords, setApiRecords] = useState<TravelRecord[] | null>(null);
+  const [loadingRecords, setLoadingRecords] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const nickname = user?.nickname || user?.email?.split('@')[0] || 'User';
+
+  const myLocalRecords = useMemo(() => {
+    if (!user?.userId) {
+      return localRecords;
+    }
+    return localRecords.filter(r => r.authorId === user.userId);
+  }, [localRecords, user?.userId]);
+
+  const loadMyRecords = useCallback(async () => {
+    if (!accessToken) {
+      setApiRecords(null);
+      return;
+    }
+    try {
+      const list = await fetchMyTravelRecords(accessToken);
+      const mapped = list.map(item => mapTravelRecordManageItem(item, nickname));
+      setApiRecords(mapped);
+      upsertTravelRecords(mapped);
+    } catch (error) {
+      if (__DEV__) {
+        const message =
+          error instanceof TravelRecordServiceError ? error.message : String(error);
+        console.warn('[MyPage] fetchMyTravelRecords failed:', message);
+      }
+      setApiRecords(null);
+    }
+  }, [accessToken, nickname, upsertTravelRecords]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingRecords(true);
+    void loadMyRecords().finally(() => {
+      if (!cancelled) {
+        setLoadingRecords(false);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [loadMyRecords]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadMyRecords();
+    setRefreshing(false);
+  }, [loadMyRecords]);
+
+  const records = useMemo(() => {
+    if (apiRecords != null) {
+      const byId = new Map(apiRecords.map(r => [r.travelRecordId, r]));
+      myLocalRecords.forEach(local => {
+        if (!byId.has(local.travelRecordId)) {
+          byId.set(local.travelRecordId, local);
+        }
+      });
+      return Array.from(byId.values());
+    }
+    return myLocalRecords;
+  }, [apiRecords, myLocalRecords]);
 
   const goToLogin = () => {
     navigation.reset({
@@ -129,30 +225,30 @@ export function MyPageScreen({ navigation }: Props) {
     });
   };
 
-  const applyNicknameUpdate = (nickname: string) => {
+  const applyNicknameUpdate = (nextNickname: string) => {
     if (!user) {
       return;
     }
-    useAuthStore.getState().setUser({ ...user, nickname });
+    useAuthStore.getState().setUser({ ...user, nickname: nextNickname });
     useAppStore.getState().login({
       userId: user.userId,
-      displayName: nickname || user.email.split('@')[0] || 'User',
+      displayName: nextNickname || user.email.split('@')[0] || 'User',
     });
   };
 
-  const handleSaveNickname = async (nickname: string) => {
+  const handleSaveNickname = async (nextNickname: string) => {
     if (!accessToken) {
       alert({ title: copy.changeNicknameError });
       return;
     }
-    if (!nickname) {
+    if (!nextNickname) {
       alert({ title: copy.changeNicknameEmpty });
       return;
     }
 
     setSavingNickname(true);
     try {
-      const updated = await updateMyProfile(accessToken, { nickname });
+      const updated = await updateMyProfile(accessToken, { nickname: nextNickname });
       applyNicknameUpdate(updated.nickname);
       setNicknameModalOpen(false);
       alert({ title: copy.changeNicknameSuccess });
@@ -210,91 +306,187 @@ export function MyPageScreen({ navigation }: Props) {
     notSet: copy.preferenceFields.notSet,
     skipped: copy.preferenceFields.skipped,
   });
-  const preferencesMessage = !onboarding
-    ? copy.preferencesEmpty
-    : onboarding.skippedAll
-      ? copy.preferencesSkippedAll
-      : null;
 
   return (
     <View className="flex-1 bg-brand-background" style={layout.screen}>
       <ScrollView
-        className="flex-1 px-5"
-        contentContainerStyle={{
-          paddingTop: 16,
-          paddingBottom: 24,
-        }}
-        showsVerticalScrollIndicator={false}>
-        <Text className="mb-5 text-[28px] font-bold text-brand-text">{copy.title}</Text>
-
-        <View className="mb-5 rounded-2xl border border-brand-border bg-brand-surface p-5">
-          <Text className="mb-4 text-lg font-bold text-brand-text">{copy.profile}</Text>
-
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: 32 }}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={ICON_COLOR_PRIMARY} />
+        }>
+        {/* Instagram-style profile header */}
+        <View className="px-5 pt-4 pb-3">
           {isAuthenticated && user ? (
             <>
-              <NicknameRow
-                label={copy.nickname}
-                value={user.nickname || '—'}
-                actionLabel={copy.changeNickname}
-                onPressAction={() => setNicknameModalOpen(true)}
-              />
-              <InfoRow label={copy.email} value={user.email || '—'} />
-              <InfoRow label={copy.provider} value={providerLabel} />
-              {!hideUserIdOnMyPage ? (
-                <InfoRow label={copy.userId} value={user.userId} />
-              ) : null}
-              <Pressable
-                onPress={handleDeleteAccount}
-                disabled={deletingAccount}
-                className={cn(
-                  'mt-2 self-start active:opacity-70',
-                  deletingAccount && 'opacity-50',
-                )}
-                accessibilityRole="button">
-                <Text className="text-sm font-semibold text-red-600">{copy.deleteAccount}</Text>
-              </Pressable>
+              <View className="mb-4 flex-row items-center">
+                <View className="mr-5 h-20 w-20 items-center justify-center rounded-full bg-brand-primary">
+                  <Text className="text-3xl font-bold text-white">
+                    {authorInitial(nickname)}
+                  </Text>
+                </View>
+                <View className="flex-1">
+                  <Text className="mb-1 text-xl font-bold text-brand-text" numberOfLines={1}>
+                    {nickname}
+                  </Text>
+                  <View className="flex-row items-end gap-1">
+                    <Text className="text-lg font-bold text-brand-text">
+                      {copy.postsCount(records.length)}
+                    </Text>
+                    <Text className="mb-0.5 text-sm text-brand-muted">{copy.posts}</Text>
+                  </View>
+                  {user.email ? (
+                    <Text className="mt-1 text-xs text-brand-muted" numberOfLines={1}>
+                      {user.email}
+                    </Text>
+                  ) : null}
+                </View>
+              </View>
+
+              <View className="mb-3 flex-row gap-2">
+                <HeaderActionButton
+                  label={copy.editProfile}
+                  onPress={() => setNicknameModalOpen(true)}
+                />
+                <HeaderActionButton
+                  label={copy.editPreferences}
+                  onPress={() => navigation.navigate('Onboarding', { mode: 'edit' })}
+                  primary
+                />
+              </View>
+
+              {preferenceRows && preferenceRows.length > 0 ? (
+                <View className="mb-2 rounded-2xl border border-brand-border bg-brand-surface px-4 py-3">
+                  <Text className="mb-2 text-xs font-bold uppercase tracking-wide text-brand-muted">
+                    {copy.preferences}
+                  </Text>
+                  <View className="flex-row flex-wrap gap-x-3 gap-y-1">
+                    {preferenceRows.slice(0, 4).map(row => (
+                      <Text key={row.id} className="text-xs text-brand-text">
+                        <Text className="text-brand-muted">{row.label} </Text>
+                        {row.value}
+                      </Text>
+                    ))}
+                  </View>
+                </View>
+              ) : (
+                <Text className="mb-2 text-xs text-brand-muted">
+                  {!onboarding
+                    ? copy.preferencesEmpty
+                    : onboarding.skippedAll
+                      ? copy.preferencesSkippedAll
+                      : copy.preferencesDesc}
+                </Text>
+              )}
             </>
           ) : (
-            <Text className="mb-4 text-base text-brand-muted">{copy.notLoggedIn}</Text>
-          )}
-        </View>
-
-        <View className="mb-5 rounded-2xl border border-brand-border bg-brand-surface p-5">
-          <Text className="mb-4 text-lg font-bold text-brand-text">{copy.session}</Text>
-          <InfoRow
-            label={copy.rememberMe}
-            value={rememberMe ? copy.rememberMeOn : copy.rememberMeOff}
-          />
-          <SettingToggle
-            label={copy.hideUserId}
-            checked={hideUserIdOnMyPage}
-            onPress={() => setHideUserIdOnMyPage(!hideUserIdOnMyPage)}
-          />
-        </View>
-
-        <View className="mb-5 rounded-2xl border border-brand-border bg-brand-surface p-5">
-          <Text className="mb-1 text-lg font-bold text-brand-text">{copy.preferences}</Text>
-          <Text className="mb-4 text-sm leading-5 text-brand-muted">{copy.preferencesDesc}</Text>
-          {preferenceRows ? (
-            <View className="mb-4">
-              {preferenceRows.map(row => (
-                <InfoRow key={row.id} label={row.label} value={row.value} />
-              ))}
+            <View className="mb-4 items-center py-8">
+              <View className="mb-4 h-20 w-20 items-center justify-center rounded-full bg-brand-selected">
+                <AppIcon name="user" size={36} color={ICON_COLOR_MUTED} />
+              </View>
+              <Text className="mb-4 text-base text-brand-muted">{copy.notLoggedIn}</Text>
+              <HeaderActionButton label={copy.loginAgain} onPress={goToLogin} primary />
             </View>
-          ) : (
-            <Text className="mb-4 text-base text-brand-muted">{preferencesMessage}</Text>
           )}
-          <PrimaryButton
-            label={copy.editPreferences}
-            onPress={() => navigation.navigate('Onboarding', { mode: 'edit' })}
-          />
         </View>
 
+        {/* Feed grid */}
         {isAuthenticated ? (
-          <PrimaryButton label={copy.logout} onPress={handleLogout} />
-        ) : (
-          <PrimaryButton label={copy.loginAgain} onPress={goToLogin} />
-        )}
+          <View>
+            <View className="mb-2 flex-row items-center justify-between border-t border-brand-border px-5 pt-3">
+              <Text className="text-sm font-bold text-brand-text">{copy.myRecords}</Text>
+              <AppIcon name="layoutGrid" size={18} color={ICON_COLOR_MUTED} />
+            </View>
+
+            {loadingRecords && records.length === 0 ? (
+              <View className="items-center py-16">
+                <ActivityIndicator color={ICON_COLOR_PRIMARY} />
+              </View>
+            ) : records.length === 0 ? (
+              <MyTravelRecordGridEmpty
+                title={copy.recordsEmpty}
+                subtitle={copy.recordsEmptySub}
+              />
+            ) : (
+              <MyTravelRecordGrid
+                records={records}
+                statusLabels={copy.statusLabels}
+                onPressRecord={travelRecordId =>
+                  navigation.navigate('TravelRecordDetail', { travelRecordId })
+                }
+              />
+            )}
+          </View>
+        ) : null}
+
+        {/* Account settings (collapsed) */}
+        {isAuthenticated && user ? (
+          <View className="mt-6 px-5">
+            <Pressable
+              onPress={() => setAccountOpen(open => !open)}
+              className="mb-3 flex-row items-center justify-between rounded-2xl border border-brand-border bg-brand-surface px-4 py-3.5 active:opacity-80"
+              accessibilityRole="button">
+              <Text className="text-sm font-bold text-brand-text">{copy.accountSettings}</Text>
+              <AppIcon
+                name={accountOpen ? 'chevronUp' : 'chevronDown'}
+                size={18}
+                color={ICON_COLOR_MUTED}
+              />
+            </Pressable>
+
+            {accountOpen ? (
+              <View className="mb-4 rounded-2xl border border-brand-border bg-brand-surface p-5">
+                <InfoRow label={copy.nickname} value={user.nickname || '—'} />
+                <InfoRow label={copy.email} value={user.email || '—'} />
+                <InfoRow label={copy.provider} value={providerLabel} />
+                {!hideUserIdOnMyPage ? (
+                  <InfoRow label={copy.userId} value={user.userId} />
+                ) : null}
+                <InfoRow
+                  label={copy.rememberMe}
+                  value={rememberMe ? copy.rememberMeOn : copy.rememberMeOff}
+                />
+                <SettingToggle
+                  label={copy.hideUserId}
+                  checked={hideUserIdOnMyPage}
+                  onPress={() => setHideUserIdOnMyPage(!hideUserIdOnMyPage)}
+                />
+                <Pressable
+                  onPress={() => setNicknameModalOpen(true)}
+                  className="mb-3 self-start active:opacity-70"
+                  accessibilityRole="button">
+                  <Text className="text-sm font-semibold text-brand-primary">
+                    {copy.changeNickname}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={handleDeleteAccount}
+                  disabled={deletingAccount}
+                  className={cn(
+                    'mb-4 self-start active:opacity-70',
+                    deletingAccount && 'opacity-50',
+                  )}
+                  accessibilityRole="button">
+                  <Text className="text-sm font-semibold text-red-600">{copy.deleteAccount}</Text>
+                </Pressable>
+                <Pressable
+                  onPress={handleLogout}
+                  className="items-center rounded-xl border border-brand-border bg-brand-background py-3 active:opacity-80"
+                  accessibilityRole="button">
+                  <Text className="text-sm font-bold text-brand-text">{copy.logout}</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <Pressable
+                onPress={handleLogout}
+                className="mb-2 items-center rounded-xl border border-brand-border bg-brand-surface py-3 active:opacity-80"
+                accessibilityRole="button">
+                <Text className="text-sm font-bold text-brand-text">{copy.logout}</Text>
+              </Pressable>
+            )}
+          </View>
+        ) : null}
       </ScrollView>
 
       {user ? (

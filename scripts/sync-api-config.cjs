@@ -102,6 +102,36 @@ export const TRAVEL_TEAM_ENDPOINTS = {
   travelInvite: (travelId: string) => \`/api/v1/travel/team/\${travelId}/invite\`,
 } as const;
 
+export const TRAVEL_RECORD_ENDPOINTS = {
+  /** 여행 기록 초안 생성 */
+  createDraft: (travelId: string) => \`/api/v1/travels/\${travelId}/records\`,
+  /** 초안 상세 / 수정 */
+  draftById: (travelId: string, travelRecordId: string) =>
+    \`/api/v1/travels/\${travelId}/records/\${travelRecordId}\`,
+  publish: (travelId: string, travelRecordId: string) =>
+    \`/api/v1/travels/\${travelId}/records/\${travelRecordId}/publish\`,
+  placeReview: (travelId: string, travelRecordId: string, travelRecordPlaceId: string) =>
+    \`/api/v1/travels/\${travelId}/records/\${travelRecordId}/places/\${travelRecordPlaceId}/review\`,
+  /** 공개 피드 */
+  feed: '/api/v1/travel-records',
+  feedById: (travelRecordId: string) => \`/api/v1/travel-records/\${travelRecordId}\`,
+  me: '/api/v1/travel-records/me',
+  meBookmarks: '/api/v1/travel-records/me/bookmarks',
+  meById: (travelRecordId: string) => \`/api/v1/travel-records/me/\${travelRecordId}\`,
+  hide: (travelRecordId: string) => \`/api/v1/travel-records/me/\${travelRecordId}/hide\`,
+  republish: (travelRecordId: string) =>
+    \`/api/v1/travel-records/me/\${travelRecordId}/republish\`,
+  bookmarks: (travelRecordId: string) =>
+    \`/api/v1/travel-records/\${travelRecordId}/bookmarks\`,
+  likes: (travelRecordId: string) => \`/api/v1/travel-records/\${travelRecordId}/likes\`,
+  comments: (travelRecordId: string) =>
+    \`/api/v1/travel-records/\${travelRecordId}/comments\`,
+  commentById: (travelRecordId: string, commentId: string) =>
+    \`/api/v1/travel-records/\${travelRecordId}/comments/\${commentId}\`,
+  placesTravelRecords: '/api/v1/places/travel-records',
+  placesReviews: '/api/v1/places/reviews',
+} as const;
+
 export type OAuthClientConfig = {
   clientId: string;
   redirectUri: string;

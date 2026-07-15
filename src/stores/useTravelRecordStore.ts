@@ -36,6 +36,8 @@ type TravelRecordState = {
       viewCount?: number;
     },
   ) => TravelRecord;
+  /** Merge remote/local records by travelRecordId (remote wins). */
+  upsertTravelRecords: (records: TravelRecord[]) => void;
   getTravelRecordForTravel: (travelId: string) => TravelRecord | undefined;
   isTravelPublished: (travelId: string) => boolean;
   getSocialForTravelRecord: (travelRecordId: string) => TravelRecordSocial;
@@ -104,6 +106,30 @@ export const useTravelRecordStore = create<TravelRecordState>()(
                 : state.publishedTravelIds,
         }));
         return travelRecord;
+      },
+      upsertTravelRecords: records => {
+        if (records.length === 0) {
+          return;
+        }
+        set(state => {
+          const byId = new Map(
+            state.publishedTravelRecords.map(r => [r.travelRecordId, r] as const),
+          );
+          records.forEach(record => {
+            const existing = byId.get(record.travelRecordId);
+            byId.set(record.travelRecordId, existing ? { ...existing, ...record } : record);
+          });
+          const publishedTravelRecords = Array.from(byId.values());
+          const publishedTravelIds = [
+            ...new Set([
+              ...state.publishedTravelIds,
+              ...records
+                .map(r => r.originalTravelId)
+                .filter((id): id is string => Boolean(id)),
+            ]),
+          ];
+          return { publishedTravelRecords, publishedTravelIds };
+        });
       },
       getTravelRecordForTravel: travelId =>
         get().publishedTravelRecords.find(t => t.originalTravelId === travelId),

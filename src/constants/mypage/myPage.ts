@@ -1,10 +1,20 @@
 import type { AppLanguage } from '../../types/user';
+import type { TravelRecordStatus } from '../../types/travelReview';
 
 /** @deprecated Use useCopy('myPage') from src/i18n */
 export const MY_PAGE_COPY: Record<
   AppLanguage,
   {
     title: string;
+    posts: string;
+    postsCount: (n: number) => string;
+    editProfile: string;
+    editPreferences: string;
+    myRecords: string;
+    recordsEmpty: string;
+    recordsEmptySub: string;
+    recordsLoadError: string;
+    statusLabels: Record<TravelRecordStatus, string>;
     profile: string;
     nickname: string;
     changeNickname: string;
@@ -22,6 +32,7 @@ export const MY_PAGE_COPY: Record<
     email: string;
     provider: string;
     userId: string;
+    accountSettings: string;
     session: string;
     rememberMe: string;
     rememberMeOn: string;
@@ -36,7 +47,6 @@ export const MY_PAGE_COPY: Record<
     preferencesDesc: string;
     preferencesEmpty: string;
     preferencesSkippedAll: string;
-    editPreferences: string;
     preferenceFields: {
       travelStyle: string;
       schedulePace: string;
@@ -52,6 +62,19 @@ export const MY_PAGE_COPY: Record<
 > = {
   ko: {
     title: '마이페이지',
+    posts: '게시물',
+    postsCount: n => `${n}`,
+    editProfile: '프로필 편집',
+    editPreferences: '여행 성향',
+    myRecords: '내 여행 기록',
+    recordsEmpty: '아직 여행 기록이 없어요',
+    recordsEmptySub: '여행을 마치고 여행기를 올리면 여기에 표시됩니다.',
+    recordsLoadError: '여행 기록을 불러오지 못했어요.',
+    statusLabels: {
+      DRAFT: '초안',
+      PUBLISHED: '공개',
+      HIDDEN: '숨김',
+    },
     profile: '내 계정',
     nickname: '닉네임',
     changeNickname: '닉네임 변경',
@@ -63,12 +86,14 @@ export const MY_PAGE_COPY: Record<
     changeNicknameError: '닉네임 변경에 실패했습니다.',
     changeNicknameEmpty: '닉네임을 입력해 주세요.',
     deleteAccount: '계정 탈퇴',
-    deleteAccountConfirm: '정말 탈퇴하시겠습니까? 계정과 로그인 정보가 삭제되며 복구할 수 없습니다.',
+    deleteAccountConfirm:
+      '정말 탈퇴하시겠습니까? 계정과 로그인 정보가 삭제되며 복구할 수 없습니다.',
     deleteAccountCancel: '취소',
     deleteAccountError: '계정 탈퇴에 실패했습니다.',
     email: '이메일',
     provider: '로그인 방식',
     userId: '사용자 ID',
+    accountSettings: '계정 설정',
     session: '로그인 세션',
     rememberMe: '자동 로그인',
     rememberMeOn: '켜짐',
@@ -83,7 +108,6 @@ export const MY_PAGE_COPY: Record<
     preferencesDesc: 'AI 추천과 일정 생성에 반영되는 설문 응답입니다.',
     preferencesEmpty: '아직 저장된 취향이 없습니다.',
     preferencesSkippedAll: '온보딩을 건너뛰어 취향 정보가 없습니다.',
-    editPreferences: '취향 다시 설정',
     preferenceFields: {
       travelStyle: '여행 스타일',
       schedulePace: '일정 페이스',
@@ -98,6 +122,19 @@ export const MY_PAGE_COPY: Record<
   },
   en: {
     title: 'My page',
+    posts: 'Posts',
+    postsCount: n => `${n}`,
+    editProfile: 'Edit profile',
+    editPreferences: 'Preferences',
+    myRecords: 'My travel records',
+    recordsEmpty: 'No travel records yet',
+    recordsEmptySub: 'Publish a travelogue after your trip to see it here.',
+    recordsLoadError: 'Could not load travel records.',
+    statusLabels: {
+      DRAFT: 'Draft',
+      PUBLISHED: 'Public',
+      HIDDEN: 'Hidden',
+    },
     profile: 'Account',
     nickname: 'Nickname',
     changeNickname: 'Edit nickname',
@@ -116,6 +153,7 @@ export const MY_PAGE_COPY: Record<
     email: 'Email',
     provider: 'Sign-in method',
     userId: 'User ID',
+    accountSettings: 'Account settings',
     session: 'Session',
     rememberMe: 'Keep me signed in',
     rememberMeOn: 'On',
@@ -130,7 +168,6 @@ export const MY_PAGE_COPY: Record<
     preferencesDesc: 'Used for AI recommendations and itinerary generation.',
     preferencesEmpty: 'No saved preferences yet.',
     preferencesSkippedAll: 'Onboarding was skipped — no preference data.',
-    editPreferences: 'Update preferences',
     preferenceFields: {
       travelStyle: 'Travel style',
       schedulePace: 'Schedule pace',
@@ -145,6 +182,19 @@ export const MY_PAGE_COPY: Record<
   },
   ja: {
     title: 'マイページ',
+    posts: '投稿',
+    postsCount: n => `${n}`,
+    editProfile: 'プロフィール編集',
+    editPreferences: '旅行の好み',
+    myRecords: '自分の旅行記',
+    recordsEmpty: 'まだ旅行記がありません',
+    recordsEmptySub: '旅行後に旅行記を公開するとここに表示されます。',
+    recordsLoadError: '旅行記を読み込めませんでした。',
+    statusLabels: {
+      DRAFT: '下書き',
+      PUBLISHED: '公開',
+      HIDDEN: '非公開',
+    },
     profile: 'アカウント',
     nickname: 'ニックネーム',
     changeNickname: '変更',
@@ -163,6 +213,7 @@ export const MY_PAGE_COPY: Record<
     email: 'メール',
     provider: 'ログイン方法',
     userId: 'ユーザーID',
+    accountSettings: 'アカウント設定',
     session: 'セッション',
     rememberMe: '自動ログイン',
     rememberMeOn: 'オン',
@@ -177,7 +228,6 @@ export const MY_PAGE_COPY: Record<
     preferencesDesc: 'AIおすすめと行程作成に反映されます。',
     preferencesEmpty: '保存された好みはまだありません。',
     preferencesSkippedAll: 'オンボーディングをスキップしたため、好み情報がありません。',
-    editPreferences: '好みを再設定',
     preferenceFields: {
       travelStyle: '旅行スタイル',
       schedulePace: '日程のペース',
@@ -192,6 +242,19 @@ export const MY_PAGE_COPY: Record<
   },
   zh: {
     title: '我的',
+    posts: '帖子',
+    postsCount: n => `${n}`,
+    editProfile: '编辑资料',
+    editPreferences: '旅行偏好',
+    myRecords: '我的旅行记录',
+    recordsEmpty: '暂无旅行记录',
+    recordsEmptySub: '完成旅行并发布游记后会显示在这里。',
+    recordsLoadError: '无法加载旅行记录。',
+    statusLabels: {
+      DRAFT: '草稿',
+      PUBLISHED: '公开',
+      HIDDEN: '隐藏',
+    },
     profile: '账户',
     nickname: '昵称',
     changeNickname: '修改昵称',
@@ -209,6 +272,7 @@ export const MY_PAGE_COPY: Record<
     email: '邮箱',
     provider: '登录方式',
     userId: '用户 ID',
+    accountSettings: '账户设置',
     session: '会话',
     rememberMe: '自动登录',
     rememberMeOn: '开启',
@@ -223,7 +287,6 @@ export const MY_PAGE_COPY: Record<
     preferencesDesc: '用于 AI 推荐与行程生成。',
     preferencesEmpty: '尚未保存偏好。',
     preferencesSkippedAll: '已跳过引导，暂无偏好信息。',
-    editPreferences: '重新设置偏好',
     preferenceFields: {
       travelStyle: '旅行风格',
       schedulePace: '行程节奏',
