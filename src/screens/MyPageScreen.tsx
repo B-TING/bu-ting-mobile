@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import type { NavigationProp } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { NicknameEditModal } from '../components/mypage/NicknameEditModal';
 import { PrimaryButton } from '../components/shared/buttons/PrimaryButton';
 import { AppIcon } from '../components/shared/icons/AppIcon';
+import { getNavbarOverlayHeight } from '../components/shared/navigation/Navbar';
 import { useAppAlert } from '../components/shared/modals';
 import { useAppLanguage, useCopy } from '../i18n';
 import { summarizeOnboardingPreferences } from '../constants/setup/onboarding';
@@ -91,6 +93,8 @@ function SettingToggle({
 }
 
 export function MyPageScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
+  const navbarClearance = getNavbarOverlayHeight(insets.bottom);
   const { alert } = useAppAlert();
   const language = useAppLanguage();
   const user = useAuthStore(selectAuthUser);
@@ -222,7 +226,7 @@ export function MyPageScreen({ navigation }: Props) {
         className="flex-1 px-5"
         contentContainerStyle={{
           paddingTop: 16,
-          paddingBottom: 24,
+          paddingBottom: navbarClearance + 24,
         }}
         showsVerticalScrollIndicator={false}>
         <Text className="mb-5 text-[28px] font-bold text-brand-text">{copy.title}</Text>
