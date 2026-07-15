@@ -28,7 +28,7 @@ import { usePlanRoutePlaceDetails } from '../../hooks/usePlanRoutePlaceDetails';
 import { useTravelMembersSync } from '../../hooks/useTravelMembersSync';
 import type { RootStackParamList } from '../../navigation/types';
 import { navigateToMainTab } from '../../navigation/navigateToMainTab';
-import { addPlanPlaceFromCandidate, findDayRoute, getDayRoutesFromPlan, removePlanPlaceFromApi, replacePlanPlaceFromCandidate, routesInItemOrder, updatePlanPlaceMemoOnApi, updatePlanPlaceOrderOnApi } from '../../services/travel/planPlaceSync';
+import { addPlanPlaceFromCandidate, findDayRoute, getDayRoutesFromPlan, removePlanPlaceFromApi, replacePlanPlaceFromCandidate, routesInItemOrder, updatePlanPlaceMemoOnApi, updatePlanPlaceOrderOnApi, updatePlanPlaceVisitedOnApi } from '../../services/travel/planPlaceSync';
 import {
   addPlanDayOnApi,
   canAddPlanDay,
@@ -39,6 +39,7 @@ import {
 import { resolveTravelInviteLink } from '../../services/travel/travelTeamService';
 import { updateTravelStatus } from '../../services/travel/travelService';
 import { savePlaceReviewForTravel } from '../../services/travel/savePlaceReviewForTravel';
+import { loadPlanPlaceReviewsForTravel } from '../../services/travel/loadPlanPlaceReviewsForTravel';
 import {
   EMPTY_REVIEWS,
   hydrateRoutePlaceInfo,
@@ -139,6 +140,28 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
   const isPlanPublished = useTravelRecordStore(s =>
     travelId ? s.isTravelPublished(travelId) : false,
   );
+
+  const planPlaceIdsKey = useMemo(() => {
+    if (!plan) {
+      return '';
+    }
+    return plan.itinerary
+      .flatMap(day => day.routes)
+      .map(r => r.apiPlanPlaceId)
+      .filter(Boolean)
+      .join(',');
+  }, [plan]);
+
+  useEffect(() => {
+    if (!planId || !accessToken || !isApiPlan) {
+      return;
+    }
+    const current = usePlanStore.getState().plans.find(p => p.planId === planId);
+    if (!current) {
+      return;
+    }
+    void loadPlanPlaceReviewsForTravel({ accessToken, plan: current });
+  }, [planId, accessToken, isApiPlan, planPlaceIdsKey]);
 
   const budgetEntries = useMemo(
     () => (planId ? budgetByPlan[planId] : undefined) ?? EMPTY_BUDGET,
@@ -452,6 +475,48 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     confirmRemoveDay,
     notifyScheduleReadOnly,
   ]);
+
+  const handleToggleVisited = useCallback(
+    (itemId: string) => {
+      if (!planId || !plan) {
+        return;
+      }
+      if (scheduleReadOnly) {
+        notifyScheduleReadOnly();
+        return;
+      }
+
+      const route = plan.itinerary
+        .flatMap(day => day.routes)
+        .find(r => r.itemId === itemId);
+      if (!route) {
+        return;
+      }
+
+      const nextVisited = !route.isVisited;
+      toggleVisited(planId, itemId);
+
+      if (isApiPlan && accessToken && route.apiPlanPlaceId) {
+        void updatePlanPlaceVisitedOnApi(accessToken, route, nextVisited).catch(
+          error => {
+            // OpenAPI UpdateRequest에 visited가 없는 환경도 있어, 로컬 체크는 유지한다.
+            if (__DEV__) {
+              console.warn('[PlanDetail] visited PATCH skipped/failed', error);
+            }
+          },
+        );
+      }
+    },
+    [
+      planId,
+      plan,
+      scheduleReadOnly,
+      notifyScheduleReadOnly,
+      toggleVisited,
+      isApiPlan,
+      accessToken,
+    ],
+  );
 
   const handleSaveRouteMemo = useCallback(
     async (route: RouteItem, memo: string | undefined) => {
@@ -881,13 +946,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
                 selectedDay={selectedDay}
                 planReviews={planReviews}
                 onSelectDay={setSelectedDay}
-                onToggleVisited={itemId => {
-                  if (scheduleReadOnly) {
-                    notifyScheduleReadOnly();
-                    return;
-                  }
-                  toggleVisited(planId, itemId);
-                }}
+                onToggleVisited={handleToggleVisited}
                 onWriteReview={setReviewFormRoute}
                 onQuickRating={handleQuickRating}
                 onDeleteRoute={handleDeleteRoute}

@@ -27,7 +27,9 @@ type TravelRecordState = {
     travelId: string,
     payload: Omit<PlaceReview, 'placeReviewId' | 'createdAt' | 'updatedAt'> & {
       placeReviewId?: string;
-      /** route id → 서버 place id 매칭 시 기존 후기 교체용 */
+      /** planPlaceId / itemId / travelRecordPlaceId 등 기존 후기 교체 매칭 */
+      matchPlaceKeys?: string[];
+      /** @deprecated matchPlaceKeys 사용 */
       matchTravelRecordPlaceIds?: string[];
     },
   ) => PlaceReview;
@@ -59,14 +61,33 @@ export const useTravelRecordStore = create<TravelRecordState>()((set, get) => ({
   upsertPlaceReview: (travelId, payload) => {
     const now = new Date().toISOString();
     const existing = get().reviewsByTravelId[travelId] ?? [];
-    const { matchTravelRecordPlaceIds, placeReviewId, ...rest } = payload;
+    const {
+      matchPlaceKeys,
+      matchTravelRecordPlaceIds,
+      placeReviewId,
+      ...rest
+    } = payload;
+    const keys = [
+      ...(matchPlaceKeys ?? []),
+      ...(matchTravelRecordPlaceIds ?? []),
+    ];
     const found =
       (placeReviewId
         ? existing.find(r => r.placeReviewId === placeReviewId)
         : undefined) ??
-      existing.find(r => r.travelRecordPlaceId === rest.travelRecordPlaceId) ??
-      (matchTravelRecordPlaceIds?.length
-        ? existing.find(r => matchTravelRecordPlaceIds.includes(r.travelRecordPlaceId))
+      (rest.planPlaceId
+        ? existing.find(r => r.planPlaceId === rest.planPlaceId)
+        : undefined) ??
+      (rest.travelRecordPlaceId
+        ? existing.find(r => r.travelRecordPlaceId === rest.travelRecordPlaceId)
+        : undefined) ??
+      (keys.length
+        ? existing.find(
+            r =>
+              (r.planPlaceId != null && keys.includes(r.planPlaceId)) ||
+              (r.travelRecordPlaceId != null &&
+                keys.includes(r.travelRecordPlaceId)),
+          )
         : undefined);
 
     const hasServerId = Boolean(

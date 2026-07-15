@@ -105,28 +105,26 @@ export async function publishTravelRecord(
   return apiPost(url(TRAVEL_RECORD_ENDPOINTS.publish(travelId, travelRecordId)), auth(accessToken));
 }
 
-/** POST place review */
+/** POST /travels/{travelId}/plans/places/{planPlaceId}/review */
 export async function createPlaceReview(
   accessToken: string,
   travelId: string,
-  travelRecordId: string,
-  travelRecordPlaceId: string,
+  planPlaceId: string,
   body: PlaceReviewCreateRequest,
 ): Promise<PlaceReviewResponse> {
-  return apiPost(
-    url(TRAVEL_RECORD_ENDPOINTS.placeReview(travelId, travelRecordId, travelRecordPlaceId)),
-    { ...auth(accessToken), body },
-  );
+  return apiPost(url(TRAVEL_RECORD_ENDPOINTS.placeReview(travelId, planPlaceId)), {
+    ...auth(accessToken),
+    body,
+  });
 }
 
 export async function fetchPlaceReview(
   accessToken: string,
   travelId: string,
-  travelRecordId: string,
-  travelRecordPlaceId: string,
+  planPlaceId: string,
 ): Promise<PlaceReviewResponse> {
   return apiGet(
-    url(TRAVEL_RECORD_ENDPOINTS.placeReview(travelId, travelRecordId, travelRecordPlaceId)),
+    url(TRAVEL_RECORD_ENDPOINTS.placeReview(travelId, planPlaceId)),
     auth(accessToken),
   );
 }
@@ -134,24 +132,22 @@ export async function fetchPlaceReview(
 export async function updatePlaceReview(
   accessToken: string,
   travelId: string,
-  travelRecordId: string,
-  travelRecordPlaceId: string,
+  planPlaceId: string,
   body?: PlaceReviewUpdateRequest,
 ): Promise<PlaceReviewResponse> {
-  return apiPatch(
-    url(TRAVEL_RECORD_ENDPOINTS.placeReview(travelId, travelRecordId, travelRecordPlaceId)),
-    { ...auth(accessToken), body: body ?? {} },
-  );
+  return apiPatch(url(TRAVEL_RECORD_ENDPOINTS.placeReview(travelId, planPlaceId)), {
+    ...auth(accessToken),
+    body: body ?? {},
+  });
 }
 
 export async function deletePlaceReview(
   accessToken: string,
   travelId: string,
-  travelRecordId: string,
-  travelRecordPlaceId: string,
+  planPlaceId: string,
 ): Promise<void> {
   await apiDelete(
-    url(TRAVEL_RECORD_ENDPOINTS.placeReview(travelId, travelRecordId, travelRecordPlaceId)),
+    url(TRAVEL_RECORD_ENDPOINTS.placeReview(travelId, planPlaceId)),
     auth(accessToken),
   );
 }

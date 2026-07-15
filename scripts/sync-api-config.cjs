@@ -110,8 +110,9 @@ export const TRAVEL_RECORD_ENDPOINTS = {
     \`/api/v1/travels/\${travelId}/records/\${travelRecordId}\`,
   publish: (travelId: string, travelRecordId: string) =>
     \`/api/v1/travels/\${travelId}/records/\${travelRecordId}/publish\`,
-  placeReview: (travelId: string, travelRecordId: string, travelRecordPlaceId: string) =>
-    \`/api/v1/travels/\${travelId}/records/\${travelRecordId}/places/\${travelRecordPlaceId}/review\`,
+  /** 일정 장소(PlanPlace) 후기 — 초안 없이 travelId + planPlaceId */
+  placeReview: (travelId: string, planPlaceId: string) =>
+    \`/api/v1/travels/\${travelId}/plans/places/\${planPlaceId}/review\`,
   /** 공개 피드 */
   feed: '/api/v1/travel-records',
   feedById: (travelRecordId: string) => \`/api/v1/travel-records/\${travelRecordId}\`,

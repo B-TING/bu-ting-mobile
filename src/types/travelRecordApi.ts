@@ -26,12 +26,16 @@ export type PlaceReviewCreateRequest = {
   rating: number;
   content?: string | null;
   tags?: string[];
+  stayMinutes?: number | null;
+  mediaUrls?: string[];
 };
 
 export type PlaceReviewUpdateRequest = {
   rating?: number | null;
   content?: string | null;
   tags?: string[] | null;
+  stayMinutes?: number | null;
+  mediaUrls?: string[] | null;
 };
 
 export type TravelRecordCommentCreateRequest = {
@@ -147,10 +151,13 @@ export type TravelRecordLikeResponse = {
 
 export type PlaceReviewResponse = {
   placeReviewId: string;
-  travelRecordPlaceId: string;
+  planPlaceId: string | null;
+  travelRecordPlaceId: string | null;
   rating: number;
+  stayMinutes?: number | null;
   content: string | null;
   tags: string[];
+  mediaUrls?: string[];
   createdAt: string;
   updatedAt: string;
 };

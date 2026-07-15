@@ -13,20 +13,34 @@ import {
   fetchPublicTravelRecord,
 } from './travelRecordService';
 
+function mediaFromUrls(placeReviewId: string, mediaUrls?: string[]) {
+  return (
+    mediaUrls?.map((uri, index) => ({
+      mediaId: `api-media-${placeReviewId}-${index}`,
+      type: (uri.match(/\.(mp4|mov|webm)(\?|$)/i) ? 'video' : 'image') as
+        | 'image'
+        | 'video',
+      uri,
+    })) ?? []
+  );
+}
+
 function mapDtoToPlaceReview(
   dto: PlaceReviewResponse,
   place: TravelRecordPlace,
 ): PlaceReview {
   return {
     placeReviewId: dto.placeReviewId,
-    travelRecordPlaceId: place.travelRecordPlaceId,
+    planPlaceId: dto.planPlaceId ?? place.originalPlanPlaceId,
+    travelRecordPlaceId: dto.travelRecordPlaceId ?? place.travelRecordPlaceId,
     rating: dto.rating,
+    stayMinutes: dto.stayMinutes ?? null,
     content: dto.content,
     tags: dto.tags ?? [],
     createdAt: dto.createdAt,
     updatedAt: dto.updatedAt,
     placeName: place.placeName,
-    media: [],
+    media: mediaFromUrls(dto.placeReviewId, dto.mediaUrls),
   };
 }
 
@@ -35,6 +49,7 @@ function mapSummaryItemToPlaceReview(
 ): PlaceReview {
   return {
     placeReviewId: item.placeReviewId,
+    planPlaceId: null,
     travelRecordPlaceId: item.travelRecordPlaceId,
     rating: item.rating,
     content: item.content,
@@ -51,7 +66,7 @@ function flattenPlaces(record: TravelRecord): TravelRecordPlace[] {
 }
 
 /**
- * 작성자 권한이 있으면 travel-record place review GET,
+ * 작성자 권한이 있으면 PlanPlace 후기 GET,
  * 없으면(공개 피드) places/reviews 집계에서 해당 travelRecordId만 필터.
  */
 async function fetchPlaceReviewsForRecord(options: {
@@ -70,13 +85,12 @@ async function fetchPlaceReviewsForRecord(options: {
   if (canUseAuthorApi) {
     const results = await Promise.all(
       places.map(async place => {
+        const planPlaceId = place.originalPlanPlaceId;
+        if (!planPlaceId) {
+          return null;
+        }
         try {
-          const dto = await fetchPlaceReview(
-            accessToken!,
-            travelId!,
-            travelRecord.travelRecordId,
-            place.travelRecordPlaceId,
-          );
+          const dto = await fetchPlaceReview(accessToken!, travelId!, planPlaceId);
           return mapDtoToPlaceReview(dto, place);
         } catch {
           return null;
@@ -147,7 +161,7 @@ export type LoadTravelRecordDetailInput = {
 };
 
 /**
- * 공개/내 여행기 상세 + 장소 후기 조회 후 스토어에 upsert.
+ * 공개/내 여행기 상세 + 장소 후기 조회 → 스토어에 upsert.
  */
 export async function loadTravelRecordDetail(
   input: LoadTravelRecordDetailInput,

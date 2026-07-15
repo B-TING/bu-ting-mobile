@@ -125,7 +125,8 @@ export function PlaceReviewFormModal({
     try {
       await onSave({
         placeReviewId: existing?.placeReviewId,
-        travelRecordPlaceId: route.apiPlanPlaceId ?? route.itemId,
+        planPlaceId: route.apiPlanPlaceId ?? null,
+        travelRecordPlaceId: existing?.travelRecordPlaceId ?? null,
         placeName: route.placeName,
         rating,
         tags,

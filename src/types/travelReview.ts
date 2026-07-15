@@ -5,10 +5,6 @@ export type TravelRecordStatus = 'DRAFT' | 'PUBLISHED' | 'HIDDEN';
 
 export type TransportType = 'CAR' | 'PUBLIC_TRANSPORT' | 'WALK';
 
-/**
- * Mock-only media attachments.
- * OpenAPI PlaceReview / TravelRecord schemas do not include media yet.
- */
 export type ReviewMediaType = 'image' | 'video';
 
 export type ReviewMedia = {
@@ -18,18 +14,22 @@ export type ReviewMedia = {
   thumbnailUri?: string;
 };
 
-/** OpenAPI `PlaceReviewResponse` (+ client display/mock fields) */
+/** OpenAPI `PlaceReviewResponse` (+ client display fields) */
 export type PlaceReview = {
   placeReviewId: string;
-  travelRecordPlaceId: string;
+  /** 일정 장소 ID — 초안 전 후기는 여기에 붙음 */
+  planPlaceId: string | null;
+  /** 여행기 스냅샷 장소 ID — 초안 생성 후 복사본에 붙을 수 있음 */
+  travelRecordPlaceId: string | null;
   rating: number;
+  stayMinutes?: number | null;
   content: string | null;
   tags: string[];
   createdAt: string;
   updatedAt: string;
-  /** Client-only: place label for local draft UI before place payload is joined */
+  /** Client-only: place label for local UI */
   placeName: string;
-  /** Mock attachments — not in OpenAPI yet */
+  /** Client display; server `mediaUrls`는 저장 시 선택적으로 전달 */
   media: ReviewMedia[];
 };
 

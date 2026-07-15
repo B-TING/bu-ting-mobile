@@ -19,23 +19,35 @@ export function averageRating(reviews: PlaceReview[]): number {
   return Math.round((sum / reviews.length) * 10) / 10;
 }
 
-export function getReviewForPlace(
-  reviews: PlaceReview[],
-  travelRecordPlaceId: string,
-): PlaceReview | undefined {
-  return reviews.find(r => r.travelRecordPlaceId === travelRecordPlaceId);
+export function reviewMatchesPlaceKey(
+  review: PlaceReview,
+  placeKey: string,
+): boolean {
+  return (
+    review.planPlaceId === placeKey || review.travelRecordPlaceId === placeKey
+  );
 }
 
-/** 초안 장소 ↔ 로컬/서버 후기 키(travelerRecordPlaceId 또는 originalPlanPlaceId) 매칭 */
+export function getReviewForPlace(
+  reviews: PlaceReview[],
+  placeKey: string,
+): PlaceReview | undefined {
+  return reviews.find(r => reviewMatchesPlaceKey(r, placeKey));
+}
+
+/** 초안 장소 ↔ 로컬/서버 후기 (planPlaceId 또는 travelRecordPlaceId) 매칭 */
 export function getReviewForTravelRecordPlace(
   reviews: PlaceReview[],
-  place: { travelRecordPlaceId: string; originalPlanPlaceId?: string | null },
+  place: {
+    travelRecordPlaceId: string;
+    originalPlanPlaceId?: string | null;
+  },
 ): PlaceReview | undefined {
   return reviews.find(
     r =>
-      r.travelRecordPlaceId === place.travelRecordPlaceId ||
+      reviewMatchesPlaceKey(r, place.travelRecordPlaceId) ||
       (place.originalPlanPlaceId != null &&
-        r.travelRecordPlaceId === place.originalPlanPlaceId),
+        reviewMatchesPlaceKey(r, place.originalPlanPlaceId)),
   );
 }
 
@@ -52,7 +64,9 @@ export function reviewProgress(
 ): { total: number; completed: number; allDone: boolean } {
   const eligible = collectPlanRoutes(routes);
   const completed = eligible.filter(r =>
-    reviews.some(rv => rv.travelRecordPlaceId === (r.apiPlanPlaceId ?? r.itemId)),
+    reviews.some(rv =>
+      reviewMatchesPlaceKey(rv, r.apiPlanPlaceId ?? r.itemId),
+    ),
   ).length;
   return {
     total: eligible.length,

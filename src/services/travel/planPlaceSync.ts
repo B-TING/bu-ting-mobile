@@ -168,6 +168,14 @@ export async function updatePlanPlaceMemoOnApi(
   await updatePlanPlace(accessToken, resolveApiPlanPlaceId(route), { memo: normalized });
 }
 
+export async function updatePlanPlaceVisitedOnApi(
+  accessToken: string,
+  route: RouteItem,
+  visited: boolean,
+): Promise<void> {
+  await updatePlanPlace(accessToken, resolveApiPlanPlaceId(route), { visited });
+}
+
 /**
  * 인근 장소로 대체(reboot) — PATCH /api/v1/plans/places/{planPlaceId}/place
  */
