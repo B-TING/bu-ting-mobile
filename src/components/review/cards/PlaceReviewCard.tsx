@@ -12,7 +12,7 @@ type PlaceReviewCardProps = {
   writeLabel: string;
   editLabel: string;
   visitFirstLabel: string;
-  onPress: () => void;
+  onPress?: () => void;
 };
 
 export function PlaceReviewCard({
@@ -25,13 +25,14 @@ export function PlaceReviewCard({
   onPress,
 }: PlaceReviewCardProps) {
   const actionLabel = review ? editLabel : writeLabel;
+  const canWrite = Boolean(onPress) && isVisited;
 
   return (
     <Pressable
       onPress={onPress}
-      disabled={!isVisited}
+      disabled={!canWrite}
       className={`mb-3 rounded-2xl border border-brand-border bg-brand-surface p-4 ${
-        isVisited ? 'active:opacity-90' : 'opacity-60'
+        canWrite ? 'active:opacity-90' : 'opacity-60'
       }`}>
       <View className="flex-row items-start justify-between">
         <View className="mr-3 flex-1">
@@ -62,11 +63,11 @@ export function PlaceReviewCard({
                 </View>
               ) : null}
             </View>
-          ) : (
+          ) : onPress ? (
             <Text className="mt-1 text-xs text-brand-primary">{actionLabel}</Text>
-          )}
+          ) : null}
         </View>
-        {isVisited ? (
+        {isVisited && onPress ? (
           <View className="rounded-full bg-brand-primary/10 px-3 py-1.5">
             {review ? (
               <AppIcon name="check" size={14} color={ICON_COLOR_PRIMARY} strokeWidth={2.5} />
