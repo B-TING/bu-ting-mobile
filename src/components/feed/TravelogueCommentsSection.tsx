@@ -1,14 +1,14 @@
 import { Pressable, Text, View } from 'react-native';
 
 import type { CopyFor } from '../../i18n';
-import type { TravelogueComment } from '../../types/travelReview';
+import type { TravelRecordComment } from '../../types/travelReview';
 import { authorInitial } from '../../utils/review/travelReview';
 
 type Copy = CopyFor<'travelReview'>;
 
 type TravelogueCommentsSectionProps = {
   copy: Copy;
-  comments: TravelogueComment[];
+  comments: TravelRecordComment[];
   currentUserName: string;
   language?: 'ko' | 'en' | 'ja' | 'zh';
   previewLimit?: number;
@@ -53,13 +53,13 @@ export function TravelogueCommentsSection({
           <View key={comment.commentId} className="mb-3 flex-row gap-2">
             <View className="h-8 w-8 items-center justify-center rounded-full bg-brand-selected">
               <Text className="text-xs font-bold text-brand-primary">
-                {authorInitial(comment.authorName)}
+                {authorInitial(comment.authorNickname)}
               </Text>
             </View>
             <View className="min-w-0 flex-1">
               <Text className="text-sm leading-5 text-brand-text">
-                <Text className="font-bold">{comment.authorName}</Text>{' '}
-                {comment.text}
+                <Text className="font-bold">{comment.authorNickname}</Text>{' '}
+                {comment.content}
               </Text>
               <Text className="mt-0.5 text-[10px] text-brand-muted">
                 {formatCommentDate(comment.createdAt, language)}

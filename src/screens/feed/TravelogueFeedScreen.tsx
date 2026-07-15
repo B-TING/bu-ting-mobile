@@ -12,10 +12,10 @@ import { AppIcon } from '../../components/shared/icons/AppIcon';
 import { useAppLanguage, useCopy } from '../../i18n';
 import { ICON_COLOR_MUTED } from '../../constants/icons';
 import type { RootStackParamList } from '../../navigation/types';
-import { useAppStore, useTravelogueStore } from '../../stores';
-import type { Travelogue } from '../../types/travelReview';
+import { useAppStore, useTravelRecordStore } from '../../stores';
+import type { TravelRecord } from '../../types/travelReview';
 import type { AppLanguage } from '../../types/user';
-import { isTraveloguePublic } from '../../utils/review/travelReview';
+import { isTravelRecordPublic } from '../../utils/review/travelReview';
 
 type Props = {
   navigation: NavigationProp<RootStackParamList>;
@@ -23,14 +23,14 @@ type Props = {
 };
 
 type FeedRowProps = {
-  travelogue: Travelogue;
+  travelRecord: TravelRecord;
   language: AppLanguage;
   navigation: NavigationProp<RootStackParamList>;
-  onOpenComposer: (travelogue: Travelogue) => void;
+  onOpenComposer: (travelRecord: TravelRecord) => void;
 };
 
 function TravelogueFeedRow({
-  travelogue,
+  travelRecord,
   language,
   navigation,
   onOpenComposer,
@@ -40,30 +40,30 @@ function TravelogueFeedRow({
     social,
     userId,
     userName,
-    handleToggleHelpful,
+    handleToggleLike,
     handleImportPlan,
-    importPlanModalProps,
-  } = useTravelogueSocialActions(travelogue, copy, navigation);
+    importModalProps,
+  } = useTravelogueSocialActions(travelRecord, copy, navigation);
 
   return (
     <>
       <TravelogueFeedItem
-        travelogue={travelogue}
+        travelRecord={travelRecord}
         copy={copy}
         language={language}
         social={social}
         userId={userId}
         userName={userName}
         onPressDetail={() =>
-          navigation.navigate('TravelogueDetail', {
-            travelogueId: travelogue.travelogueId,
+          navigation.navigate('TravelRecordDetail', {
+            travelRecordId: travelRecord.travelRecordId,
           })
         }
-        onToggleHelpful={handleToggleHelpful}
+        onToggleLike={handleToggleLike}
         onImportPlan={handleImportPlan}
-        onOpenComposer={() => onOpenComposer(travelogue)}
+        onOpenComposer={() => onOpenComposer(travelRecord)}
       />
-      <ImportPlanModal {...importPlanModalProps} />
+      <ImportPlanModal {...importModalProps} />
     </>
   );
 }
@@ -73,15 +73,15 @@ export function TravelogueFeedScreen({ navigation, embeddedInMainTabs = false }:
   const language = useAppLanguage();
   const auth = useAppStore(s => s.auth);
   const copy = useCopy('travelReview');
-  const publishedTravelogues = useTravelogueStore(s => s.publishedTravelogues);
-  const addComment = useTravelogueStore(s => s.addComment);
-  const travelogues = useMemo(
-    () => publishedTravelogues.filter(isTraveloguePublic),
-    [publishedTravelogues],
+  const publishedTravelRecords = useTravelRecordStore(s => s.publishedTravelRecords);
+  const addComment = useTravelRecordStore(s => s.addComment);
+  const travelRecords = useMemo(
+    () => publishedTravelRecords.filter(isTravelRecordPublic),
+    [publishedTravelRecords],
   );
   const bottomPadding = embeddedInMainTabs ? 16 : insets.bottom + 16;
 
-  const [commentTarget, setCommentTarget] = useState<Travelogue | null>(null);
+  const [commentTarget, setCommentTarget] = useState<TravelRecord | null>(null);
 
   const userId = auth.userId ?? 'local-user';
   const userName = auth.displayName ?? (language === 'ko' ? '여행자' : 'Traveler');
@@ -90,10 +90,10 @@ export function TravelogueFeedScreen({ navigation, embeddedInMainTabs = false }:
     if (!commentTarget) {
       return;
     }
-    addComment(commentTarget.travelogueId, {
+    addComment(commentTarget.travelRecordId, {
       authorId: userId,
-      authorName: userName,
-      text,
+      authorNickname: userName,
+      content: text,
     });
   };
 
@@ -109,7 +109,7 @@ export function TravelogueFeedScreen({ navigation, embeddedInMainTabs = false }:
         <Text className="flex-1 text-lg font-bold text-brand-text">{copy.feedTitle}</Text>
       </View>
 
-      {travelogues.length === 0 ? (
+      {travelRecords.length === 0 ? (
         <View className="flex-1 items-center justify-center px-6" style={{ paddingBottom: bottomPadding }}>
           <View className="items-center rounded-2xl border-2 border-dashed border-brand-border bg-brand-surface px-6 py-12">
             <AppIcon name="fileText" size={40} color={ICON_COLOR_MUTED} />
@@ -123,11 +123,11 @@ export function TravelogueFeedScreen({ navigation, embeddedInMainTabs = false }:
         </View>
       ) : (
         <FlatList
-          data={travelogues}
-          keyExtractor={item => item.travelogueId}
+          data={travelRecords}
+          keyExtractor={item => item.travelRecordId}
           renderItem={({ item }) => (
             <TravelogueFeedRow
-              travelogue={item}
+              travelRecord={item}
               language={language}
               navigation={navigation}
               onOpenComposer={setCommentTarget}
@@ -143,7 +143,7 @@ export function TravelogueFeedScreen({ navigation, embeddedInMainTabs = false }:
         visible={commentTarget != null}
         copy={copy}
         userName={userName}
-        subtitle={commentTarget?.title}
+        subtitle={commentTarget?.title ?? undefined}
         onClose={() => setCommentTarget(null)}
         onSubmit={handleSubmitComment}
       />

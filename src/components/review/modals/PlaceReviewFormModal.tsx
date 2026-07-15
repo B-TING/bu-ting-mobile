@@ -21,10 +21,9 @@ type PlaceReviewFormModalProps = {
   existing?: PlaceReview;
   copy: Copy;
   language: AppLanguage;
-  planId: string;
   onClose: () => void;
-  onSave: (payload: Omit<PlaceReview, 'reviewId' | 'createdAt' | 'updatedAt'> & {
-    reviewId?: string;
+  onSave: (payload: Omit<PlaceReview, 'placeReviewId' | 'createdAt' | 'updatedAt'> & {
+    placeReviewId?: string;
   }) => void;
 };
 
@@ -44,14 +43,14 @@ export function PlaceReviewFormModal({
   existing,
   copy,
   language,
-  planId,
   onClose,
   onSave,
 }: PlaceReviewFormModalProps) {
   const [rating, setRating] = useState(5);
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
-  const [comment, setComment] = useState('');
+  const [content, setContent] = useState('');
+  /** Mock-only media until upload API exists */
   const [media, setMedia] = useState<ReviewMedia[]>([]);
 
   const presets = REVIEW_TAG_PRESETS[language];
@@ -63,7 +62,7 @@ export function PlaceReviewFormModal({
     setRating(existing?.rating ?? 5);
     setTags(existing?.tags ?? []);
     setTagInput('');
-    setComment(existing?.comment ?? '');
+    setContent(existing?.content ?? '');
     setMedia(existing?.media ?? []);
   }, [visible, route, existing]);
 
@@ -115,14 +114,12 @@ export function PlaceReviewFormModal({
 
   const handleSave = () => {
     onSave({
-      reviewId: existing?.reviewId,
-      planId,
-      routeItemId: route.itemId,
-      placeId: route.placeId,
+      placeReviewId: existing?.placeReviewId,
+      travelRecordPlaceId: route.apiPlanPlaceId ?? route.itemId,
       placeName: route.placeName,
       rating,
       tags,
-      comment: comment.trim(),
+      content: content.trim() || null,
       media,
     });
     onClose();
@@ -204,8 +201,8 @@ export function PlaceReviewFormModal({
 
         <Text className="mb-2 mt-2 text-xs font-bold text-brand-muted">{copy.commentLabel}</Text>
         <TextInput
-          value={comment}
-          onChangeText={setComment}
+          value={content}
+          onChangeText={setContent}
           placeholder={copy.commentPlaceholder}
           placeholderTextColor="#94A3B8"
           multiline

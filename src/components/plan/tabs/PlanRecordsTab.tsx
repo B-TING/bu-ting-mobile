@@ -5,51 +5,57 @@ import { PlaceReviewCard } from '../../review/cards/PlaceReviewCard';
 import { PlaceReviewFormModal } from '../../review/modals/PlaceReviewFormModal';
 import { TravelogueComposeModal } from '../../review/modals/TravelogueComposeModal';
 import { useCopy } from '../../../i18n';
-import { EMPTY_REVIEWS, useTravelogueStore } from '../../../stores/useTravelogueStore';
+import { EMPTY_REVIEWS, useTravelRecordStore } from '../../../stores/useTravelRecordStore';
 import type { AppLanguage } from '../../../types/user';
 import type { RouteItem, TravelPlan } from '../../../types/travelPlan';
+import type { TravelRecordStatus } from '../../../types/travelReview';
 import {
-  buildItinerarySnapshot,
+  buildTravelRecordDays,
   collectPlanRoutes,
-  getReviewForRoute,
-  isTraveloguePublic,
+  getReviewForPlace,
+  isTravelRecordPublic,
   reviewProgress,
 } from '../../../utils/review/travelReview';
 import { computeTripTotalMinutes, formatDurationMinutes } from '../../../utils/geo/tripDuration';
+
+function placeKey(route: RouteItem): string {
+  return route.apiPlanPlaceId ?? route.itemId;
+}
 
 type PlanRecordsTabProps = {
   plan: TravelPlan;
   allRoutes: RouteItem[];
   language: AppLanguage;
-  authorName: string;
+  authorNickname: string;
   destinationLabel: string;
   isTripActive: boolean;
   onPublished?: () => void;
   onEndTrip?: () => void;
   onViewFeed?: () => void;
-  onViewTravelogue?: (travelogueId: string) => void;
+  onViewTravelRecord?: (travelRecordId: string) => void;
 };
 
 export function PlanRecordsTab({
   plan,
   allRoutes,
   language,
-  authorName,
+  authorNickname,
   destinationLabel,
   isTripActive,
   onPublished,
   onEndTrip,
   onViewFeed,
-  onViewTravelogue,
+  onViewTravelRecord,
 }: PlanRecordsTabProps) {
   const copy = useCopy('travelReview');
+  const travelId = plan.apiTravelId ?? plan.planId;
   const reviews =
-    useTravelogueStore(s => s.reviewsByPlan[plan.planId]) ?? EMPTY_REVIEWS;
-  const upsertReview = useTravelogueStore(s => s.upsertPlaceReview);
-  const publishTravelogue = useTravelogueStore(s => s.publishTravelogue);
-  const isPublished = useTravelogueStore(s => s.publishedPlanIds.includes(plan.planId));
-  const publishedTravelogue = useTravelogueStore(s =>
-    s.publishedTravelogues.find(t => t.planId === plan.planId),
+    useTravelRecordStore(s => s.reviewsByTravelId[travelId]) ?? EMPTY_REVIEWS;
+  const upsertReview = useTravelRecordStore(s => s.upsertPlaceReview);
+  const publishTravelRecord = useTravelRecordStore(s => s.publishTravelRecord);
+  const isPublished = useTravelRecordStore(s => s.publishedTravelIds.includes(travelId));
+  const publishedTravelRecord = useTravelRecordStore(s =>
+    s.publishedTravelRecords.find(t => t.originalTravelId === travelId),
   );
 
   const [reviewRoute, setReviewRoute] = useState<RouteItem | null>(null);
@@ -67,33 +73,32 @@ export function PlanRecordsTab({
     if (minutes <= 0) {
       return null;
     }
-    return copy.totalDuration(
-      formatDurationMinutes(minutes, language),
-    );
+    return copy.totalDuration(formatDurationMinutes(minutes, language));
   }, [copy, plan.itinerary, language]);
 
   const handlePublish = (payload: {
     title: string;
-    overallReview: string;
-    overallRating: number;
-    isPublic: boolean;
+    content: string;
+    status: Extract<TravelRecordStatus, 'PUBLISHED' | 'HIDDEN'>;
   }) => {
-    publishTravelogue({
-      planId: plan.planId,
-      title: payload.title,
-      authorName,
+    const firstImage = reviews.flatMap(r => r.media ?? []).find(m => m.type === 'image');
+    publishTravelRecord({
+      originalTravelId: travelId,
       authorId: plan.members[0]?.userId ?? 'local-user',
-      overallRating: payload.overallRating,
-      overallReview: payload.overallReview,
+      authorNickname,
+      title: payload.title,
+      content: payload.content || null,
+      coverImageUrl: firstImage?.uri ?? null,
+      travelStartDate: plan.startDate,
+      travelEndDate: plan.endDate,
+      status: payload.status,
+      days: buildTravelRecordDays(plan),
       placeReviews: reviews,
-      destinationLabel,
-      startDate: plan.startDate,
-      endDate: plan.endDate,
-      itinerary: buildItinerarySnapshot(plan),
-      isPublic: payload.isPublic,
     });
     setSuccessMsg(
-      payload.isPublic ? copy.publishedSuccessPublic : copy.publishedSuccessPrivate,
+      payload.status === 'PUBLISHED'
+        ? copy.publishedSuccessPublic
+        : copy.publishedSuccessPrivate,
     );
     onPublished?.();
   };
@@ -131,7 +136,7 @@ export function PlanRecordsTab({
         <Text className="text-sm text-brand-muted">{copy.noReviewsYet}</Text>
       ) : (
         eligibleRoutes.map(route => {
-          const review = getReviewForRoute(reviews, route.itemId);
+          const review = getReviewForPlace(reviews, placeKey(route));
           return (
             <PlaceReviewCard
               key={route.itemId}
@@ -153,31 +158,31 @@ export function PlanRecordsTab({
         </View>
       ) : null}
 
-      {isPublished && publishedTravelogue ? (
+      {isPublished && publishedTravelRecord ? (
         <View className="mt-4 rounded-2xl border border-brand-primary/30 bg-brand-selected px-4 py-4">
           <View className="flex-row items-center gap-2">
             <Text className="text-xs font-bold text-brand-primary">{copy.published}</Text>
             <View className="rounded-full bg-brand-primary/10 px-2 py-0.5">
               <Text className="text-[10px] font-bold text-brand-primary">
-                {isTraveloguePublic(publishedTravelogue)
+                {isTravelRecordPublic(publishedTravelRecord)
                   ? copy.publishedPublic
                   : copy.publishedPrivate}
               </Text>
             </View>
           </View>
           <Text className="mt-1 text-base font-bold text-brand-text">
-            {publishedTravelogue.title}
+            {publishedTravelRecord.title}
           </Text>
-          {onViewTravelogue ? (
+          {onViewTravelRecord ? (
             <Pressable
-              onPress={() => onViewTravelogue(publishedTravelogue.travelogueId)}
+              onPress={() => onViewTravelRecord(publishedTravelRecord.travelRecordId)}
               className="mt-3 active:opacity-80">
               <Text className="text-sm font-bold text-brand-primary">
                 {copy.viewMyTravelogue}
               </Text>
             </Pressable>
           ) : null}
-          {isTraveloguePublic(publishedTravelogue) && onViewFeed ? (
+          {isTravelRecordPublic(publishedTravelRecord) && onViewFeed ? (
             <Pressable onPress={onViewFeed} className="mt-2 active:opacity-80">
               <Text className="text-sm font-bold text-brand-primary">{copy.viewFeed}</Text>
             </Pressable>
@@ -209,20 +214,19 @@ export function PlanRecordsTab({
         visible={!!reviewRoute}
         route={reviewRoute}
         existing={
-          reviewRoute ? getReviewForRoute(reviews, reviewRoute.itemId) : undefined
+          reviewRoute ? getReviewForPlace(reviews, placeKey(reviewRoute)) : undefined
         }
         copy={copy}
         language={language}
-        planId={plan.planId}
         onClose={() => setReviewRoute(null)}
-        onSave={payload => upsertReview(plan.planId, payload)}
+        onSave={payload => upsertReview(travelId, payload)}
       />
 
       <TravelogueComposeModal
         visible={composeOpen}
         copy={copy}
         language={language}
-        authorName={authorName}
+        authorNickname={authorNickname}
         destinationLabel={destinationLabel}
         placeReviews={reviews}
         defaultTitle={plan.title}

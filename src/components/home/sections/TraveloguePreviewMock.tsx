@@ -2,8 +2,12 @@ import { Pressable, Text, View } from 'react-native';
 
 import { ICON_COLOR_PRIMARY } from '../../../constants/icons';
 import type { MockTravelogue, MockSpecialOffer } from '../../../constants/home/mainHome';
-import type { Travelogue } from '../../../types/travelReview';
-import { travelogueThumbnailIcon } from '../../../utils/review/travelReview';
+import type { TravelRecord } from '../../../types/travelReview';
+import {
+  averageRating,
+  travelRecordDestinationLabel,
+  travelRecordThumbnailIcon,
+} from '../../../utils/review/travelReview';
 import { AppIcon } from '../../shared/icons/AppIcon';
 import { StarRating } from '../../shared/rating/StarRating';
 
@@ -12,7 +16,7 @@ type TraveloguePreviewMockProps = {
   specialOffer: MockSpecialOffer;
   trendingTitle: string;
   language?: 'ko' | 'en' | 'ja' | 'zh';
-  latestTravelogue?: Travelogue;
+  latestTravelogue?: TravelRecord;
   onTraveloguePress?: () => void;
   onOfferPress?: () => void;
   onFeedPress?: () => void;
@@ -34,13 +38,16 @@ export function TraveloguePreviewMock({
       ? travelogue.titleKo
       : travelogue.titleEn;
   const tSub = latestTravelogue
-    ? `${latestTravelogue.authorName} · ${latestTravelogue.destinationLabel}`
+    ? `${latestTravelogue.authorNickname} · ${travelRecordDestinationLabel(latestTravelogue)}`
     : language === 'ko'
       ? travelogue.subtitleKo
       : travelogue.subtitleEn;
   const tIcon = latestTravelogue
-    ? travelogueThumbnailIcon(latestTravelogue)
+    ? travelRecordThumbnailIcon(latestTravelogue)
     : travelogue.thumbnailIcon;
+  const latestRating = latestTravelogue
+    ? averageRating(latestTravelogue.placeReviews)
+    : 0;
   const oTitle = language === 'ko' ? specialOffer.titleKo : specialOffer.titleEn;
   const oSub = language === 'ko' ? specialOffer.subtitleKo : specialOffer.subtitleEn;
 
@@ -80,7 +87,7 @@ export function TraveloguePreviewMock({
           </Text>
           {latestTravelogue ? (
             <View className="mt-2">
-              <StarRating value={latestTravelogue.overallRating} readonly size="sm" />
+              <StarRating value={latestRating} readonly size="sm" />
             </View>
           ) : null}
         </View>

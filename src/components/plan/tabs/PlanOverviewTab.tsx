@@ -20,7 +20,7 @@ type PlanOverviewTabProps = {
   budgetTotal: number;
   onNavigateToTab: (tab: PlanDetailTab) => void;
   recordsProgress?: { completed: number; total: number; allDone: boolean };
-  isTraveloguePublished?: boolean;
+  isTravelRecordPublished?: boolean;
   showInvite?: boolean;
   onInvite?: () => void;
 };
@@ -34,7 +34,7 @@ export function PlanOverviewTab({
   budgetTotal,
   onNavigateToTab,
   recordsProgress,
-  isTraveloguePublished,
+  isTravelRecordPublished,
   showInvite = false,
   onInvite,
 }: PlanOverviewTabProps) {
@@ -69,7 +69,7 @@ export function PlanOverviewTab({
         budgetTotal={budgetTotal}
         budgetEntries={budgetEntries}
         recordsProgress={recordsProgress}
-        isTraveloguePublished={isTraveloguePublished}
+        isTravelRecordPublished={isTravelRecordPublished}
         onBudgetPress={() => onNavigateToTab('budget')}
         onRecordsPress={() => onNavigateToTab('records')}
       />

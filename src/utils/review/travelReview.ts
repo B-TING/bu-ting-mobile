@@ -1,13 +1,14 @@
 import type {
   PlaceReview,
   ReviewMedia,
-  Travelogue,
-  TravelogueDaySnapshot,
-  TravelogueRouteSnapshot,
-  TravelogueSocial,
+  TravelRecord,
+  TravelRecordDay,
+  TravelRecordPlace,
+  TravelRecordSocial,
 } from '../../types/travelReview';
 import type { LucideIconName } from '../../constants/icons';
 import type { RouteItem, TravelPlan } from '../../types/travelPlan';
+import { createId } from '../common/id';
 import { sortedRoutes } from '../plan/planItinerary';
 
 export function averageRating(reviews: PlaceReview[]): number {
@@ -18,12 +19,15 @@ export function averageRating(reviews: PlaceReview[]): number {
   return Math.round((sum / reviews.length) * 10) / 10;
 }
 
-export function getReviewForRoute(
+export function getReviewForPlace(
   reviews: PlaceReview[],
-  routeItemId: string,
+  travelRecordPlaceId: string,
 ): PlaceReview | undefined {
-  return reviews.find(r => r.routeItemId === routeItemId);
+  return reviews.find(r => r.travelRecordPlaceId === travelRecordPlaceId);
 }
+
+/** @deprecated Use getReviewForPlace */
+export const getReviewForRoute = getReviewForPlace;
 
 export function collectPlanRoutes(routes: RouteItem[]): RouteItem[] {
   return routes.filter(r => r.type !== 'LOCKER');
@@ -35,7 +39,7 @@ export function reviewProgress(
 ): { total: number; completed: number; allDone: boolean } {
   const eligible = collectPlanRoutes(routes);
   const completed = eligible.filter(r =>
-    reviews.some(rv => rv.routeItemId === r.itemId),
+    reviews.some(rv => rv.travelRecordPlaceId === (r.apiPlanPlaceId ?? r.itemId)),
   ).length;
   return {
     total: eligible.length,
@@ -44,7 +48,7 @@ export function reviewProgress(
   };
 }
 
-export function buildDefaultTravelogueTitle(
+export function buildDefaultTravelRecordTitle(
   destinationLabel: string,
   lang: 'ko' | 'en' | 'ja' | 'zh',
 ): string {
@@ -56,11 +60,14 @@ export function buildDefaultTravelogueTitle(
     case 'zh':
       return `${destinationLabel}游记`;
     default:
-      return `${destinationLabel} Travelogue`;
+      return `${destinationLabel} Travel Record`;
   }
 }
 
-export function buildDefaultOverallReview(
+/** @deprecated Use buildDefaultTravelRecordTitle */
+export const buildDefaultTravelogueTitle = buildDefaultTravelRecordTitle;
+
+export function buildDefaultContent(
   reviews: PlaceReview[],
   lang: 'ko' | 'en' | 'ja' | 'zh',
 ): string {
@@ -72,7 +79,7 @@ export function buildDefaultOverallReview(
     .map(r => r.placeName)
     .slice(0, 3);
   if (highlights.length === 0) {
-    return reviews[0]?.comment ?? '';
+    return reviews[0]?.content ?? '';
   }
   switch (lang) {
     case 'ko':
@@ -86,69 +93,109 @@ export function buildDefaultOverallReview(
   }
 }
 
-export function buildItinerarySnapshot(plan: TravelPlan): TravelogueDaySnapshot[] {
+/** @deprecated Use buildDefaultContent */
+export const buildDefaultOverallReview = buildDefaultContent;
+
+export function buildTravelRecordDays(plan: TravelPlan): TravelRecordDay[] {
   return plan.itinerary.map(day => ({
+    travelRecordDayId: day.dailyId ?? createId('trd-'),
+    originalPlanId: day.apiPlanId ?? null,
     dayNumber: day.dayNumber,
-    date: day.date,
-    routes: sortedRoutes(day.routes)
+    visitDate: day.date,
+    places: sortedRoutes(day.routes)
       .filter(r => r.type !== 'LOCKER')
       .map(
-        (r): TravelogueRouteSnapshot => ({
-          itemId: r.itemId,
+        (r): TravelRecordPlace => ({
+          travelRecordPlaceId: r.apiPlanPlaceId ?? r.itemId,
+          originalPlanPlaceId: r.apiPlanPlaceId ?? r.itemId,
           sequence: r.sequence,
-          placeId: r.placeId,
           placeName: r.placeName,
-          type: r.type,
-          location: r.location,
-          isVisited: r.isVisited,
+          address: r.placeInfo?.address ?? null,
+          latitude: r.location.lat,
+          longitude: r.location.lng,
+          provider: r.apiProvider ?? 'GOOGLE',
+          providerPlaceId: r.placeId,
+          durationMinutes: null,
+          memo: r.memo ?? null,
+          scheduledTime: null,
+          visited: r.isVisited,
+          routeToNext: null,
+          routeItemType: r.type,
         }),
       ),
   }));
 }
 
-export function flattenItineraryRoutes(
-  itinerary: TravelogueDaySnapshot[],
-): TravelogueRouteSnapshot[] {
-  const routes: TravelogueRouteSnapshot[] = [];
-  itinerary.forEach(day => {
-    day.routes.forEach(route => {
-      routes.push(route);
+/** @deprecated Use buildTravelRecordDays */
+export const buildItinerarySnapshot = buildTravelRecordDays;
+
+export function flattenTravelRecordPlaces(days: TravelRecordDay[]): TravelRecordPlace[] {
+  const places: TravelRecordPlace[] = [];
+  days.forEach(day => {
+    day.places.forEach(place => {
+      places.push(place);
     });
   });
-  return routes;
+  return places;
 }
 
-export function resolveTravelogueItinerary(
-  travelogue: Travelogue,
+/** @deprecated Use flattenTravelRecordPlaces */
+export function flattenItineraryRoutes(days: TravelRecordDay[]): TravelRecordPlace[] {
+  return flattenTravelRecordPlaces(days);
+}
+
+export function resolveTravelRecordDays(
+  travelRecord: TravelRecord,
   plan: TravelPlan | null,
-): TravelogueDaySnapshot[] {
-  if (travelogue.itinerary?.length) {
-    return travelogue.itinerary;
+): TravelRecordDay[] {
+  if (travelRecord.days?.length) {
+    return travelRecord.days;
   }
   if (plan) {
-    return buildItinerarySnapshot(plan);
+    return buildTravelRecordDays(plan);
   }
   return [];
 }
 
-export function snapshotToRouteItems(
-  routes: TravelogueRouteSnapshot[],
-): RouteItem[] {
-  return routes.map((r, index) => ({
-    ...r,
-    sequence: index,
-    placeInfo: undefined,
+/** @deprecated Use resolveTravelRecordDays */
+export const resolveTravelogueItinerary = resolveTravelRecordDays;
+
+export function snapshotToRouteItems(places: TravelRecordPlace[]): RouteItem[] {
+  return places.map((place, index) => ({
+    itemId: place.travelRecordPlaceId,
+    apiPlanPlaceId: place.originalPlanPlaceId ?? undefined,
+    apiProvider: place.provider,
+    sequence: place.sequence ?? index,
+    placeId: place.providerPlaceId,
+    placeName: place.placeName,
+    type: place.routeItemType ?? 'ATTRACTION',
+    location: {
+      lat: place.latitude ?? 0,
+      lng: place.longitude ?? 0,
+    },
+    isVisited: place.visited ?? false,
+    memo: place.memo ?? undefined,
   }));
 }
 
-export function isTraveloguePublic(travelogue: Travelogue): boolean {
-  return travelogue.isPublic !== false;
+export function isTravelRecordPublic(travelRecord: TravelRecord): boolean {
+  return travelRecord.status === 'PUBLISHED';
 }
 
-export function collectTravelogueImages(travelogue: Travelogue): ReviewMedia[] {
+/** @deprecated Use isTravelRecordPublic */
+export const isTraveloguePublic = isTravelRecordPublic;
+
+export function travelRecordDestinationLabel(travelRecord: TravelRecord): string {
+  const firstPlace = travelRecord.days
+    ?.flatMap(day => day.places)
+    .find(place => place.placeName);
+  return firstPlace?.placeName ?? firstPlace?.address ?? '';
+}
+
+export function collectTravelRecordImages(travelRecord: TravelRecord): ReviewMedia[] {
   const images: ReviewMedia[] = [];
-  travelogue.placeReviews.forEach(review => {
-    review.media.forEach(media => {
+  travelRecord.placeReviews.forEach(review => {
+    (review.media ?? []).forEach(media => {
       if (media.type === 'image') {
         images.push(media);
       }
@@ -157,16 +204,25 @@ export function collectTravelogueImages(travelogue: Travelogue): ReviewMedia[] {
   return images;
 }
 
-export function getHelpfulCount(social: TravelogueSocial | undefined): number {
-  return social?.helpfulUserIds.length ?? 0;
+/** @deprecated Use collectTravelRecordImages */
+export const collectTravelogueImages = collectTravelRecordImages;
+
+export function getLikeCount(social: TravelRecordSocial | undefined): number {
+  return social?.likedUserIds.length ?? 0;
 }
 
-export function isHelpfulByUser(
-  social: TravelogueSocial | undefined,
+/** @deprecated Use getLikeCount */
+export const getHelpfulCount = getLikeCount;
+
+export function isLikedByUser(
+  social: TravelRecordSocial | undefined,
   userId: string,
 ): boolean {
-  return social?.helpfulUserIds.includes(userId) ?? false;
+  return social?.likedUserIds.includes(userId) ?? false;
 }
+
+/** @deprecated Use isLikedByUser */
+export const isHelpfulByUser = isLikedByUser;
 
 export function authorInitial(name: string): string {
   const trimmed = name.trim();
@@ -176,8 +232,8 @@ export function authorInitial(name: string): string {
   return trimmed.charAt(0).toUpperCase();
 }
 
-export function travelogueThumbnailIcon(travelogue: Travelogue): LucideIconName {
-  const top = travelogue.placeReviews.find(r => r.rating >= 4);
+export function travelRecordThumbnailIcon(travelRecord: TravelRecord): LucideIconName {
+  const top = travelRecord.placeReviews.find(r => r.rating >= 4);
   if (top?.tags.includes('맛집') || top?.tags.includes('food')) {
     return 'utensils';
   }
@@ -187,9 +243,12 @@ export function travelogueThumbnailIcon(travelogue: Travelogue): LucideIconName 
   return 'map';
 }
 
-/** @deprecated Use travelogueThumbnailIcon */
-export function travelogueThumbnailEmoji(travelogue: Travelogue): string {
-  const icon = travelogueThumbnailIcon(travelogue);
+/** @deprecated Use travelRecordThumbnailIcon */
+export const travelogueThumbnailIcon = travelRecordThumbnailIcon;
+
+/** @deprecated Use travelRecordThumbnailIcon */
+export function travelogueThumbnailEmoji(travelRecord: TravelRecord): string {
+  const icon = travelRecordThumbnailIcon(travelRecord);
   if (icon === 'utensils') {
     return '🍽️';
   }
@@ -199,41 +258,46 @@ export function travelogueThumbnailEmoji(travelogue: Travelogue): string {
   return '🗺️';
 }
 
-export function buildPlanFromTravelogue(
-  travelogue: Travelogue,
+export function buildPlanFromTravelRecord(
+  travelRecord: TravelRecord,
   linkedPlan: TravelPlan | null,
   member: { userId: string; displayName: string },
   idFactory: (prefix: string) => string,
 ): TravelPlan | null {
-  const snapshot = resolveTravelogueItinerary(travelogue, linkedPlan);
-  if (snapshot.length === 0) {
+  const days = resolveTravelRecordDays(travelRecord, linkedPlan);
+  if (days.length === 0) {
     return null;
   }
 
   const startDate =
-    travelogue.startDate ?? snapshot[0]?.date ?? new Date().toISOString().slice(0, 10);
+    travelRecord.travelStartDate ??
+    days[0]?.visitDate ??
+    new Date().toISOString().slice(0, 10);
   const endDate =
-    travelogue.endDate ?? snapshot[snapshot.length - 1]?.date ?? startDate;
+    travelRecord.travelEndDate ?? days[days.length - 1]?.visitDate ?? startDate;
 
   return {
     planId: idFactory('plan-'),
-    title: travelogue.title,
+    title: travelRecord.title ?? '',
     startDate,
     endDate,
     status: 'DRAFT',
     constraints: linkedPlan?.constraints ?? {},
     members: [{ userId: member.userId, nickname: member.displayName, role: 'LEADER' }],
-    itinerary: snapshot.map(day => ({
+    itinerary: days.map(day => ({
       dailyId: idFactory('day-'),
       dayNumber: day.dayNumber,
-      date: day.date,
-      routes: day.routes.map((route, index) => ({
+      date: day.visitDate,
+      routes: day.places.map((place, index) => ({
         itemId: idFactory('route-'),
         sequence: index,
-        placeId: route.placeId,
-        placeName: route.placeName,
-        type: route.type,
-        location: route.location,
+        placeId: place.providerPlaceId,
+        placeName: place.placeName,
+        type: place.routeItemType ?? 'ATTRACTION',
+        location: {
+          lat: place.latitude ?? 0,
+          lng: place.longitude ?? 0,
+        },
         isVisited: false,
       })),
     })),
@@ -241,3 +305,6 @@ export function buildPlanFromTravelogue(
     aiPromptContext: linkedPlan?.aiPromptContext,
   };
 }
+
+/** @deprecated Use buildPlanFromTravelRecord */
+export const buildPlanFromTravelogue = buildPlanFromTravelRecord;

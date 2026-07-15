@@ -39,9 +39,12 @@ export type {
   PlaceReview,
   ReviewMedia,
   ReviewMediaType,
-  Travelogue,
-  TravelogueDaySnapshot,
-  TravelogueRouteSnapshot,
+  TravelRecord,
+  TravelRecordComment,
+  TravelRecordDay,
+  TravelRecordPlace,
+  TravelRecordSocial,
+  TravelRecordStatus,
 } from './travelReview';
 export type {
   PlaceDetailVO,

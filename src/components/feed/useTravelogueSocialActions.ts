@@ -7,15 +7,15 @@ import {
   selectActivePlan,
   useAppStore,
   usePlanStore,
-  useTravelogueStore,
+  useTravelRecordStore,
   EMPTY_SOCIAL,
 } from '../../stores';
-import type { Travelogue } from '../../types/travelReview';
+import type { TravelRecord } from '../../types/travelReview';
 import type { AppLanguage } from '../../types/user';
 
 type Copy = CopyFor<'travelReview'>;
 
-type TravelogueNavigation = {
+type TravelRecordNavigation = {
   navigate: (
     screen: 'PlanDetail',
     params: RootStackParamList['PlanDetail'],
@@ -23,21 +23,21 @@ type TravelogueNavigation = {
 };
 
 export function useTravelogueSocialActions(
-  travelogue: Travelogue,
+  travelRecord: TravelRecord,
   copy: Copy,
-  navigation: TravelogueNavigation,
+  navigation: TravelRecordNavigation,
 ) {
   const auth = useAppStore(s => s.auth);
   const language = useAppStore(s => s.language) ?? 'ko';
   const userId = auth.userId ?? 'local-user';
   const userName = auth.displayName ?? (language === 'ko' ? '여행자' : 'Traveler');
 
-  const social = useTravelogueStore(
-    s => s.socialByTravelogue[travelogue.travelogueId] ?? EMPTY_SOCIAL,
+  const social = useTravelRecordStore(
+    s => s.socialByTravelRecord[travelRecord.travelRecordId] ?? EMPTY_SOCIAL,
   );
-  const toggleHelpful = useTravelogueStore(s => s.toggleHelpful);
-  const addComment = useTravelogueStore(s => s.addComment);
-  const importPlanFromTravelogue = usePlanStore(s => s.importPlanFromTravelogue);
+  const toggleLike = useTravelRecordStore(s => s.toggleLike);
+  const addComment = useTravelRecordStore(s => s.addComment);
+  const importPlanFromTravelRecord = usePlanStore(s => s.importPlanFromTravelRecord);
   const activePlan = usePlanStore(selectActivePlan);
 
   const [importModalPhase, setImportModalPhase] = useState<ImportPlanModalPhase | null>(null);
@@ -49,7 +49,7 @@ export function useTravelogueSocialActions(
   }, []);
 
   const performImport = useCallback(() => {
-    const plan = importPlanFromTravelogue(travelogue, {
+    const plan = importPlanFromTravelRecord(travelRecord, {
       userId,
       displayName: userName,
     });
@@ -59,17 +59,17 @@ export function useTravelogueSocialActions(
     }
     setImportedPlanId(plan.planId);
     setImportModalPhase('success');
-  }, [importPlanFromTravelogue, travelogue, userId, userName]);
+  }, [importPlanFromTravelRecord, travelRecord, userId, userName]);
 
-  const handleToggleHelpful = () => {
-    toggleHelpful(travelogue.travelogueId, userId);
+  const handleToggleLike = () => {
+    toggleLike(travelRecord.travelRecordId, userId);
   };
 
   const handleAddComment = (text: string) => {
-    addComment(travelogue.travelogueId, {
+    addComment(travelRecord.travelRecordId, {
       authorId: userId,
-      authorName: userName,
-      text,
+      authorNickname: userName,
+      content: text,
     });
   };
 
@@ -78,43 +78,48 @@ export function useTravelogueSocialActions(
   };
 
   const handleConfirmImport = () => {
-    if (activePlan) {
-      setImportModalPhase('activePlanConfirm');
+    if (activePlan && activePlan.status !== 'COMPLETED') {
+      setImportModalPhase('activePlanWarning');
       return;
     }
     performImport();
   };
 
-  const handleConfirmOverwrite = () => {
+  const handleConfirmActivePlanImport = () => {
     performImport();
   };
 
-  const handleViewImportedPlan = () => {
-    if (importedPlanId) {
-      navigation.navigate('PlanDetail', { planId: importedPlanId });
+  const handleGoToImportedPlan = () => {
+    if (!importedPlanId) {
+      return;
     }
     closeImportModal();
+    navigation.navigate('PlanDetail', { planId: importedPlanId });
   };
 
-  const importPlanModalProps: ImportPlanModalProps = {
-    visible: importModalPhase != null,
-    phase: importModalPhase ?? 'confirm',
+  const importModalProps: ImportPlanModalProps = {
+    phase: importModalPhase,
     copy,
-    travelogue,
-    activePlan,
+    language: language as AppLanguage,
+    travelRecordTitle: travelRecord.title ?? '',
+    activePlanTitle: activePlan?.title,
     onClose: closeImportModal,
     onConfirm: handleConfirmImport,
-    onConfirmOverwrite: handleConfirmOverwrite,
-    onViewPlan: handleViewImportedPlan,
+    onConfirmActivePlan: handleConfirmActivePlanImport,
+    onGoToPlan: handleGoToImportedPlan,
   };
 
   return {
+    travelRecord,
     social,
     userId,
     userName,
-    handleToggleHelpful,
+    handleToggleLike,
     handleAddComment,
     handleImportPlan,
-    importPlanModalProps,
+    importModalProps,
+    // Back-compat aliases used by existing screens
+    travelogue: travelRecord,
+    handleToggleHelpful: handleToggleLike,
   };
 }

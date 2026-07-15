@@ -10,18 +10,21 @@ import {
 } from 'react-native';
 
 import { ICON_COLOR_PRIMARY } from '../../constants/icons';
-import type { ReviewMedia, Travelogue } from '../../types/travelReview';
-import { travelogueThumbnailIcon } from '../../utils/review/travelReview';
+import type { ReviewMedia, TravelRecord } from '../../types/travelReview';
+import {
+  travelRecordDestinationLabel,
+  travelRecordThumbnailIcon,
+} from '../../utils/review/travelReview';
 import { AppIcon } from '../shared/icons/AppIcon';
 
 type TravelogueImageCarouselProps = {
-  travelogue: Travelogue;
+  travelRecord: TravelRecord;
   images: ReviewMedia[];
   onPress?: () => void;
 };
 
 export function TravelogueImageCarousel({
-  travelogue,
+  travelRecord,
   images,
   onPress,
 }: TravelogueImageCarouselProps) {
@@ -29,7 +32,8 @@ export function TravelogueImageCarousel({
   const imageWidth = screenWidth;
   const imageHeight = Math.round(screenWidth * 0.85);
   const [activeIndex, setActiveIndex] = useState(0);
-  const icon = travelogueThumbnailIcon(travelogue);
+  const icon = travelRecordThumbnailIcon(travelRecord);
+  const destinationLabel = travelRecordDestinationLabel(travelRecord);
 
   const content =
     images.length === 0 ? (
@@ -38,9 +42,9 @@ export function TravelogueImageCarousel({
         className="items-center justify-center bg-brand-selected">
         <AppIcon name={icon} size={56} color={ICON_COLOR_PRIMARY} />
         <Text className="mt-3 px-6 text-center text-sm font-semibold text-brand-text">
-          {travelogue.title}
+          {travelRecord.title ?? ''}
         </Text>
-        <Text className="mt-1 text-xs text-brand-muted">{travelogue.destinationLabel}</Text>
+        <Text className="mt-1 text-xs text-brand-muted">{destinationLabel}</Text>
       </View>
     ) : (
       <>

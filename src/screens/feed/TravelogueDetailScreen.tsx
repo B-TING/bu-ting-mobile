@@ -17,21 +17,23 @@ import { ICON_COLOR_MUTED } from '../../constants/icons';
 import type { CopyFor } from '../../i18n';
 import { useAppLanguage, useCopy } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
-import { selectPlanById, useAppStore, usePlanStore, useTravelogueStore } from '../../stores';
-import type { PlaceReview, Travelogue } from '../../types/travelReview';
+import { usePlanStore, useTravelRecordStore } from '../../stores';
+import type { PlaceReview, TravelRecord } from '../../types/travelReview';
 import type { AppLanguage } from '../../types/user';
 import {
-  flattenItineraryRoutes,
-  getReviewForRoute,
-  resolveTravelogueItinerary,
-  snapshotToRouteItems,
-  collectTravelogueImages,
+  averageRating,
   authorInitial,
+  collectTravelRecordImages,
+  flattenTravelRecordPlaces,
+  getReviewForPlace,
+  resolveTravelRecordDays,
+  snapshotToRouteItems,
+  travelRecordDestinationLabel,
 } from '../../utils/review/travelReview';
 import { computeTripTotalMinutes, formatDurationMinutes } from '../../utils/geo/tripDuration';
 import { formatWeekdayDate } from '../../utils/geo/geo';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'TravelogueDetail'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'TravelRecordDetail'>;
 type Copy = CopyFor<'travelReview'>;
 
 function PlaceReviewBlock({
@@ -56,12 +58,12 @@ function PlaceReviewBlock({
           ))}
         </View>
       ) : null}
-      {review.comment ? (
-        <Text className="mt-2 text-sm leading-5 text-brand-text">{review.comment}</Text>
+      {review.content ? (
+        <Text className="mt-2 text-sm leading-5 text-brand-text">{review.content}</Text>
       ) : null}
-      {review.media.length > 0 ? (
+      {(review.media ?? []).length > 0 ? (
         <View className="mt-2 flex-row flex-wrap gap-2">
-          {review.media.map(item => (
+          {(review.media ?? []).map(item => (
             <View
               key={item.mediaId}
               className="h-12 w-12 items-center justify-center rounded-xl bg-brand-selected">
@@ -78,41 +80,49 @@ function PlaceReviewBlock({
   );
 }
 
-function TravelogueDetailBody({
-  travelogue,
+function TravelRecordDetailBody({
+  travelRecord,
   navigation,
   language,
   copy,
   insets,
 }: {
-  travelogue: Travelogue;
+  travelRecord: TravelRecord;
   navigation: Props['navigation'];
   language: AppLanguage;
   copy: Copy;
   insets: { top: number; bottom: number };
 }) {
-  const linkedPlan = usePlanStore(selectPlanById(travelogue.planId));
+  const linkedPlan = usePlanStore(s => {
+    const id = travelRecord.originalTravelId;
+    if (!id) {
+      return null;
+    }
+    return s.plans.find(p => p.planId === id || p.apiTravelId === id) ?? null;
+  });
   const {
     social,
     userId,
     userName,
-    handleToggleHelpful,
+    handleToggleLike,
     handleAddComment,
     handleImportPlan,
-    importPlanModalProps,
-  } = useTravelogueSocialActions(travelogue, copy, navigation);
+    importModalProps,
+  } = useTravelogueSocialActions(travelRecord, copy, navigation);
 
-  const itinerary = useMemo(
-    () => resolveTravelogueItinerary(travelogue, linkedPlan),
-    [travelogue, linkedPlan],
+  const days = useMemo(
+    () => resolveTravelRecordDays(travelRecord, linkedPlan),
+    [travelRecord, linkedPlan],
   );
 
   const mapRoutes = useMemo(
-    () => snapshotToRouteItems(flattenItineraryRoutes(itinerary)),
-    [itinerary],
+    () => snapshotToRouteItems(flattenTravelRecordPlaces(days)),
+    [days],
   );
 
-  const feedImages = useMemo(() => collectTravelogueImages(travelogue), [travelogue]);
+  const feedImages = useMemo(() => collectTravelRecordImages(travelRecord), [travelRecord]);
+  const rating = averageRating(travelRecord.placeReviews);
+  const destinationLabel = travelRecordDestinationLabel(travelRecord);
   const [commentOpen, setCommentOpen] = useState(false);
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
 
@@ -127,24 +137,26 @@ function TravelogueDetailBody({
   }, [mapRoutes]);
 
   const totalDurationLabel = useMemo(() => {
-    if (itinerary.length === 0) {
+    if (days.length === 0) {
       return null;
     }
     const minutes = computeTripTotalMinutes(
-      itinerary.map(day => ({
+      days.map(day => ({
         dailyId: `day-${day.dayNumber}`,
         dayNumber: day.dayNumber,
-        date: day.date,
-        routes: day.routes,
+        date: day.visitDate,
+        routes: snapshotToRouteItems(day.places),
       })),
     );
     return copy.totalDuration(formatDurationMinutes(minutes, language));
-  }, [itinerary, copy, language]);
+  }, [days, copy, language]);
 
-  const publishedDate = new Date(travelogue.publishedAt).toLocaleDateString();
+  const publishedDate = travelRecord.publishedAt
+    ? new Date(travelRecord.publishedAt).toLocaleDateString()
+    : '';
   const tripPeriod =
-    travelogue.startDate && travelogue.endDate
-      ? copy.tripPeriod(travelogue.startDate, travelogue.endDate)
+    travelRecord.travelStartDate && travelRecord.travelEndDate
+      ? copy.tripPeriod(travelRecord.travelStartDate, travelRecord.travelEndDate)
       : null;
 
   let globalOrder = 0;
@@ -180,33 +192,37 @@ function TravelogueDetailBody({
         <View className="flex-row items-center px-4 py-3">
           <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-brand-primary">
             <Text className="text-sm font-bold text-white">
-              {authorInitial(travelogue.authorName)}
+              {authorInitial(travelRecord.authorNickname)}
             </Text>
           </View>
           <View className="min-w-0 flex-1">
-            <Text className="text-sm font-bold text-brand-text">{travelogue.authorName}</Text>
-            <Text className="text-xs text-brand-muted">{travelogue.destinationLabel}</Text>
+            <Text className="text-sm font-bold text-brand-text">
+              {travelRecord.authorNickname}
+            </Text>
+            <Text className="text-xs text-brand-muted">{destinationLabel}</Text>
           </View>
         </View>
 
-        <TravelogueImageCarousel travelogue={travelogue} images={feedImages} />
+        <TravelogueImageCarousel travelRecord={travelRecord} images={feedImages} />
 
         <View className="px-4 pt-3">
           <TravelogueSocialBar
             copy={copy}
             social={social}
             userId={userId}
-            onToggleHelpful={handleToggleHelpful}
+            onToggleLike={handleToggleLike}
             onImportPlan={handleImportPlan}
           />
 
           <Text className="text-[10px] font-bold tracking-wide text-brand-primary">
             TRAVELOGUE
           </Text>
-          <Text className="mt-1 text-2xl font-bold text-brand-text">{travelogue.title}</Text>
+          <Text className="mt-1 text-2xl font-bold text-brand-text">
+            {travelRecord.title ?? ''}
+          </Text>
           <Text className="mt-2 text-sm text-brand-muted">
-            {copy.detailBy(travelogue.authorName)} · {travelogue.destinationLabel} ·{' '}
-            {publishedDate}
+            {copy.detailBy(travelRecord.authorNickname)} · {destinationLabel}
+            {publishedDate ? ` · ${publishedDate}` : ''}
           </Text>
           {tripPeriod ? (
             <Text className="mt-1 text-xs text-brand-muted">{tripPeriod}</Text>
@@ -220,44 +236,44 @@ function TravelogueDetailBody({
           <View className="mt-4 rounded-2xl border border-brand-border bg-brand-surface p-4">
             <Text className="mb-2 text-xs font-bold text-brand-muted">{copy.overallRating}</Text>
             <View className="flex-row items-center gap-2">
-              <StarRating value={travelogue.overallRating} readonly />
+              <StarRating value={rating} readonly />
               <Text className="text-sm font-bold text-brand-primary">
-                {copy.stars(travelogue.overallRating)}
+                {copy.stars(rating)}
               </Text>
             </View>
-            {travelogue.overallReview ? (
+            {travelRecord.content ? (
               <>
                 <Text className="mb-2 mt-4 text-xs font-bold text-brand-muted">
                   {copy.overallSummary}
                 </Text>
-                <Text className="text-sm leading-6 text-brand-text">{travelogue.overallReview}</Text>
+                <Text className="text-sm leading-6 text-brand-text">{travelRecord.content}</Text>
               </>
             ) : null}
           </View>
 
-          {itinerary.length > 0 ? (
+          {days.length > 0 ? (
             <>
               <Text className="mb-3 mt-6 text-base font-bold text-brand-text">
                 {copy.itinerarySection}
               </Text>
-              {itinerary.map(day => (
+              {days.map(day => (
                 <View key={`day-${day.dayNumber}`} className="mb-4">
                   <Text className="mb-2 text-sm font-bold text-brand-primary">
-                    {copy.dayLabel(day.dayNumber)} · {formatWeekdayDate(day.date, language)}
+                    {copy.dayLabel(day.dayNumber)} · {formatWeekdayDate(day.visitDate, language)}
                   </Text>
-                  {day.routes.map(routeItem => {
+                  {day.places.map(place => {
                     globalOrder += 1;
                     const order = globalOrder;
-                    const review = getReviewForRoute(
-                      travelogue.placeReviews,
-                      routeItem.itemId,
+                    const review = getReviewForPlace(
+                      travelRecord.placeReviews,
+                      place.travelRecordPlaceId,
                     );
-                    const selected = selectedRouteId === routeItem.itemId;
+                    const selected = selectedRouteId === place.travelRecordPlaceId;
 
                     return (
                       <Pressable
-                        key={routeItem.itemId}
-                        onPress={() => setSelectedRouteId(routeItem.itemId)}
+                        key={place.travelRecordPlaceId}
+                        onPress={() => setSelectedRouteId(place.travelRecordPlaceId)}
                         className={`mb-2 rounded-2xl border p-4 ${
                           selected
                             ? 'border-brand-primary bg-brand-selected'
@@ -270,19 +286,19 @@ function TravelogueDetailBody({
                           <View className="min-w-0 flex-1">
                             <View className="flex-row items-center gap-2">
                               <Text className="flex-1 text-base font-bold text-brand-text">
-                                {routeItem.placeName}
+                                {place.placeName}
                               </Text>
                               <View
                                 className={`rounded-full px-2 py-0.5 ${
-                                  routeItem.isVisited ? 'bg-brand-selected' : 'bg-brand-border'
+                                  place.visited ? 'bg-brand-selected' : 'bg-brand-border'
                                 }`}>
                                 <Text
                                   className={`text-[10px] font-semibold ${
-                                    routeItem.isVisited
+                                    place.visited
                                       ? 'text-brand-primary'
                                       : 'text-brand-muted'
                                   }`}>
-                                  {routeItem.isVisited
+                                  {place.visited
                                     ? copy.visitedBadge
                                     : copy.notVisitedBadge}
                                 </Text>
@@ -308,12 +324,12 @@ function TravelogueDetailBody({
               <Text className="mb-3 mt-6 text-base font-bold text-brand-text">
                 {copy.placeReviewsSection}
               </Text>
-              {travelogue.placeReviews.length === 0 ? (
+              {travelRecord.placeReviews.length === 0 ? (
                 <Text className="text-sm text-brand-muted">{copy.noReviewsYet}</Text>
               ) : (
-                travelogue.placeReviews.map(review => (
+                travelRecord.placeReviews.map(review => (
                   <View
-                    key={review.reviewId}
+                    key={review.placeReviewId}
                     className="mb-3 rounded-2xl border border-brand-border bg-brand-surface p-4">
                     <Text className="text-base font-bold text-brand-text">{review.placeName}</Text>
                     <PlaceReviewBlock review={review} copy={copy} />
@@ -340,11 +356,11 @@ function TravelogueDetailBody({
         visible={commentOpen}
         copy={copy}
         userName={userName}
-        subtitle={travelogue.title}
+        subtitle={travelRecord.title ?? undefined}
         onClose={() => setCommentOpen(false)}
         onSubmit={handleAddComment}
       />
-      <ImportPlanModal {...importPlanModalProps} />
+      <ImportPlanModal {...importModalProps} />
     </View>
   );
 }
@@ -353,11 +369,11 @@ export function TravelogueDetailScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const language = useAppLanguage();
   const copy = useCopy('travelReview');
-  const travelogue = useTravelogueStore(s =>
-    s.publishedTravelogues.find(t => t.travelogueId === route.params.travelogueId),
+  const travelRecord = useTravelRecordStore(s =>
+    s.publishedTravelRecords.find(t => t.travelRecordId === route.params.travelRecordId),
   );
 
-  if (!travelogue) {
+  if (!travelRecord) {
     return (
       <View className="flex-1 items-center justify-center bg-brand-background px-6">
         <Text className="text-brand-muted">
@@ -372,8 +388,8 @@ export function TravelogueDetailScreen({ navigation, route }: Props) {
   }
 
   return (
-    <TravelogueDetailBody
-      travelogue={travelogue}
+    <TravelRecordDetailBody
+      travelRecord={travelRecord}
       navigation={navigation}
       language={language}
       copy={copy}
@@ -381,4 +397,3 @@ export function TravelogueDetailScreen({ navigation, route }: Props) {
     />
   );
 }
-

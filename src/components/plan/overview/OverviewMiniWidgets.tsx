@@ -11,7 +11,7 @@ type OverviewMiniWidgetsProps = {
   budgetTotal: number;
   budgetEntries: BudgetEntry[];
   recordsProgress?: { completed: number; total: number; allDone: boolean };
-  isTraveloguePublished?: boolean;
+  isTravelRecordPublished?: boolean;
   onBudgetPress: () => void;
   onRecordsPress: () => void;
 };
@@ -21,7 +21,7 @@ export function OverviewMiniWidgets({
   budgetTotal,
   budgetEntries,
   recordsProgress,
-  isTraveloguePublished,
+  isTravelRecordPublished,
   onBudgetPress,
   onRecordsPress,
 }: OverviewMiniWidgetsProps) {
@@ -58,7 +58,7 @@ export function OverviewMiniWidgets({
           <Text className="text-xs font-bold text-brand-text">{copy.recordsPreview}</Text>
           <Text className="text-[10px] font-semibold text-brand-primary">{copy.viewTab}</Text>
         </View>
-        {isTraveloguePublished ? (
+        {isTravelRecordPublished ? (
           <Text className="text-xs font-semibold text-brand-primary" numberOfLines={2}>
             {copy.recordsPublished}
           </Text>

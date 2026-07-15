@@ -3,11 +3,11 @@ import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import type { CopyFor } from '../../../i18n';
 import type { AppLanguage } from '../../../types/user';
-import type { PlaceReview } from '../../../types/travelReview';
+import type { PlaceReview, TravelRecordStatus } from '../../../types/travelReview';
 import {
   averageRating,
-  buildDefaultOverallReview,
-  buildDefaultTravelogueTitle,
+  buildDefaultContent,
+  buildDefaultTravelRecordTitle,
 } from '../../../utils/review/travelReview';
 import { StarRating } from '../../shared/rating/StarRating';
 import { AppModal, AppModalActions } from '../../shared/modals';
@@ -18,7 +18,7 @@ type TravelogueComposeModalProps = {
   visible: boolean;
   copy: Copy;
   language: AppLanguage;
-  authorName: string;
+  authorNickname: string;
   destinationLabel: string;
   placeReviews: PlaceReview[];
   defaultTitle?: string;
@@ -26,9 +26,8 @@ type TravelogueComposeModalProps = {
   onClose: () => void;
   onPublish: (payload: {
     title: string;
-    overallReview: string;
-    overallRating: number;
-    isPublic: boolean;
+    content: string;
+    status: Extract<TravelRecordStatus, 'PUBLISHED' | 'HIDDEN'>;
   }) => void;
 };
 
@@ -36,7 +35,7 @@ export function TravelogueComposeModal({
   visible,
   copy,
   language,
-  authorName,
+  authorNickname,
   destinationLabel,
   placeReviews,
   defaultTitle,
@@ -46,15 +45,15 @@ export function TravelogueComposeModal({
 }: TravelogueComposeModalProps) {
   const computedRating = averageRating(placeReviews);
   const [title, setTitle] = useState('');
-  const [overallReview, setOverallReview] = useState('');
+  const [content, setContent] = useState('');
   const [isPublic, setIsPublic] = useState(true);
 
   useEffect(() => {
     if (!visible) {
       return;
     }
-    setTitle(defaultTitle ?? buildDefaultTravelogueTitle(destinationLabel, language));
-    setOverallReview(buildDefaultOverallReview(placeReviews, language));
+    setTitle(defaultTitle ?? buildDefaultTravelRecordTitle(destinationLabel, language));
+    setContent(buildDefaultContent(placeReviews, language));
     setIsPublic(true);
   }, [visible, defaultTitle, destinationLabel, language, placeReviews]);
 
@@ -65,9 +64,8 @@ export function TravelogueComposeModal({
     }
     onPublish({
       title: trimmedTitle,
-      overallReview: overallReview.trim(),
-      overallRating: computedRating,
-      isPublic,
+      content: content.trim(),
+      status: isPublic ? 'PUBLISHED' : 'HIDDEN',
     });
     onClose();
   };
@@ -108,7 +106,7 @@ export function TravelogueComposeModal({
         />
 
         <Text className="mb-1 text-xs font-bold text-brand-muted">{copy.authorLabel}</Text>
-        <Text className="mb-4 text-base font-semibold text-brand-text">{authorName}</Text>
+        <Text className="mb-4 text-base font-semibold text-brand-text">{authorNickname}</Text>
 
         <Text className="mb-2 text-xs font-bold text-brand-muted">{copy.overallRating}</Text>
         <View className="mb-1 flex-row items-center gap-2">
@@ -158,8 +156,8 @@ export function TravelogueComposeModal({
 
         <Text className="mb-2 text-xs font-bold text-brand-muted">{copy.overallReview}</Text>
         <TextInput
-          value={overallReview}
-          onChangeText={setOverallReview}
+          value={content}
+          onChangeText={setContent}
           placeholder={copy.overallReviewPlaceholder}
           placeholderTextColor="#94A3B8"
           multiline
@@ -174,16 +172,16 @@ export function TravelogueComposeModal({
         ) : (
           placeReviews.map(review => (
             <View
-              key={review.reviewId}
+              key={review.placeReviewId}
               className="mb-2 rounded-xl border border-brand-border bg-brand-surface px-3 py-3">
               <Text className="font-semibold text-brand-text">{review.placeName}</Text>
               <View className="mt-1 flex-row items-center gap-2">
                 <StarRating value={review.rating} readonly size="sm" />
                 <Text className="text-xs text-brand-muted">{copy.stars(review.rating)}</Text>
               </View>
-              {review.comment ? (
+              {review.content ? (
                 <Text className="mt-1 text-xs text-brand-muted" numberOfLines={2}>
-                  {review.comment}
+                  {review.content}
                 </Text>
               ) : null}
             </View>

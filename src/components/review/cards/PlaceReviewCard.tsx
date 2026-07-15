@@ -43,9 +43,9 @@ export function PlaceReviewCard({
           ) : review ? (
             <View className="mt-2">
               <StarRating value={review.rating} readonly size="sm" />
-              {review.comment ? (
+              {review.content ? (
                 <Text className="mt-2 text-sm text-brand-muted" numberOfLines={2}>
-                  {review.comment}
+                  {review.content}
                 </Text>
               ) : null}
               {review.tags.length > 0 ? (

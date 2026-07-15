@@ -43,7 +43,7 @@ import {
   useAppStore,
   useAuthStore,
   usePlanStore,
-  useTravelogueStore,
+  useTravelRecordStore,
 } from '../../stores';
 import { selectIsPlanOfflineSync } from '../../stores/usePlanStore';
 import { selectReusableAccessToken } from '../../stores/useAuthStore';
@@ -57,7 +57,7 @@ import {
   type RebootPlaceCandidate,
 } from '../../utils/places/rebootPlaces';
 import { mergeRouteWithPlaceDetail } from '../../utils/places/routePlaceDetail';
-import { getReviewForRoute, reviewProgress } from '../../utils/review/travelReview';
+import { getReviewForPlace, reviewProgress } from '../../utils/review/travelReview';
 import { lockPlanScheduleIfApiError } from '../../utils/travel/scheduleApiLock';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PlanDetail'> & {
@@ -84,7 +84,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
   const removeItineraryDay = usePlanStore(s => s.removeItineraryDay);
   const addBudgetEntry = usePlanStore(s => s.addBudgetEntry);
   const completePlan = usePlanStore(s => s.completePlan);
-  const upsertPlaceReview = useTravelogueStore(s => s.upsertPlaceReview);
+  const upsertPlaceReview = useTravelRecordStore(s => s.upsertPlaceReview);
   const displayName = useAppStore(s => s.auth.displayName) ?? 'Traveler';
   const accessToken = useAuthStore(selectReusableAccessToken);
   const authUser = useAuthStore(s => s.user);
@@ -131,10 +131,11 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     enabled: isApiPlan,
   });
   const planReviews =
-    useTravelogueStore(s => (planId ? s.reviewsByPlan[planId] : undefined)) ??
-    EMPTY_REVIEWS;
-  const isPlanPublished = useTravelogueStore(s =>
-    planId ? s.publishedPlanIds.includes(planId) : false,
+    useTravelRecordStore(s =>
+      travelId ? s.reviewsByTravelId[travelId] : undefined,
+    ) ?? EMPTY_REVIEWS;
+  const isPlanPublished = useTravelRecordStore(s =>
+    travelId ? s.publishedTravelIds.includes(travelId) : false,
   );
 
   const budgetEntries = useMemo(
@@ -709,21 +710,19 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
 
   const handleQuickRating = useCallback(
     (routeItem: RouteItem, rating: number) => {
-      if (!planId) {
+      if (!travelId) {
         return;
       }
-      upsertPlaceReview(planId, {
-        planId,
-        routeItemId: routeItem.itemId,
-        placeId: routeItem.placeId,
+      upsertPlaceReview(travelId, {
+        travelRecordPlaceId: routeItem.apiPlanPlaceId ?? routeItem.itemId,
         placeName: routeItem.placeName,
         rating,
         tags: [],
-        comment: '',
+        content: null,
         media: [],
       });
     },
-    [planId, upsertPlaceReview],
+    [travelId, upsertPlaceReview],
   );
 
   useEffect(() => {
@@ -812,7 +811,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
               budgetTotal={budgetTotal}
               onNavigateToTab={setTab}
               recordsProgress={recordsProgress}
-              isTraveloguePublished={isPlanPublished}
+              isTravelRecordPublished={isPlanPublished}
               showInvite={isApiPlan && canInvite}
               onInvite={handleInvite}
             />
@@ -869,7 +868,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
               plan={enrichedPlan}
               allRoutes={allRoutes}
               language={language}
-              authorName={displayName}
+              authorNickname={displayName}
               destinationLabel={enrichedPlan.title}
               isTripActive={enrichedPlan.status !== 'COMPLETED'}
               onPublished={() => {
@@ -877,8 +876,8 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
               }}
               onEndTrip={requestCompletePlan}
               onViewFeed={() => navigateToMainTab(navigation, 'feed')}
-              onViewTravelogue={travelogueId =>
-                navigation.navigate('TravelogueDetail', { travelogueId })
+              onViewTravelRecord={travelRecordId =>
+                navigation.navigate('TravelRecordDetail', { travelRecordId })
               }
             />
           ),
@@ -957,14 +956,21 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
         route={reviewFormRoute}
         existing={
           reviewFormRoute
-            ? getReviewForRoute(planReviews, reviewFormRoute.itemId)
+            ? getReviewForPlace(
+                planReviews,
+                reviewFormRoute.apiPlanPlaceId ?? reviewFormRoute.itemId,
+              )
             : undefined
         }
         copy={reviewCopy}
         language={language}
-        planId={planId}
         onClose={() => setReviewFormRoute(null)}
-        onSave={payload => upsertPlaceReview(planId, payload)}
+        onSave={payload => {
+          if (!travelId) {
+            return;
+          }
+          upsertPlaceReview(travelId, payload);
+        }}
       />
 
       <TravelInviteLinkModal

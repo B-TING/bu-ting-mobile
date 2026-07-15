@@ -24,11 +24,11 @@ import type { RootStackParamList } from '../navigation/types';
 import { PLACE_CONTENT_TYPE } from '../types/placesApi';
 import { upcomingFestivalDateRangeYyyymmdd } from '../utils/places/festivalApiMapper';
 import { showTravelSurveyOnboardingPrompt } from '../services/setup/travelSurveyOnboardingPrompt';
-import { selectActivePlan, selectHomeFeaturedPlan, useAppStore, useFestivalStore, usePlanStore, useTravelogueStore } from '../stores';
+import { selectActivePlan, selectHomeFeaturedPlan, useAppStore, useFestivalStore, usePlanStore, useTravelRecordStore } from '../stores';
 import { useSessionActiveTravelsSyncOnFocus } from '../hooks/useSessionActiveTravelsSync';
 import { usePlanOfflineSyncFeedback } from '../hooks/usePlanOfflineSyncFeedback';
 import { isServerBackedPlan } from '../utils/plan/serverBackedPlan';
-import { isTraveloguePublic } from '../utils/review/travelReview';
+import { isTravelRecordPublic } from '../utils/review/travelReview';
 import { getNearestUpcomingStop } from '../utils/plan/planSchedule';
 import { resolvePlanTravelStatus } from '../utils/plan/planTravelStatus';
 import { getChatRoomByZoneId } from '../constants/eventZone/eventZone';
@@ -66,10 +66,10 @@ export function MainHomeScreen({ navigation }: Props) {
     });
   useSessionActiveTravelsSyncOnFocus();
 
-  const publishedTravelogues = useTravelogueStore(s => s.publishedTravelogues);
+  const publishedTravelRecords = useTravelRecordStore(s => s.publishedTravelRecords);
   const latestTravelogue = useMemo(
-    () => publishedTravelogues.find(isTraveloguePublic),
-    [publishedTravelogues],
+    () => publishedTravelRecords.find(isTravelRecordPublic),
+    [publishedTravelRecords],
   );
   const homeFestivals = useFestivalStore(s => s.homeFestivals);
   const fetchHomeFestivals = useFestivalStore(s => s.fetchHomeFestivals);
@@ -232,8 +232,8 @@ export function MainHomeScreen({ navigation }: Props) {
           latestTravelogue={latestTravelogue}
           onTraveloguePress={() => {
             if (latestTravelogue) {
-              navigation.navigate('TravelogueDetail', {
-                travelogueId: latestTravelogue.travelogueId,
+              navigation.navigate('TravelRecordDetail', {
+                travelRecordId: latestTravelogue.travelRecordId,
               });
             } else {
               goToTab('feed');
