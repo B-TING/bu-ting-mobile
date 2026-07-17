@@ -21,7 +21,7 @@ export const APP_MENU_ITEMS: AppMenuItem[] = [
     id: 'home',
     labelKo: '홈',
     labelEn: 'Home',
-    target: { kind: 'screen', route: 'MainHome' },
+    target: { kind: 'screen', route: 'MainTabs', params: { tab: 'home' } },
   },
   {
     id: 'plan',
@@ -83,6 +83,6 @@ export const APP_MENU_ITEMS: AppMenuItem[] = [
     id: 'my',
     labelKo: '마이페이지',
     labelEn: 'My page',
-    target: { kind: 'screen', route: 'MyPage' },
+    target: { kind: 'screen', route: 'MainTabs', params: { tab: 'my' } },
   },
 ];

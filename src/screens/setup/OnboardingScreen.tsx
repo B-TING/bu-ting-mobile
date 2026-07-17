@@ -151,7 +151,7 @@ export function OnboardingScreen({ navigation, route }: Props) {
         return;
       }
       if (isAccountMode) {
-        navigation.replace('MainHome');
+        navigation.replace('MainTabs');
         return;
       }
       navigation.replace('Login');

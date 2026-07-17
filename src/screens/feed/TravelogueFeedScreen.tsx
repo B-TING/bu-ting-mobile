@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { FlatList, Text, View } from 'react-native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { NavigationProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { TravelogueFeedItem } from '../../components/feed/TravelogueFeedItem';
@@ -17,12 +17,15 @@ import type { Travelogue } from '../../types/travelReview';
 import type { AppLanguage } from '../../types/user';
 import { isTraveloguePublic } from '../../utils/review/travelReview';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'TravelogueFeed'>;
+type Props = {
+  navigation: NavigationProp<RootStackParamList>;
+  embeddedInMainTabs?: boolean;
+};
 
 type FeedRowProps = {
   travelogue: Travelogue;
   language: AppLanguage;
-  navigation: Props['navigation'];
+  navigation: NavigationProp<RootStackParamList>;
   onOpenComposer: (travelogue: Travelogue) => void;
 };
 
@@ -65,7 +68,7 @@ function TravelogueFeedRow({
   );
 }
 
-export function TravelogueFeedScreen({ navigation }: Props) {
+export function TravelogueFeedScreen({ navigation, embeddedInMainTabs = false }: Props) {
   const insets = useSafeAreaInsets();
   const language = useAppLanguage();
   const auth = useAppStore(s => s.auth);
@@ -76,6 +79,7 @@ export function TravelogueFeedScreen({ navigation }: Props) {
     () => publishedTravelogues.filter(isTraveloguePublic),
     [publishedTravelogues],
   );
+  const bottomPadding = embeddedInMainTabs ? 16 : insets.bottom + 16;
 
   const [commentTarget, setCommentTarget] = useState<Travelogue | null>(null);
 
@@ -94,17 +98,19 @@ export function TravelogueFeedScreen({ navigation }: Props) {
   };
 
   return (
-    <View className="flex-1 bg-brand-background" style={{ paddingTop: insets.top }}>
+    <View className="flex-1 bg-brand-background">
       <View className="flex-row items-center border-b border-brand-border bg-brand-surface px-4 py-3">
-        <BackButton
-          accessibilityLabel={language === 'ko' ? '뒤로' : 'Back'}
-          onPress={() => navigation.goBack()}
-        />
+        {!embeddedInMainTabs ? (
+          <BackButton
+            accessibilityLabel={language === 'ko' ? '뒤로' : 'Back'}
+            onPress={() => navigation.goBack()}
+          />
+        ) : null}
         <Text className="flex-1 text-lg font-bold text-brand-text">{copy.feedTitle}</Text>
       </View>
 
       {travelogues.length === 0 ? (
-        <View className="flex-1 items-center justify-center px-6">
+        <View className="flex-1 items-center justify-center px-6" style={{ paddingBottom: bottomPadding }}>
           <View className="items-center rounded-2xl border-2 border-dashed border-brand-border bg-brand-surface px-6 py-12">
             <AppIcon name="fileText" size={40} color={ICON_COLOR_MUTED} />
             <Text className="mt-3 text-base font-semibold text-brand-text">
@@ -129,7 +135,7 @@ export function TravelogueFeedScreen({ navigation }: Props) {
           )}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
+          contentContainerStyle={{ paddingBottom: bottomPadding }}
         />
       )}
 
