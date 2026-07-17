@@ -1,29 +1,25 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { NavigationProp } from '@react-navigation/native';
 
 import { NicknameEditModal } from '../components/mypage/NicknameEditModal';
 import { PrimaryButton } from '../components/shared/buttons/PrimaryButton';
 import { AppIcon } from '../components/shared/icons/AppIcon';
-import { AppBar } from '../components/shared/navigation/AppBar';
-import { AppMenuDrawer } from '../components/shared/navigation/AppMenuDrawer';
-import { Navbar, type NavbarTab } from '../components/shared/navigation/Navbar';
 import { useAppAlert } from '../components/shared/modals';
 import { useAppLanguage, useCopy } from '../i18n';
 import { summarizeOnboardingPreferences } from '../constants/setup/onboarding';
 import { layout } from '../constants/common/layout';
 import { ICON_COLOR_WHITE } from '../constants/icons';
-import { selectActivePlan, selectOnboardingForUser, useAppStore, useAuthStore, usePlanStore } from '../stores';
+import { selectOnboardingForUser, useAppStore, useAuthStore } from '../stores';
 import { selectAuthUser, selectIsAuthenticated, selectReusableAccessToken } from '../stores/useAuthStore';
 import type { RootStackParamList } from '../navigation/types';
 import { logoutSession } from '../services/auth/authSession';
 import { deleteMyAccount, updateMyProfile, UserServiceError } from '../services/user/userService';
 import { cn } from '../utils/common/cn';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'MyPage'>;
-
-const NAVBAR_HEIGHT = 72;
+type Props = {
+  navigation: NavigationProp<RootStackParamList>;
+};
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
@@ -95,7 +91,6 @@ function SettingToggle({
 }
 
 export function MyPageScreen({ navigation }: Props) {
-  const insets = useSafeAreaInsets();
   const { alert } = useAppAlert();
   const language = useAppLanguage();
   const user = useAuthStore(selectAuthUser);
@@ -103,32 +98,12 @@ export function MyPageScreen({ navigation }: Props) {
   const hideUserIdOnMyPage = useAppStore(s => s.hideUserIdOnMyPage);
   const setHideUserIdOnMyPage = useAppStore(s => s.setHideUserIdOnMyPage);
   const copy = useCopy('myPage');
-  const activePlan = usePlanStore(selectActivePlan);
   const isAuthenticated = useAuthStore(selectIsAuthenticated);
   const rememberMe = useAuthStore(s => s.rememberMe);
   const accessToken = useAuthStore(selectReusableAccessToken);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [nicknameModalOpen, setNicknameModalOpen] = useState(false);
   const [savingNickname, setSavingNickname] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
-
-  const handleNavbarPress = (tab: NavbarTab) => {
-    switch (tab) {
-      case 'home':
-        navigation.navigate('MainHome');
-        break;
-      case 'route':
-        navigation.navigate(activePlan ? 'PlanDetail' : 'PlanWizard');
-        break;
-      case 'feed':
-        navigation.navigate('TravelogueFeed');
-        break;
-      case 'my':
-        break;
-      default:
-        break;
-    }
-  };
 
   const goToLogin = () => {
     navigation.reset({
@@ -243,23 +218,11 @@ export function MyPageScreen({ navigation }: Props) {
 
   return (
     <View className="flex-1 bg-brand-background" style={layout.screen}>
-      <AppBar
-        onMenuPress={() => setMenuOpen(true)}
-        onProfilePress={() => undefined}
-      />
-
-      <AppMenuDrawer
-        visible={menuOpen}
-        language={language}
-        navigation={navigation}
-        onClose={() => setMenuOpen(false)}
-      />
-
       <ScrollView
         className="flex-1 px-5"
         contentContainerStyle={{
           paddingTop: 16,
-          paddingBottom: NAVBAR_HEIGHT + insets.bottom + 24,
+          paddingBottom: 24,
         }}
         showsVerticalScrollIndicator={false}>
         <Text className="mb-5 text-[28px] font-bold text-brand-text">{copy.title}</Text>
@@ -333,8 +296,6 @@ export function MyPageScreen({ navigation }: Props) {
           <PrimaryButton label={copy.loginAgain} onPress={goToLogin} />
         )}
       </ScrollView>
-
-      <Navbar activeTab="my" language={language} onTabPress={handleNavbarPress} />
 
       {user ? (
         <NicknameEditModal

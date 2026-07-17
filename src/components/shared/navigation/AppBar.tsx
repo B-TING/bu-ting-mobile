@@ -64,5 +64,10 @@ export function AppBar({ onMenuPress, onProfilePress, topRightAccessory }: AppBa
   );
 }
 
-/** AppBar가 차지하는 대략적인 전체 높이 (스크롤 패딩 등) */
+/** AppBar가 차지하는 대략적인 전체 높이 (safe area 제외, 스크롤 패딩 등) */
 export const APP_BAR_TOTAL_HEIGHT = BAR_HEIGHT + TOP_GAP;
+
+/** safe area 포함 AppBar 전체 높이 */
+export function useAppBarTotalHeight(): number {
+  return useAppBarTopInset() + BAR_HEIGHT;
+}

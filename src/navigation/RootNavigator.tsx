@@ -16,9 +16,6 @@ import { EventGameDetailScreen } from '../screens/eventZone/EventGameDetailScree
 import { EventGameCameraScreen } from '../screens/eventZone/EventGameCameraScreen';
 import { LuggageStorageScreen } from '../screens/locker/LuggageStorageScreen';
 import { TravelogueDetailScreen } from '../screens/feed/TravelogueDetailScreen';
-import { TravelogueFeedScreen } from '../screens/feed/TravelogueFeedScreen';
-import { MyPageScreen } from '../screens/MyPageScreen';
-import { MainHomeScreen } from '../screens/MainHomeScreen';
 import { MenuPlaceholderScreen } from '../screens/MenuPlaceholderScreen';
 import { PlanCandidatesScreen } from '../screens/plan/PlanCandidatesScreen';
 import { PlanDetailScreen } from '../screens/plan/PlanDetailScreen';
@@ -26,6 +23,7 @@ import { PlanWizardScreen } from '../screens/plan/PlanWizardScreen';
 import { LanguageSelectionScreen } from '../screens/setup/LanguageSelectionScreen';
 import { LoginScreen } from '../screens/setup/LoginScreen';
 import { OnboardingScreen } from '../screens/setup/OnboardingScreen';
+import { MainTabNavigator } from './MainTabNavigator';
 import { initI18n } from '../i18n';
 import { bootstrapAuth } from '../services/auth/authSession';
 import {
@@ -95,7 +93,7 @@ export function RootNavigator() {
   }
 
   const initialRoute =
-    phase === 'main' ? 'MainHome' : INITIAL_ROUTES[phase];
+    phase === 'main' ? 'MainTabs' : INITIAL_ROUTES[phase];
 
   return (
     <NavigationContainer>
@@ -108,13 +106,11 @@ export function RootNavigator() {
         />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-        <Stack.Screen name="MainHome" component={MainHomeScreen} />
-        <Stack.Screen name="MyPage" component={MyPageScreen} />
+        <Stack.Screen name="MainTabs" component={MainTabNavigator} />
         <Stack.Screen name="MenuPlaceholder" component={MenuPlaceholderScreen} />
         <Stack.Screen name="PlanWizard" component={PlanWizardScreen} />
         <Stack.Screen name="PlanCandidates" component={PlanCandidatesScreen} />
         <Stack.Screen name="PlanDetail" component={PlanDetailScreen} />
-        <Stack.Screen name="TravelogueFeed" component={TravelogueFeedScreen} />
         <Stack.Screen name="TravelogueDetail" component={TravelogueDetailScreen} />
         <Stack.Screen name="FestivalCalendar" component={FestivalCalendarScreen} />
         <Stack.Screen name="FestivalDetail" component={FestivalDetailScreen} />

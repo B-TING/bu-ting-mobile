@@ -3,7 +3,7 @@ import { ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from '
 
 import { festivalTagLabel } from '../../../constants/festival/festivalCalendar';
 import type { MockEvent } from '../../../constants/home/mainHome';
-import { ICON_COLOR_PRIMARY } from '../../../constants/icons';
+import { ICON_COLOR_WHITE } from '../../../constants/icons';
 import type { AppLanguage } from '../../../types/user';
 import { cn } from '../../../utils/common/cn';
 import { AppIcon } from '../../shared/icons/AppIcon';
@@ -55,21 +55,21 @@ function EventCard({
   const date = pickLocalizedEventField(event, 'date', language);
   const hasImage = Boolean(event.imageUri) && !imageFailed;
 
-  const body = (
-    <View className="p-3">
+  const overlay = (
+    <View style={styles.imageOverlay}>
       <View
         className={cn(
-          'mb-2 self-start rounded-md px-2 py-0.5',
+          'self-start rounded-md px-2 py-0.5',
           event.tag === 'FESTIVAL' ? 'bg-brand-primary' : 'bg-orange-500',
         )}>
         <Text className="text-[10px] font-bold text-white">
           {festivalTagLabel(event.tag, language)}
         </Text>
       </View>
-      <Text className="text-sm font-bold text-brand-text" numberOfLines={2}>
+      <Text className="mt-2 text-sm font-bold text-white" numberOfLines={2}>
         {title}
       </Text>
-      <Text className="mt-1 text-xs text-brand-muted">
+      <Text className="mt-1 text-xs font-medium text-white/90">
         {location} • {date}
       </Text>
     </View>
@@ -78,59 +78,40 @@ function EventCard({
   return (
     <Pressable
       onPress={onPress}
-      className="mr-3 w-[260px] overflow-hidden rounded-2xl border border-brand-border bg-brand-surface active:opacity-90"
+      className="mr-3 w-[260px] overflow-hidden rounded-2xl active:opacity-90"
       accessibilityRole="button">
       {hasImage ? (
         <ImageBackground
           source={{ uri: event.imageUri }}
-          style={styles.imageHeader}
-          imageStyle={styles.imageRadius}
+          style={styles.card}
+          imageStyle={styles.imageFill}
           resizeMode="cover"
           onError={() => setImageFailed(true)}>
-          <View style={styles.imageOverlay}>
-            <View
-              className={cn(
-                'self-start rounded-md px-2 py-0.5',
-                event.tag === 'FESTIVAL' ? 'bg-brand-primary' : 'bg-orange-500',
-              )}>
-              <Text className="text-[10px] font-bold text-white">
-                {festivalTagLabel(event.tag, language)}
-              </Text>
-            </View>
-            <Text className="mt-2 text-sm font-bold text-white" numberOfLines={2}>
-              {title}
-            </Text>
-            <Text className="mt-1 text-xs font-medium text-white/90">
-              {location} • {date}
-            </Text>
-          </View>
+          {overlay}
         </ImageBackground>
       ) : (
-        <>
-          <View
-            className="h-32 items-center justify-center"
-            style={{ backgroundColor: event.imageColor }}>
-            <AppIcon name={event.imageIcon} size={40} color={ICON_COLOR_PRIMARY} />
+        <View style={[styles.card, { backgroundColor: event.imageColor }]}>
+          <View className="absolute inset-0 items-center justify-center opacity-40">
+            <AppIcon name={event.imageIcon} size={48} color={ICON_COLOR_WHITE} />
           </View>
-          {body}
-        </>
+          {overlay}
+        </View>
       )}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  imageHeader: {
-    height: 128,
+  card: {
+    height: 180,
     justifyContent: 'flex-end',
   },
-  imageRadius: {
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+  imageFill: {
+    borderRadius: 16,
   },
   imageOverlay: {
     padding: 12,
-    backgroundColor: 'rgba(15, 23, 42, 0.55)',
+    backgroundColor: 'rgba(15, 23, 42, 0.45)',
   },
 });
 
