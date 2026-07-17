@@ -69,10 +69,25 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
         : copy.statusNotJoined;
 
   const rulesText =
-    event.type === 'place_auth' ? copy.placeAuthRules : copy.objectSightRules;
+    event.type === 'place_auth'
+      ? copy.placeAuthRules
+      : event.type === 'mukjjippa'
+        ? copy.mukjjippaRules
+        : copy.objectSightRules;
+
+  const targetTitle =
+    event.type === 'place_auth'
+      ? copy.targetPlace
+      : event.type === 'mukjjippa'
+        ? copy.targetOpponent
+        : copy.targetObject;
 
   const handleParticipate = () => {
     setStatus('in_progress');
+    if (event.type === 'mukjjippa') {
+      navigation.navigate('EventGameMukjjippa', { eventId: event.id });
+      return;
+    }
     navigation.navigate('EventGameCamera', { eventId: event.id });
   };
 
@@ -116,9 +131,7 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
         </View>
 
         <View className="mt-4 rounded-2xl border border-brand-border bg-brand-surface p-4">
-          <Text className="text-sm font-bold text-brand-text">
-            {event.type === 'place_auth' ? copy.targetPlace : copy.targetObject}
-          </Text>
+          <Text className="text-sm font-bold text-brand-text">{targetTitle}</Text>
           {event.type === 'place_auth' && landmark ? (
             <View className="mt-3 flex-row items-center gap-3">
               <Text className="text-2xl">{landmark.emoji}</Text>
@@ -130,6 +143,13 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
                   GPS {landmark.location.lat.toFixed(4)}, {landmark.location.lng.toFixed(4)}
                 </Text>
               </View>
+            </View>
+          ) : event.type === 'mukjjippa' ? (
+            <View className="mt-3 flex-row items-center gap-3">
+              <Text className="text-2xl">⚔️</Text>
+              <Text className="flex-1 text-base font-semibold text-brand-text">
+                {copy.targetOpponentHint}
+              </Text>
             </View>
           ) : (
             <View className="mt-3 flex-row items-center gap-3">

@@ -83,10 +83,11 @@ export type ZoneEventType =
   | 'qr_cross' // 핫플 QR 크로스
   | 'zone_battle' // 타 구역 유저와 대결
   | 'place_auth' // 장소 인증 (카메라 + GPS)
-  | 'object_sight'; // 사물 인증 (카메라 + 객체 인식)
+  | 'object_sight' // 사물 인증 (카메라 + 객체 인식)
+  | 'mukjjippa'; // 묵찌빠 (타 구역 유저 대결)
 
-/** 카메라 기반 이벤트 게임 타입 */
-export type EventGameType = 'place_auth' | 'object_sight';
+/** 이벤트 게임 타입 */
+export type EventGameType = 'place_auth' | 'object_sight' | 'mukjjippa';
 
 /** 구역에 발생하는 이벤트 VO (목업) */
 export type ZoneEvent = {

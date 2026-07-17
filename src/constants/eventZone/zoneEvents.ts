@@ -48,6 +48,12 @@ export const ZONE_EVENT_TYPE_META: Record<
     defaultDurationMinutes: 30,
     descriptionKo: '목표 사물을 찾아 촬영하면 AI 사물 인증을 완료하세요.',
   },
+  mukjjippa: {
+    labelKo: '묵찌빠 대결',
+    emoji: '✊',
+    defaultDurationMinutes: 20,
+    descriptionKo: '다른 구역 유저와 묵찌빠로 대결해 승리하세요. (목업)',
+  },
 };
 
 export const ZONE_EVENT_TYPES: ZoneEventType[] = Object.keys(

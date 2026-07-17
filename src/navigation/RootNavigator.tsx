@@ -14,6 +14,7 @@ import { EventZoneScreen } from '../screens/eventZone/EventZoneScreen';
 import { EventZoneChatScreen } from '../screens/eventZone/EventZoneChatScreen';
 import { EventGameDetailScreen } from '../screens/eventZone/EventGameDetailScreen';
 import { EventGameCameraScreen } from '../screens/eventZone/EventGameCameraScreen';
+import { EventGameMukjjippaScreen } from '../screens/eventZone/EventGameMukjjippaScreen';
 import { LuggageStorageScreen } from '../screens/locker/LuggageStorageScreen';
 import { TravelogueDetailScreen } from '../screens/feed/TravelogueDetailScreen';
 import { MenuPlaceholderScreen } from '../screens/MenuPlaceholderScreen';
@@ -121,6 +122,7 @@ export function RootNavigator() {
         <Stack.Screen name="EventZoneChat" component={EventZoneChatScreen} />
         <Stack.Screen name="EventGameDetail" component={EventGameDetailScreen} />
         <Stack.Screen name="EventGameCamera" component={EventGameCameraScreen} />
+        <Stack.Screen name="EventGameMukjjippa" component={EventGameMukjjippaScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

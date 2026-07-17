@@ -3,7 +3,11 @@ import type { EventGameType, EventZoneId, ZoneEvent } from '../../types/eventZon
 import { EVENT_ZONE_BY_ID } from './eventZone';
 import { buildMockZoneEvent } from './zoneEvents';
 
-export const EVENT_GAME_TYPES: EventGameType[] = ['place_auth', 'object_sight'];
+export const EVENT_GAME_TYPES: EventGameType[] = [
+  'place_auth',
+  'object_sight',
+  'mukjjippa',
+];
 
 const MOCK_OBJECTS = [
   {
@@ -27,11 +31,17 @@ const MOCK_OBJECTS = [
 ] as const;
 
 export function isEventGameType(type: string): type is EventGameType {
-  return type === 'place_auth' || type === 'object_sight';
+  return (
+    type === 'place_auth' || type === 'object_sight' || type === 'mukjjippa'
+  );
 }
 
 export function isEventGame(event: ZoneEvent): boolean {
   return isEventGameType(event.type);
+}
+
+export function isCameraEventGame(event: ZoneEvent): boolean {
+  return event.type === 'place_auth' || event.type === 'object_sight';
 }
 
 export function buildMockGameEvent(
@@ -47,6 +57,10 @@ export function buildMockGameEvent(
       ...base,
       targetLandmarkId: landmark?.id,
     };
+  }
+
+  if (type === 'mukjjippa') {
+    return base;
   }
 
   const object = MOCK_OBJECTS[Math.floor(Math.random() * MOCK_OBJECTS.length)];
@@ -98,8 +112,11 @@ export const EVENT_GAME_COPY: Record<
     participate: string;
     placeAuthRules: string;
     objectSightRules: string;
+    mukjjippaRules: string;
     targetPlace: string;
     targetObject: string;
+    targetOpponent: string;
+    targetOpponentHint: string;
     remainingLabel: (remaining: string) => string;
     cameraHintPlace: string;
     cameraHintObject: (objectName: string) => string;
@@ -110,12 +127,26 @@ export const EVENT_GAME_COPY: Record<
     successTitle: string;
     successPlace: string;
     successObject: (objectName: string) => string;
+    successMukjjippa: string;
     failTitle: string;
     failPlace: string;
     failObject: string;
+    failMukjjippa: string;
     retry: string;
+    retryMukjjippa: string;
     done: string;
     mockCameraLabel: string;
+    mukjjippaYou: string;
+    mukjjippaOpponent: string;
+    mukjjippaPickHint: string;
+    mukjjippaNoAttack: string;
+    mukjjippaYourAttack: string;
+    mukjjippaOpponentAttack: string;
+    mukjjippaHandRock: string;
+    mukjjippaHandScissors: string;
+    mukjjippaHandPaper: string;
+    mukjjippaRevealing: string;
+    mukjjippaRoundContinue: string;
   }
 > = {
   ko: {
@@ -134,8 +165,12 @@ export const EVENT_GAME_COPY: Record<
       '목표 장소 근처에서 사진을 촬영하면 GPS 기반으로 장소 인증이 완료됩니다.',
     objectSightRules:
       '목표 사물을 찾아 촬영하면 AI 기반으로 사물 인증이 완료됩니다.',
+    mukjjippaRules:
+      '처음엔 공격권 없이 가위바위보를 합니다. 이긴 사람이 공격권을 가져가고, 공격권을 가진 사람과 상대가 같은 손을 내면 공격권 보유자의 승리로 게임이 끝납니다. (목업: 상대는 랜덤)',
     targetPlace: '목표 장소',
     targetObject: '목표 사물',
+    targetOpponent: '대결 상대',
+    targetOpponentHint: '다른 구역 유저와 랜덤 매칭 (목업)',
     remainingLabel: remaining => `남은 시간 ${remaining}`,
     cameraHintPlace: '목표 장소가 화면에 담기도록 촬영해 주세요',
     cameraHintObject: objectName => `'${objectName}'을(를) 찾아 촬영해 주세요`,
@@ -146,12 +181,26 @@ export const EVENT_GAME_COPY: Record<
     successTitle: '미션 성공!',
     successPlace: '장소 인증에 성공했어요!',
     successObject: objectName => `'${objectName}' 인증 성공!`,
+    successMukjjippa: '묵찌빠에서 승리했어요!',
     failTitle: '다시 시도해 주세요',
     failPlace: '목표 장소와 거리가 멀거나 촬영이 불명확해요.',
     failObject: '사물 인증에 실패했어요. 목표 사물이 화면에 잘 보이도록 다시 촬영해 주세요.',
+    failMukjjippa: '상대가 이겼어요. 다시 도전해 보세요!',
     retry: '다시 촬영',
+    retryMukjjippa: '다시 대결',
     done: '완료',
     mockCameraLabel: '카메라 미리보기 (목업)',
+    mukjjippaYou: '나',
+    mukjjippaOpponent: '상대',
+    mukjjippaPickHint: '손 모양을 선택하세요',
+    mukjjippaNoAttack: '공격권 없음 · 가위바위보',
+    mukjjippaYourAttack: '내 공격권 · 같은 손을 내면 승리',
+    mukjjippaOpponentAttack: '상대 공격권 · 같은 손을 내면 패배',
+    mukjjippaHandRock: '묵',
+    mukjjippaHandScissors: '찌',
+    mukjjippaHandPaper: '빠',
+    mukjjippaRevealing: '공개 중…',
+    mukjjippaRoundContinue: '계속!',
   },
   en: {
     nearbyEventBanner: 'An event is happening at your current location!',
@@ -169,8 +218,12 @@ export const EVENT_GAME_COPY: Record<
       'Take a photo near the target place to complete GPS place verification.',
     objectSightRules:
       'Find and photograph the target object. AI will verify your shot.',
+    mukjjippaRules:
+      'Start with no attack right. Winner of rock-paper-scissors gets attack. If the attacker and opponent play the same hand, the attacker wins. (Mock: opponent plays randomly)',
     targetPlace: 'Target place',
     targetObject: 'Target object',
+    targetOpponent: 'Opponent',
+    targetOpponentHint: 'Random match with another zone (mock)',
     remainingLabel: remaining => `${remaining} left`,
     cameraHintPlace: 'Frame the target place in your shot',
     cameraHintObject: objectName => `Find and photograph the ${objectName}`,
@@ -181,12 +234,26 @@ export const EVENT_GAME_COPY: Record<
     successTitle: 'Mission complete!',
     successPlace: 'Place verified successfully!',
     successObject: objectName => `Recognized: ${objectName}!`,
+    successMukjjippa: 'You won Muk-jji-ppa!',
     failTitle: 'Try again',
     failPlace: 'You may be too far from the target or the photo is unclear.',
     failObject: 'Make sure the target object is clearly visible and retry.',
+    failMukjjippa: 'Your opponent won. Try again!',
     retry: 'Retake',
+    retryMukjjippa: 'Rematch',
     done: 'Done',
     mockCameraLabel: 'Camera preview (mock)',
+    mukjjippaYou: 'You',
+    mukjjippaOpponent: 'Opponent',
+    mukjjippaPickHint: 'Pick your hand',
+    mukjjippaNoAttack: 'No attack · rock-paper-scissors',
+    mukjjippaYourAttack: 'Your attack · same hand wins',
+    mukjjippaOpponentAttack: 'Opponent attack · same hand loses',
+    mukjjippaHandRock: 'Rock',
+    mukjjippaHandScissors: 'Scissors',
+    mukjjippaHandPaper: 'Paper',
+    mukjjippaRevealing: 'Revealing…',
+    mukjjippaRoundContinue: 'Continue!',
   },
   ja: {
     nearbyEventBanner: '現在地でイベントが発生しました！',
@@ -202,8 +269,12 @@ export const EVENT_GAME_COPY: Record<
     participate: 'イベント参加',
     placeAuthRules: '目標スポット付近で撮影するとGPSで場所認証が完了します。',
     objectSightRules: '案内された物体を撮影するとAIが認識して判定します。',
+    mukjjippaRules:
+      '最初は攻撃権なしでじゃんけん。勝った人が攻撃権を持ち、攻撃権のある人と相手が同じ手なら攻撃権者の勝ちです。（モック：相手はランダム）',
     targetPlace: '目標スポット',
     targetObject: '目標物体',
+    targetOpponent: '対戦相手',
+    targetOpponentHint: '他エリアのユーザーとランダム対戦（モック）',
     remainingLabel: remaining => `残り ${remaining}`,
     cameraHintPlace: '目標スポットが写るように撮影してください',
     cameraHintObject: objectName => `「${objectName}」を見つけて撮影してください`,
@@ -214,12 +285,26 @@ export const EVENT_GAME_COPY: Record<
     successTitle: 'ミッション成功！',
     successPlace: '場所認証に成功しました！',
     successObject: objectName => `「${objectName}」を認識しました！`,
+    successMukjjippa: 'ムクチッパに勝利しました！',
     failTitle: 'もう一度お試しください',
     failPlace: '目標地点から離れているか、写真が不明瞭です。',
     failObject: '目標物体がはっきり写るように再撮影してください。',
+    failMukjjippa: '相手の勝ちです。もう一度挑戦してください！',
     retry: '再撮影',
+    retryMukjjippa: '再戦',
     done: '完了',
     mockCameraLabel: 'カメラプレビュー（モック）',
+    mukjjippaYou: '自分',
+    mukjjippaOpponent: '相手',
+    mukjjippaPickHint: '手を選んでください',
+    mukjjippaNoAttack: '攻撃権なし · じゃんけん',
+    mukjjippaYourAttack: '自分の攻撃権 · 同じ手で勝ち',
+    mukjjippaOpponentAttack: '相手の攻撃権 · 同じ手で負け',
+    mukjjippaHandRock: 'グー',
+    mukjjippaHandScissors: 'チョキ',
+    mukjjippaHandPaper: 'パー',
+    mukjjippaRevealing: '公開中…',
+    mukjjippaRoundContinue: '続行！',
   },
   zh: {
     nearbyEventBanner: '您当前位置发生了活动！',
@@ -235,8 +320,12 @@ export const EVENT_GAME_COPY: Record<
     participate: '参与活动',
     placeAuthRules: '在目标地点附近拍照，通过GPS完成地点认证。',
     objectSightRules: '找到并拍摄指定物体，AI将识别并判定是否成功。',
+    mukjjippaRules:
+      '开局无人拥有攻击权，先猜拳。胜者获得攻击权；拥有攻击权的人与对手出相同手势则攻击方获胜。（模拟：对手随机）',
     targetPlace: '目标地点',
     targetObject: '目标物体',
+    targetOpponent: '对战对手',
+    targetOpponentHint: '与其他区域用户随机匹配（模拟）',
     remainingLabel: remaining => `剩余 ${remaining}`,
     cameraHintPlace: '请将目标地点拍入画面',
     cameraHintObject: objectName => `找到并拍摄「${objectName}」`,
@@ -247,11 +336,25 @@ export const EVENT_GAME_COPY: Record<
     successTitle: '任务成功！',
     successPlace: '地点认证成功！',
     successObject: objectName => `已识别：${objectName}！`,
+    successMukjjippa: '你赢了默默啪！',
     failTitle: '请重试',
     failPlace: '距离目标较远或照片不够清晰。',
     failObject: '请确保目标物体清晰可见后重新拍摄。',
+    failMukjjippa: '对手获胜了。再试一次吧！',
     retry: '重新拍摄',
+    retryMukjjippa: '再战',
     done: '完成',
     mockCameraLabel: '相机预览（模拟）',
+    mukjjippaYou: '我',
+    mukjjippaOpponent: '对手',
+    mukjjippaPickHint: '请选择手势',
+    mukjjippaNoAttack: '无攻击权 · 猜拳',
+    mukjjippaYourAttack: '你的攻击权 · 相同手势即胜',
+    mukjjippaOpponentAttack: '对手攻击权 · 相同手势即败',
+    mukjjippaHandRock: '石头',
+    mukjjippaHandScissors: '剪刀',
+    mukjjippaHandPaper: '布',
+    mukjjippaRevealing: '揭晓中…',
+    mukjjippaRoundContinue: '继续！',
   },
 };

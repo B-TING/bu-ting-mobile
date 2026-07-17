@@ -8,7 +8,7 @@ import { AppIcon } from '../../components/shared/icons/AppIcon';
 import { ICON_COLOR_MUTED, ICON_COLOR_WHITE } from '../../constants/icons';
 import {
   eventGameObjectLabel,
-  isEventGame,
+  isCameraEventGame,
   mockEvaluateGameCapture,
 } from '../../constants/eventZone/eventGame';
 import { useAppLanguage, useCopy } from '../../i18n';
@@ -36,12 +36,12 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
   const [captured, setCaptured] = useState(false);
 
   useEffect(() => {
-    if (!event || !isEventGame(event)) {
+    if (!event || !isCameraEventGame(event)) {
       navigation.goBack();
     }
   }, [event, navigation]);
 
-  if (!event || !isEventGame(event)) {
+  if (!event || !isCameraEventGame(event)) {
     return null;
   }
 

@@ -27,6 +27,7 @@ export type RootStackParamList = {
   EventZoneChat: { roomId: string };
   EventGameDetail: { eventId: string };
   EventGameCamera: { eventId: string };
+  EventGameMukjjippa: { eventId: string };
 };
 
 export type SetupPhase = 'language' | 'login' | 'onboarding' | 'main';
