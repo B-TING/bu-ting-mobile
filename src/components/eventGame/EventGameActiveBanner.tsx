@@ -1,19 +1,20 @@
 import { Pressable, Text, View } from 'react-native';
 
-import { AppIcon } from '../shared/icons/AppIcon';
 import { ICON_COLOR_WHITE } from '../../constants/icons';
+import { AppIcon } from '../shared/icons/AppIcon';
 
-type EventZoneActiveEventBannerProps = {
+type EventGameActiveBannerProps = {
   message: string;
   actionLabel: string;
   onPress: () => void;
 };
 
-export function EventZoneActiveEventBanner({
+/** 현재 존에 활성 게임이 있을 때 채팅 리스트 위 참여 배너 */
+export function EventGameActiveBanner({
   message,
   actionLabel,
   onPress,
-}: EventZoneActiveEventBannerProps) {
+}: EventGameActiveBannerProps) {
   return (
     <View className="mx-3 flex-row items-center gap-2 rounded-2xl border border-pink-200 bg-pink-50 px-3 py-2.5 shadow-sm">
       <View className="h-8 w-8 items-center justify-center rounded-full bg-pink-600">
