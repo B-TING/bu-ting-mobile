@@ -9,6 +9,7 @@ import { TravelogueCommentModal } from '../../components/feed/modals/TravelogueC
 import { useTravelogueSocialActions } from '../../components/feed/useTravelogueSocialActions';
 import { BackButton } from '../../components/shared/buttons/BackButton';
 import { AppIcon } from '../../components/shared/icons/AppIcon';
+import { getNavbarOverlayHeight } from '../../components/shared/navigation/Navbar';
 import { useAppLanguage, useCopy } from '../../i18n';
 import { ICON_COLOR_MUTED } from '../../constants/icons';
 import type { RootStackParamList } from '../../navigation/types';
@@ -79,7 +80,9 @@ export function TravelogueFeedScreen({ navigation, embeddedInMainTabs = false }:
     () => publishedTravelogues.filter(isTraveloguePublic),
     [publishedTravelogues],
   );
-  const bottomPadding = embeddedInMainTabs ? 16 : insets.bottom + 16;
+  const bottomPadding = embeddedInMainTabs
+    ? getNavbarOverlayHeight(insets.bottom) + 16
+    : insets.bottom + 16;
 
   const [commentTarget, setCommentTarget] = useState<Travelogue | null>(null);
 
