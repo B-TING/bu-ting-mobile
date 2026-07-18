@@ -372,6 +372,22 @@ export function selectHomeFeaturedPlan(state: PlanState): TravelPlan | null {
   return plan;
 }
 
+/** 오프라인 열람용 — 활성 일정 우선, 없으면 가장 최근 생성 일정 */
+export function selectLatestLocalPlan(state: PlanState): TravelPlan | null {
+  if (state.plans.length === 0) {
+    return null;
+  }
+  if (state.activePlanId) {
+    const active = state.plans.find(p => p.planId === state.activePlanId);
+    if (active) {
+      return active;
+    }
+  }
+  return [...state.plans].sort((a, b) =>
+    (b.createdAt || '').localeCompare(a.createdAt || ''),
+  )[0];
+}
+
 export function selectPlanById(planId: string) {
   return (state: PlanState) => {
     const plan = state.plans.find(p => p.planId === planId) ?? null;
