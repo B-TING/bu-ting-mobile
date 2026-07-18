@@ -8,6 +8,7 @@ import { isTourApiContentId, routeTypeToContentTypeId } from '../utils/places/ro
 import type { PlanWizardAnswers } from '../types/planWizard';
 import type { BudgetEntry, RouteItem, TravelLegMode, TravelPlan } from '../types/travelPlan';
 import type { Travelogue } from '../types/travelReview';
+import { isPlanForCurrentApiServer } from '../utils/api/apiServerOrigin';
 import { createId } from '../utils/common/id';
 import { buildPlanFromTravelogue } from '../utils/review/travelReview';
 import { optimizeRouteOrder } from '../utils/plan/routeOptimize';
@@ -348,7 +349,12 @@ export function selectActivePlan(state: PlanState): TravelPlan | null {
     return null;
   }
   const active = state.plans.find(p => p.planId === state.activePlanId);
-  if (!active || active.status === 'COMPLETED' || !isServerBackedPlan(active)) {
+  if (
+    !active ||
+    active.status === 'COMPLETED' ||
+    !isServerBackedPlan(active) ||
+    !isPlanForCurrentApiServer(active)
+  ) {
     return null;
   }
   return active;
@@ -360,7 +366,7 @@ export function selectHomeFeaturedPlan(state: PlanState): TravelPlan | null {
     return null;
   }
   const plan = state.plans.find(p => p.planId === state.activePlanId);
-  if (!plan || !isServerBackedPlan(plan)) {
+  if (!plan || !isServerBackedPlan(plan) || !isPlanForCurrentApiServer(plan)) {
     return null;
   }
   return plan;
@@ -383,8 +389,13 @@ export function selectLatestLocalPlan(state: PlanState): TravelPlan | null {
 }
 
 export function selectPlanById(planId: string) {
-  return (state: PlanState) =>
-    state.plans.find(p => p.planId === planId) ?? null;
+  return (state: PlanState) => {
+    const plan = state.plans.find(p => p.planId === planId) ?? null;
+    if (!plan || !isPlanForCurrentApiServer(plan)) {
+      return null;
+    }
+    return plan;
+  };
 }
 
 export function selectIsPlanOfflineSync(planId: string) {

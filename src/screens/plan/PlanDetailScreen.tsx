@@ -261,8 +261,14 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
   const scheduleDay =
     enrichedPlan?.itinerary.find(d => d.dayNumber === selectedDay) ??
     enrichedPlan?.itinerary[0];
-  const scheduleRoutes = scheduleDay ? sortedRoutes(scheduleDay.routes) : [];
-  const schedulePlaceIds = scheduleRoutes.map(r => r.placeId);
+  const scheduleRoutes = useMemo(
+    () => (scheduleDay ? sortedRoutes(scheduleDay.routes) : []),
+    [scheduleDay],
+  );
+  const schedulePlaceIds = useMemo(
+    () => scheduleRoutes.map(r => r.placeId),
+    [scheduleRoutes],
+  );
   const pickRoute =
     scheduleModal.kind === 'pick'
       ? (scheduleRoutes.find(r => r.itemId === scheduleModal.itemId) ?? null)
@@ -300,7 +306,17 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
 
       removeRoute(planId, route.itemId);
     },
-    [planId, scheduleReadOnly, isApiPlan, accessToken, removeRoute, syncFromServer, lockScheduleOnApiError, notifyScheduleReadOnly],
+    [
+      planId,
+      viewOnly,
+      scheduleReadOnly,
+      isApiPlan,
+      accessToken,
+      removeRoute,
+      syncFromServer,
+      lockScheduleOnApiError,
+      notifyScheduleReadOnly,
+    ],
   );
 
   const resolveSelectedDayAfterRemove = useCallback(
@@ -404,7 +420,6 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     planId,
     enrichedPlan,
     scheduleDay,
-    scheduleReadOnly,
     viewOnly,
     selectedDay,
     isApiPlan,
@@ -479,7 +494,16 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
         }
       }
     },
-    [planId, scheduleReadOnly, isApiPlan, accessToken, updateRouteMemo, lockScheduleOnApiError, notifyScheduleReadOnly],
+    [
+      planId,
+      viewOnly,
+      scheduleReadOnly,
+      isApiPlan,
+      accessToken,
+      updateRouteMemo,
+      lockScheduleOnApiError,
+      notifyScheduleReadOnly,
+    ],
   );
 
   const handlePickReplacement = useCallback(
@@ -534,8 +558,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
       accessToken,
       replaceRoute,
       closeScheduleModal,
-      scheduleReadOnly,
-    viewOnly,
+      viewOnly,
       syncFromServer,
       lockScheduleOnApiError,
     ],
@@ -574,7 +597,16 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
         await syncFromServer();
       }
     },
-    [planId, scheduleReadOnly, enrichedPlan, isApiPlan, accessToken, reorderRoutes, syncFromServer, lockScheduleOnApiError],
+    [
+      planId,
+      viewOnly,
+      enrichedPlan,
+      isApiPlan,
+      accessToken,
+      reorderRoutes,
+      syncFromServer,
+      lockScheduleOnApiError,
+    ],
   );
 
   const handleOptimizeDayRoute = useCallback(
@@ -616,7 +648,18 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
         await syncFromServer();
       }
     },
-    [planId, scheduleReadOnly, enrichedPlan, isApiPlan, accessToken, reorderRoutes, syncFromServer, alert, copy, lockScheduleOnApiError],
+    [
+      planId,
+      viewOnly,
+      enrichedPlan,
+      isApiPlan,
+      accessToken,
+      reorderRoutes,
+      syncFromServer,
+      alert,
+      copy,
+      lockScheduleOnApiError,
+    ],
   );
 
   const handleAddPlace = useCallback(
@@ -665,8 +708,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
       language,
       planId,
       enrichedPlan,
-      scheduleReadOnly,
-    viewOnly,
+      viewOnly,
       isApiPlan,
       accessToken,
       addRoute,

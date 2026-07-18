@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useRef } from 'react';
+import { Animated, Pressable, StyleSheet, View } from 'react-native';
 
 import { ICON_COLOR_WHITE } from '../../../constants/icons';
 import { AppIcon } from '../../shared/icons/AppIcon';
@@ -12,22 +13,75 @@ type ScheduleRebootFabProps = {
 };
 
 export function ScheduleRebootFab({ onPress, bottom }: ScheduleRebootFabProps) {
+  const scale = useRef(new Animated.Value(1)).current;
+  const glow = useRef(new Animated.Value(1)).current;
+  const opacity = useRef(new Animated.Value(1)).current;
+
+  const animateIn = () => {
+    Animated.parallel([
+      Animated.spring(scale, {
+        toValue: 0.88,
+        friction: 5,
+        tension: 320,
+        useNativeDriver: true,
+      }),
+      Animated.spring(glow, {
+        toValue: 1.18,
+        friction: 5,
+        tension: 280,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacity, {
+        toValue: 0.92,
+        duration: 70,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const animateOut = () => {
+    Animated.parallel([
+      Animated.spring(scale, {
+        toValue: 1,
+        friction: 5,
+        tension: 280,
+        useNativeDriver: true,
+      }),
+      Animated.spring(glow, {
+        toValue: 1,
+        friction: 6,
+        tension: 220,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 140,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
   return (
     <View
       className="absolute right-4 z-20"
       style={{ bottom }}
       pointerEvents="box-none">
       <View style={styles.glowOuter}>
-        <View style={styles.glowHalo} />
+        <Animated.View
+          style={[styles.glowHalo, { transform: [{ scale: glow }] }]}
+        />
         <Pressable
           onPress={onPress}
+          onPressIn={animateIn}
+          onPressOut={animateOut}
           accessibilityRole="button"
           accessibilityLabel="Reboot"
-          style={({ pressed }) => [styles.pressable, pressed && styles.pressed]}>
-          <View style={styles.fab}>
+          style={styles.pressable}>
+          <Animated.View
+            style={[styles.fab, { transform: [{ scale }], opacity }]}>
             <View style={styles.shine} />
             <AppIcon name="rotateCcw" size={24} color={ICON_COLOR_WHITE} strokeWidth={2.5} />
-          </View>
+          </Animated.View>
         </Pressable>
       </View>
     </View>
@@ -60,10 +114,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.55,
     shadowRadius: 12,
     elevation: 12,
-  },
-  pressed: {
-    opacity: 0.92,
-    transform: [{ scale: 0.96 }],
   },
   fab: {
     width: FAB_SIZE,

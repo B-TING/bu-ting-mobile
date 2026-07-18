@@ -9,7 +9,13 @@ import { AppIcon } from '../icons/AppIcon';
 
 export type NavbarTab = 'home' | 'route' | 'feed' | 'my';
 
+/** 탭 아이콘·라벨 영역 높이 (safe area / home indicator 패딩 제외) */
 export const NAVBAR_HEIGHT = 72;
+
+/** absolute Navbar가 덮는 전체 높이 — 탭 콘텐츠·FAB 하단 clearance */
+export function getNavbarOverlayHeight(safeAreaBottom: number): number {
+  return NAVBAR_HEIGHT + Math.max(safeAreaBottom, 8);
+}
 
 type TabConfig = {
   id: NavbarTab;

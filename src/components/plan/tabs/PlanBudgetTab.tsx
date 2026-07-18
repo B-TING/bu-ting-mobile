@@ -30,6 +30,7 @@ type PlanBudgetTabProps = {
   budgetTotal: number;
   members: PlanMember[];
   onAddExpense?: () => void;
+  scrollBottomInset?: number;
 };
 
 const ROW = 'flex-row items-center px-4 py-3.5';
@@ -205,9 +206,11 @@ export function PlanBudgetTab({
   budgetTotal,
   members,
   onAddExpense,
+  scrollBottomInset = 0,
 }: PlanBudgetTabProps) {
   const [expandedEntryId, setExpandedEntryId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const listBottomPadding = 24 + scrollBottomInset;
 
   const categoryTotals = useMemo(
     () => sumBudgetByCategory(budgetEntries),
@@ -271,8 +274,8 @@ export function PlanBudgetTab({
           className="mt-3 flex-1"
           contentContainerStyle={
             dateTabs.length === 0
-              ? { paddingBottom: 24, flexGrow: 1 }
-              : { paddingBottom: 24 }
+              ? { paddingBottom: listBottomPadding, flexGrow: 1 }
+              : { paddingBottom: listBottomPadding }
           }
           showsVerticalScrollIndicator={false}
           nestedScrollEnabled>
