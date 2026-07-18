@@ -457,7 +457,7 @@ export async function bootstrapAuth(): Promise<void> {
 
   }
 
-
+  useAppStore.getState().setOfflineMode(false);
 
   if (selectIsAuthenticated(state) && state.user) {
 

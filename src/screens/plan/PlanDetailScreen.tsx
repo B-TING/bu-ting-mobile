@@ -70,6 +70,8 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
   const paramPlanId = route.params?.planId;
   const insets = useSafeAreaInsets();
   const language = useAppLanguage();
+  const offlineMode = useAppStore(s => s.offlineMode);
+  const setOfflineMode = useAppStore(s => s.setOfflineMode);
 
   const plans = usePlanStore(s => s.plans);
   const activePlanId = usePlanStore(s => s.activePlanId);
@@ -106,6 +108,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
   const isApiPlan = plan?.source === 'api';
   const isPlanOfflineSync = usePlanStore(selectIsPlanOfflineSync(planId));
   const scheduleReadOnly = isApiPlan && isPlanOfflineSync;
+  const viewOnly = scheduleReadOnly || offlineMode;
   const travelId = plan?.apiTravelId ?? plan?.planId;
 
   const copy = useCopy('planDetail');
@@ -121,14 +124,14 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
 
   const { syncFromServer } = useApiTravelPlanSync({
     planId,
-    enabled: isApiPlan,
+    enabled: isApiPlan && !offlineMode,
     accessToken,
   });
   useTravelMembersSync({
     planId,
     travelId,
     accessToken,
-    enabled: isApiPlan,
+    enabled: isApiPlan && !offlineMode,
   });
   const planReviews =
     useTravelogueStore(s => (planId ? s.reviewsByPlan[planId] : undefined)) ??
@@ -258,8 +261,14 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
   const scheduleDay =
     enrichedPlan?.itinerary.find(d => d.dayNumber === selectedDay) ??
     enrichedPlan?.itinerary[0];
-  const scheduleRoutes = scheduleDay ? sortedRoutes(scheduleDay.routes) : [];
-  const schedulePlaceIds = scheduleRoutes.map(r => r.placeId);
+  const scheduleRoutes = useMemo(
+    () => (scheduleDay ? sortedRoutes(scheduleDay.routes) : []),
+    [scheduleDay],
+  );
+  const schedulePlaceIds = useMemo(
+    () => scheduleRoutes.map(r => r.placeId),
+    [scheduleRoutes],
+  );
   const pickRoute =
     scheduleModal.kind === 'pick'
       ? (scheduleRoutes.find(r => r.itemId === scheduleModal.itemId) ?? null)
@@ -274,7 +283,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
 
   const handleDeleteRoute = useCallback(
     async (route: RouteItem) => {
-      if (!planId || scheduleReadOnly) {
+      if (!planId || viewOnly) {
         if (scheduleReadOnly) {
           notifyScheduleReadOnly();
         }
@@ -297,7 +306,17 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
 
       removeRoute(planId, route.itemId);
     },
-    [planId, scheduleReadOnly, isApiPlan, accessToken, removeRoute, syncFromServer, lockScheduleOnApiError, notifyScheduleReadOnly],
+    [
+      planId,
+      viewOnly,
+      scheduleReadOnly,
+      isApiPlan,
+      accessToken,
+      removeRoute,
+      syncFromServer,
+      lockScheduleOnApiError,
+      notifyScheduleReadOnly,
+    ],
   );
 
   const resolveSelectedDayAfterRemove = useCallback(
@@ -325,7 +344,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
   );
 
   const handleAddDay = useCallback(async () => {
-    if (!planId || !enrichedPlan || scheduleReadOnly) {
+    if (!planId || !enrichedPlan || viewOnly) {
       if (scheduleReadOnly) {
         notifyScheduleReadOnly();
       }
@@ -362,6 +381,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     planId,
     enrichedPlan,
     scheduleReadOnly,
+    viewOnly,
     isApiPlan,
     accessToken,
     alert,
@@ -373,7 +393,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
   ]);
 
   const confirmRemoveDay = useCallback(async () => {
-    if (!planId || !enrichedPlan || !scheduleDay || scheduleReadOnly) {
+    if (!planId || !enrichedPlan || !scheduleDay || viewOnly) {
       return;
     }
 
@@ -400,7 +420,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     planId,
     enrichedPlan,
     scheduleDay,
-    scheduleReadOnly,
+    viewOnly,
     selectedDay,
     isApiPlan,
     accessToken,
@@ -412,7 +432,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
   ]);
 
   const handleRemoveDay = useCallback(() => {
-    if (!planId || !enrichedPlan || !scheduleDay || scheduleReadOnly) {
+    if (!planId || !enrichedPlan || !scheduleDay || viewOnly) {
       if (scheduleReadOnly) {
         notifyScheduleReadOnly();
       }
@@ -443,6 +463,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     enrichedPlan,
     scheduleDay,
     scheduleReadOnly,
+    viewOnly,
     alert,
     copy,
     confirmRemoveDay,
@@ -451,7 +472,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
 
   const handleSaveRouteMemo = useCallback(
     async (route: RouteItem, memo: string | undefined) => {
-      if (!planId || scheduleReadOnly) {
+      if (!planId || viewOnly) {
         if (scheduleReadOnly) {
           notifyScheduleReadOnly();
         }
@@ -473,12 +494,21 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
         }
       }
     },
-    [planId, scheduleReadOnly, isApiPlan, accessToken, updateRouteMemo, lockScheduleOnApiError, notifyScheduleReadOnly],
+    [
+      planId,
+      viewOnly,
+      scheduleReadOnly,
+      isApiPlan,
+      accessToken,
+      updateRouteMemo,
+      lockScheduleOnApiError,
+      notifyScheduleReadOnly,
+    ],
   );
 
   const handlePickReplacement = useCallback(
     async (candidate: RebootPlaceCandidate, legMode?: TravelLegMode) => {
-      if (!pickRoute || !planId || !scheduleDay || scheduleReadOnly) {
+      if (!pickRoute || !planId || !scheduleDay || viewOnly) {
         return;
       }
 
@@ -528,7 +558,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
       accessToken,
       replaceRoute,
       closeScheduleModal,
-      scheduleReadOnly,
+      viewOnly,
       syncFromServer,
       lockScheduleOnApiError,
     ],
@@ -536,7 +566,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
 
   const handleReorderRoutes = useCallback(
     async (dayNumber: number, orderedItemIds: string[]) => {
-      if (!planId || scheduleReadOnly) {
+      if (!planId || viewOnly) {
         return;
       }
 
@@ -567,12 +597,21 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
         await syncFromServer();
       }
     },
-    [planId, scheduleReadOnly, enrichedPlan, isApiPlan, accessToken, reorderRoutes, syncFromServer, lockScheduleOnApiError],
+    [
+      planId,
+      viewOnly,
+      enrichedPlan,
+      isApiPlan,
+      accessToken,
+      reorderRoutes,
+      syncFromServer,
+      lockScheduleOnApiError,
+    ],
   );
 
   const handleOptimizeDayRoute = useCallback(
     async (dayNumber: number) => {
-      if (!planId || scheduleReadOnly) {
+      if (!planId || viewOnly) {
         return;
       }
 
@@ -609,12 +648,23 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
         await syncFromServer();
       }
     },
-    [planId, scheduleReadOnly, enrichedPlan, isApiPlan, accessToken, reorderRoutes, syncFromServer, alert, copy, lockScheduleOnApiError],
+    [
+      planId,
+      viewOnly,
+      enrichedPlan,
+      isApiPlan,
+      accessToken,
+      reorderRoutes,
+      syncFromServer,
+      alert,
+      copy,
+      lockScheduleOnApiError,
+    ],
   );
 
   const handleAddPlace = useCallback(
     async (candidate: RebootPlaceCandidate, legMode?: TravelLegMode) => {
-      if (!scheduleDay || !planId || !enrichedPlan || scheduleReadOnly) {
+      if (!scheduleDay || !planId || !enrichedPlan || viewOnly) {
         return;
       }
 
@@ -658,7 +708,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
       language,
       planId,
       enrichedPlan,
-      scheduleReadOnly,
+      viewOnly,
       isApiPlan,
       accessToken,
       addRoute,
@@ -709,7 +759,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
 
   const handleQuickRating = useCallback(
     (routeItem: RouteItem, rating: number) => {
-      if (!planId) {
+      if (offlineMode || !planId) {
         return;
       }
       upsertPlaceReview(planId, {
@@ -723,15 +773,23 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
         media: [],
       });
     },
-    [planId, upsertPlaceReview],
+    [planId, upsertPlaceReview, offlineMode],
   );
+
+  const exitOffline = useCallback(() => {
+    setOfflineMode(false);
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Login' }],
+    });
+  }, [navigation, setOfflineMode]);
 
   useEffect(() => {
     openRebootPendingRef.current = route.params?.openReboot === true;
   }, [route.params?.openReboot]);
 
   useEffect(() => {
-    if (!openRebootPendingRef.current || !enrichedPlan) {
+    if (offlineMode || !openRebootPendingRef.current || !enrichedPlan) {
       return;
     }
 
@@ -744,7 +802,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     }, 400);
 
     return () => clearTimeout(timer);
-  }, [enrichedPlan, navigation]);
+  }, [enrichedPlan, navigation, offlineMode]);
 
   useEffect(() => {
     if (scheduleModal.kind === 'pick' && !pickRoute) {
@@ -754,9 +812,13 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
 
   useEffect(() => {
     if (!enrichedPlan) {
-      navigation.replace('PlanWizard');
+      if (offlineMode) {
+        exitOffline();
+      } else {
+        navigation.replace('PlanWizard');
+      }
     }
-  }, [enrichedPlan, navigation]);
+  }, [enrichedPlan, navigation, offlineMode, exitOffline]);
 
   if (!enrichedPlan) {
     return null;
@@ -784,15 +846,41 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
       <View className="flex-row items-center border-b border-brand-border bg-brand-surface px-4 py-3">
         {!embeddedInMainTabs ? (
           <BackButton
-            accessibilityLabel={language === 'ko' ? '메인으로' : 'Back to home'}
-            onPress={() => navigateToMainTab(navigation, 'home')}
+            accessibilityLabel={
+              offlineMode
+                ? language === 'ko'
+                  ? '로그인으로'
+                  : 'Back to login'
+                : language === 'ko'
+                  ? '메인으로'
+                  : 'Back to home'
+            }
+            onPress={() => {
+              if (offlineMode) {
+                exitOffline();
+              } else {
+                navigateToMainTab(navigation, 'home');
+              }
+            }}
           />
         ) : null}
         <Text className="flex-1 text-lg font-bold text-brand-text" numberOfLines={1}>
           {enrichedPlan.title}
         </Text>
-        {isApiPlan ? <PlanSyncStatusDot offline={isPlanOfflineSync} /> : null}
+        {isApiPlan && !offlineMode ? (
+          <PlanSyncStatusDot offline={isPlanOfflineSync} />
+        ) : null}
       </View>
+
+      {offlineMode ? (
+        <View className="border-b border-brand-border bg-brand-selected px-4 py-2">
+          <Text className="text-center text-xs font-semibold text-brand-primary">
+            {language === 'ko'
+              ? '오프라인 모드 · 열람만 가능'
+              : 'Offline mode · view only'}
+          </Text>
+        </View>
+      ) : null}
 
       <PlanTabPager
         active={tab}
@@ -813,7 +901,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
               onNavigateToTab={setTab}
               recordsProgress={recordsProgress}
               isTraveloguePublished={isPlanPublished}
-              showInvite={isApiPlan && canInvite}
+              showInvite={isApiPlan && canInvite && !offlineMode}
               onInvite={handleInvite}
             />
           ),
@@ -824,27 +912,39 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
               plan={enrichedPlan}
               language={language}
               copy={copy}
-              readOnly={scheduleReadOnly}
+              readOnly={viewOnly}
               onReadOnlyPress={scheduleReadOnly ? notifyScheduleReadOnly : undefined}
               selectedDay={selectedDay}
               planReviews={planReviews}
               onSelectDay={setSelectedDay}
               onToggleVisited={itemId => {
-                if (scheduleReadOnly) {
-                  notifyScheduleReadOnly();
+                if (viewOnly) {
+                  if (scheduleReadOnly) {
+                    notifyScheduleReadOnly();
+                  }
                   return;
                 }
                 toggleVisited(planId, itemId);
               }}
-              onWriteReview={setReviewFormRoute}
+              onWriteReview={routeItem => {
+                if (offlineMode) {
+                  return;
+                }
+                setReviewFormRoute(routeItem);
+              }}
               onQuickRating={handleQuickRating}
               onDeleteRoute={handleDeleteRoute}
-              onSaveRouteMemo={scheduleReadOnly ? undefined : handleSaveRouteMemo}
-              onReorderRoutes={scheduleReadOnly ? undefined : isApiPlan ? handleReorderRoutes : undefined}
-              onOptimizeDayRoute={scheduleReadOnly ? undefined : isApiPlan ? handleOptimizeDayRoute : undefined}
-              onScheduleModalChange={setScheduleModal}
+              onSaveRouteMemo={viewOnly ? undefined : handleSaveRouteMemo}
+              onReorderRoutes={viewOnly ? undefined : isApiPlan ? handleReorderRoutes : undefined}
+              onOptimizeDayRoute={viewOnly ? undefined : isApiPlan ? handleOptimizeDayRoute : undefined}
+              onScheduleModalChange={modal => {
+                if (offlineMode) {
+                  return;
+                }
+                setScheduleModal(modal);
+              }}
               onReorderActiveChange={setScheduleReorderActive}
-              canAddDay={!scheduleReadOnly}
+              canAddDay={!viewOnly}
               canRemoveDay={canRemovePlanDay(enrichedPlan)}
               onAddDay={() => {
                 void handleAddDay();
@@ -861,7 +961,9 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
               budgetEntries={budgetEntries}
               budgetTotal={budgetTotal}
               members={enrichedPlan.members}
-              onAddExpense={() => setBudgetModalOpen(true)}
+              onAddExpense={
+                offlineMode ? undefined : () => setBudgetModalOpen(true)
+              }
             />
           ),
           records: (
@@ -871,21 +973,30 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
               language={language}
               authorName={displayName}
               destinationLabel={enrichedPlan.title}
-              isTripActive={enrichedPlan.status !== 'COMPLETED'}
-              onPublished={() => {
-                void handleCompletePlan();
-              }}
-              onEndTrip={requestCompletePlan}
-              onViewFeed={() => navigateToMainTab(navigation, 'feed')}
-              onViewTravelogue={travelogueId =>
-                navigation.navigate('TravelogueDetail', { travelogueId })
+              isTripActive={!offlineMode && enrichedPlan.status !== 'COMPLETED'}
+              onPublished={
+                offlineMode
+                  ? undefined
+                  : () => {
+                      void handleCompletePlan();
+                    }
+              }
+              onEndTrip={offlineMode ? undefined : requestCompletePlan}
+              onViewFeed={
+                offlineMode ? undefined : () => navigateToMainTab(navigation, 'feed')
+              }
+              onViewTravelogue={
+                offlineMode
+                  ? undefined
+                  : travelogueId =>
+                      navigation.navigate('TravelogueDetail', { travelogueId })
               }
             />
           ),
         }}
       />
 
-      {tab === 'schedule' && !scheduleReadOnly ? (
+      {tab === 'schedule' && !viewOnly ? (
         <RouteOptimizeFab
           bottom={routeFabBottom(embeddedInMainTabs ? 0 : insets.bottom)}
           label={copy.routeOptimize}
@@ -896,7 +1007,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
       ) : null}
 
       <BudgetEntryModal
-        visible={budgetModalOpen}
+        visible={!offlineMode && budgetModalOpen}
         copy={copy}
         language={language}
         members={enrichedPlan.members}
@@ -907,7 +1018,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
       />
 
       <PlacePickModal
-        visible={scheduleModal.kind === 'pick' && !!pickRoute}
+        visible={!offlineMode && scheduleModal.kind === 'pick' && !!pickRoute}
         anchor={pickRoute?.location}
         language={language}
         showTransportMode
@@ -930,7 +1041,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
       />
 
       <PlacePickModal
-        visible={scheduleModal.kind === 'add'}
+        visible={!offlineMode && scheduleModal.kind === 'add'}
         anchor={addPlaceAnchor}
         language={language}
         showTransportMode
@@ -953,7 +1064,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
       />
 
       <PlaceReviewFormModal
-        visible={!!reviewFormRoute}
+        visible={!offlineMode && !!reviewFormRoute}
         route={reviewFormRoute}
         existing={
           reviewFormRoute

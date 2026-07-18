@@ -8,6 +8,7 @@ import { isTourApiContentId, routeTypeToContentTypeId } from '../utils/places/ro
 import type { PlanWizardAnswers } from '../types/planWizard';
 import type { BudgetEntry, RouteItem, TravelLegMode, TravelPlan } from '../types/travelPlan';
 import type { Travelogue } from '../types/travelReview';
+import { isPlanForCurrentApiServer } from '../utils/api/apiServerOrigin';
 import { createId } from '../utils/common/id';
 import { buildPlanFromTravelogue } from '../utils/review/travelReview';
 import { optimizeRouteOrder } from '../utils/plan/routeOptimize';
@@ -348,7 +349,12 @@ export function selectActivePlan(state: PlanState): TravelPlan | null {
     return null;
   }
   const active = state.plans.find(p => p.planId === state.activePlanId);
-  if (!active || active.status === 'COMPLETED' || !isServerBackedPlan(active)) {
+  if (
+    !active ||
+    active.status === 'COMPLETED' ||
+    !isServerBackedPlan(active) ||
+    !isPlanForCurrentApiServer(active)
+  ) {
     return null;
   }
   return active;
@@ -360,15 +366,36 @@ export function selectHomeFeaturedPlan(state: PlanState): TravelPlan | null {
     return null;
   }
   const plan = state.plans.find(p => p.planId === state.activePlanId);
-  if (!plan || !isServerBackedPlan(plan)) {
+  if (!plan || !isServerBackedPlan(plan) || !isPlanForCurrentApiServer(plan)) {
     return null;
   }
   return plan;
 }
 
+/** 오프라인 열람용 — 활성 일정 우선, 없으면 가장 최근 생성 일정 */
+export function selectLatestLocalPlan(state: PlanState): TravelPlan | null {
+  if (state.plans.length === 0) {
+    return null;
+  }
+  if (state.activePlanId) {
+    const active = state.plans.find(p => p.planId === state.activePlanId);
+    if (active) {
+      return active;
+    }
+  }
+  return [...state.plans].sort((a, b) =>
+    (b.createdAt || '').localeCompare(a.createdAt || ''),
+  )[0];
+}
+
 export function selectPlanById(planId: string) {
-  return (state: PlanState) =>
-    state.plans.find(p => p.planId === planId) ?? null;
+  return (state: PlanState) => {
+    const plan = state.plans.find(p => p.planId === planId) ?? null;
+    if (!plan || !isPlanForCurrentApiServer(plan)) {
+      return null;
+    }
+    return plan;
+  };
 }
 
 export function selectIsPlanOfflineSync(planId: string) {
