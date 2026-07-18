@@ -29,7 +29,7 @@ type PlanBudgetTabProps = {
   budgetEntries: BudgetEntry[];
   budgetTotal: number;
   members: PlanMember[];
-  onAddExpense: () => void;
+  onAddExpense?: () => void;
   scrollBottomInset?: number;
 };
 
@@ -282,14 +282,16 @@ export function PlanBudgetTab({
           {dateTabs.length === 0 ? (
             <View className="justify-center">
               <Text className="text-center text-sm text-brand-muted">{copy.budgetEmpty}</Text>
-              <Pressable
-                onPress={onAddExpense}
-                className="mt-4 items-center rounded-2xl bg-brand-primary py-3 active:opacity-90">
-                <View className="flex-row items-center gap-1.5">
-                  <AppIcon name="plus" size={14} color={ICON_COLOR_WHITE} strokeWidth={2.5} />
-                  <Text className="font-bold text-white">{copy.budgetAdd}</Text>
-                </View>
-              </Pressable>
+              {onAddExpense ? (
+                <Pressable
+                  onPress={onAddExpense}
+                  className="mt-4 items-center rounded-2xl bg-brand-primary py-3 active:opacity-90">
+                  <View className="flex-row items-center gap-1.5">
+                    <AppIcon name="plus" size={14} color={ICON_COLOR_WHITE} strokeWidth={2.5} />
+                    <Text className="font-bold text-white">{copy.budgetAdd}</Text>
+                  </View>
+                </Pressable>
+              ) : null}
             </View>
           ) : selectedEntries.length === 0 ? (
             <View className="py-6">

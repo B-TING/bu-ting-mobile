@@ -18,6 +18,7 @@ import type { RootStackParamList } from '../../navigation/types';
 import { completeProviderLogin } from '../../services/auth/authSession';
 import { AuthServiceError } from '../../services/auth/authService';
 import { OAuthSdkError, signInWithProvider } from '../../services/auth/oauthSdkService';
+import { selectLatestLocalPlan, useAppStore, usePlanStore } from '../../stores';
 import type { OAuthProvider } from '../../types/auth';
 import { logAuth } from '../../utils/auth/authLogger';
 import { cn } from '../../utils/common/cn';
@@ -28,6 +29,7 @@ export function LoginScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const language = useAppLanguage();
   const copy = useCopy('setup');
+  const setOfflineMode = useAppStore(state => state.setOfflineMode);
   const [rememberMe, setRememberMe] = useState(true);
   const [loadingProvider, setLoadingProvider] = useState<OAuthProvider | null>(
     null,
@@ -84,6 +86,17 @@ export function LoginScreen({ navigation }: Props) {
     [language, navigation, rememberMe],
   );
 
+  const onEnterOfflineMode = useCallback(() => {
+    const plan = selectLatestLocalPlan(usePlanStore.getState());
+    if (!plan) {
+      setErrorMessage(copy.offlineModeEmpty);
+      return;
+    }
+    setErrorMessage(null);
+    setOfflineMode(true);
+    navigation.replace('PlanDetail', { planId: plan.planId });
+  }, [copy.offlineModeEmpty, navigation, setOfflineMode]);
+
   return (
     <View
       className="flex-1 bg-brand-background px-6"
@@ -136,12 +149,26 @@ export function LoginScreen({ navigation }: Props) {
         ) : null}
       </View>
 
-      <View className="pt-2" style={{ paddingBottom: insets.bottom + 20 }}>
-        <Text className="text-center text-xs text-brand-muted">
+      <View className="items-center pt-2" style={{ paddingBottom: insets.bottom + 20 }}>
+        <Text className="mb-4 text-center text-xs text-brand-muted">
           {language === 'ko'
             ? '소셜 계정으로 가입·로그인합니다. 최초 로그인 시 자동으로 회원가입됩니다.'
             : 'Sign up or sign in with a social account. First sign-in creates your account.'}
         </Text>
+
+        <Pressable
+          disabled={isLoading}
+          onPress={onEnterOfflineMode}
+          accessibilityRole="button"
+          accessibilityLabel={copy.offlineMode}
+          className="active:opacity-70">
+          <Text className="text-center text-sm font-semibold text-brand-primary">
+            {copy.offlineMode}
+          </Text>
+          <Text className="mt-1 text-center text-xs text-brand-muted">
+            {copy.offlineModeHint}
+          </Text>
+        </Pressable>
       </View>
     </View>
   );

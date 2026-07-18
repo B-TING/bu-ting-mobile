@@ -141,7 +141,11 @@ export function PlanRecordsTab({
               writeLabel={copy.writeReview}
               editLabel={copy.editReview}
               visitFirstLabel={copy.visitFirst}
-              onPress={() => setReviewRoute(route)}
+              onPress={
+                onPublished || onEndTrip
+                  ? () => setReviewRoute(route)
+                  : undefined
+              }
             />
           );
         })
@@ -183,15 +187,15 @@ export function PlanRecordsTab({
             </Pressable>
           ) : null}
         </View>
-      ) : (
+      ) : onPublished ? (
         <Pressable
           onPress={() => setComposeOpen(true)}
           className="mt-4 items-center rounded-2xl bg-brand-primary py-3 active:opacity-90">
           <Text className="font-bold text-white">{copy.composeTravelogue}</Text>
         </Pressable>
-      )}
+      ) : null}
 
-      {!isPublished && progress.total > 0 && !progress.allDone ? (
+      {!isPublished && onPublished && progress.total > 0 && !progress.allDone ? (
         <Text className="mt-2 text-center text-xs text-brand-muted">
           {copy.composePartialHint}
         </Text>

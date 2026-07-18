@@ -19,7 +19,7 @@ type BudgetSummarySectionProps = {
   budgetTotal: number;
   expenseCount: number;
   totals: CategoryTotals;
-  onAddExpense: () => void;
+  onAddExpense?: () => void;
 };
 
 function formatPercent(amount: number, total: number): string {
@@ -183,14 +183,16 @@ export function BudgetSummarySection({
             {copy.budgetExpenseCount(expenseCount)}
           </Text>
         </View>
-        <Pressable
-          onPress={onAddExpense}
-          className="rounded-xl bg-brand-primary px-3 py-2 active:opacity-90">
-          <View className="flex-row items-center gap-1">
-            <AppIcon name="plus" size={12} color={ICON_COLOR_WHITE} strokeWidth={2.5} />
-            <Text className="text-xs font-bold text-white">{copy.budgetAdd}</Text>
-          </View>
-        </Pressable>
+        {onAddExpense ? (
+          <Pressable
+            onPress={onAddExpense}
+            className="rounded-xl bg-brand-primary px-3 py-2 active:opacity-90">
+            <View className="flex-row items-center gap-1">
+              <AppIcon name="plus" size={12} color={ICON_COLOR_WHITE} strokeWidth={2.5} />
+              <Text className="text-xs font-bold text-white">{copy.budgetAdd}</Text>
+            </View>
+          </Pressable>
+        ) : null}
       </View>
 
       <GaugeBar segments={activeSegments} />
