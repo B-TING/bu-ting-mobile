@@ -48,6 +48,7 @@ type AppState = {
     options?: { userId?: string | null },
   ) => void;
   saveUserOnboarding: (userId: string, profile: OnboardingProfile) => void;
+  clearUserOnboarding: (userId: string) => void;
   setActiveOnboarding: (userId: string) => void;
   clearGuestOnboarding: () => void;
   resetSetup: () => void;
@@ -114,6 +115,16 @@ export const useAppStore = create<AppState>()(
           onboarding: record,
         }));
       },
+      clearUserOnboarding: userId =>
+        set(state => {
+          const { [userId]: _removed, ...rest } = state.onboardingByUserId;
+          const activeCleared =
+            state.onboarding?.ownerUserId === userId ? null : state.onboarding;
+          return {
+            onboardingByUserId: rest,
+            onboarding: activeCleared,
+          };
+        }),
       setActiveOnboarding: userId =>
         set(state => ({
           onboarding: state.onboardingByUserId[userId] ?? null,
@@ -171,10 +182,14 @@ export const useAppStore = create<AppState>()(
 
 export function selectOnboardingForUser(userId: string | null | undefined) {
   return (state: AppState): OnboardingProfile | null => {
-    if (userId) {
-      return state.onboardingByUserId[userId] ?? null;
+    const profile = userId
+      ? state.onboardingByUserId[userId] ?? null
+      : state.guestOnboarding ?? state.onboarding;
+    // 과거 skippedAll: true 캐시는 취향 없음으로 취급
+    if (profile?.skippedAll) {
+      return null;
     }
-    return state.guestOnboarding ?? state.onboarding;
+    return profile;
   };
 }
 
