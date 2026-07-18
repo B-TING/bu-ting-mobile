@@ -13,7 +13,6 @@ import {
 import { ApiClientError, apiGet, apiPut } from '../api/apiClient';
 import {
   fromTravelSurveyResponse,
-  shouldSyncTravelSurvey,
   toTravelSurveyRequest,
 } from './travelSurveyMapper';
 
@@ -36,7 +35,16 @@ function mapTravelSurveyError(error: ApiClientError): TravelSurveyServiceError {
 function isTravelSurveyPayload(
   value: TravelSurveyProfileResponse | undefined,
 ): value is TravelSurveyProfileResponse {
-  return Boolean(value && 'preferredLanguage' in value);
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  return (
+    'preferredLanguage' in value ||
+    'skippedAll' in value ||
+    'isPlanned' in value ||
+    'purposes' in value ||
+    'completedAt' in value
+  );
 }
 
 export async function fetchTravelSurvey(
@@ -80,13 +88,6 @@ export async function putTravelSurvey(
   profile: OnboardingProfile,
   options?: { userId?: string },
 ): Promise<TravelSurveyProfileResponse> {
-  if (!shouldSyncTravelSurvey(profile)) {
-    logTravelSurvey('skip', 'PUT skipped — skippedAll is true', {
-      detail: { userId: options?.userId ?? profile.ownerUserId },
-    });
-    throw new TravelSurveyServiceError('Skipped onboarding is not synced to server.');
-  }
-
   const request: TravelSurveyProfileRequest = toTravelSurveyRequest(profile);
   const userId = options?.userId ?? profile.ownerUserId ?? undefined;
 
@@ -135,7 +136,15 @@ export async function putTravelSurveyProfile(
   fallbackLanguage: OnboardingProfile['language'],
 ): Promise<OnboardingProfile> {
   const response = await putTravelSurvey(accessToken, profile, { userId: ownerUserId });
-  return fromTravelSurveyResponse(response, fallbackLanguage, ownerUserId);
+  const mapped = fromTravelSurveyResponse(response, fallbackLanguage, ownerUserId);
+  if (mapped) {
+    return mapped;
+  }
+  return {
+    ...profile,
+    skippedAll: false,
+    ownerUserId,
+  };
 }
 
 export async function fetchTravelSurveyProfile(

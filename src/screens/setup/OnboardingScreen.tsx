@@ -26,9 +26,13 @@ import { useAppLanguage, useCopy } from '../../i18n';
 import type { OnboardingFlowStep, OnboardingStepId } from '../../constants/setup/onboarding';
 import type { RootStackParamList } from '../../navigation/types';
 import { buildUserPromptContext } from '../../services/setup/promptBuilder';
+import { hasAnsweredSurvey } from '../../services/setup/travelSurveyMapper';
 import { persistTravelSurveyForUser } from '../../services/setup/travelSurveySync';
 import { selectOnboardingForUser, useAppStore } from '../../stores';
-import { selectIsAuthenticated, useAuthStore } from '../../stores/useAuthStore';
+import {
+  selectReusableAccessToken,
+  useAuthStore,
+} from '../../stores/useAuthStore';
 import type {
   BusanFamiliarity,
   OnboardingAnswers,
@@ -83,6 +87,52 @@ function questionIndexForStep(
   return null;
 }
 
+function applyQuestionSkip(
+  prev: OnboardingAnswers,
+  questionIndex: number,
+): OnboardingAnswers {
+  const skippedSteps = prev.skippedSteps.includes(questionIndex)
+    ? prev.skippedSteps
+    : [...prev.skippedSteps, questionIndex];
+  const next: OnboardingAnswers = { ...prev, skippedSteps, skippedAll: false };
+  switch (QUESTION_ORDER[questionIndex]) {
+    case 'travelStyle':
+      next.travelStyle = null;
+      break;
+    case 'schedulePace':
+      next.schedulePace = null;
+      break;
+    case 'companions':
+      next.companions = null;
+      break;
+    case 'luggage':
+      next.luggage = null;
+      break;
+    case 'purposes':
+      next.purposes = [];
+      break;
+    case 'busanFamiliarity':
+      next.busanFamiliarity = null;
+      break;
+    default:
+      break;
+  }
+  return next;
+}
+
+function withAnsweredQuestion(
+  prev: OnboardingAnswers,
+  questionIndex: number,
+  patch: Partial<OnboardingAnswers>,
+): OnboardingAnswers {
+  return {
+    ...prev,
+    ...patch,
+    skippedSteps: prev.skippedSteps.filter(index => index !== questionIndex),
+    skippedAll: false,
+  };
+}
+
 export function OnboardingScreen({ navigation, route }: Props) {
   const mode = route.params?.mode ?? 'setup';
   const isEditMode = mode === 'edit';
@@ -91,9 +141,8 @@ export function OnboardingScreen({ navigation, route }: Props) {
   const { alert } = useAppAlert();
   const language = useAppLanguage();
   const copy = useCopy('setup');
-  const isAuthenticated = useAuthStore(selectIsAuthenticated);
   const userId = useAuthStore(state => state.user?.userId ?? null);
-  const accessToken = useAuthStore(state => state.accessToken);
+  const accessToken = useAuthStore(selectReusableAccessToken);
   const savedOnboarding = useAppStore(
     isQuestionOnlyFlow ? selectOnboardingForUser(userId) : state => state.onboarding,
   );
@@ -103,11 +152,12 @@ export function OnboardingScreen({ navigation, route }: Props) {
   const stepCount = flowSteps.length;
 
   const [step, setStep] = useState(0);
-  const [answers, setAnswers] = useState<OnboardingAnswers>(() =>
-    isEditMode && savedOnboarding
-      ? profileToAnswers(savedOnboarding)
-      : emptyAnswers(),
-  );
+  const [answers, setAnswers] = useState<OnboardingAnswers>(() => {
+    if (isEditMode && savedOnboarding && hasAnsweredSurvey(savedOnboarding)) {
+      return profileToAnswers({ ...savedOnboarding, skippedAll: false });
+    }
+    return emptyAnswers();
+  });
   const [pendingComplete, setPendingComplete] = useState<OnboardingAnswers | null>(
     null,
   );
@@ -121,26 +171,36 @@ export function OnboardingScreen({ navigation, route }: Props) {
       const completedAt = new Date().toISOString();
       const profile: OnboardingProfile = {
         ...finalAnswers,
+        skippedAll: false,
         language,
         completedAt,
         aiPromptContext: '',
       };
       profile.aiPromptContext = buildUserPromptContext(profile);
 
-      if (isAuthenticated && userId && accessToken) {
-        try {
-          const synced = await persistTravelSurveyForUser(
-            profile,
-            userId,
-            accessToken,
-          );
-          completeOnboardingStore(synced, { userId });
-        } catch (error) {
-          console.warn('[Bu-Ting] travel survey save failed', error);
-          alert({
-            title: copy.travelSurveySaveError,
-          });
-          return;
+      // 계정 취향은 userId 기준으로 저장. 게스트 분기는 로그인 전 플로우만.
+      if (userId) {
+        if (accessToken) {
+          try {
+            const synced = await persistTravelSurveyForUser(
+              profile,
+              userId,
+              accessToken,
+            );
+            completeOnboardingStore(synced, { userId });
+          } catch (error) {
+            console.warn('[Bu-Ting] travel survey save failed', error);
+            alert({
+              title: copy.travelSurveySaveError,
+            });
+            return;
+          }
+        } else {
+          // 토큰 만료 시에도 guest로 새지 않고 계정 로컬 캐시 갱신
+          completeOnboardingStore(profile, { userId });
+          if (isEditMode || isAccountMode) {
+            alert({ title: copy.travelSurveySaveError });
+          }
         }
       } else {
         completeOnboardingStore(profile, { userId: null });
@@ -163,7 +223,6 @@ export function OnboardingScreen({ navigation, route }: Props) {
       completeOnboardingStore,
       isEditMode,
       isAccountMode,
-      isAuthenticated,
       userId,
       accessToken,
       alert,
@@ -180,15 +239,6 @@ export function OnboardingScreen({ navigation, route }: Props) {
     },
     [isQuestionOnlyFlow, persistProfile],
   );
-
-  const markQuestionSkipped = (questionIndex: number) => {
-    setAnswers(prev => ({
-      ...prev,
-      skippedSteps: prev.skippedSteps.includes(questionIndex)
-        ? prev.skippedSteps
-        : [...prev.skippedSteps, questionIndex],
-    }));
-  };
 
   const goNext = () => {
     if (step < stepCount - 1) {
@@ -239,14 +289,19 @@ export function OnboardingScreen({ navigation, route }: Props) {
     }
     if (stepConfig.kind === 'question') {
       const qIndex = questionIndexForStep(flowSteps, step);
-      if (qIndex !== null && qIndex >= 0) {
-        markQuestionSkipped(qIndex);
-      }
       const skipDelta = isEditMode ? 1 : 2;
       const nextStep = step + skipDelta;
       if (nextStep >= stepCount) {
-        showThankYouThenComplete(answers);
+        const finalAnswers =
+          qIndex !== null && qIndex >= 0
+            ? applyQuestionSkip(answers, qIndex)
+            : answers;
+        setAnswers(finalAnswers);
+        showThankYouThenComplete(finalAnswers);
         return;
+      }
+      if (qIndex !== null && qIndex >= 0) {
+        setAnswers(prev => applyQuestionSkip(prev, qIndex));
       }
       setStep(nextStep);
       return;
@@ -259,19 +314,16 @@ export function OnboardingScreen({ navigation, route }: Props) {
       navigation.goBack();
       return;
     }
+    // skippedAll 플래그 없이 빈 설문으로 완료 처리
+    const emptySkipped: OnboardingAnswers = {
+      ...emptyAnswers(),
+      skippedSteps: Array.from({ length: ONBOARDING_QUESTION_COUNT }, (_, i) => i),
+    };
     if (isAccountMode) {
-      void persistProfile({
-        ...answers,
-        skippedAll: true,
-        skippedSteps: Array.from({ length: ONBOARDING_QUESTION_COUNT }, (_, i) => i),
-      });
+      void persistProfile(emptySkipped);
       return;
     }
-    showThankYouThenComplete({
-      ...answers,
-      skippedAll: true,
-      skippedSteps: Array.from({ length: ONBOARDING_QUESTION_COUNT }, (_, i) => i),
-    });
+    showThankYouThenComplete(emptySkipped);
   };
 
   const canProceed = (): boolean => {
@@ -302,12 +354,12 @@ export function OnboardingScreen({ navigation, route }: Props) {
   const togglePurpose = (purpose: VisitPurpose) => {
     setAnswers(prev => {
       const exists = prev.purposes.includes(purpose);
-      return {
-        ...prev,
-        purposes: exists
-          ? prev.purposes.filter(p => p !== purpose)
-          : [...prev.purposes, purpose],
-      };
+      const purposes = exists
+        ? prev.purposes.filter(p => p !== purpose)
+        : [...prev.purposes, purpose];
+      return withAnsweredQuestion(prev, QUESTION_ORDER.indexOf('purposes'), {
+        purposes,
+      });
     });
   };
 
@@ -323,7 +375,11 @@ export function OnboardingScreen({ navigation, route }: Props) {
             label={opt.label[language]}
             selected={answers.travelStyle === opt.value}
             onPress={() =>
-              setAnswers(prev => ({ ...prev, travelStyle: opt.value }))
+              setAnswers(prev =>
+                withAnsweredQuestion(prev, QUESTION_ORDER.indexOf('travelStyle'), {
+                  travelStyle: opt.value,
+                }),
+              )
             }
           />
         ));
@@ -334,7 +390,11 @@ export function OnboardingScreen({ navigation, route }: Props) {
             label={opt.label[language]}
             selected={answers.schedulePace === opt.value}
             onPress={() =>
-              setAnswers(prev => ({ ...prev, schedulePace: opt.value as SchedulePace }))
+              setAnswers(prev =>
+                withAnsweredQuestion(prev, QUESTION_ORDER.indexOf('schedulePace'), {
+                  schedulePace: opt.value as SchedulePace,
+                }),
+              )
             }
           />
         ));
@@ -345,7 +405,11 @@ export function OnboardingScreen({ navigation, route }: Props) {
             label={opt.label[language]}
             selected={answers.companions === opt.value}
             onPress={() =>
-              setAnswers(prev => ({ ...prev, companions: opt.value }))
+              setAnswers(prev =>
+                withAnsweredQuestion(prev, QUESTION_ORDER.indexOf('companions'), {
+                  companions: opt.value,
+                }),
+              )
             }
           />
         ));
@@ -356,7 +420,11 @@ export function OnboardingScreen({ navigation, route }: Props) {
             label={opt.label[language]}
             selected={answers.luggage === opt.value}
             onPress={() =>
-              setAnswers(prev => ({ ...prev, luggage: opt.value }))
+              setAnswers(prev =>
+                withAnsweredQuestion(prev, QUESTION_ORDER.indexOf('luggage'), {
+                  luggage: opt.value,
+                }),
+              )
             }
           />
         ));
@@ -381,10 +449,13 @@ export function OnboardingScreen({ navigation, route }: Props) {
             label={opt.label[language]}
             selected={answers.busanFamiliarity === opt.value}
             onPress={() =>
-              setAnswers(prev => ({
-                ...prev,
-                busanFamiliarity: opt.value as BusanFamiliarity,
-              }))
+              setAnswers(prev =>
+                withAnsweredQuestion(
+                  prev,
+                  QUESTION_ORDER.indexOf('busanFamiliarity'),
+                  { busanFamiliarity: opt.value as BusanFamiliarity },
+                ),
+              )
             }
           />
         ));

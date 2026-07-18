@@ -91,10 +91,8 @@ export function buildUserPromptContext(profile: OnboardingProfile): string {
         : 'Highlight features: travel journal (primary), GPS nearby guide (secondary)',
     );
   }
-  if (profile.skippedAll || profile.skippedSteps.length > 0) {
-    lines.push(
-      `Onboarding skipped steps: ${profile.skippedAll ? 'all' : profile.skippedSteps.join(', ')}`,
-    );
+  if (profile.skippedSteps.length > 0) {
+    lines.push(`Onboarding skipped steps: ${profile.skippedSteps.join(', ')}`);
   }
 
   return lines.join('\n');
