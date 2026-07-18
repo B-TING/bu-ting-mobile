@@ -10,6 +10,7 @@ import { BudgetEntryModal } from '../../components/plan/modals/BudgetEntryModal'
 import { PlacePickModal } from '../../components/plan/modals/PlacePickModal';
 import { TravelInviteLinkModal } from '../../components/plan/modals/TravelInviteLinkModal';
 import { RouteOptimizeFab, routeFabBottom } from '../../components/plan/fab/RouteOptimizeFab';
+import { getNavbarOverlayHeight } from '../../components/shared/navigation/Navbar';
 import { PlanBudgetTab } from '../../components/plan/tabs/PlanBudgetTab';
 import { PlanOverviewTab } from '../../components/plan/tabs/PlanOverviewTab';
 import { PlanRecordsTab } from '../../components/plan/tabs/PlanRecordsTab';
@@ -47,6 +48,9 @@ import {
 } from '../../stores';
 import { selectIsPlanOfflineSync } from '../../stores/usePlanStore';
 import { selectReusableAccessToken } from '../../stores/useAuthStore';
+import {
+  filterPlansForCurrentApiServer,
+} from '../../utils/api/apiServerOrigin';
 import { useApiTravelPlanSync } from '../../hooks/useApiTravelPlanSync';
 import { usePlanOfflineSyncFeedback } from '../../hooks/usePlanOfflineSyncFeedback';
 import type { BudgetEntry, RouteItem, TravelLegMode } from '../../types/travelPlan';
@@ -71,7 +75,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
   const insets = useSafeAreaInsets();
   const language = useAppLanguage();
 
-  const plans = usePlanStore(s => s.plans);
+  const plans = usePlanStore(s => filterPlansForCurrentApiServer(s.plans));
   const activePlanId = usePlanStore(s => s.activePlanId);
   const budgetByPlan = usePlanStore(s => s.budgetByPlan);
   const toggleVisited = usePlanStore(s => s.toggleRouteVisited);
@@ -779,6 +783,11 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     legTransit: copy.legTransit,
   };
 
+  /** 글래스 Navbar 위로 FAB·스크롤만 올리고, 화면 배경은 계속 비침 */
+  const contentBottomInset = embeddedInMainTabs
+    ? getNavbarOverlayHeight(insets.bottom)
+    : insets.bottom;
+
   return (
     <View className="flex-1 bg-brand-background">
       <View className="flex-row items-center border-b border-brand-border bg-brand-surface px-4 py-3">
@@ -798,6 +807,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
         active={tab}
         onChange={setTab}
         language={language}
+        scrollBottomInset={contentBottomInset}
         horizontalScrollEnabled={
           !scheduleReorderActive && tab !== 'schedule' && tab !== 'overview'
         }
@@ -850,7 +860,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
                 void handleAddDay();
               }}
               onRemoveDay={handleRemoveDay}
-              scrollBottomInset={embeddedInMainTabs ? 0 : undefined}
+              scrollBottomInset={contentBottomInset}
             />
           ),
           budget: (
@@ -862,6 +872,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
               budgetTotal={budgetTotal}
               members={enrichedPlan.members}
               onAddExpense={() => setBudgetModalOpen(true)}
+              scrollBottomInset={contentBottomInset}
             />
           ),
           records: (
@@ -887,7 +898,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
 
       {tab === 'schedule' && !scheduleReadOnly ? (
         <RouteOptimizeFab
-          bottom={routeFabBottom(embeddedInMainTabs ? 0 : insets.bottom)}
+          bottom={routeFabBottom(contentBottomInset)}
           label={copy.routeOptimize}
           addPlaceLabel={copy.addPlace}
           onPress={() => scheduleRef.current?.handleRouteOptimize()}
@@ -981,7 +992,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
       <TransientBottomToast
         text={toastText}
         opacity={toastOpacity}
-        bottom={(embeddedInMainTabs ? 0 : insets.bottom) + 16}
+        bottom={contentBottomInset + 16}
       />
     </View>
   );

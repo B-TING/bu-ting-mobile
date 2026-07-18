@@ -3,6 +3,7 @@ import { useFocusEffect } from '@react-navigation/native';
 
 import { fetchTravelMembers } from '../services/travel/travelTeamService';
 import { travelMembersToPlanMembers } from '../services/travel/travelMapper';
+import { isPlanForCurrentApiServer } from '../utils/api/apiServerOrigin';
 import { logTravelPlanApi } from '../utils/travel/travelPlanApiLogger';
 import { usePlanStore } from '../stores/usePlanStore';
 
@@ -30,7 +31,7 @@ export function useTravelMembersSync({
     try {
       const members = await fetchTravelMembers(accessToken, travelId);
       const plan = usePlanStore.getState().plans.find(p => p.planId === planId);
-      if (!plan) {
+      if (!plan || !isPlanForCurrentApiServer(plan)) {
         return;
       }
 
