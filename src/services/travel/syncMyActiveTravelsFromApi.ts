@@ -1,6 +1,10 @@
 import type { MyTravelResponse } from '../../types/travelApi';
 import type { PlanMember, TravelPlan } from '../../types/travelPlan';
 import { usePlanStore } from '../../stores/usePlanStore';
+import {
+  filterPlansForCurrentApiServer,
+  isPlanForCurrentApiServer,
+} from '../../utils/api/apiServerOrigin';
 import { isServerBackedPlan } from '../../utils/plan/serverBackedPlan';
 import { logTravelPlanApi } from '../../utils/travel/travelPlanApiLogger';
 import { fetchMyActiveTravels } from './travelTeamService';
@@ -8,7 +12,9 @@ import { myTravelMemberRole, myTravelResponseToPlanShell } from './travelMapper'
 import { trySyncTravelPlanFromApi } from './trySyncTravelPlanFromApi';
 
 function findLocalPlanForTravel(plans: TravelPlan[], travelId: string): TravelPlan | undefined {
-  return plans.find(plan => plan.apiTravelId === travelId || plan.planId === travelId);
+  return filterPlansForCurrentApiServer(plans).find(
+    plan => plan.apiTravelId === travelId || plan.planId === travelId,
+  );
 }
 
 function pickActiveTravelId(
@@ -21,7 +27,9 @@ function pickActiveTravelId(
 
   const travelIds = new Set(travels.map(travel => travel.travelId));
   if (currentActivePlanId) {
-    const activePlan = usePlanStore.getState().plans.find(p => p.planId === currentActivePlanId);
+    const activePlan = filterPlansForCurrentApiServer(usePlanStore.getState().plans).find(
+      p => p.planId === currentActivePlanId,
+    );
     const activeTravelId = activePlan?.apiTravelId ?? activePlan?.planId;
     if (activeTravelId && travelIds.has(activeTravelId)) {
       return activePlan?.planId ?? activeTravelId;
@@ -51,7 +59,12 @@ function clearInvalidActivePlan(): void {
     return;
   }
   const active = store.plans.find(plan => plan.planId === store.activePlanId);
-  if (!active || !isServerBackedPlan(active) || active.status === 'COMPLETED') {
+  if (
+    !active ||
+    !isServerBackedPlan(active) ||
+    active.status === 'COMPLETED' ||
+    !isPlanForCurrentApiServer(active)
+  ) {
     store.clearActivePlan();
   }
 }
