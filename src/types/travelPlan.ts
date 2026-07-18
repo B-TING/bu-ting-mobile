@@ -2,6 +2,9 @@ import type { PlaceProviderDto, TravelStatusDto, TravelTeamRoleDto } from './tra
 
 export type PlanStatus = 'DRAFT' | 'CONFIRMED' | 'COMPLETED';
 
+/** 여행 계획을 동기화/생성한 API 서버 환경 */
+export type ApiServerOrigin = 'live' | 'local';
+
 export type MemberRole = TravelTeamRoleDto;
 
 export type RouteItemType =
@@ -115,6 +118,11 @@ export type TravelPlan = {
   aiPromptContext?: string;
   /** local = 목 AI·로컬 only, api = 백엔드 Travel API 연동 */
   source?: 'local' | 'api';
+  /**
+   * API 연동 플랜이 어느 서버에서 동기화·생성됐는지.
+   * live = api.buting.store, local = localhost 등 개발 서버
+   */
+  apiServerOrigin?: ApiServerOrigin;
   /** 백엔드 travel UUID (`planId`와 동일할 수 있음) */
   apiTravelId?: string;
   /** 백엔드 Travel.status (PLANNED · IN_PROGRESS · COMPLETED) */

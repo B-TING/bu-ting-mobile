@@ -4,6 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { trySyncTravelPlanFromApi } from '../services/travel/trySyncTravelPlanFromApi';
 import { unlockPlanSchedule } from '../utils/travel/scheduleApiLock';
 import type { TravelPlan } from '../types/travelPlan';
+import { isPlanForCurrentApiServer } from '../utils/api/apiServerOrigin';
 import { usePlanStore } from '../stores/usePlanStore';
 
 type UseApiTravelPlanSyncOptions = {
@@ -31,13 +32,14 @@ export function useApiTravelPlanSync({
 
   const syncFromServer = useCallback(async (): Promise<TravelPlan | null> => {
     if (!enabled || !accessToken || !planId) {
-      return usePlanStore.getState().plans.find(p => p.planId === planId) ?? null;
+      const plan = usePlanStore.getState().plans.find(p => p.planId === planId) ?? null;
+      return plan && isPlanForCurrentApiServer(plan) ? plan : null;
     }
 
     const localPlan = usePlanStore.getState().plans.find(p => p.planId === planId);
-    if (!localPlan || localPlan.source !== 'api') {
+    if (!localPlan || localPlan.source !== 'api' || !isPlanForCurrentApiServer(localPlan)) {
       unlockPlanSchedule(planId);
-      return localPlan ?? null;
+      return localPlan && isPlanForCurrentApiServer(localPlan) ? localPlan : null;
     }
 
     syncingRef.current = true;

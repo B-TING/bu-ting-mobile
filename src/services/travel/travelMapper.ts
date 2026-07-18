@@ -19,6 +19,7 @@ import type {
   RouteItem,
   TravelPlan,
 } from '../../types/travelPlan';
+import { getCurrentApiServerOrigin } from '../../utils/api/apiServerOrigin';
 import { createId } from '../../utils/common/id';
 import { dayCountBetween } from '../../constants/plan/planWizard';
 
@@ -129,6 +130,7 @@ export function myTravelResponseToPlanShell(
     }),
     createdAt: travel.createdAt ?? existing?.createdAt ?? new Date().toISOString(),
     source: 'api',
+    apiServerOrigin: getCurrentApiServerOrigin(),
     aiPromptContext: existing?.aiPromptContext,
   };
 }
@@ -172,6 +174,7 @@ export function travelResponseToPlan(
     itinerary: emptyDailyItineraryFromPlans(dayPlans, travel.startDate, travel.endDate),
     createdAt: travel.createdAt ?? new Date().toISOString(),
     source: 'api',
+    apiServerOrigin: getCurrentApiServerOrigin(),
     apiTravelId: travel.id,
   };
 }
@@ -261,6 +264,7 @@ export function travelPlansResponseToPlan(
     itinerary,
     createdAt: new Date().toISOString(),
     source: 'api',
+    apiServerOrigin: getCurrentApiServerOrigin(),
   };
 }
 
@@ -300,6 +304,7 @@ export function mergeApiTravelPlanWithLocal(
     createdAt: local.createdAt,
     aiPromptContext: local.aiPromptContext,
     constraints: local.constraints,
+    apiServerOrigin: getCurrentApiServerOrigin(),
     itinerary: synced.itinerary.map(day => {
       const localDay = localDayByNumber[day.dayNumber];
       return {

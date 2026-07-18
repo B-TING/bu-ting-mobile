@@ -48,6 +48,9 @@ import {
 } from '../../stores';
 import { selectIsPlanOfflineSync } from '../../stores/usePlanStore';
 import { selectReusableAccessToken } from '../../stores/useAuthStore';
+import {
+  filterPlansForCurrentApiServer,
+} from '../../utils/api/apiServerOrigin';
 import { useApiTravelPlanSync } from '../../hooks/useApiTravelPlanSync';
 import { usePlanOfflineSyncFeedback } from '../../hooks/usePlanOfflineSyncFeedback';
 import type { BudgetEntry, RouteItem, TravelLegMode } from '../../types/travelPlan';
@@ -72,7 +75,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
   const insets = useSafeAreaInsets();
   const language = useAppLanguage();
 
-  const plans = usePlanStore(s => s.plans);
+  const plans = usePlanStore(s => filterPlansForCurrentApiServer(s.plans));
   const activePlanId = usePlanStore(s => s.activePlanId);
   const budgetByPlan = usePlanStore(s => s.budgetByPlan);
   const toggleVisited = usePlanStore(s => s.toggleRouteVisited);
