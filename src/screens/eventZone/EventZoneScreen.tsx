@@ -3,11 +3,13 @@ import { Animated, Pressable, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import {
+  EventGameActiveBanner,
+  EventGameBanner,
+} from '../../components/eventGame';
 import { BusanZoneMap } from '../../components/eventZone/BusanZoneMap';
-import { EventZoneActiveEventBanner } from '../../components/eventZone/EventZoneActiveEventBanner';
 import {
   EventZoneChatList,
-  EventZoneGameEventBanner,
   EventZoneMapBadge,
   EventZoneZoneDetailPanel,
 } from '../../components/eventZone/EventZoneSections';
@@ -217,7 +219,7 @@ export function EventZoneScreen({ navigation }: Props) {
             className="absolute left-0 right-0"
             style={{ top: insets.top + 56 }}
             pointerEvents="box-none">
-            <EventZoneGameEventBanner
+            <EventGameBanner
               event={selectedZoneGameEvent}
               language={language}
               actionLabel={gameCopy.joinEvent}
@@ -270,7 +272,7 @@ export function EventZoneScreen({ navigation }: Props) {
       {!isExpanded ? (
         <>
           {currentZoneGameEvent ? (
-            <EventZoneActiveEventBanner
+            <EventGameActiveBanner
               message={gameCopy.nearbyEventBanner}
               actionLabel={gameCopy.joinEvent}
               onPress={() =>

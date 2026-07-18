@@ -14,7 +14,7 @@ import type { EventZoneId } from '../../types/eventZone';
 import { resolveLandmarkMapPoint } from '../../utils/eventZone/landmarkMapPoint';
 import { svgPointToLayout } from '../../utils/eventZone/svgMapCoordinates';
 import { useZoneMapViewBox } from '../../utils/eventZone/useZoneMapViewBox';
-import { EventPulseMarkerOverlay } from './EventPulseMarkerOverlay';
+import { EventPulseMarkerOverlay } from '../eventGame/EventPulseMarkerOverlay';
 
 const EVENT_GLOW_COLOR = '#E91E63';
 
