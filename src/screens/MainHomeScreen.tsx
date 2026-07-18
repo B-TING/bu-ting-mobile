@@ -10,7 +10,11 @@ import { EventsSectionMock } from '../components/home/sections/EventsSectionMock
 import { HomeEventZoneSection } from '../components/home/sections/HomeEventZoneSection';
 import { QuickAccessRow } from '../components/home/sections/QuickAccessRow';
 import { TraveloguePreviewMock } from '../components/home/sections/TraveloguePreviewMock';
-import { HomeActionFabs, FAB_GAP, FAB_SIZE } from '../components/helpdesk/HomeActionFabs';
+import {
+  HomeActionFabs,
+  FAB_GAP,
+  FAB_SIZE,
+} from '../components/helpdesk/HomeActionFabs';
 import { ROUTE_FAB_BOTTOM_OFFSET } from '../components/plan/fab/RouteOptimizeFab';
 import { getNavbarOverlayHeight } from '../components/shared/navigation/Navbar';
 import { useAppAlert } from '../components/shared/modals';
@@ -27,7 +31,14 @@ import type { RootStackParamList } from '../navigation/types';
 import { PLACE_CONTENT_TYPE } from '../types/placesApi';
 import { upcomingFestivalDateRangeYyyymmdd } from '../utils/places/festivalApiMapper';
 import { showTravelSurveyOnboardingPrompt } from '../services/setup/travelSurveyOnboardingPrompt';
-import { selectActivePlan, selectHomeFeaturedPlan, useAppStore, useFestivalStore, usePlanStore, useTravelogueStore } from '../stores';
+import {
+  selectActivePlan,
+  selectHomeFeaturedPlan,
+  useAppStore,
+  useFestivalStore,
+  usePlanStore,
+  useTravelogueStore,
+} from '../stores';
 import { useSessionActiveTravelsSyncOnFocus } from '../hooks/useSessionActiveTravelsSync';
 import { usePlanOfflineSyncFeedback } from '../hooks/usePlanOfflineSyncFeedback';
 import { isServerBackedPlan } from '../utils/plan/serverBackedPlan';
@@ -50,7 +61,9 @@ export function MainHomeScreen({ navigation }: Props) {
   const copy = useCopy('mainHome');
   const planDetailCopy = useCopy('planDetail');
   const helpCopy = useCopy('helpdesk');
-  const pendingTravelSurveyPrompt = useAppStore(s => s.pendingTravelSurveyPrompt);
+  const pendingTravelSurveyPrompt = useAppStore(
+    s => s.pendingTravelSurveyPrompt,
+  );
   const setPendingTravelSurveyPrompt = useAppStore(
     s => s.setPendingTravelSurveyPrompt,
   );
@@ -61,13 +74,14 @@ export function MainHomeScreen({ navigation }: Props) {
     [featuredPlan],
   );
   const showTripRebootFab = featuredTravelStatus === 'IN_PROGRESS';
-  const showSyncStatus = Boolean(featuredPlan && isServerBackedPlan(featuredPlan));
-  const { toastText, toastOpacity } =
-    usePlanOfflineSyncFeedback({
-      planId: featuredPlan?.planId ?? '',
-      enabled: showSyncStatus,
-      message: planDetailCopy.offlineSyncNotice,
-    });
+  const showSyncStatus = Boolean(
+    featuredPlan && isServerBackedPlan(featuredPlan),
+  );
+  const { toastText, toastOpacity } = usePlanOfflineSyncFeedback({
+    planId: featuredPlan?.planId ?? '',
+    enabled: showSyncStatus,
+    message: planDetailCopy.offlineSyncNotice,
+  });
   useSessionActiveTravelsSyncOnFocus();
 
   const publishedTravelogues = useTravelogueStore(s => s.publishedTravelogues);
@@ -84,7 +98,9 @@ export function MainHomeScreen({ navigation }: Props) {
 
   useEffect(() => {
     void fetchHomeFestivals(
-      language === 'ko' ? '행사 정보를 불러오지 못했어요' : 'Could not load events',
+      language === 'ko'
+        ? '행사 정보를 불러오지 못했어요'
+        : 'Could not load events',
     );
   }, [fetchHomeFestivals, language]);
 
@@ -147,7 +163,7 @@ export function MainHomeScreen({ navigation }: Props) {
   return (
     <View className="flex-1 bg-brand-background" style={layout.screen}>
       <ScrollView
-        className="flex-1 px-5"
+        className="flex-1"
         contentContainerStyle={{
           paddingBottom:
             fabBottom +
@@ -155,7 +171,8 @@ export function MainHomeScreen({ navigation }: Props) {
             (showTripRebootFab ? FAB_GAP + FAB_SIZE : 0) +
             16,
         }}
-        showsVerticalScrollIndicator={false}>
+        showsVerticalScrollIndicator={false}
+      >
         {featuredPlan && featuredTravelStatus ? (
           <ActivePlanHeroBanner
             plan={featuredPlan}
@@ -184,75 +201,77 @@ export function MainHomeScreen({ navigation }: Props) {
             onCtaPress={() => openItineraryOrWizard(navigation)}
           />
         )}
+        <View className="px-5">
+          <QuickAccessRow
+            items={QUICK_ACCESS_ITEMS}
+            language={language}
+            onItemPress={id => {
+              if (id === 'festivals') {
+                navigation.navigate('FestivalCalendar');
+              }
+              if (id === 'luggage') {
+                navigation.navigate('LuggageStorage');
+              }
+              if (id === 'hotels') {
+                navigation.navigate('PlaceMapSearch', {
+                  contentTypeId: PLACE_CONTENT_TYPE.accommodation,
+                });
+              }
+              if (id === 'attractions') {
+                navigation.navigate('PlaceMapSearch', {
+                  contentTypeId: PLACE_CONTENT_TYPE.attraction,
+                });
+              }
+              if (id === 'eventZone') {
+                navigation.navigate('EventZone');
+              }
+              if (id === 'help') {
+                goToHelpDesk();
+              }
+            }}
+          />
 
-        <QuickAccessRow
-          items={QUICK_ACCESS_ITEMS}
-          language={language}
-          onItemPress={id => {
-            if (id === 'festivals') {
-              navigation.navigate('FestivalCalendar');
-            }
-            if (id === 'luggage') {
-              navigation.navigate('LuggageStorage');
-            }
-            if (id === 'hotels') {
+          <HomeEventZoneSection
+            onMapPress={goToEventZone}
+            onEnterChat={goToEventZoneChat}
+          />
+
+          <EventsSectionMock
+            title={copy.eventsTitle}
+            viewAllLabel={copy.eventsViewAll}
+            events={homeEvents}
+            language={language}
+            onViewAllPress={() => navigation.navigate('FestivalCalendar')}
+            onEventPress={id => {
+              const { eventStartDate, eventEndDate } =
+                upcomingFestivalDateRangeYyyymmdd();
               navigation.navigate('PlaceMapSearch', {
-                contentTypeId: PLACE_CONTENT_TYPE.accommodation,
+                contentTypeId: PLACE_CONTENT_TYPE.festival,
+                selectedContentId: id,
+                festivalEventStartDate: eventStartDate,
+                festivalEventEndDate: eventEndDate,
               });
-            }
-            if (id === 'attractions') {
-              navigation.navigate('PlaceMapSearch', {
-                contentTypeId: PLACE_CONTENT_TYPE.attraction,
-              });
-            }
-            if (id === 'eventZone') {
-              navigation.navigate('EventZone');
-            }
-            if (id === 'help') {
-              goToHelpDesk();
-            }
-          }}
-        />
+            }}
+          />
 
-        <HomeEventZoneSection
-          onMapPress={goToEventZone}
-          onEnterChat={goToEventZoneChat}
-        />
-
-        <EventsSectionMock
-          title={copy.eventsTitle}
-          viewAllLabel={copy.eventsViewAll}
-          events={homeEvents}
-          language={language}
-          onViewAllPress={() => navigation.navigate('FestivalCalendar')}
-          onEventPress={id => {
-            const { eventStartDate, eventEndDate } = upcomingFestivalDateRangeYyyymmdd();
-            navigation.navigate('PlaceMapSearch', {
-              contentTypeId: PLACE_CONTENT_TYPE.festival,
-              selectedContentId: id,
-              festivalEventStartDate: eventStartDate,
-              festivalEventEndDate: eventEndDate,
-            });
-          }}
-        />
-
-        <TraveloguePreviewMock
-          trendingTitle={copy.trendingTitle}
-          travelogue={MOCK_TRAVELOGUE}
-          specialOffer={MOCK_SPECIAL_OFFER}
-          language={language}
-          latestTravelogue={latestTravelogue}
-          onTraveloguePress={() => {
-            if (latestTravelogue) {
-              navigation.navigate('TravelogueDetail', {
-                travelogueId: latestTravelogue.travelogueId,
-              });
-            } else {
-              goToTab('feed');
-            }
-          }}
-          onFeedPress={() => goToTab('feed')}
-        />
+          <TraveloguePreviewMock
+            trendingTitle={copy.trendingTitle}
+            travelogue={MOCK_TRAVELOGUE}
+            specialOffer={MOCK_SPECIAL_OFFER}
+            language={language}
+            latestTravelogue={latestTravelogue}
+            onTraveloguePress={() => {
+              if (latestTravelogue) {
+                navigation.navigate('TravelogueDetail', {
+                  travelogueId: latestTravelogue.travelogueId,
+                });
+              } else {
+                goToTab('feed');
+              }
+            }}
+            onFeedPress={() => goToTab('feed')}
+          />
+        </View>
       </ScrollView>
 
       <HomeActionFabs

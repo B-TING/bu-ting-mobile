@@ -49,7 +49,10 @@ const STATUS_OVERLAY_CLASS: Record<TravelStatusDto, string> = {
   COMPLETED: 'rgba(15, 23, 42, 0.58)',
 };
 
-function statusLabel(travelStatus: TravelStatusDto, copy: ActivePlanHeroBannerProps['copy']): string {
+function statusLabel(
+  travelStatus: TravelStatusDto,
+  copy: ActivePlanHeroBannerProps['copy'],
+): string {
   if (travelStatus === 'PLANNED') {
     return copy.plannedLabel;
   }
@@ -59,7 +62,10 @@ function statusLabel(travelStatus: TravelStatusDto, copy: ActivePlanHeroBannerPr
   return copy.inProgressLabel;
 }
 
-function ddayText(startDate: string, copy: ActivePlanHeroBannerProps['copy']): string {
+function ddayText(
+  startDate: string,
+  copy: ActivePlanHeroBannerProps['copy'],
+): string {
   const d = calcTripDday(startDate);
   if (d > 0) {
     return copy.dday(d);
@@ -99,27 +105,42 @@ export function ActivePlanHeroBanner({
 }: ActivePlanHeroBannerProps) {
   const showNextStop = travelStatus === 'IN_PROGRESS' && upcoming != null;
   const ctaLabel =
-    travelStatus === 'COMPLETED' ? copy.viewCompletedItinerary : copy.viewItinerary;
+    travelStatus === 'COMPLETED'
+      ? copy.viewCompletedItinerary
+      : copy.viewItinerary;
 
   return (
     <Pressable
       onPress={onPress}
-      className="mb-5 mt-5 overflow-hidden rounded-2xl active:opacity-95"
-      accessibilityRole="button">
-      <ImageBackground source={heroImage} style={styles.image} resizeMode="cover">
+      className="mb-5 mt-5 overflow-hidden active:opacity-95"
+      accessibilityRole="button"
+    >
+      <ImageBackground
+        source={heroImage}
+        style={styles.image}
+        resizeMode="cover"
+      >
         <View
-          style={[styles.overlay, { backgroundColor: STATUS_OVERLAY_CLASS[travelStatus] }]}
-          className="justify-end p-5">
+          style={[
+            styles.overlay,
+            { backgroundColor: STATUS_OVERLAY_CLASS[travelStatus] },
+          ]}
+          className="justify-end p-5"
+        >
           <View
             className={cn(
               'mb-2 self-start rounded-full px-2.5 py-1',
               STATUS_BADGE_CLASS[travelStatus],
-            )}>
+            )}
+          >
             <Text className="text-[11px] font-bold text-white">
               {statusLabel(travelStatus, copy)}
             </Text>
           </View>
-          <Text className="mb-1 text-lg font-bold leading-snug text-white" numberOfLines={2}>
+          <Text
+            className="mb-1 text-lg font-bold leading-snug text-white"
+            numberOfLines={2}
+          >
             {plan.title}
           </Text>
           <Text className="mb-3 text-xs text-white/90">
@@ -132,15 +153,19 @@ export function ActivePlanHeroBanner({
               </Text>
               <Text className="text-sm font-bold text-white" numberOfLines={1}>
                 {copy.dayLabel(upcoming.day.dayNumber)} ·{' '}
-                {formatWeekdayDate(upcoming.day.date, language)} — {upcoming.route.placeName}
+                {formatWeekdayDate(upcoming.day.date, language)} —{' '}
+                {upcoming.route.placeName}
               </Text>
             </View>
           ) : null}
           <Text
             className={cn(
               'mt-3 text-sm font-bold',
-              travelStatus === 'COMPLETED' ? 'text-white/85' : 'text-brand-secondary',
-            )}>
+              travelStatus === 'COMPLETED'
+                ? 'text-white/85'
+                : 'text-brand-secondary',
+            )}
+          >
             {ctaLabel} →
           </Text>
         </View>
@@ -152,10 +177,10 @@ export function ActivePlanHeroBanner({
 const styles = StyleSheet.create({
   image: {
     width: '100%',
-    minHeight: 200,
+    minHeight: 240,
   },
   overlay: {
     flex: 1,
-    minHeight: 200,
+    minHeight: 240,
   },
 });
