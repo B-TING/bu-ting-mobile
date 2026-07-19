@@ -106,12 +106,18 @@ export const TRAVEL_REVIEW_COPY: Record<
     feedCommentPlaceholder: string;
     feedCommentsEmpty: string;
     feedAddComment: string;
+    feedEditComment: string;
+    feedDeleteComment: string;
+    feedDeleteCommentConfirmTitle: string;
+    feedDeleteCommentConfirmMessage: string;
     feedViewAllComments: (n: number) => string;
     viewDetail: string;
     feedTapHint: string;
     socialLoginRequired: string;
     socialLikeFailed: string;
     socialCommentFailed: string;
+    socialCommentUpdateFailed: string;
+    socialCommentDeleteFailed: string;
   }
 > = {
   ko: {
@@ -214,12 +220,18 @@ export const TRAVEL_REVIEW_COPY: Record<
     feedCommentPlaceholder: '응원의 댓글을 남겨보세요',
     feedCommentsEmpty: '아직 댓글이 없어요. 첫 댓글을 남겨보세요!',
     feedAddComment: '등록',
+    feedEditComment: '수정',
+    feedDeleteComment: '삭제',
+    feedDeleteCommentConfirmTitle: '댓글 삭제',
+    feedDeleteCommentConfirmMessage: '이 댓글을 삭제할까요?',
     feedViewAllComments: n => `댓글 ${n}개 모두 보기`,
     viewDetail: '자세히 보기',
     feedTapHint: '탭하면 상세 여행기를 볼 수 있어요',
     socialLoginRequired: '로그인이 필요해요.',
     socialLikeFailed: '좋아요 처리에 실패했어요.',
     socialCommentFailed: '댓글 등록에 실패했어요.',
+    socialCommentUpdateFailed: '댓글 수정에 실패했어요.',
+    socialCommentDeleteFailed: '댓글 삭제에 실패했어요.',
   },
   en: {
     writeReview: 'Write review',
@@ -321,12 +333,18 @@ export const TRAVEL_REVIEW_COPY: Record<
     feedCommentPlaceholder: 'Leave an encouraging comment',
     feedCommentsEmpty: 'No comments yet. Be the first!',
     feedAddComment: 'Post',
+    feedEditComment: 'Edit',
+    feedDeleteComment: 'Delete',
+    feedDeleteCommentConfirmTitle: 'Delete comment',
+    feedDeleteCommentConfirmMessage: 'Delete this comment?',
     feedViewAllComments: n => `View all ${n} comments`,
     viewDetail: 'View details',
     feedTapHint: 'Tap to open the full travelogue',
     socialLoginRequired: 'Please sign in to continue.',
     socialLikeFailed: 'Could not update like.',
     socialCommentFailed: 'Could not post comment.',
+    socialCommentUpdateFailed: 'Could not update comment.',
+    socialCommentDeleteFailed: 'Could not delete comment.',
   },
   ja: {
     writeReview: 'レビューを書く',
@@ -428,12 +446,18 @@ export const TRAVEL_REVIEW_COPY: Record<
     feedCommentPlaceholder: '応援コメントを書いてみましょう',
     feedCommentsEmpty: 'まだコメントがありません。最初のコメントをどうぞ！',
     feedAddComment: '投稿',
+    feedEditComment: '編集',
+    feedDeleteComment: '削除',
+    feedDeleteCommentConfirmTitle: 'コメントを削除',
+    feedDeleteCommentConfirmMessage: 'このコメントを削除しますか？',
     feedViewAllComments: n => `コメント${n}件をすべて見る`,
     viewDetail: '詳細を見る',
     feedTapHint: 'タップで旅行記の詳細を表示',
     socialLoginRequired: 'ログインが必要です。',
     socialLikeFailed: 'いいねに失敗しました。',
     socialCommentFailed: 'コメント投稿に失敗しました。',
+    socialCommentUpdateFailed: 'コメントの編集に失敗しました。',
+    socialCommentDeleteFailed: 'コメントの削除に失敗しました。',
   },
   zh: {
     writeReview: '写点评',
@@ -532,11 +556,17 @@ export const TRAVEL_REVIEW_COPY: Record<
     feedCommentPlaceholder: '留下鼓励的评论吧',
     feedCommentsEmpty: '暂无评论，来发表第一条吧！',
     feedAddComment: '发布',
+    feedEditComment: '编辑',
+    feedDeleteComment: '删除',
+    feedDeleteCommentConfirmTitle: '删除评论',
+    feedDeleteCommentConfirmMessage: '要删除这条评论吗？',
     feedViewAllComments: n => `查看全部 ${n} 条评论`,
     viewDetail: '查看详情',
     feedTapHint: '点击查看完整游记',
     socialLoginRequired: '请先登录。',
     socialLikeFailed: '点赞失败。',
     socialCommentFailed: '评论发布失败。',
+    socialCommentUpdateFailed: '评论修改失败。',
+    socialCommentDeleteFailed: '评论删除失败。',
   },
 };

@@ -34,7 +34,12 @@ import {
 import { updateTravelRecordForTravel } from '../../services/travel/updateTravelRecordForTravel';
 import { useAuthStore, usePlanStore } from '../../stores';
 import { selectReusableAccessToken } from '../../stores/useAuthStore';
-import type { PlaceReview, TravelRecord, TravelRecordPlace } from '../../types/travelReview';
+import type {
+  PlaceReview,
+  TravelRecord,
+  TravelRecordComment,
+  TravelRecordPlace,
+} from '../../types/travelReview';
 import type { DailyItinerary, RouteItem, TravelPlan } from '../../types/travelPlan';
 import type { AppLanguage } from '../../types/user';
 import { resolveEventZoneForRoute } from '../../utils/eventZone/zoneResolver';
@@ -170,6 +175,8 @@ function TravelRecordDetailBody({
     commenting,
     handleToggleLike,
     handleAddComment,
+    handleUpdateComment,
+    handleDeleteComment,
     handleImportPlan,
     importModalProps,
   } = useTravelogueSocialActions(travelRecord, copy, navigation, {
@@ -177,6 +184,16 @@ function TravelRecordDetailBody({
       onTravelRecordChange({ ...travelRecord, ...patch });
     },
   });
+
+  const [commentOpen, setCommentOpen] = useState(false);
+  const [editingComment, setEditingComment] = useState<TravelRecordComment | null>(
+    null,
+  );
+  const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [reviewRoute, setReviewRoute] = useState<RouteItem | null>(null);
+  const [savingReview, setSavingReview] = useState(false);
 
   const onToggleLike = () => {
     void handleToggleLike().catch(error => {
@@ -191,16 +208,46 @@ function TravelRecordDetailBody({
 
   const onSubmitComment = async (text: string) => {
     try {
-      await handleAddComment(text);
+      if (editingComment) {
+        await handleUpdateComment(editingComment.commentId, text);
+      } else {
+        await handleAddComment(text);
+      }
     } catch (error) {
       alert({
         title:
           error instanceof TravelogueSocialError
             ? error.message
-            : copy.socialCommentFailed,
+            : editingComment
+              ? copy.socialCommentUpdateFailed
+              : copy.socialCommentFailed,
       });
       throw error;
     }
+  };
+
+  const onDeleteComment = (comment: TravelRecordComment) => {
+    alert({
+      title: copy.feedDeleteCommentConfirmTitle,
+      message: copy.feedDeleteCommentConfirmMessage,
+      buttons: [
+        { label: copy.cancel, variant: 'secondary', onPress: () => undefined },
+        {
+          label: copy.feedDeleteComment,
+          variant: 'danger',
+          onPress: () => {
+            void handleDeleteComment(comment.commentId).catch(error => {
+              alert({
+                title:
+                  error instanceof TravelogueSocialError
+                    ? error.message
+                    : copy.socialCommentDeleteFailed,
+              });
+            });
+          },
+        },
+      ],
+    });
   };
 
   const editPlan = useMemo(
@@ -241,12 +288,6 @@ function TravelRecordDetailBody({
   const feedImages = useMemo(() => collectTravelRecordImages(travelRecord), [travelRecord]);
   const rating = travelRecordOverallRating(travelRecord);
   const destinationLabel = travelRecordDestinationLabel(travelRecord);
-  const [commentOpen, setCommentOpen] = useState(false);
-  const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
-  const [composeOpen, setComposeOpen] = useState(false);
-  const [publishing, setPublishing] = useState(false);
-  const [reviewRoute, setReviewRoute] = useState<RouteItem | null>(null);
-  const [savingReview, setSavingReview] = useState(false);
 
   const selectedDayNumber = useMemo(() => {
     if (!selectedRouteId) {
@@ -722,9 +763,18 @@ function TravelRecordDetailBody({
             <TravelogueCommentsSection
               copy={copy}
               comments={social.comments}
+              currentUserId={userId}
               currentUserName={userName}
               language={language}
-              onOpenComposer={() => setCommentOpen(true)}
+              onOpenComposer={() => {
+                setEditingComment(null);
+                setCommentOpen(true);
+              }}
+              onEditComment={comment => {
+                setEditingComment(comment);
+                setCommentOpen(true);
+              }}
+              onDeleteComment={onDeleteComment}
             />
           </View>
         </View>
@@ -735,8 +785,13 @@ function TravelRecordDetailBody({
         copy={copy}
         userName={userName}
         subtitle={travelRecord.title ?? undefined}
+        mode={editingComment ? 'edit' : 'create'}
+        initialContent={editingComment?.content ?? ''}
         submitting={commenting}
-        onClose={() => setCommentOpen(false)}
+        onClose={() => {
+          setCommentOpen(false);
+          setEditingComment(null);
+        }}
         onSubmit={onSubmitComment}
       />
       <ImportPlanModal {...importModalProps} />

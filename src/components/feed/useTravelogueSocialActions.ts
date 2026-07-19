@@ -5,9 +5,11 @@ import type { CopyFor } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
 import {
   createTravelRecordComment,
+  deleteTravelRecordComment,
   fetchTravelRecordComments,
   likeTravelRecord,
   unlikeTravelRecord,
+  updateTravelRecordComment,
 } from '../../services/travel/travelRecordService';
 import {
   selectActivePlan,
@@ -256,6 +258,112 @@ export function useTravelogueSocialActions(
     ],
   );
 
+  const handleUpdateComment = useCallback(
+    async (commentId: string, text: string) => {
+      const content = text.trim();
+      if (!content) {
+        return;
+      }
+      if (!accessToken?.trim() || !userId) {
+        requireLogin();
+        return;
+      }
+      if (commentId.startsWith('temp-cmt-')) {
+        throw new TravelogueSocialError(copy.socialCommentUpdateFailed);
+      }
+      if (commenting) {
+        return;
+      }
+      const prev = comments.find(c => c.commentId === commentId);
+      if (!prev) {
+        return;
+      }
+      setComments(list =>
+        list.map(c =>
+          c.commentId === commentId
+            ? { ...c, content, updatedAt: new Date().toISOString() }
+            : c,
+        ),
+      );
+      setCommenting(true);
+      try {
+        const updated = await updateTravelRecordComment(
+          accessToken,
+          travelRecord.travelRecordId,
+          commentId,
+          { content },
+        );
+        setComments(list =>
+          list.map(c => (c.commentId === commentId ? updated : c)),
+        );
+      } catch (error) {
+        setComments(list =>
+          list.map(c => (c.commentId === commentId ? prev : c)),
+        );
+        const message =
+          error instanceof Error && error.message
+            ? error.message
+            : copy.socialCommentUpdateFailed;
+        throw new TravelogueSocialError(message);
+      } finally {
+        setCommenting(false);
+      }
+    },
+    [
+      accessToken,
+      userId,
+      commenting,
+      comments,
+      travelRecord.travelRecordId,
+      requireLogin,
+      copy.socialCommentUpdateFailed,
+    ],
+  );
+
+  const handleDeleteComment = useCallback(
+    async (commentId: string) => {
+      if (!accessToken?.trim() || !userId) {
+        requireLogin();
+        return;
+      }
+      if (commentId.startsWith('temp-cmt-')) {
+        setComments(list => list.filter(c => c.commentId !== commentId));
+        return;
+      }
+      if (commenting) {
+        return;
+      }
+      const prev = comments;
+      setComments(list => list.filter(c => c.commentId !== commentId));
+      setCommenting(true);
+      try {
+        await deleteTravelRecordComment(
+          accessToken,
+          travelRecord.travelRecordId,
+          commentId,
+        );
+      } catch (error) {
+        setComments(prev);
+        const message =
+          error instanceof Error && error.message
+            ? error.message
+            : copy.socialCommentDeleteFailed;
+        throw new TravelogueSocialError(message);
+      } finally {
+        setCommenting(false);
+      }
+    },
+    [
+      accessToken,
+      userId,
+      commenting,
+      comments,
+      travelRecord.travelRecordId,
+      requireLogin,
+      copy.socialCommentDeleteFailed,
+    ],
+  );
+
   const handleImportPlan = () => {
     setImportModalPhase('confirm');
   };
@@ -303,6 +411,8 @@ export function useTravelogueSocialActions(
     reloadComments,
     handleToggleLike,
     handleAddComment,
+    handleUpdateComment,
+    handleDeleteComment,
     handleImportPlan,
     importModalProps,
     travelogue: travelRecord,

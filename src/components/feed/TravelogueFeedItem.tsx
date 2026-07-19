@@ -1,7 +1,11 @@
 import { Pressable, Text, View } from 'react-native';
 
 import type { CopyFor } from '../../i18n';
-import type { TravelRecord, TravelRecordSocial } from '../../types/travelReview';
+import type {
+  TravelRecord,
+  TravelRecordComment,
+  TravelRecordSocial,
+} from '../../types/travelReview';
 import type { AppLanguage } from '../../types/user';
 import {
   authorInitial,
@@ -27,6 +31,8 @@ type TravelogueFeedItemProps = {
   onToggleLike: () => void;
   onImportPlan: () => void;
   onOpenComposer?: () => void;
+  onEditComment?: (comment: TravelRecordComment) => void;
+  onDeleteComment?: (comment: TravelRecordComment) => void;
   variant?: 'feed' | 'detail';
 };
 
@@ -41,6 +47,8 @@ export function TravelogueFeedItem({
   onToggleLike,
   onImportPlan,
   onOpenComposer,
+  onEditComment,
+  onDeleteComment,
   variant = 'feed',
 }: TravelogueFeedItemProps) {
   const images = collectTravelRecordImages(travelRecord);
@@ -120,11 +128,14 @@ export function TravelogueFeedItem({
           <TravelogueCommentsSection
             copy={copy}
             comments={social.comments}
+            currentUserId={userId}
             currentUserName={userName}
             language={language}
             previewLimit={isFeed ? 2 : undefined}
             onViewAllPress={isFeed ? onPressDetail : undefined}
             onOpenComposer={onOpenComposer}
+            onEditComment={onEditComment}
+            onDeleteComment={onDeleteComment}
           />
         </View>
       </View>

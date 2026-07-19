@@ -27,7 +27,7 @@ import { fetchTravelRecordFeed } from '../../services/travel/travelRecordService
 import { mapTravelRecordFeedItem } from '../../types/travelRecordApi';
 import { useAuthStore } from '../../stores';
 import { selectReusableAccessToken } from '../../stores/useAuthStore';
-import type { TravelRecord } from '../../types/travelReview';
+import type { TravelRecord, TravelRecordComment } from '../../types/travelReview';
 import type { AppLanguage } from '../../types/user';
 import { isTravelRecordPublic } from '../../utils/review/travelReview';
 
@@ -52,6 +52,9 @@ function TravelogueFeedRow({
   const { alert } = useAppAlert();
   const copy = useCopy('travelReview');
   const [commentOpen, setCommentOpen] = useState(false);
+  const [editingComment, setEditingComment] = useState<TravelRecordComment | null>(
+    null,
+  );
   const {
     social,
     userId,
@@ -59,6 +62,8 @@ function TravelogueFeedRow({
     commenting,
     handleToggleLike,
     handleAddComment,
+    handleUpdateComment,
+    handleDeleteComment,
     handleImportPlan,
     importModalProps,
   } = useTravelogueSocialActions(travelRecord, copy, navigation, {
@@ -80,16 +85,51 @@ function TravelogueFeedRow({
 
   const onSubmitComment = async (text: string) => {
     try {
-      await handleAddComment(text);
+      if (editingComment) {
+        await handleUpdateComment(editingComment.commentId, text);
+      } else {
+        await handleAddComment(text);
+      }
     } catch (error) {
       alert({
         title:
           error instanceof TravelogueSocialError
             ? error.message
-            : copy.socialCommentFailed,
+            : editingComment
+              ? copy.socialCommentUpdateFailed
+              : copy.socialCommentFailed,
       });
       throw error;
     }
+  };
+
+  const onDeleteComment = (comment: TravelRecordComment) => {
+    alert({
+      title: copy.feedDeleteCommentConfirmTitle,
+      message: copy.feedDeleteCommentConfirmMessage,
+      buttons: [
+        { label: copy.cancel, variant: 'secondary', onPress: () => undefined },
+        {
+          label: copy.feedDeleteComment,
+          variant: 'danger',
+          onPress: () => {
+            void handleDeleteComment(comment.commentId).catch(error => {
+              alert({
+                title:
+                  error instanceof TravelogueSocialError
+                    ? error.message
+                    : copy.socialCommentDeleteFailed,
+              });
+            });
+          },
+        },
+      ],
+    });
+  };
+
+  const closeCommentModal = () => {
+    setCommentOpen(false);
+    setEditingComment(null);
   };
 
   return (
@@ -108,7 +148,15 @@ function TravelogueFeedRow({
         }
         onToggleLike={onToggleLike}
         onImportPlan={handleImportPlan}
-        onOpenComposer={() => setCommentOpen(true)}
+        onOpenComposer={() => {
+          setEditingComment(null);
+          setCommentOpen(true);
+        }}
+        onEditComment={comment => {
+          setEditingComment(comment);
+          setCommentOpen(true);
+        }}
+        onDeleteComment={onDeleteComment}
       />
       <ImportPlanModal {...importModalProps} />
       <TravelogueCommentModal
@@ -116,8 +164,10 @@ function TravelogueFeedRow({
         copy={copy}
         userName={userName}
         subtitle={travelRecord.title ?? undefined}
+        mode={editingComment ? 'edit' : 'create'}
+        initialContent={editingComment?.content ?? ''}
         submitting={commenting}
-        onClose={() => setCommentOpen(false)}
+        onClose={closeCommentModal}
         onSubmit={onSubmitComment}
       />
     </>

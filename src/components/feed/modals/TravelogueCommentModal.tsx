@@ -15,6 +15,8 @@ type TravelogueCommentModalProps = {
   copy: Copy;
   userName: string;
   subtitle?: string;
+  mode?: 'create' | 'edit';
+  initialContent?: string;
   submitting?: boolean;
   onClose: () => void;
   onSubmit: (text: string) => void | Promise<void>;
@@ -25,6 +27,8 @@ export function TravelogueCommentModal({
   copy,
   userName,
   subtitle,
+  mode = 'create',
+  initialContent = '',
   submitting = false,
   onClose,
   onSubmit,
@@ -39,13 +43,18 @@ export function TravelogueCommentModal({
       setBusy(false);
       return;
     }
+    setDraft(initialContent);
     const timer = setTimeout(() => inputRef.current?.focus(), 100);
     return () => clearTimeout(timer);
-  }, [visible]);
+  }, [visible, initialContent]);
 
   const handleSubmit = () => {
     const trimmed = draft.trim();
     if (!trimmed || busy || submitting) {
+      return;
+    }
+    if (mode === 'edit' && trimmed === initialContent.trim()) {
+      onClose();
       return;
     }
     setBusy(true);
@@ -63,12 +72,16 @@ export function TravelogueCommentModal({
   };
 
   const disabled = !draft.trim() || busy || submitting;
+  const title =
+    mode === 'edit' ? copy.feedEditComment : copy.feedCommentsTitle;
+  const submitLabel =
+    mode === 'edit' ? copy.feedEditComment : copy.feedAddComment;
 
   return (
     <AppModal
       visible={visible}
       onClose={busy || submitting ? () => undefined : onClose}
-      title={copy.feedCommentsTitle}
+      title={title}
       subtitle={subtitle}
       keyboardAware
       closeAccessibilityLabel={copy.cancel}
@@ -83,7 +96,7 @@ export function TravelogueCommentModal({
               disabled: busy || submitting,
             },
             {
-              label: copy.feedAddComment,
+              label: submitLabel,
               onPress: handleSubmit,
               variant: 'primary',
               disabled,
