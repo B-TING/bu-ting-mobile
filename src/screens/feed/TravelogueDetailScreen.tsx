@@ -9,7 +9,10 @@ import { ImportPlanModal } from '../../components/feed/modals/ImportPlanModal';
 import { TravelogueCommentModal } from '../../components/feed/modals/TravelogueCommentModal';
 import { TravelogueImageCarousel } from '../../components/feed/TravelogueImageCarousel';
 import { TravelogueSocialBar } from '../../components/feed/TravelogueSocialBar';
-import { useTravelogueSocialActions } from '../../components/feed/useTravelogueSocialActions';
+import {
+  TravelogueSocialError,
+  useTravelogueSocialActions,
+} from '../../components/feed/useTravelogueSocialActions';
 import { PlaceReviewFormModal } from '../../components/review/modals/PlaceReviewFormModal';
 import { TravelogueComposeModal } from '../../components/review/modals/TravelogueComposeModal';
 import { BackButton } from '../../components/shared/buttons/BackButton';
@@ -164,6 +167,7 @@ function TravelRecordDetailBody({
     social,
     userId,
     userName,
+    commenting,
     handleToggleLike,
     handleAddComment,
     handleImportPlan,
@@ -173,6 +177,31 @@ function TravelRecordDetailBody({
       onTravelRecordChange({ ...travelRecord, ...patch });
     },
   });
+
+  const onToggleLike = () => {
+    void handleToggleLike().catch(error => {
+      alert({
+        title:
+          error instanceof TravelogueSocialError
+            ? error.message
+            : copy.socialLikeFailed,
+      });
+    });
+  };
+
+  const onSubmitComment = async (text: string) => {
+    try {
+      await handleAddComment(text);
+    } catch (error) {
+      alert({
+        title:
+          error instanceof TravelogueSocialError
+            ? error.message
+            : copy.socialCommentFailed,
+      });
+      throw error;
+    }
+  };
 
   const editPlan = useMemo(
     () =>
@@ -484,7 +513,7 @@ function TravelRecordDetailBody({
             copy={copy}
             social={social}
             userId={userId}
-            onToggleLike={handleToggleLike}
+            onToggleLike={onToggleLike}
             onImportPlan={handleImportPlan}
           />
 
@@ -706,8 +735,9 @@ function TravelRecordDetailBody({
         copy={copy}
         userName={userName}
         subtitle={travelRecord.title ?? undefined}
+        submitting={commenting}
         onClose={() => setCommentOpen(false)}
-        onSubmit={handleAddComment}
+        onSubmit={onSubmitComment}
       />
       <ImportPlanModal {...importModalProps} />
 

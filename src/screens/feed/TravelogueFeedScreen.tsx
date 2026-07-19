@@ -12,15 +12,19 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TravelogueFeedItem } from '../../components/feed/TravelogueFeedItem';
 import { ImportPlanModal } from '../../components/feed/modals/ImportPlanModal';
 import { TravelogueCommentModal } from '../../components/feed/modals/TravelogueCommentModal';
-import { useTravelogueSocialActions } from '../../components/feed/useTravelogueSocialActions';
+import {
+  TravelogueSocialError,
+  useTravelogueSocialActions,
+} from '../../components/feed/useTravelogueSocialActions';
 import { BackButton } from '../../components/shared/buttons/BackButton';
 import { AppIcon } from '../../components/shared/icons/AppIcon';
+import { useAppAlert } from '../../components/shared/modals';
 import { useAppLanguage, useCopy } from '../../i18n';
 import { ICON_COLOR_MUTED, ICON_COLOR_PRIMARY } from '../../constants/icons';
 import type { RootStackParamList } from '../../navigation/types';
-import { fetchTravelRecordFeed, createTravelRecordComment } from '../../services/travel/travelRecordService';
+import { fetchTravelRecordFeed } from '../../services/travel/travelRecordService';
 import { mapTravelRecordFeedItem } from '../../types/travelRecordApi';
-import { useAppStore, useAuthStore } from '../../stores';
+import { useAuthStore } from '../../stores';
 import { selectReusableAccessToken } from '../../stores/useAuthStore';
 import type { TravelRecord } from '../../types/travelReview';
 import type { AppLanguage } from '../../types/user';
@@ -35,7 +39,6 @@ type FeedRowProps = {
   travelRecord: TravelRecord;
   language: AppLanguage;
   navigation: NavigationProp<RootStackParamList>;
-  onOpenComposer: (travelRecord: TravelRecord) => void;
   onPatchRecord: (travelRecordId: string, patch: Partial<TravelRecord>) => void;
 };
 
@@ -43,15 +46,18 @@ function TravelogueFeedRow({
   travelRecord,
   language,
   navigation,
-  onOpenComposer,
   onPatchRecord,
 }: FeedRowProps) {
+  const { alert } = useAppAlert();
   const copy = useCopy('travelReview');
+  const [commentOpen, setCommentOpen] = useState(false);
   const {
     social,
     userId,
     userName,
+    commenting,
     handleToggleLike,
+    handleAddComment,
     handleImportPlan,
     importModalProps,
   } = useTravelogueSocialActions(travelRecord, copy, navigation, {
@@ -59,6 +65,31 @@ function TravelogueFeedRow({
       onPatchRecord(travelRecord.travelRecordId, patch);
     },
   });
+
+  const onToggleLike = () => {
+    void handleToggleLike().catch(error => {
+      alert({
+        title:
+          error instanceof TravelogueSocialError
+            ? error.message
+            : copy.socialLikeFailed,
+      });
+    });
+  };
+
+  const onSubmitComment = async (text: string) => {
+    try {
+      await handleAddComment(text);
+    } catch (error) {
+      alert({
+        title:
+          error instanceof TravelogueSocialError
+            ? error.message
+            : copy.socialCommentFailed,
+      });
+      throw error;
+    }
+  };
 
   return (
     <>
@@ -74,11 +105,20 @@ function TravelogueFeedRow({
             travelRecordId: travelRecord.travelRecordId,
           })
         }
-        onToggleLike={handleToggleLike}
+        onToggleLike={onToggleLike}
         onImportPlan={handleImportPlan}
-        onOpenComposer={() => onOpenComposer(travelRecord)}
+        onOpenComposer={() => setCommentOpen(true)}
       />
       <ImportPlanModal {...importModalProps} />
+      <TravelogueCommentModal
+        visible={commentOpen}
+        copy={copy}
+        userName={userName}
+        subtitle={travelRecord.title ?? undefined}
+        submitting={commenting}
+        onClose={() => setCommentOpen(false)}
+        onSubmit={onSubmitComment}
+      />
     </>
   );
 }
@@ -86,14 +126,12 @@ function TravelogueFeedRow({
 export function TravelogueFeedScreen({ navigation, embeddedInMainTabs = false }: Props) {
   const insets = useSafeAreaInsets();
   const language = useAppLanguage();
-  const auth = useAppStore(s => s.auth);
   const accessToken = useAuthStore(selectReusableAccessToken);
   const copy = useCopy('travelReview');
 
   const [travelRecords, setTravelRecords] = useState<TravelRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [commentTarget, setCommentTarget] = useState<TravelRecord | null>(null);
 
   const bottomPadding = embeddedInMainTabs ? 16 : insets.bottom + 16;
 
@@ -139,22 +177,6 @@ export function TravelogueFeedScreen({ navigation, embeddedInMainTabs = false }:
     }
   }, [loadFeed]);
 
-  const userName = auth.displayName ?? (language === 'ko' ? '여행자' : 'Traveler');
-
-  const handleSubmitComment = (text: string) => {
-    if (!commentTarget || !accessToken?.trim()) {
-      return;
-    }
-    const travelRecordId = commentTarget.travelRecordId;
-    void createTravelRecordComment(accessToken, travelRecordId, {
-      content: text.trim(),
-    }).catch(error => {
-      if (__DEV__) {
-        console.warn('[TravelogueFeed] comment failed', error);
-      }
-    });
-  };
-
   return (
     <View className="flex-1 bg-brand-background">
       <View className="flex-row items-center border-b border-brand-border bg-brand-surface px-4 py-3">
@@ -194,7 +216,6 @@ export function TravelogueFeedScreen({ navigation, embeddedInMainTabs = false }:
               travelRecord={item}
               language={language}
               navigation={navigation}
-              onOpenComposer={setCommentTarget}
               onPatchRecord={(id, patch) => {
                 setTravelRecords(prev =>
                   prev.map(r => (r.travelRecordId === id ? { ...r, ...patch } : r)),
@@ -216,15 +237,6 @@ export function TravelogueFeedScreen({ navigation, embeddedInMainTabs = false }:
           }
         />
       )}
-
-      <TravelogueCommentModal
-        visible={commentTarget != null}
-        copy={copy}
-        userName={userName}
-        subtitle={commentTarget?.title ?? undefined}
-        onClose={() => setCommentTarget(null)}
-        onSubmit={handleSubmitComment}
-      />
     </View>
   );
 }

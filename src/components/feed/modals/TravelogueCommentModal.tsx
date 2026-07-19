@@ -6,7 +6,6 @@ import {
   AppModalActions,
 } from '../../shared/modals';
 import type { CopyFor } from '../../../i18n';
-import type { AppLanguage } from '../../../types/user';
 import { authorInitial } from '../../../utils/review/travelReview';
 
 type Copy = CopyFor<'travelReview'>;
@@ -16,8 +15,9 @@ type TravelogueCommentModalProps = {
   copy: Copy;
   userName: string;
   subtitle?: string;
+  submitting?: boolean;
   onClose: () => void;
-  onSubmit: (text: string) => void;
+  onSubmit: (text: string) => void | Promise<void>;
 };
 
 export function TravelogueCommentModal({
@@ -25,15 +25,18 @@ export function TravelogueCommentModal({
   copy,
   userName,
   subtitle,
+  submitting = false,
   onClose,
   onSubmit,
 }: TravelogueCommentModalProps) {
   const inputRef = useRef<TextInput>(null);
   const [draft, setDraft] = useState('');
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!visible) {
       setDraft('');
+      setBusy(false);
       return;
     }
     const timer = setTimeout(() => inputRef.current?.focus(), 100);
@@ -42,18 +45,29 @@ export function TravelogueCommentModal({
 
   const handleSubmit = () => {
     const trimmed = draft.trim();
-    if (!trimmed) {
+    if (!trimmed || busy || submitting) {
       return;
     }
-    onSubmit(trimmed);
-    setDraft('');
-    onClose();
+    setBusy(true);
+    void Promise.resolve(onSubmit(trimmed))
+      .then(() => {
+        setDraft('');
+        onClose();
+      })
+      .catch(() => {
+        // 호출 측에서 안내. 모달은 유지해 재시도 가능.
+      })
+      .finally(() => {
+        setBusy(false);
+      });
   };
+
+  const disabled = !draft.trim() || busy || submitting;
 
   return (
     <AppModal
       visible={visible}
-      onClose={onClose}
+      onClose={busy || submitting ? () => undefined : onClose}
       title={copy.feedCommentsTitle}
       subtitle={subtitle}
       keyboardAware
@@ -62,12 +76,17 @@ export function TravelogueCommentModal({
         <AppModalActions
           className="mt-5"
           actions={[
-            { label: copy.cancel, onPress: onClose, variant: 'secondary' },
+            {
+              label: copy.cancel,
+              onPress: onClose,
+              variant: 'secondary',
+              disabled: busy || submitting,
+            },
             {
               label: copy.feedAddComment,
               onPress: handleSubmit,
               variant: 'primary',
-              disabled: !draft.trim(),
+              disabled,
             },
           ]}
         />
@@ -86,6 +105,7 @@ export function TravelogueCommentModal({
             placeholder={copy.feedCommentPlaceholder}
             placeholderTextColor="#94A3B8"
             multiline
+            editable={!busy && !submitting}
             className="min-h-[64px] flex-1 text-sm leading-5 text-brand-text"
             textAlignVertical="top"
           />

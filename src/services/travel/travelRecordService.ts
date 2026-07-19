@@ -259,7 +259,14 @@ export async function likeTravelRecord(
   accessToken: string,
   travelRecordId: string,
 ): Promise<TravelRecordLikeResponse> {
-  return apiPost(url(TRAVEL_RECORD_ENDPOINTS.likes(travelRecordId)), auth(accessToken));
+  const data = await apiPost<TravelRecordLikeResponse>(
+    url(TRAVEL_RECORD_ENDPOINTS.likes(travelRecordId)),
+    auth(accessToken),
+  );
+  if (!data?.travelRecordId) {
+    throw new TravelRecordServiceError('Like response missing travelRecordId');
+  }
+  return data;
 }
 
 export async function unlikeTravelRecord(
@@ -267,6 +274,42 @@ export async function unlikeTravelRecord(
   travelRecordId: string,
 ): Promise<void> {
   await apiDelete(url(TRAVEL_RECORD_ENDPOINTS.likes(travelRecordId)), auth(accessToken));
+}
+
+function mapTravelRecordComment(raw: TravelRecordComment): TravelRecordComment {
+  const nowIso = new Date().toISOString();
+  const createdAt = normalizeCommentTimestamp(raw.createdAt) ?? nowIso;
+  const updatedAt =
+    normalizeCommentTimestamp(raw.updatedAt) ??
+    normalizeCommentTimestamp(raw.createdAt) ??
+    createdAt;
+  return {
+    commentId: raw.commentId,
+    travelRecordId: raw.travelRecordId,
+    authorId: raw.authorId,
+    authorNickname: raw.authorNickname ?? '',
+    authorProfileImageUrl: raw.authorProfileImageUrl ?? null,
+    content: raw.content ?? '',
+    createdAt,
+    updatedAt,
+  };
+}
+
+/** 파싱 불가·epoch(1월 1일) 등은 버림 */
+function normalizeCommentTimestamp(value: unknown): string | null {
+  if (typeof value !== 'string' || !value.trim()) {
+    return null;
+  }
+  const date = new Date(value);
+  const ms = date.getTime();
+  if (Number.isNaN(ms)) {
+    return null;
+  }
+  // 1970-01-01 근처는 서버 기본값/누락으로 보고 무시
+  if (ms < 24 * 60 * 60 * 1000) {
+    return null;
+  }
+  return date.toISOString();
 }
 
 export async function fetchTravelRecordComments(
@@ -279,7 +322,7 @@ export async function fetchTravelRecordComments(
       mapError,
     },
   );
-  return data ?? [];
+  return (data ?? []).map(mapTravelRecordComment);
 }
 
 export async function createTravelRecordComment(
@@ -287,10 +330,17 @@ export async function createTravelRecordComment(
   travelRecordId: string,
   body: TravelRecordCommentCreateRequest,
 ): Promise<TravelRecordComment> {
-  return apiPost(url(TRAVEL_RECORD_ENDPOINTS.comments(travelRecordId)), {
-    ...auth(accessToken),
-    body,
-  });
+  const data = await apiPost<TravelRecordComment>(
+    url(TRAVEL_RECORD_ENDPOINTS.comments(travelRecordId)),
+    {
+      ...auth(accessToken),
+      body,
+    },
+  );
+  if (!data?.commentId) {
+    throw new TravelRecordServiceError('Comment create response missing commentId');
+  }
+  return mapTravelRecordComment(data);
 }
 
 export async function updateTravelRecordComment(
@@ -299,10 +349,17 @@ export async function updateTravelRecordComment(
   commentId: string,
   body: TravelRecordCommentUpdateRequest,
 ): Promise<TravelRecordComment> {
-  return apiPatch(url(TRAVEL_RECORD_ENDPOINTS.commentById(travelRecordId, commentId)), {
-    ...auth(accessToken),
-    body,
-  });
+  const data = await apiPatch<TravelRecordComment>(
+    url(TRAVEL_RECORD_ENDPOINTS.commentById(travelRecordId, commentId)),
+    {
+      ...auth(accessToken),
+      body,
+    },
+  );
+  if (!data?.commentId) {
+    throw new TravelRecordServiceError('Comment update response missing commentId');
+  }
+  return mapTravelRecordComment(data);
 }
 
 export async function deleteTravelRecordComment(

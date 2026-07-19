@@ -109,6 +109,9 @@ export const TRAVEL_REVIEW_COPY: Record<
     feedViewAllComments: (n: number) => string;
     viewDetail: string;
     feedTapHint: string;
+    socialLoginRequired: string;
+    socialLikeFailed: string;
+    socialCommentFailed: string;
   }
 > = {
   ko: {
@@ -214,6 +217,9 @@ export const TRAVEL_REVIEW_COPY: Record<
     feedViewAllComments: n => `댓글 ${n}개 모두 보기`,
     viewDetail: '자세히 보기',
     feedTapHint: '탭하면 상세 여행기를 볼 수 있어요',
+    socialLoginRequired: '로그인이 필요해요.',
+    socialLikeFailed: '좋아요 처리에 실패했어요.',
+    socialCommentFailed: '댓글 등록에 실패했어요.',
   },
   en: {
     writeReview: 'Write review',
@@ -318,6 +324,9 @@ export const TRAVEL_REVIEW_COPY: Record<
     feedViewAllComments: n => `View all ${n} comments`,
     viewDetail: 'View details',
     feedTapHint: 'Tap to open the full travelogue',
+    socialLoginRequired: 'Please sign in to continue.',
+    socialLikeFailed: 'Could not update like.',
+    socialCommentFailed: 'Could not post comment.',
   },
   ja: {
     writeReview: 'レビューを書く',
@@ -422,6 +431,9 @@ export const TRAVEL_REVIEW_COPY: Record<
     feedViewAllComments: n => `コメント${n}件をすべて見る`,
     viewDetail: '詳細を見る',
     feedTapHint: 'タップで旅行記の詳細を表示',
+    socialLoginRequired: 'ログインが必要です。',
+    socialLikeFailed: 'いいねに失敗しました。',
+    socialCommentFailed: 'コメント投稿に失敗しました。',
   },
   zh: {
     writeReview: '写点评',
@@ -523,5 +535,8 @@ export const TRAVEL_REVIEW_COPY: Record<
     feedViewAllComments: n => `查看全部 ${n} 条评论`,
     viewDetail: '查看详情',
     feedTapHint: '点击查看完整游记',
+    socialLoginRequired: '请先登录。',
+    socialLikeFailed: '点赞失败。',
+    socialCommentFailed: '评论发布失败。',
   },
 };

@@ -17,7 +17,14 @@ type TravelogueCommentsSectionProps = {
 };
 
 function formatCommentDate(iso: string, language: 'ko' | 'en' | 'ja' | 'zh'): string {
+  if (!iso?.trim()) {
+    return '';
+  }
   const date = new Date(iso);
+  const ms = date.getTime();
+  if (Number.isNaN(ms) || ms < 24 * 60 * 60 * 1000) {
+    return '';
+  }
   return date.toLocaleDateString(language === 'ko' ? 'ko-KR' : 'en-US', {
     month: 'short',
     day: 'numeric',
