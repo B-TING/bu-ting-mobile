@@ -13,6 +13,10 @@ export const TRAVEL_REVIEW_COPY: Record<
   {
     writeReview: string;
     editReview: string;
+    deleteReview: string;
+    deleteReviewConfirmTitle: string;
+    deleteReviewConfirmMessage: string;
+    deleteReviewConfirm: string;
     reviewTitle: string;
     placeLabel: string;
     ratingLabel: string;
@@ -31,8 +35,11 @@ export const TRAVEL_REVIEW_COPY: Record<
     noReviewsYet: string;
     allReviewsDone: string;
     composeTravelogue: string;
+    editTravelogue: string;
     composeTitle: string;
     composeSub: string;
+    editTravelogueTitle: string;
+    editTravelogueSub: string;
     travelogueTitle: string;
     travelogueTitlePlaceholder: string;
     overallRating: string;
@@ -45,6 +52,7 @@ export const TRAVEL_REVIEW_COPY: Record<
     visibilityPublicHint: string;
     visibilityPrivateHint: string;
     publish: string;
+    saveTravelogue: string;
     published: string;
     publishedPublic: string;
     publishedPrivate: string;
@@ -52,6 +60,8 @@ export const TRAVEL_REVIEW_COPY: Record<
     viewMyTravelogue: string;
     publishedSuccessPublic: string;
     publishedSuccessPrivate: string;
+    updatedSuccessPublic: string;
+    updatedSuccessPrivate: string;
     feedTitle: string;
     feedEmpty: string;
     feedEmptySub: string;
@@ -104,6 +114,11 @@ export const TRAVEL_REVIEW_COPY: Record<
   ko: {
     writeReview: '후기 남기기',
     editReview: '후기 수정',
+    deleteReview: '후기 삭제',
+    deleteReviewConfirmTitle: '후기 삭제',
+    deleteReviewConfirmMessage:
+      '이 장소 후기를 삭제할까요? 일정에서 장소 자체는 유지됩니다.',
+    deleteReviewConfirm: '삭제',
     reviewTitle: '여행지 후기',
     placeLabel: '장소',
     ratingLabel: '평점',
@@ -122,8 +137,11 @@ export const TRAVEL_REVIEW_COPY: Record<
     noReviewsYet: '아직 작성한 후기가 없어요',
     allReviewsDone: '모든 여행지 후기가 완료됐어요!',
     composeTravelogue: '여행기 작성하기',
+    editTravelogue: '여행기 수정',
     composeTitle: '여행기 작성',
     composeSub: '작성한 후기를 바탕으로 여행기를 완성해 보세요. 후기가 없어도 등록할 수 있어요.',
+    editTravelogueTitle: '여행기 수정',
+    editTravelogueSub: '제목·본문과 공개 여부를 수정할 수 있어요.',
     travelogueTitle: '제목',
     travelogueTitlePlaceholder: '예: 부산 3박 4일 맛집 투어',
     overallRating: '종합 평점',
@@ -136,6 +154,7 @@ export const TRAVEL_REVIEW_COPY: Record<
     visibilityPublicHint: '다른 여행자들이 피드에서 볼 수 있어요',
     visibilityPrivateHint: '나만 볼 수 있어요. 피드에는 표시되지 않아요',
     publish: '게시하기',
+    saveTravelogue: '저장하기',
     published: '게시됨',
     publishedPublic: '공개',
     publishedPrivate: '비공개',
@@ -143,6 +162,8 @@ export const TRAVEL_REVIEW_COPY: Record<
     viewMyTravelogue: '내 여행기 보기',
     publishedSuccessPublic: '여행기가 공개 게시됐어요!',
     publishedSuccessPrivate: '여행기가 비공개로 저장됐어요!',
+    updatedSuccessPublic: '여행기가 수정됐어요!',
+    updatedSuccessPrivate: '여행기가 비공개로 저장됐어요!',
     feedTitle: '여행기',
     feedEmpty: '아직 게시된 여행기가 없어요',
     feedEmptySub: '공개로 게시된 여행기가 여기에 표시됩니다.',
@@ -197,6 +218,11 @@ export const TRAVEL_REVIEW_COPY: Record<
   en: {
     writeReview: 'Write review',
     editReview: 'Edit review',
+    deleteReview: 'Delete review',
+    deleteReviewConfirmTitle: 'Delete review',
+    deleteReviewConfirmMessage:
+      'Delete this place review? The place stays on your itinerary.',
+    deleteReviewConfirm: 'Delete',
     reviewTitle: 'Place review',
     placeLabel: 'Place',
     ratingLabel: 'Rating',
@@ -215,8 +241,11 @@ export const TRAVEL_REVIEW_COPY: Record<
     noReviewsYet: 'No reviews yet',
     allReviewsDone: 'All place reviews are complete!',
     composeTravelogue: 'Create travelogue',
+    editTravelogue: 'Edit travelogue',
     composeTitle: 'Compose travelogue',
     composeSub: 'Complete your travelogue from the reviews you wrote. You can publish without any reviews.',
+    editTravelogueTitle: 'Edit travelogue',
+    editTravelogueSub: 'Update the title, summary, and visibility.',
     travelogueTitle: 'Title',
     travelogueTitlePlaceholder: 'e.g. 4-day Busan food tour',
     overallRating: 'Overall rating',
@@ -229,6 +258,7 @@ export const TRAVEL_REVIEW_COPY: Record<
     visibilityPublicHint: 'Visible to other travelers in the feed',
     visibilityPrivateHint: 'Only you can see this. It won\'t appear in the feed',
     publish: 'Publish',
+    saveTravelogue: 'Save',
     published: 'Published',
     publishedPublic: 'Public',
     publishedPrivate: 'Private',
@@ -236,6 +266,8 @@ export const TRAVEL_REVIEW_COPY: Record<
     viewMyTravelogue: 'View my travelogue',
     publishedSuccessPublic: 'Travelogue published publicly!',
     publishedSuccessPrivate: 'Travelogue saved privately!',
+    updatedSuccessPublic: 'Travelogue updated!',
+    updatedSuccessPrivate: 'Travelogue saved privately!',
     feedTitle: 'Travelogues',
     feedEmpty: 'No travelogues yet',
     feedEmptySub: 'Public travelogues from other travelers will appear here.',
@@ -290,6 +322,11 @@ export const TRAVEL_REVIEW_COPY: Record<
   ja: {
     writeReview: 'レビューを書く',
     editReview: 'レビューを編集',
+    deleteReview: 'レビューを削除',
+    deleteReviewConfirmTitle: 'レビューを削除',
+    deleteReviewConfirmMessage:
+      'このスポットのレビューを削除しますか？日程の場所自体は残ります。',
+    deleteReviewConfirm: '削除',
     reviewTitle: 'スポットレビュー',
     placeLabel: '場所',
     ratingLabel: '評価',
@@ -308,8 +345,11 @@ export const TRAVEL_REVIEW_COPY: Record<
     noReviewsYet: 'まだレビューがありません',
     allReviewsDone: 'すべてのレビューが完了しました！',
     composeTravelogue: '旅行記を作成',
+    editTravelogue: '旅行記を編集',
     composeTitle: '旅行記を作成',
     composeSub: '書いたレビューをもとに旅行記を完成させましょう。レビューがなくても登録できます。',
+    editTravelogueTitle: '旅行記を編集',
+    editTravelogueSub: 'タイトル・本文・公開設定を変更できます。',
     travelogueTitle: 'タイトル',
     travelogueTitlePlaceholder: '例：釜山3泊4日グルメ旅',
     overallRating: '総合評価',
@@ -322,6 +362,7 @@ export const TRAVEL_REVIEW_COPY: Record<
     visibilityPublicHint: '他の旅行者がフィードで閲覧できます',
     visibilityPrivateHint: '自分だけが閲覧できます。フィードには表示されません',
     publish: '公開する',
+    saveTravelogue: '保存する',
     published: '公開済み',
     publishedPublic: '公開',
     publishedPrivate: '非公開',
@@ -329,6 +370,8 @@ export const TRAVEL_REVIEW_COPY: Record<
     viewMyTravelogue: '自分の旅行記を見る',
     publishedSuccessPublic: '旅行記を公開しました！',
     publishedSuccessPrivate: '旅行記を非公開で保存しました！',
+    updatedSuccessPublic: '旅行記を更新しました！',
+    updatedSuccessPrivate: '旅行記を非公開で保存しました！',
     feedTitle: '旅行記',
     feedEmpty: 'まだ公開された旅行記がありません',
     feedEmptySub: '公開された旅行記がここに表示されます。',
@@ -383,6 +426,10 @@ export const TRAVEL_REVIEW_COPY: Record<
   zh: {
     writeReview: '写点评',
     editReview: '编辑点评',
+    deleteReview: '删除点评',
+    deleteReviewConfirmTitle: '删除点评',
+    deleteReviewConfirmMessage: '要删除此地点评吗？行程中的地点会保留。',
+    deleteReviewConfirm: '删除',
     reviewTitle: '地点点评',
     placeLabel: '地点',
     ratingLabel: '评分',
@@ -401,8 +448,11 @@ export const TRAVEL_REVIEW_COPY: Record<
     noReviewsYet: '暂无点评',
     allReviewsDone: '所有地点点评已完成！',
     composeTravelogue: '撰写游记',
+    editTravelogue: '编辑游记',
     composeTitle: '撰写游记',
     composeSub: '根据已写点评完成游记。没有点评也可以发布。',
+    editTravelogueTitle: '编辑游记',
+    editTravelogueSub: '可修改标题、正文与公开设置。',
     travelogueTitle: '标题',
     travelogueTitlePlaceholder: '例：釜山四天美食之旅',
     overallRating: '综合评分',
@@ -415,6 +465,7 @@ export const TRAVEL_REVIEW_COPY: Record<
     visibilityPublicHint: '其他旅行者可在动态中看到',
     visibilityPrivateHint: '仅自己可见，不会出现在动态中',
     publish: '发布',
+    saveTravelogue: '保存',
     published: '已发布',
     publishedPublic: '公开',
     publishedPrivate: '私密',
@@ -422,6 +473,8 @@ export const TRAVEL_REVIEW_COPY: Record<
     viewMyTravelogue: '查看我的游记',
     publishedSuccessPublic: '游记已公开发布！',
     publishedSuccessPrivate: '游记已私密保存！',
+    updatedSuccessPublic: '游记已更新！',
+    updatedSuccessPrivate: '游记已私密保存！',
     feedTitle: '游记',
     feedEmpty: '暂无已发布游记',
     feedEmptySub: '公开发布的游记会显示在这里。',

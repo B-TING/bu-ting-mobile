@@ -1,63 +1,32 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 
-import type {
-  PlaceReview,
-  TravelRecord,
-  TravelRecordComment,
-  TravelRecordSocial,
-} from '../types/travelReview';
+import type { PlaceReview } from '../types/travelReview';
 import { createId } from '../utils/common/id';
 
 export const EMPTY_REVIEWS: PlaceReview[] = [];
-export const EMPTY_SOCIAL: TravelRecordSocial = { likedUserIds: [], comments: [] };
 
-const LEGACY_PERSIST_KEY = '@buting/travel-records';
-
-/** 이전 로컬 여행기 persist 잔여 데이터 제거 */
-void AsyncStorage.removeItem(LEGACY_PERSIST_KEY).catch(() => undefined);
-
-type TravelRecordState = {
-  /** 세션 메모리 캐시 (API 응답 반영). 디스크 저장 없음 */
+/**
+ * 장소 후기 세션 캐시만 유지 (여행기 본문은 스토어에 두지 않음).
+ * 디스크 persist 없음.
+ */
+type PlaceReviewState = {
   reviewsByTravelId: Record<string, PlaceReview[]>;
-  publishedTravelRecords: TravelRecord[];
-  publishedTravelIds: string[];
-  socialByTravelRecord: Record<string, TravelRecordSocial>;
   upsertPlaceReview: (
     travelId: string,
     payload: Omit<PlaceReview, 'placeReviewId' | 'createdAt' | 'updatedAt'> & {
       placeReviewId?: string;
-      /** planPlaceId / itemId / travelRecordPlaceId 등 기존 후기 교체 매칭 */
       matchPlaceKeys?: string[];
       /** @deprecated matchPlaceKeys 사용 */
       matchTravelRecordPlaceIds?: string[];
     },
   ) => PlaceReview;
+  removePlaceReview: (travelId: string, placeReviewId: string) => void;
   getReviewsForTravel: (travelId: string) => PlaceReview[];
-  /** Merge API records by travelRecordId (remote wins). */
-  upsertTravelRecords: (records: TravelRecord[]) => void;
-  /** Replace session list (e.g. after feed/me fetch). */
-  setTravelRecords: (records: TravelRecord[]) => void;
-  clearTravelRecords: () => void;
-  getTravelRecordForTravel: (travelId: string) => TravelRecord | undefined;
-  isTravelPublished: (travelId: string) => boolean;
-  getSocialForTravelRecord: (travelRecordId: string) => TravelRecordSocial;
-  toggleLike: (travelRecordId: string, userId: string) => void;
-  addComment: (
-    travelRecordId: string,
-    payload: { authorId: string; authorNickname: string; content: string },
-  ) => TravelRecordComment;
+  clearPlaceReviews: () => void;
 };
 
-function isPublishedStatus(status: TravelRecord['status']): boolean {
-  return status === 'PUBLISHED' || status === 'HIDDEN';
-}
-
-export const useTravelRecordStore = create<TravelRecordState>()((set, get) => ({
+export const useTravelRecordStore = create<PlaceReviewState>()((set, get) => ({
   reviewsByTravelId: {},
-  publishedTravelRecords: [],
-  publishedTravelIds: [],
-  socialByTravelRecord: {},
   upsertPlaceReview: (travelId, payload) => {
     const now = new Date().toISOString();
     const existing = get().reviewsByTravelId[travelId] ?? [];
@@ -122,108 +91,19 @@ export const useTravelRecordStore = create<TravelRecordState>()((set, get) => ({
     }));
     return review;
   },
-  getReviewsForTravel: travelId => get().reviewsByTravelId[travelId] ?? EMPTY_REVIEWS,
-  upsertTravelRecords: records => {
-    if (records.length === 0) {
-      return;
-    }
+  removePlaceReview: (travelId, placeReviewId) => {
     set(state => {
-      const byId = new Map(
-        state.publishedTravelRecords.map(r => [r.travelRecordId, r] as const),
-      );
-      records.forEach(record => {
-        const existing = byId.get(record.travelRecordId);
-        byId.set(record.travelRecordId, existing ? { ...existing, ...record } : record);
-      });
-      const publishedTravelRecords = Array.from(byId.values());
-      const publishedTravelIds = [
-        ...new Set([
-          ...state.publishedTravelIds,
-          ...records
-            .filter(r => isPublishedStatus(r.status))
-            .map(r => r.travelId)
-            .filter((id): id is string => Boolean(id)),
-        ]),
-      ];
-      return { publishedTravelRecords, publishedTravelIds };
-    });
-  },
-  setTravelRecords: records => {
-    set({
-      publishedTravelRecords: records,
-      publishedTravelIds: [
-        ...new Set(
-          records
-            .filter(r => isPublishedStatus(r.status))
-            .map(r => r.travelId)
-            .filter((id): id is string => Boolean(id)),
-        ),
-      ],
-    });
-  },
-  clearTravelRecords: () => {
-    set({
-      reviewsByTravelId: {},
-      publishedTravelRecords: [],
-      publishedTravelIds: [],
-      socialByTravelRecord: {},
-    });
-  },
-  getTravelRecordForTravel: travelId =>
-    get().publishedTravelRecords.find(t => t.travelId === travelId),
-  isTravelPublished: travelId => {
-    const record = get().getTravelRecordForTravel(travelId);
-    if (record) {
-      return isPublishedStatus(record.status);
-    }
-    return get().publishedTravelIds.includes(travelId);
-  },
-  getSocialForTravelRecord: travelRecordId =>
-    get().socialByTravelRecord[travelRecordId] ?? EMPTY_SOCIAL,
-  toggleLike: (travelRecordId, userId) => {
-    const current = get().getSocialForTravelRecord(travelRecordId);
-    const liked = current.likedUserIds.includes(userId);
-    const likedUserIds = liked
-      ? current.likedUserIds.filter(id => id !== userId)
-      : [...current.likedUserIds, userId];
-    set(state => ({
-      socialByTravelRecord: {
-        ...state.socialByTravelRecord,
-        [travelRecordId]: { ...current, likedUserIds },
-      },
-      publishedTravelRecords: state.publishedTravelRecords.map(record =>
-        record.travelRecordId === travelRecordId
-          ? {
-              ...record,
-              likeCount: likedUserIds.length,
-              likedByMe: likedUserIds.includes(userId),
-            }
-          : record,
-      ),
-    }));
-  },
-  addComment: (travelRecordId, payload) => {
-    const current = get().getSocialForTravelRecord(travelRecordId);
-    const now = new Date().toISOString();
-    const comment: TravelRecordComment = {
-      commentId: createId('cmt-'),
-      travelRecordId,
-      authorId: payload.authorId,
-      authorNickname: payload.authorNickname,
-      authorProfileImageUrl: null,
-      content: payload.content.trim(),
-      createdAt: now,
-      updatedAt: now,
-    };
-    set(state => ({
-      socialByTravelRecord: {
-        ...state.socialByTravelRecord,
-        [travelRecordId]: {
-          ...current,
-          comments: [...current.comments, comment],
+      const existing = state.reviewsByTravelId[travelId] ?? [];
+      return {
+        reviewsByTravelId: {
+          ...state.reviewsByTravelId,
+          [travelId]: existing.filter(r => r.placeReviewId !== placeReviewId),
         },
-      },
-    }));
-    return comment;
+      };
+    });
+  },
+  getReviewsForTravel: travelId => get().reviewsByTravelId[travelId] ?? EMPTY_REVIEWS,
+  clearPlaceReviews: () => {
+    set({ reviewsByTravelId: {} });
   },
 }));

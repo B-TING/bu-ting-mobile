@@ -21,7 +21,6 @@ export {
 } from './usePlanStore';
 export {
   EMPTY_REVIEWS,
-  EMPTY_SOCIAL,
   useTravelRecordStore,
 } from './useTravelRecordStore';
 export { useLockerBookmarkStore } from './useLockerBookmarkStore';

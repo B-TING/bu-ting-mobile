@@ -24,7 +24,6 @@ import {
   selectOnboardingForUser,
   useAppStore,
   useAuthStore,
-  useTravelRecordStore,
 } from '../stores';
 import {
   selectAuthUser,
@@ -129,8 +128,6 @@ export function MyPageScreen({ navigation }: Props) {
   const rememberMe = useAuthStore(s => s.rememberMe);
   const accessToken = useAuthStore(selectReusableAccessToken);
 
-  const upsertTravelRecords = useTravelRecordStore(s => s.upsertTravelRecords);
-
   const [nicknameModalOpen, setNicknameModalOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [savingNickname, setSavingNickname] = useState(false);
@@ -149,8 +146,7 @@ export function MyPageScreen({ navigation }: Props) {
     const list = await fetchMyTravelRecords(accessToken);
     const mapped = list.map(item => mapTravelRecordManageItem(item, nickname));
     setRecords(mapped);
-    upsertTravelRecords(mapped);
-  }, [accessToken, nickname, upsertTravelRecords]);
+  }, [accessToken, nickname]);
 
   useEffect(() => {
     let cancelled = false;

@@ -1,4 +1,3 @@
-import { useTravelRecordStore } from '../../stores/useTravelRecordStore';
 import type {
   PlaceReviewResponse,
   PlaceReviewSummaryItemResponse,
@@ -102,7 +101,6 @@ async function fetchPlaceReviewsForRecord(options: {
     if (authorReviews.length > 0) {
       return authorReviews;
     }
-    // 작성자가 아니거나 404면 공개 집계로 fallback
   }
 
   const providerIds = [
@@ -138,46 +136,32 @@ async function fetchPlaceReviewsForRecord(options: {
   return travelRecord.placeReviews ?? [];
 }
 
-function mergeLocalFallback(
-  remote: TravelRecord,
-  local: TravelRecord | undefined,
-): TravelRecord {
-  if (!local) {
-    return remote;
-  }
-  return {
-    ...remote,
-    authorNickname: remote.authorNickname || local.authorNickname,
-    placeReviews:
-      remote.placeReviews.length > 0 ? remote.placeReviews : local.placeReviews,
-    days: remote.days.length > 0 ? remote.days : local.days,
-  };
-}
-
 export type LoadTravelRecordDetailInput = {
   travelRecordId: string;
   accessToken?: string | null;
-  /** 이미 스토어/피드에 있는 요약 (닉네임 등) */
-  seed?: TravelRecord | null;
+};
+
+export type LoadTravelRecordDetailResult = {
+  record: TravelRecord;
+  /** GET /travel-records/me/{id} 성공 → 작성자 본인 */
+  loadedAsOwner: boolean;
 };
 
 /**
- * 공개/내 여행기 상세 + 장소 후기 조회 → 스토어에 upsert.
+ * 공개/내 여행기 상세 + 장소 후기 — API만 사용 (로컬 시드/스토어 병합 없음).
  */
 export async function loadTravelRecordDetail(
   input: LoadTravelRecordDetailInput,
-): Promise<TravelRecord> {
-  const { travelRecordId, accessToken, seed } = input;
-  const store = useTravelRecordStore.getState();
-  const local =
-    seed ??
-    store.publishedTravelRecords.find(r => r.travelRecordId === travelRecordId);
+): Promise<LoadTravelRecordDetailResult> {
+  const { travelRecordId, accessToken } = input;
 
   let dto: TravelRecordResponse | null = null;
+  let loadedAsOwner = false;
 
   if (accessToken?.trim()) {
     try {
       dto = await fetchMyTravelRecord(accessToken, travelRecordId);
+      loadedAsOwner = true;
     } catch {
       // 작성자가 아니면 공개 상세로
     }
@@ -185,24 +169,18 @@ export async function loadTravelRecordDetail(
 
   if (!dto) {
     dto = await fetchPublicTravelRecord(travelRecordId);
+    loadedAsOwner = false;
   }
 
-  let record = mapTravelRecordResponse(dto, {
-    authorNickname: local?.authorNickname ?? '',
-    likedByMe: local?.likedByMe,
-    placeReviews: local?.placeReviews ?? [],
-  });
+  let record = mapTravelRecordResponse(dto);
 
   const placeReviews = await fetchPlaceReviewsForRecord({
     travelRecord: record,
     accessToken,
   });
 
-  record = mergeLocalFallback(
-    { ...record, placeReviews },
-    local ?? undefined,
-  );
-
-  store.upsertTravelRecords([record]);
-  return record;
+  return {
+    record: { ...record, placeReviews },
+    loadedAsOwner,
+  };
 }

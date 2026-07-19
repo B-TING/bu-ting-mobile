@@ -22,6 +22,11 @@ type TravelogueComposeModalProps = {
   destinationLabel: string;
   placeReviews: PlaceReview[];
   defaultTitle?: string;
+  /** 수정 모드: 기존 제목/본문/공개 여부 */
+  initialTitle?: string | null;
+  initialContent?: string | null;
+  initialStatus?: Extract<TravelRecordStatus, 'PUBLISHED' | 'HIDDEN'>;
+  mode?: 'create' | 'edit';
   totalDurationLabel?: string | null;
   publishing?: boolean;
   onClose: () => void;
@@ -40,11 +45,16 @@ export function TravelogueComposeModal({
   destinationLabel,
   placeReviews,
   defaultTitle,
+  initialTitle,
+  initialContent,
+  initialStatus,
+  mode = 'create',
   totalDurationLabel,
   publishing = false,
   onClose,
   onPublish,
 }: TravelogueComposeModalProps) {
+  const isEdit = mode === 'edit';
   const computedRating = averageRating(placeReviews);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -54,10 +64,29 @@ export function TravelogueComposeModal({
     if (!visible) {
       return;
     }
+    if (isEdit) {
+      setTitle(
+        (initialTitle ?? defaultTitle ?? '').trim() ||
+          buildDefaultTravelRecordTitle(destinationLabel, language),
+      );
+      setContent(initialContent ?? '');
+      setIsPublic(initialStatus !== 'HIDDEN');
+      return;
+    }
     setTitle(defaultTitle ?? buildDefaultTravelRecordTitle(destinationLabel, language));
     setContent(buildDefaultContent(placeReviews, language));
     setIsPublic(true);
-  }, [visible, defaultTitle, destinationLabel, language, placeReviews]);
+  }, [
+    visible,
+    isEdit,
+    initialTitle,
+    initialContent,
+    initialStatus,
+    defaultTitle,
+    destinationLabel,
+    language,
+    placeReviews,
+  ]);
 
   const handlePublish = () => {
     const trimmedTitle = title.trim();
@@ -70,19 +99,21 @@ export function TravelogueComposeModal({
         content: content.trim(),
         status: isPublic ? 'PUBLISHED' : 'HIDDEN',
       }),
-    ).then(() => {
-      onClose();
-    }).catch(() => {
-      // 부모에서 에러 처리 — 모달은 열어 둔다
-    });
+    )
+      .then(() => {
+        onClose();
+      })
+      .catch(() => {
+        // 부모에서 에러 처리 — 모달은 열어 둔다
+      });
   };
 
   return (
     <AppModal
       visible={visible}
       onClose={publishing ? () => undefined : onClose}
-      title={copy.composeTitle}
-      subtitle={copy.composeSub}
+      title={isEdit ? copy.editTravelogueTitle : copy.composeTitle}
+      subtitle={isEdit ? copy.editTravelogueSub : copy.composeSub}
       maxHeight="92%"
       keyboardAware
       footer={
@@ -97,9 +128,15 @@ export function TravelogueComposeModal({
             {
               label: publishing
                 ? language === 'ko'
-                  ? '게시 중…'
-                  : 'Publishing…'
-                : copy.publish,
+                  ? isEdit
+                    ? '저장 중…'
+                    : '게시 중…'
+                  : isEdit
+                    ? 'Saving…'
+                    : 'Publishing…'
+                : isEdit
+                  ? copy.saveTravelogue
+                  : copy.publish,
               onPress: handlePublish,
               variant: 'primary',
               disabled: publishing,

@@ -4,13 +4,20 @@ import { Pressable, Text, View } from 'react-native';
 import { PlaceReviewCard } from '../../review/cards/PlaceReviewCard';
 import { PlaceReviewFormModal } from '../../review/modals/PlaceReviewFormModal';
 import { TravelogueComposeModal } from '../../review/modals/TravelogueComposeModal';
+import { AppIcon } from '../../shared/icons/AppIcon';
 import { useAppAlert } from '../../shared/modals';
+import { ICON_COLOR_PRIMARY } from '../../../constants/icons';
 import { useCopy } from '../../../i18n';
+import { deletePlaceReviewForTravel } from '../../../services/travel/deletePlaceReviewForTravel';
 import {
   publishTravelRecordForTravel,
   PublishTravelRecordError,
 } from '../../../services/travel/publishTravelRecordForTravel';
-import { savePlaceReviewForTravel } from '../../../services/travel/savePlaceReviewForTravel';
+import {
+  PlaceReviewSyncError,
+  savePlaceReviewForTravel,
+} from '../../../services/travel/savePlaceReviewForTravel';
+import { updateTravelRecordForTravel } from '../../../services/travel/updateTravelRecordForTravel';
 import {
   fetchMyTravelRecords,
   TravelRecordServiceError,
@@ -21,7 +28,7 @@ import { useAuthStore } from '../../../stores';
 import { selectReusableAccessToken } from '../../../stores/useAuthStore';
 import type { AppLanguage } from '../../../types/user';
 import type { RouteItem, TravelPlan } from '../../../types/travelPlan';
-import type { PlaceReview, TravelRecordStatus } from '../../../types/travelReview';
+import type { PlaceReview, TravelRecord, TravelRecordStatus } from '../../../types/travelReview';
 import {
   collectPlanRoutes,
   getReviewForPlace,
@@ -65,24 +72,21 @@ export function PlanRecordsTab({
   const travelId = plan.apiTravelId ?? plan.planId;
   const reviews =
     useTravelRecordStore(s => s.reviewsByTravelId[travelId]) ?? EMPTY_REVIEWS;
-  const upsertTravelRecords = useTravelRecordStore(s => s.upsertTravelRecords);
-  const isPublished = useTravelRecordStore(s => s.isTravelPublished(travelId));
-  const publishedTravelRecord = useTravelRecordStore(s =>
-    s.publishedTravelRecords.find(
-      t =>
-        t.travelId === travelId &&
-        (t.status === 'PUBLISHED' || t.status === 'HIDDEN'),
-    ),
-  );
+
+  const [publishedTravelRecord, setPublishedTravelRecord] =
+    useState<TravelRecord | null>(null);
+  const isPublished = Boolean(publishedTravelRecord);
 
   const [reviewRoute, setReviewRoute] = useState<RouteItem | null>(null);
   const [composeOpen, setComposeOpen] = useState(false);
+  const [composeMode, setComposeMode] = useState<'create' | 'edit'>('create');
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [savingReview, setSavingReview] = useState(false);
   const [publishing, setPublishing] = useState(false);
 
   useEffect(() => {
     if (!accessToken?.trim() || plan.source !== 'api') {
+      setPublishedTravelRecord(null);
       return;
     }
     let cancelled = false;
@@ -91,10 +95,14 @@ export function PlanRecordsTab({
         if (cancelled) {
           return;
         }
-        const mapped = list.map(item =>
-          mapTravelRecordManageItem(item, authorNickname),
+        const match = list.find(
+          item =>
+            item.travelId === travelId &&
+            (item.status === 'PUBLISHED' || item.status === 'HIDDEN'),
         );
-        upsertTravelRecords(mapped);
+        setPublishedTravelRecord(
+          match ? mapTravelRecordManageItem(match, authorNickname) : null,
+        );
       })
       .catch(error => {
         if (__DEV__) {
@@ -102,11 +110,14 @@ export function PlanRecordsTab({
             error instanceof TravelRecordServiceError ? error.message : String(error);
           console.warn('[PlanRecordsTab] fetchMyTravelRecords failed:', message);
         }
+        if (!cancelled) {
+          setPublishedTravelRecord(null);
+        }
       });
     return () => {
       cancelled = true;
     };
-  }, [accessToken, authorNickname, plan.source, upsertTravelRecords]);
+  }, [accessToken, authorNickname, plan.source, travelId]);
 
   const eligibleRoutes = useMemo(() => collectPlanRoutes(allRoutes), [allRoutes]);
   const progress = useMemo(
@@ -121,6 +132,16 @@ export function PlanRecordsTab({
     }
     return copy.totalDuration(formatDurationMinutes(minutes, language));
   }, [copy, plan.itinerary, language]);
+
+  const openCreateCompose = () => {
+    setComposeMode('create');
+    setComposeOpen(true);
+  };
+
+  const openEditCompose = () => {
+    setComposeMode('edit');
+    setComposeOpen(true);
+  };
 
   const handleSavePlaceReview = async (
     payload: Omit<PlaceReview, 'placeReviewId' | 'createdAt' | 'updatedAt'> & {
@@ -160,6 +181,58 @@ export function PlanRecordsTab({
     }
   };
 
+  const handleDeletePlaceReview = () =>
+    new Promise<void>((resolve, reject) => {
+      if (!reviewRoute) {
+        reject(new Error('no route'));
+        return;
+      }
+      const existing = getReviewForPlace(reviews, placeKey(reviewRoute));
+      alert({
+        title: copy.deleteReviewConfirmTitle,
+        message: copy.deleteReviewConfirmMessage,
+        buttons: [
+          {
+            label: copy.cancel,
+            variant: 'secondary',
+            onPress: () => reject(new Error('cancelled')),
+          },
+          {
+            label: copy.deleteReviewConfirm,
+            variant: 'danger',
+            onPress: () => {
+              void (async () => {
+                setSavingReview(true);
+                try {
+                  await deletePlaceReviewForTravel({
+                    accessToken,
+                    plan,
+                    route: reviewRoute,
+                    placeReviewId: existing?.placeReviewId,
+                  });
+                  resolve();
+                } catch (error) {
+                  alert({
+                    title:
+                      error instanceof PlaceReviewSyncError
+                        ? error.message
+                        : error instanceof Error
+                          ? error.message
+                          : language === 'ko'
+                            ? '후기 삭제에 실패했습니다.'
+                            : 'Failed to delete review.',
+                  });
+                  reject(error);
+                } finally {
+                  setSavingReview(false);
+                }
+              })();
+            },
+          },
+        ],
+      });
+    });
+
   const handlePublish = async (payload: {
     title: string;
     content: string;
@@ -176,21 +249,49 @@ export function PlanRecordsTab({
     setPublishing(true);
     try {
       const firstImage = reviews.flatMap(r => r.media ?? []).find(m => m.type === 'image');
-      await publishTravelRecordForTravel({
-        accessToken,
-        plan,
-        authorNickname,
-        title: payload.title,
-        content: payload.content,
-        status: payload.status,
-        coverImageUrl: firstImage?.uri ?? null,
-      });
-      setSuccessMsg(
-        payload.status === 'PUBLISHED'
-          ? copy.publishedSuccessPublic
-          : copy.publishedSuccessPrivate,
-      );
-      onPublished?.();
+      const coverImageUrl = firstImage?.uri ?? null;
+      const editingExisting =
+        composeMode === 'edit' &&
+        publishedTravelRecord &&
+        !publishedTravelRecord.travelRecordId.startsWith('local-');
+
+      if (editingExisting) {
+        const updated = await updateTravelRecordForTravel({
+          accessToken,
+          travelRecordId: publishedTravelRecord.travelRecordId,
+          travelId,
+          authorNickname,
+          title: payload.title,
+          content: payload.content,
+          status: payload.status,
+          currentStatus: publishedTravelRecord.status,
+          coverImageUrl:
+            coverImageUrl ?? publishedTravelRecord.coverImageUrl ?? null,
+        });
+        setPublishedTravelRecord(updated);
+        setSuccessMsg(
+          payload.status === 'PUBLISHED'
+            ? copy.updatedSuccessPublic
+            : copy.updatedSuccessPrivate,
+        );
+      } else {
+        const published = await publishTravelRecordForTravel({
+          accessToken,
+          plan,
+          authorNickname,
+          title: payload.title,
+          content: payload.content,
+          status: payload.status,
+          coverImageUrl,
+        });
+        setPublishedTravelRecord(published);
+        setSuccessMsg(
+          payload.status === 'PUBLISHED'
+            ? copy.publishedSuccessPublic
+            : copy.publishedSuccessPrivate,
+        );
+        onPublished?.();
+      }
     } catch (error) {
       alert({
         title:
@@ -199,14 +300,18 @@ export function PlanRecordsTab({
             : error instanceof Error
               ? error.message
               : language === 'ko'
-                ? '여행기 게시에 실패했습니다.'
-                : 'Failed to publish travelogue.',
+                ? '여행기 저장에 실패했습니다.'
+                : 'Failed to save travelogue.',
       });
       throw error;
     } finally {
       setPublishing(false);
     }
   };
+
+  const existingReviewForModal = reviewRoute
+    ? getReviewForPlace(reviews, placeKey(reviewRoute))
+    : undefined;
 
   return (
     <View className="px-4 py-4">
@@ -265,19 +370,30 @@ export function PlanRecordsTab({
 
       {isPublished && publishedTravelRecord ? (
         <View className="mt-4 rounded-2xl border border-brand-primary/30 bg-brand-selected px-4 py-4">
-          <View className="flex-row items-center gap-2">
-            <Text className="text-xs font-bold text-brand-primary">{copy.published}</Text>
-            <View className="rounded-full bg-brand-primary/10 px-2 py-0.5">
-              <Text className="text-[10px] font-bold text-brand-primary">
-                {isTravelRecordPublic(publishedTravelRecord)
-                  ? copy.publishedPublic
-                  : copy.publishedPrivate}
+          <View className="flex-row items-start gap-2">
+            <View className="min-w-0 flex-1">
+              <View className="flex-row items-center gap-2">
+                <Text className="text-xs font-bold text-brand-primary">{copy.published}</Text>
+                <View className="rounded-full bg-brand-primary/10 px-2 py-0.5">
+                  <Text className="text-[10px] font-bold text-brand-primary">
+                    {isTravelRecordPublic(publishedTravelRecord)
+                      ? copy.publishedPublic
+                      : copy.publishedPrivate}
+                  </Text>
+                </View>
+              </View>
+              <Text className="mt-1 text-base font-bold text-brand-text">
+                {publishedTravelRecord.title}
               </Text>
             </View>
+            <Pressable
+              onPress={openEditCompose}
+              accessibilityLabel={copy.editTravelogue}
+              hitSlop={8}
+              className="h-9 w-9 items-center justify-center rounded-full bg-white/80 active:opacity-80">
+              <AppIcon name="pencil" size={18} color={ICON_COLOR_PRIMARY} strokeWidth={2.2} />
+            </Pressable>
           </View>
-          <Text className="mt-1 text-base font-bold text-brand-text">
-            {publishedTravelRecord.title}
-          </Text>
           {onViewTravelRecord ? (
             <Pressable
               onPress={() => onViewTravelRecord(publishedTravelRecord.travelRecordId)}
@@ -289,13 +405,15 @@ export function PlanRecordsTab({
           ) : null}
           {isTravelRecordPublic(publishedTravelRecord) && onViewFeed ? (
             <Pressable onPress={onViewFeed} className="mt-2 active:opacity-80">
-              <Text className="text-sm font-bold text-brand-primary">{copy.viewFeed}</Text>
+              <Text className="text-sm font-bold text-brand-primary">
+                {copy.viewFeed}
+              </Text>
             </Pressable>
           ) : null}
         </View>
       ) : (
         <Pressable
-          onPress={() => setComposeOpen(true)}
+          onPress={openCreateCompose}
           className="mt-4 items-center rounded-2xl bg-brand-primary py-3 active:opacity-90">
           <Text className="font-bold text-white">{copy.composeTravelogue}</Text>
         </Pressable>
@@ -318,9 +436,7 @@ export function PlanRecordsTab({
       <PlaceReviewFormModal
         visible={!!reviewRoute}
         route={reviewRoute}
-        existing={
-          reviewRoute ? getReviewForPlace(reviews, placeKey(reviewRoute)) : undefined
-        }
+        existing={existingReviewForModal}
         copy={copy}
         language={language}
         saving={savingReview}
@@ -330,6 +446,7 @@ export function PlanRecordsTab({
           }
         }}
         onSave={handleSavePlaceReview}
+        onDelete={existingReviewForModal ? handleDeletePlaceReview : undefined}
       />
 
       <TravelogueComposeModal
@@ -340,6 +457,20 @@ export function PlanRecordsTab({
         destinationLabel={destinationLabel}
         placeReviews={reviews}
         defaultTitle={plan.title}
+        mode={composeMode}
+        initialTitle={
+          composeMode === 'edit' ? publishedTravelRecord?.title : undefined
+        }
+        initialContent={
+          composeMode === 'edit' ? publishedTravelRecord?.content : undefined
+        }
+        initialStatus={
+          composeMode === 'edit' &&
+          (publishedTravelRecord?.status === 'PUBLISHED' ||
+            publishedTravelRecord?.status === 'HIDDEN')
+            ? publishedTravelRecord.status
+            : undefined
+        }
         totalDurationLabel={totalDurationLabel}
         publishing={publishing}
         onClose={() => {

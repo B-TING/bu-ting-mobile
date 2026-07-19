@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -18,13 +18,9 @@ import { AppIcon } from '../../components/shared/icons/AppIcon';
 import { useAppLanguage, useCopy } from '../../i18n';
 import { ICON_COLOR_MUTED, ICON_COLOR_PRIMARY } from '../../constants/icons';
 import type { RootStackParamList } from '../../navigation/types';
-import { fetchTravelRecordFeed } from '../../services/travel/travelRecordService';
+import { fetchTravelRecordFeed, createTravelRecordComment } from '../../services/travel/travelRecordService';
 import { mapTravelRecordFeedItem } from '../../types/travelRecordApi';
-import {
-  useAppStore,
-  useAuthStore,
-  useTravelRecordStore,
-} from '../../stores';
+import { useAppStore, useAuthStore } from '../../stores';
 import { selectReusableAccessToken } from '../../stores/useAuthStore';
 import type { TravelRecord } from '../../types/travelReview';
 import type { AppLanguage } from '../../types/user';
@@ -40,6 +36,7 @@ type FeedRowProps = {
   language: AppLanguage;
   navigation: NavigationProp<RootStackParamList>;
   onOpenComposer: (travelRecord: TravelRecord) => void;
+  onPatchRecord: (travelRecordId: string, patch: Partial<TravelRecord>) => void;
 };
 
 function TravelogueFeedRow({
@@ -47,6 +44,7 @@ function TravelogueFeedRow({
   language,
   navigation,
   onOpenComposer,
+  onPatchRecord,
 }: FeedRowProps) {
   const copy = useCopy('travelReview');
   const {
@@ -56,7 +54,11 @@ function TravelogueFeedRow({
     handleToggleLike,
     handleImportPlan,
     importModalProps,
-  } = useTravelogueSocialActions(travelRecord, copy, navigation);
+  } = useTravelogueSocialActions(travelRecord, copy, navigation, {
+    onTravelRecordPatch: patch => {
+      onPatchRecord(travelRecord.travelRecordId, patch);
+    },
+  });
 
   return (
     <>
@@ -87,18 +89,12 @@ export function TravelogueFeedScreen({ navigation, embeddedInMainTabs = false }:
   const auth = useAppStore(s => s.auth);
   const accessToken = useAuthStore(selectReusableAccessToken);
   const copy = useCopy('travelReview');
-  const publishedTravelRecords = useTravelRecordStore(s => s.publishedTravelRecords);
-  const upsertTravelRecords = useTravelRecordStore(s => s.upsertTravelRecords);
-  const addComment = useTravelRecordStore(s => s.addComment);
 
+  const [travelRecords, setTravelRecords] = useState<TravelRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [commentTarget, setCommentTarget] = useState<TravelRecord | null>(null);
 
-  const travelRecords = useMemo(
-    () => publishedTravelRecords.filter(isTravelRecordPublic),
-    [publishedTravelRecords],
-  );
   const bottomPadding = embeddedInMainTabs ? 16 : insets.bottom + 16;
 
   const loadFeed = useCallback(async () => {
@@ -106,9 +102,11 @@ export function TravelogueFeedScreen({ navigation, embeddedInMainTabs = false }:
       { size: 20, sort: 'LATEST' },
       accessToken,
     );
-    const mapped = (page.items ?? []).map(mapTravelRecordFeedItem);
-    upsertTravelRecords(mapped);
-  }, [accessToken, upsertTravelRecords]);
+    const mapped = (page.items ?? [])
+      .map(mapTravelRecordFeedItem)
+      .filter(isTravelRecordPublic);
+    setTravelRecords(mapped);
+  }, [accessToken]);
 
   useEffect(() => {
     let cancelled = false;
@@ -117,6 +115,9 @@ export function TravelogueFeedScreen({ navigation, embeddedInMainTabs = false }:
       .catch(error => {
         if (__DEV__) {
           console.warn('[TravelogueFeed] fetch failed', error);
+        }
+        if (!cancelled) {
+          setTravelRecords([]);
         }
       })
       .finally(() => {
@@ -131,21 +132,26 @@ export function TravelogueFeedScreen({ navigation, embeddedInMainTabs = false }:
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await loadFeed();
-    setRefreshing(false);
+    try {
+      await loadFeed();
+    } finally {
+      setRefreshing(false);
+    }
   }, [loadFeed]);
 
-  const userId = auth.userId ?? 'local-user';
   const userName = auth.displayName ?? (language === 'ko' ? '여행자' : 'Traveler');
 
   const handleSubmitComment = (text: string) => {
-    if (!commentTarget) {
+    if (!commentTarget || !accessToken?.trim()) {
       return;
     }
-    addComment(commentTarget.travelRecordId, {
-      authorId: userId,
-      authorNickname: userName,
-      content: text,
+    const travelRecordId = commentTarget.travelRecordId;
+    void createTravelRecordComment(accessToken, travelRecordId, {
+      content: text.trim(),
+    }).catch(error => {
+      if (__DEV__) {
+        console.warn('[TravelogueFeed] comment failed', error);
+      }
     });
   };
 
@@ -189,6 +195,11 @@ export function TravelogueFeedScreen({ navigation, embeddedInMainTabs = false }:
               language={language}
               navigation={navigation}
               onOpenComposer={setCommentTarget}
+              onPatchRecord={(id, patch) => {
+                setTravelRecords(prev =>
+                  prev.map(r => (r.travelRecordId === id ? { ...r, ...patch } : r)),
+                );
+              }}
             />
           )}
           keyboardShouldPersistTaps="handled"

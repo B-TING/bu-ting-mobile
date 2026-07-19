@@ -1,16 +1,26 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { ImportPlanModalPhase, ImportPlanModalProps } from './modals/ImportPlanModal';
 import type { CopyFor } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
 import {
+  createTravelRecordComment,
+  fetchTravelRecordComments,
+  likeTravelRecord,
+  unlikeTravelRecord,
+} from '../../services/travel/travelRecordService';
+import {
   selectActivePlan,
   useAppStore,
+  useAuthStore,
   usePlanStore,
-  useTravelRecordStore,
-  EMPTY_SOCIAL,
 } from '../../stores';
-import type { TravelRecord } from '../../types/travelReview';
+import { selectReusableAccessToken } from '../../stores/useAuthStore';
+import type {
+  TravelRecord,
+  TravelRecordComment,
+  TravelRecordSocial,
+} from '../../types/travelReview';
 import type { AppLanguage } from '../../types/user';
 
 type Copy = CopyFor<'travelReview'>;
@@ -26,17 +36,54 @@ export function useTravelogueSocialActions(
   travelRecord: TravelRecord,
   copy: Copy,
   navigation: TravelRecordNavigation,
+  options?: {
+    onTravelRecordPatch?: (patch: Partial<TravelRecord>) => void;
+  },
 ) {
   const auth = useAppStore(s => s.auth);
   const language = useAppStore(s => s.language) ?? 'ko';
+  const accessToken = useAuthStore(selectReusableAccessToken);
   const userId = auth.userId ?? 'local-user';
   const userName = auth.displayName ?? (language === 'ko' ? '여행자' : 'Traveler');
 
-  const social = useTravelRecordStore(
-    s => s.socialByTravelRecord[travelRecord.travelRecordId] ?? EMPTY_SOCIAL,
+  const [comments, setComments] = useState<TravelRecordComment[]>([]);
+  const [likeCount, setLikeCount] = useState(travelRecord.likeCount);
+  const [likedByMe, setLikedByMe] = useState(Boolean(travelRecord.likedByMe));
+  const [liking, setLiking] = useState(false);
+
+  useEffect(() => {
+    setLikeCount(travelRecord.likeCount);
+    setLikedByMe(Boolean(travelRecord.likedByMe));
+  }, [travelRecord.likeCount, travelRecord.likedByMe, travelRecord.travelRecordId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchTravelRecordComments(travelRecord.travelRecordId)
+      .then(list => {
+        if (!cancelled) {
+          setComments(list);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setComments([]);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [travelRecord.travelRecordId]);
+
+  const social: TravelRecordSocial = useMemo(
+    () => ({
+      likedUserIds: likedByMe ? [userId] : [],
+      comments,
+      likeCount,
+      likedByMe,
+    }),
+    [likedByMe, userId, comments, likeCount],
   );
-  const toggleLike = useTravelRecordStore(s => s.toggleLike);
-  const addComment = useTravelRecordStore(s => s.addComment);
+
   const importPlanFromTravelRecord = usePlanStore(s => s.importPlanFromTravelRecord);
   const activePlan = usePlanStore(selectActivePlan);
 
@@ -61,17 +108,59 @@ export function useTravelogueSocialActions(
     setImportModalPhase('success');
   }, [importPlanFromTravelRecord, travelRecord, userId, userName]);
 
-  const handleToggleLike = () => {
-    toggleLike(travelRecord.travelRecordId, userId);
-  };
+  const handleToggleLike = useCallback(async () => {
+    if (!accessToken?.trim() || liking) {
+      return;
+    }
+    const nextLiked = !likedByMe;
+    const prevCount = likeCount;
+    const prevLiked = likedByMe;
+    setLikedByMe(nextLiked);
+    setLikeCount(c => Math.max(0, c + (nextLiked ? 1 : -1)));
+    setLiking(true);
+    try {
+      if (nextLiked) {
+        const res = await likeTravelRecord(accessToken, travelRecord.travelRecordId);
+        if (typeof res?.likeCount === 'number') {
+          setLikeCount(res.likeCount);
+        }
+      } else {
+        await unlikeTravelRecord(accessToken, travelRecord.travelRecordId);
+      }
+      options?.onTravelRecordPatch?.({
+        likedByMe: nextLiked,
+        likeCount: nextLiked ? prevCount + 1 : Math.max(0, prevCount - 1),
+      });
+    } catch {
+      setLikedByMe(prevLiked);
+      setLikeCount(prevCount);
+    } finally {
+      setLiking(false);
+    }
+  }, [
+    accessToken,
+    liking,
+    likedByMe,
+    likeCount,
+    travelRecord.travelRecordId,
+    options,
+  ]);
 
-  const handleAddComment = (text: string) => {
-    addComment(travelRecord.travelRecordId, {
-      authorId: userId,
-      authorNickname: userName,
-      content: text,
-    });
-  };
+  const handleAddComment = useCallback(
+    async (text: string) => {
+      const content = text.trim();
+      if (!content || !accessToken?.trim()) {
+        return;
+      }
+      const created = await createTravelRecordComment(
+        accessToken,
+        travelRecord.travelRecordId,
+        { content },
+      );
+      setComments(prev => [...prev, created]);
+    },
+    [accessToken, travelRecord.travelRecordId],
+  );
 
   const handleImportPlan = () => {
     setImportModalPhase('confirm');
@@ -118,7 +207,6 @@ export function useTravelogueSocialActions(
     handleAddComment,
     handleImportPlan,
     importModalProps,
-    // Back-compat aliases used by existing screens
     travelogue: travelRecord,
     handleToggleHelpful: handleToggleLike,
   };

@@ -63,35 +63,27 @@ async function resolveOrCreateDraft(
   title: string,
 ): Promise<TravelRecord> {
   const travelId = travelIdOf(plan);
-  const store = useTravelRecordStore.getState();
-  const cached = store.getTravelRecordForTravel(travelId);
+  const placeReviews = useTravelRecordStore.getState().getReviewsForTravel(travelId);
 
   const loadDetail = async (travelRecordId: string): Promise<TravelRecord | null> => {
     try {
       const detail = await fetchTravelRecordDraft(accessToken, travelId, travelRecordId);
       return mapTravelRecordResponse(detail, {
         authorNickname,
-        placeReviews: store.getReviewsForTravel(travelId),
+        placeReviews,
       });
     } catch {
       try {
         const detail = await fetchMyTravelRecord(accessToken, travelRecordId);
         return mapTravelRecordResponse(detail, {
           authorNickname,
-          placeReviews: store.getReviewsForTravel(travelId),
+          placeReviews,
         });
       } catch {
         return null;
       }
     }
   };
-
-  if (cached && !cached.travelRecordId.startsWith('local-')) {
-    const fromCache = await loadDetail(cached.travelRecordId);
-    if (fromCache) {
-      return fromCache;
-    }
-  }
 
   const mine = await fetchMyTravelRecords(accessToken);
   const match = mine.find(item => item.travelId === travelId);
@@ -105,12 +97,13 @@ async function resolveOrCreateDraft(
   const created = await createTravelRecordDraft(accessToken, travelId, { title });
   return mapTravelRecordResponse(created, {
     authorNickname,
-    placeReviews: store.getReviewsForTravel(travelId),
+    placeReviews,
   });
 }
 
 /**
  * 여행 완료 처리 → 여행기 제목/본문 저장 → 게시(또는 비공개).
+ * 결과는 반환만 하며 여행기 스토어에 저장하지 않음.
  */
 export async function publishTravelRecordForTravel(
   input: PublishTravelRecordInput,
@@ -126,7 +119,6 @@ export async function publishTravelRecordForTravel(
   }
 
   const travelId = travelIdOf(plan);
-  const store = useTravelRecordStore.getState();
 
   try {
     await ensureTravelCompleted(accessToken, plan);
@@ -154,12 +146,10 @@ export async function publishTravelRecordForTravel(
       dto = await hideMyTravelRecord(accessToken, draft.travelRecordId);
     }
 
-    const record = mapTravelRecordResponse(dto, {
+    return mapTravelRecordResponse(dto, {
       authorNickname,
-      placeReviews: store.getReviewsForTravel(travelId),
+      placeReviews: useTravelRecordStore.getState().getReviewsForTravel(travelId),
     });
-    store.upsertTravelRecords([record]);
-    return record;
   } catch (error) {
     if (error instanceof PublishTravelRecordError) {
       throw error;

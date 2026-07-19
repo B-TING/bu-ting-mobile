@@ -205,7 +205,7 @@ export function snapshotToRouteItems(places: TravelRecordPlace[]): RouteItem[] {
       description: '',
       hours: '',
       category: 'attraction',
-      address: place.address ?? undefined,
+      address: place.address ?? '',
     },
   }));
 }
@@ -240,6 +240,9 @@ export function collectTravelRecordImages(travelRecord: TravelRecord): ReviewMed
 export const collectTravelogueImages = collectTravelRecordImages;
 
 export function getLikeCount(social: TravelRecordSocial | undefined): number {
+  if (typeof social?.likeCount === 'number') {
+    return social.likeCount;
+  }
   return social?.likedUserIds.length ?? 0;
 }
 
@@ -250,6 +253,9 @@ export function isLikedByUser(
   social: TravelRecordSocial | undefined,
   userId: string,
 ): boolean {
+  if (typeof social?.likedByMe === 'boolean') {
+    return social.likedByMe;
+  }
   return social?.likedUserIds.includes(userId) ?? false;
 }
 

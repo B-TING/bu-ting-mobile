@@ -10,8 +10,11 @@ import { TravelogueCommentModal } from '../../components/feed/modals/TravelogueC
 import { TravelogueImageCarousel } from '../../components/feed/TravelogueImageCarousel';
 import { TravelogueSocialBar } from '../../components/feed/TravelogueSocialBar';
 import { useTravelogueSocialActions } from '../../components/feed/useTravelogueSocialActions';
+import { PlaceReviewFormModal } from '../../components/review/modals/PlaceReviewFormModal';
+import { TravelogueComposeModal } from '../../components/review/modals/TravelogueComposeModal';
 import { BackButton } from '../../components/shared/buttons/BackButton';
 import { AppIcon } from '../../components/shared/icons/AppIcon';
+import { useAppAlert } from '../../components/shared/modals';
 import { StarRating } from '../../components/shared/rating/StarRating';
 import { EVENT_ZONE_BY_ID } from '../../constants/eventZone/eventZone';
 import { ICON_COLOR_MUTED, ICON_COLOR_PRIMARY } from '../../constants/icons';
@@ -19,11 +22,17 @@ import { getScheduleDayColor } from '../../constants/plan/scheduleDayColors';
 import type { CopyFor } from '../../i18n';
 import { useAppLanguage, useCopy } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
+import { deletePlaceReviewForTravel } from '../../services/travel/deletePlaceReviewForTravel';
 import { loadTravelRecordDetail } from '../../services/travel/loadTravelRecordDetail';
-import { useAuthStore, usePlanStore, useTravelRecordStore } from '../../stores';
+import {
+  PlaceReviewSyncError,
+  savePlaceReviewForTravel,
+} from '../../services/travel/savePlaceReviewForTravel';
+import { updateTravelRecordForTravel } from '../../services/travel/updateTravelRecordForTravel';
+import { useAuthStore, usePlanStore } from '../../stores';
 import { selectReusableAccessToken } from '../../stores/useAuthStore';
 import type { PlaceReview, TravelRecord, TravelRecordPlace } from '../../types/travelReview';
-import type { DailyItinerary, RouteItem } from '../../types/travelPlan';
+import type { DailyItinerary, RouteItem, TravelPlan } from '../../types/travelPlan';
 import type { AppLanguage } from '../../types/user';
 import { resolveEventZoneForRoute } from '../../utils/eventZone/zoneResolver';
 import {
@@ -31,7 +40,6 @@ import {
   authorInitial,
   collectTravelRecordImages,
   getReviewForTravelRecordPlace,
-  resolveTravelRecordDays,
   snapshotToRouteItems,
   travelRecordDestinationLabel,
 } from '../../utils/review/travelReview';
@@ -49,6 +57,37 @@ function sortTravelRecordPlaces(places: TravelRecordPlace[]): TravelRecordPlace[
 
 function zoneBaseColorForRoute(route: RouteItem): string {
   return EVENT_ZONE_BY_ID[resolveEventZoneForRoute(route)].baseColor;
+}
+
+/**
+ * 방문 여부는 여행기 API의 `visited`만 사용 (로컬 일정 스냅샷 병합 금지).
+ */
+function isTravelRecordPlaceVisited(place: TravelRecordPlace): boolean {
+  return place.visited === true;
+}
+
+function buildApiPlanShell(travelRecord: TravelRecord): TravelPlan | null {
+  const travelId = travelRecord.travelId;
+  if (!travelId) {
+    return null;
+  }
+  const start =
+    travelRecord.travelStartDate ?? new Date().toISOString().slice(0, 10);
+  const end = travelRecord.travelEndDate ?? start;
+  return {
+    planId: travelId,
+    apiTravelId: travelId,
+    title: travelRecord.title ?? '',
+    startDate: start,
+    endDate: end,
+    status: 'COMPLETED',
+    travelStatus: 'COMPLETED',
+    constraints: {},
+    members: [],
+    itinerary: [],
+    createdAt: travelRecord.publishedAt ?? new Date().toISOString(),
+    source: 'api',
+  };
 }
 
 function PlaceReviewBlock({
@@ -97,17 +136,23 @@ function PlaceReviewBlock({
 
 function TravelRecordDetailBody({
   travelRecord,
+  isOwner,
+  onTravelRecordChange,
   navigation,
   language,
   copy,
   insets,
 }: {
   travelRecord: TravelRecord;
+  isOwner: boolean;
+  onTravelRecordChange: (next: TravelRecord) => void;
   navigation: Props['navigation'];
   language: AppLanguage;
   copy: Copy;
   insets: { top: number; bottom: number };
 }) {
+  const { alert } = useAppAlert();
+  const accessToken = useAuthStore(selectReusableAccessToken);
   const linkedPlan = usePlanStore(s => {
     const id = travelRecord.travelId;
     if (!id) {
@@ -123,15 +168,27 @@ function TravelRecordDetailBody({
     handleAddComment,
     handleImportPlan,
     importModalProps,
-  } = useTravelogueSocialActions(travelRecord, copy, navigation);
+  } = useTravelogueSocialActions(travelRecord, copy, navigation, {
+    onTravelRecordPatch: patch => {
+      onTravelRecordChange({ ...travelRecord, ...patch });
+    },
+  });
 
+  const editPlan = useMemo(
+    () =>
+      linkedPlan?.source === 'api'
+        ? linkedPlan
+        : buildApiPlanShell(travelRecord),
+    [linkedPlan, travelRecord],
+  );
+
+  /** 일정은 여행기 API days만 사용 (로컬 plan 스냅샷 폴백 금지) */
   const days = useMemo(() => {
-    const resolved = resolveTravelRecordDays(travelRecord, linkedPlan);
-    return resolved.map(day => ({
+    return (travelRecord.days ?? []).map(day => ({
       ...day,
       places: sortTravelRecordPlaces(day.places),
     }));
-  }, [travelRecord, linkedPlan]);
+  }, [travelRecord]);
 
   const scheduleItinerary = useMemo((): DailyItinerary[] => {
     return days.map(day => ({
@@ -157,6 +214,10 @@ function TravelRecordDetailBody({
   const destinationLabel = travelRecordDestinationLabel(travelRecord);
   const [commentOpen, setCommentOpen] = useState(false);
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [reviewRoute, setReviewRoute] = useState<RouteItem | null>(null);
+  const [savingReview, setSavingReview] = useState(false);
 
   const selectedDayNumber = useMemo(() => {
     if (!selectedRouteId) {
@@ -194,6 +255,173 @@ function TravelRecordDetailBody({
       ? copy.tripPeriod(travelRecord.travelStartDate, travelRecord.travelEndDate)
       : null;
 
+  const existingReviewForModal = reviewRoute
+    ? getReviewForTravelRecordPlace(travelRecord.placeReviews, {
+        travelRecordPlaceId: reviewRoute.itemId,
+        planPlaceId: reviewRoute.apiPlanPlaceId,
+      })
+    : undefined;
+
+  const openPlaceReviewEditor = (place: TravelRecordPlace) => {
+    const route =
+      routesByPlaceId.get(place.travelRecordPlaceId) ??
+      snapshotToRouteItems([place])[0];
+    if (!route?.apiPlanPlaceId && place.planPlaceId) {
+      setReviewRoute({ ...route, apiPlanPlaceId: place.planPlaceId });
+      return;
+    }
+    setReviewRoute(route);
+  };
+
+  const handleSaveTravelogue = async (payload: {
+    title: string;
+    content: string;
+    status: 'PUBLISHED' | 'HIDDEN';
+  }) => {
+    if (!accessToken?.trim() || !travelRecord.travelId) {
+      alert({
+        title:
+          language === 'ko' ? '로그인이 필요합니다.' : 'Please sign in to edit.',
+      });
+      throw new Error('login required');
+    }
+    setPublishing(true);
+    try {
+      const updated = await updateTravelRecordForTravel({
+        accessToken,
+        travelRecordId: travelRecord.travelRecordId,
+        travelId: travelRecord.travelId,
+        authorNickname: travelRecord.authorNickname || userName,
+        title: payload.title,
+        content: payload.content,
+        status: payload.status,
+        currentStatus: travelRecord.status,
+        coverImageUrl: travelRecord.coverImageUrl,
+      });
+      onTravelRecordChange({
+        ...updated,
+        placeReviews: travelRecord.placeReviews,
+        days: updated.days.length > 0 ? updated.days : travelRecord.days,
+      });
+    } catch (error) {
+      alert({
+        title:
+          error instanceof Error
+            ? error.message
+            : language === 'ko'
+              ? '여행기 수정에 실패했습니다.'
+              : 'Failed to update travelogue.',
+      });
+      throw error;
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  const handleSavePlaceReview = async (
+    payload: Omit<PlaceReview, 'placeReviewId' | 'createdAt' | 'updatedAt'> & {
+      placeReviewId?: string;
+    },
+  ) => {
+    if (!editPlan || !reviewRoute) {
+      return;
+    }
+    setSavingReview(true);
+    try {
+      const saved = await savePlaceReviewForTravel({
+        accessToken,
+        plan: editPlan,
+        route: reviewRoute,
+        authorNickname: travelRecord.authorNickname || userName,
+        payload: {
+          placeReviewId: payload.placeReviewId,
+          rating: payload.rating,
+          content: payload.content,
+          tags: payload.tags,
+          media: payload.media,
+        },
+      });
+      const nextReviews = [
+        ...travelRecord.placeReviews.filter(
+          r => r.placeReviewId !== saved.placeReviewId,
+        ),
+        saved,
+      ];
+      onTravelRecordChange({ ...travelRecord, placeReviews: nextReviews });
+    } catch (error) {
+      alert({
+        title:
+          error instanceof PlaceReviewSyncError
+            ? error.message
+            : error instanceof Error
+              ? error.message
+              : 'Failed to save review.',
+      });
+      throw error;
+    } finally {
+      setSavingReview(false);
+    }
+  };
+
+  const handleDeletePlaceReview = () =>
+    new Promise<void>((resolve, reject) => {
+      if (!editPlan || !reviewRoute) {
+        reject(new Error('no route'));
+        return;
+      }
+      alert({
+        title: copy.deleteReviewConfirmTitle,
+        message: copy.deleteReviewConfirmMessage,
+        buttons: [
+          {
+            label: copy.cancel,
+            variant: 'secondary',
+            onPress: () => reject(new Error('cancelled')),
+          },
+          {
+            label: copy.deleteReviewConfirm,
+            variant: 'danger',
+            onPress: () => {
+              void (async () => {
+                setSavingReview(true);
+                try {
+                  await deletePlaceReviewForTravel({
+                    accessToken,
+                    plan: editPlan,
+                    route: reviewRoute,
+                    placeReviewId: existingReviewForModal?.placeReviewId,
+                  });
+                  if (existingReviewForModal) {
+                    onTravelRecordChange({
+                      ...travelRecord,
+                      placeReviews: travelRecord.placeReviews.filter(
+                        r =>
+                          r.placeReviewId !==
+                          existingReviewForModal.placeReviewId,
+                      ),
+                    });
+                  }
+                  resolve();
+                } catch (error) {
+                  alert({
+                    title:
+                      error instanceof PlaceReviewSyncError
+                        ? error.message
+                        : error instanceof Error
+                          ? error.message
+                          : 'Failed to delete review.',
+                  });
+                  reject(error);
+                } finally {
+                  setSavingReview(false);
+                }
+              })();
+            },
+          },
+        ],
+      });
+    });
+
   return (
     <View className="flex-1 bg-brand-background" style={{ paddingTop: insets.top }}>
       <View className="flex-row items-center border-b border-brand-border bg-brand-surface px-4 py-3">
@@ -204,6 +432,15 @@ function TravelRecordDetailBody({
         <Text className="flex-1 text-lg font-bold text-brand-text" numberOfLines={1}>
           {copy.feedTitle}
         </Text>
+        {isOwner ? (
+          <Pressable
+            onPress={() => setComposeOpen(true)}
+            accessibilityLabel={copy.editTravelogue}
+            hitSlop={8}
+            className="ml-2 h-9 w-9 items-center justify-center rounded-full bg-brand-selected active:opacity-80">
+            <AppIcon name="pencil" size={18} color={ICON_COLOR_PRIMARY} strokeWidth={2.2} />
+          </Pressable>
+        ) : null}
       </View>
 
       {scheduleItinerary.some(day => day.routes.length > 0) ? (
@@ -254,9 +491,25 @@ function TravelRecordDetailBody({
           <Text className="text-[10px] font-bold tracking-wide text-brand-primary">
             TRAVELOGUE
           </Text>
-          <Text className="mt-1 text-2xl font-bold text-brand-text">
-            {travelRecord.title ?? ''}
-          </Text>
+          <View className="mt-1 flex-row items-start gap-2">
+            <Text className="min-w-0 flex-1 text-2xl font-bold text-brand-text">
+              {travelRecord.title ?? ''}
+            </Text>
+            {isOwner ? (
+              <Pressable
+                onPress={() => setComposeOpen(true)}
+                accessibilityLabel={copy.editTravelogue}
+                hitSlop={8}
+                className="mt-1 h-9 w-9 items-center justify-center rounded-full bg-brand-selected active:opacity-80">
+                <AppIcon
+                  name="pencil"
+                  size={18}
+                  color={ICON_COLOR_PRIMARY}
+                  strokeWidth={2.2}
+                />
+              </Pressable>
+            ) : null}
+          </View>
           <Text className="mt-2 text-sm text-brand-muted">
             {copy.detailBy(travelRecord.authorNickname)} · {destinationLabel}
             {publishedDate ? ` · ${publishedDate}` : ''}
@@ -340,9 +593,34 @@ function TravelRecordDetailBody({
                               <Text className="text-sm font-bold text-white">{order}</Text>
                             </View>
                             <View className="min-w-0 flex-1">
-                              <Text className="text-base font-bold text-brand-text">
-                                {place.placeName}
-                              </Text>
+                              <View className="flex-row items-start gap-2">
+                                <Text className="min-w-0 flex-1 text-base font-bold text-brand-text">
+                                  {place.placeName}
+                                </Text>
+                                {isOwner && isTravelRecordPlaceVisited(place) ? (
+                                  <Pressable
+                                    onPress={event => {
+                                      event.stopPropagation?.();
+                                      openPlaceReviewEditor(place);
+                                    }}
+                                    accessibilityLabel={
+                                      review ? copy.editReview : copy.writeReview
+                                    }
+                                    hitSlop={8}
+                                    className={`h-8 w-8 items-center justify-center rounded-full active:opacity-80 ${
+                                      review ? 'bg-brand-selected' : 'bg-brand-primary/10'
+                                    }`}>
+                                    <AppIcon
+                                      name={review ? 'pencil' : 'plus'}
+                                      size={15}
+                                      color={
+                                        review ? ICON_COLOR_MUTED : ICON_COLOR_PRIMARY
+                                      }
+                                      strokeWidth={2.2}
+                                    />
+                                  </Pressable>
+                                ) : null}
+                              </View>
                               {review ? (
                                 <PlaceReviewBlock review={review} copy={copy} />
                               ) : (
@@ -371,7 +649,38 @@ function TravelRecordDetailBody({
                   <View
                     key={review.placeReviewId}
                     className="mb-3 rounded-2xl border border-brand-border bg-brand-surface p-4">
-                    <Text className="text-base font-bold text-brand-text">{review.placeName}</Text>
+                    <View className="flex-row items-start gap-2">
+                      <Text className="min-w-0 flex-1 text-base font-bold text-brand-text">
+                        {review.placeName}
+                      </Text>
+                      {isOwner ? (
+                        <Pressable
+                          onPress={() => {
+                            const place =
+                              days
+                                .flatMap(d => d.places)
+                                .find(
+                                  p =>
+                                    p.travelRecordPlaceId ===
+                                      review.travelRecordPlaceId ||
+                                    p.planPlaceId === review.planPlaceId,
+                                ) ?? null;
+                            if (place) {
+                              openPlaceReviewEditor(place);
+                            }
+                          }}
+                          accessibilityLabel={copy.editReview}
+                          hitSlop={8}
+                          className="h-8 w-8 items-center justify-center rounded-full bg-brand-selected active:opacity-80">
+                          <AppIcon
+                            name="pencil"
+                            size={15}
+                            color={ICON_COLOR_MUTED}
+                            strokeWidth={2.2}
+                          />
+                        </Pressable>
+                      ) : null}
+                    </View>
                     <PlaceReviewBlock review={review} copy={copy} />
                   </View>
                 ))
@@ -401,6 +710,47 @@ function TravelRecordDetailBody({
         onSubmit={handleAddComment}
       />
       <ImportPlanModal {...importModalProps} />
+
+      {isOwner ? (
+        <>
+          <TravelogueComposeModal
+            visible={composeOpen}
+            copy={copy}
+            language={language}
+            authorNickname={travelRecord.authorNickname || userName}
+            destinationLabel={destinationLabel}
+            placeReviews={travelRecord.placeReviews}
+            mode="edit"
+            initialTitle={travelRecord.title}
+            initialContent={travelRecord.content}
+            initialStatus={
+              travelRecord.status === 'HIDDEN' ? 'HIDDEN' : 'PUBLISHED'
+            }
+            publishing={publishing}
+            onClose={() => {
+              if (!publishing) {
+                setComposeOpen(false);
+              }
+            }}
+            onPublish={handleSaveTravelogue}
+          />
+          <PlaceReviewFormModal
+            visible={!!reviewRoute}
+            route={reviewRoute}
+            existing={existingReviewForModal}
+            copy={copy}
+            language={language}
+            saving={savingReview}
+            onClose={() => {
+              if (!savingReview) {
+                setReviewRoute(null);
+              }
+            }}
+            onSave={handleSavePlaceReview}
+            onDelete={existingReviewForModal ? handleDeletePlaceReview : undefined}
+          />
+        </>
+      ) : null}
     </View>
   );
 }
@@ -410,25 +760,34 @@ export function TravelogueDetailScreen({ navigation, route }: Props) {
   const language = useAppLanguage();
   const copy = useCopy('travelReview');
   const accessToken = useAuthStore(selectReusableAccessToken);
+  const authUserId = useAuthStore(s => s.user?.userId ?? null);
   const travelRecordId = route.params.travelRecordId;
-  const travelRecord = useTravelRecordStore(s =>
-    s.publishedTravelRecords.find(t => t.travelRecordId === travelRecordId),
-  );
-  const [loading, setLoading] = useState(!travelRecord);
+  const [travelRecord, setTravelRecord] = useState<TravelRecord | null>(null);
+  const [loadedAsOwner, setLoadedAsOwner] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     setLoadError(false);
     setLoading(true);
+    setTravelRecord(null);
+    setLoadedAsOwner(false);
     void loadTravelRecordDetail({
       travelRecordId,
       accessToken,
-      seed: travelRecord ?? null,
     })
+      .then(({ record, loadedAsOwner: asOwner }) => {
+        if (!cancelled) {
+          setTravelRecord(record);
+          setLoadedAsOwner(asOwner);
+        }
+      })
       .catch(() => {
         if (!cancelled) {
           setLoadError(true);
+          setTravelRecord(null);
+          setLoadedAsOwner(false);
         }
       })
       .finally(() => {
@@ -439,11 +798,22 @@ export function TravelogueDetailScreen({ navigation, route }: Props) {
     return () => {
       cancelled = true;
     };
-    // seed만 최초 진입 시 사용 — travelRecord 변경으로 루프 방지
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [travelRecordId, accessToken]);
 
-  if (loading && !travelRecord) {
+  const isOwner = useMemo(() => {
+    if (loadedAsOwner) {
+      return true;
+    }
+    if (!authUserId || !travelRecord?.authorId) {
+      return false;
+    }
+    return (
+      String(authUserId).toLowerCase() ===
+      String(travelRecord.authorId).toLowerCase()
+    );
+  }, [loadedAsOwner, authUserId, travelRecord?.authorId]);
+
+  if (loading) {
     return (
       <View className="flex-1 items-center justify-center bg-brand-background">
         <ActivityIndicator color={ICON_COLOR_PRIMARY} />
@@ -474,6 +844,8 @@ export function TravelogueDetailScreen({ navigation, route }: Props) {
   return (
     <TravelRecordDetailBody
       travelRecord={travelRecord}
+      isOwner={isOwner}
+      onTravelRecordChange={setTravelRecord}
       navigation={navigation}
       language={language}
       copy={copy}

@@ -83,12 +83,15 @@ export type TravelRecordComment = {
 };
 
 /**
- * Local social state backing likes/comments until API is wired.
- * UI should prefer `likeCount` / `likedByMe` helpers.
+ * Session UI state for likes/comments (API-backed).
+ * Prefer `likeCount` / `likedByMe` when present.
  */
 export type TravelRecordSocial = {
   likedUserIds: string[];
   comments: TravelRecordComment[];
+  /** API likeCount (preferred over likedUserIds.length) */
+  likeCount?: number;
+  likedByMe?: boolean;
 };
 
 /**

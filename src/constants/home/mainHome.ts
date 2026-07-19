@@ -29,22 +29,6 @@ export type MockEvent = {
   imageUri?: string;
 };
 
-export type MockTravelogue = {
-  titleKo: string;
-  titleEn: string;
-  subtitleKo: string;
-  subtitleEn: string;
-  thumbnailColor: string;
-  thumbnailIcon: LucideIconName;
-};
-
-export type MockSpecialOffer = {
-  titleKo: string;
-  titleEn: string;
-  subtitleKo: string;
-  subtitleEn: string;
-};
-
 /** @deprecated Use useCopy('mainHome') from src/i18n */
 export const MAIN_HOME_COPY: Record<
   AppLanguage,
@@ -210,22 +194,6 @@ export const QUICK_ACCESS_ITEMS: QuickAccessItem[] = [
     labelEn: 'Luggage',
   },
 ];
-
-export const MOCK_TRAVELOGUE: MockTravelogue = {
-  titleKo: '영도 바다뷰 투어 (여행기)',
-  titleEn: 'Yeongdo Sea View Tour (Travelogue)',
-  subtitleKo: '로컬들이 사랑하는 비밀 명소 5곳',
-  subtitleEn: '5 secret spots locals love',
-  thumbnailColor: '#7dd3fc',
-  thumbnailIcon: 'waves',
-};
-
-export const MOCK_SPECIAL_OFFER: MockSpecialOffer = {
-  titleKo: '부산 투어 패스 20% 할인',
-  titleEn: 'Busan Tour Pass 20% off',
-  subtitleKo: '가장 실속있게 부산 즐기기',
-  subtitleEn: 'Enjoy Busan with the best value',
-};
 
 export function calcTripDday(startDate: string): number {
   const start = new Date(startDate);

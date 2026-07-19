@@ -27,6 +27,8 @@ type PlaceReviewFormModalProps = {
       placeReviewId?: string;
     },
   ) => void | Promise<void>;
+  /** 기존 후기 삭제 (일정 장소는 유지) */
+  onDelete?: () => void | Promise<void>;
   saving?: boolean;
 };
 
@@ -48,6 +50,7 @@ export function PlaceReviewFormModal({
   language,
   onClose,
   onSave,
+  onDelete,
   saving = false,
 }: PlaceReviewFormModalProps) {
   const [rating, setRating] = useState(5);
@@ -57,8 +60,10 @@ export function PlaceReviewFormModal({
   /** Mock-only media until upload API exists */
   const [media, setMedia] = useState<ReviewMedia[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const presets = REVIEW_TAG_PRESETS[language];
+  const canDelete = Boolean(existing?.placeReviewId && onDelete);
 
   useEffect(() => {
     if (!visible || !route) {
@@ -118,7 +123,7 @@ export function PlaceReviewFormModal({
   };
 
   const handleSave = async () => {
-    if (submitting || saving) {
+    if (submitting || saving || deleting) {
       return;
     }
     setSubmitting(true);
@@ -139,35 +144,64 @@ export function PlaceReviewFormModal({
     }
   };
 
-  const busy = submitting || saving;
+  const handleDelete = async () => {
+    if (!onDelete || submitting || saving || deleting) {
+      return;
+    }
+    setDeleting(true);
+    try {
+      await onDelete();
+      onClose();
+    } catch {
+      // 취소·실패 시 모달 유지 (실패 알림은 부모에서 처리)
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const busy = submitting || saving || deleting;
+
+  const footerActions = [
+    {
+      label: copy.cancel,
+      onPress: onClose,
+      variant: 'secondary' as const,
+      disabled: busy,
+    },
+    ...(canDelete
+      ? [
+          {
+            label: deleting
+              ? language === 'ko'
+                ? '삭제 중…'
+                : 'Deleting…'
+              : copy.deleteReview,
+            onPress: () => {
+              void handleDelete();
+            },
+            variant: 'danger' as const,
+            disabled: busy,
+          },
+        ]
+      : []),
+    {
+      label: copy.save,
+      onPress: () => {
+        void handleSave();
+      },
+      variant: 'primary' as const,
+      disabled: busy,
+    },
+  ];
 
   return (
     <AppModal
       visible={visible}
-      onClose={onClose}
-      title={copy.reviewTitle}
+      onClose={busy ? () => undefined : onClose}
+      title={existing ? copy.editReview : copy.reviewTitle}
       maxHeight="90%"
       keyboardAware
-      footer={
-        <AppModalActions
-          actions={[
-            {
-              label: copy.cancel,
-              onPress: onClose,
-              variant: 'secondary',
-              disabled: busy,
-            },
-            {
-              label: copy.save,
-              onPress: () => {
-                void handleSave();
-              },
-              variant: 'primary',
-              disabled: busy,
-            },
-          ]}
-        />
-      }>
+      footer={<AppModalActions actions={footerActions} />}>
       <ScrollView
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 16 }}
         keyboardShouldPersistTaps="handled"

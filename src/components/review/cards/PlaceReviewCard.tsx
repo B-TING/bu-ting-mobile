@@ -1,7 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 
 import type { PlaceReview } from '../../../types/travelReview';
-import { ICON_COLOR_PRIMARY } from '../../../constants/icons';
+import { ICON_COLOR_MUTED, ICON_COLOR_PRIMARY } from '../../../constants/icons';
 import { StarRating } from '../../shared/rating/StarRating';
 import { AppIcon } from '../../shared/icons/AppIcon';
 
@@ -30,6 +30,7 @@ export function PlaceReviewCard({
     <Pressable
       onPress={onPress}
       disabled={!isVisited}
+      accessibilityLabel={isVisited ? actionLabel : visitFirstLabel}
       className={`mb-3 rounded-2xl border border-brand-border bg-brand-surface p-4 ${
         isVisited ? 'active:opacity-90' : 'opacity-60'
       }`}>
@@ -63,16 +64,20 @@ export function PlaceReviewCard({
               ) : null}
             </View>
           ) : (
-            <Text className="mt-1 text-xs text-brand-primary">{actionLabel}</Text>
+            <Text className="mt-1 text-xs text-brand-primary">{writeLabel}</Text>
           )}
         </View>
         {isVisited ? (
-          <View className="rounded-full bg-brand-primary/10 px-3 py-1.5">
-            {review ? (
-              <AppIcon name="check" size={14} color={ICON_COLOR_PRIMARY} strokeWidth={2.5} />
-            ) : (
-              <AppIcon name="plus" size={14} color={ICON_COLOR_PRIMARY} strokeWidth={2.5} />
-            )}
+          <View
+            className={`h-9 w-9 items-center justify-center rounded-full ${
+              review ? 'bg-brand-selected' : 'bg-brand-primary/10'
+            }`}>
+            <AppIcon
+              name={review ? 'pencil' : 'plus'}
+              size={16}
+              color={review ? ICON_COLOR_MUTED : ICON_COLOR_PRIMARY}
+              strokeWidth={2.2}
+            />
           </View>
         ) : null}
       </View>

@@ -38,8 +38,13 @@ import {
 } from '../../services/travel/planDaySync';
 import { resolveTravelInviteLink } from '../../services/travel/travelTeamService';
 import { updateTravelStatus } from '../../services/travel/travelService';
-import { savePlaceReviewForTravel } from '../../services/travel/savePlaceReviewForTravel';
+import {
+  PlaceReviewSyncError,
+  savePlaceReviewForTravel,
+} from '../../services/travel/savePlaceReviewForTravel';
+import { deletePlaceReviewForTravel } from '../../services/travel/deletePlaceReviewForTravel';
 import { loadPlanPlaceReviewsForTravel } from '../../services/travel/loadPlanPlaceReviewsForTravel';
+import { fetchMyTravelRecords } from '../../services/travel/travelRecordService';
 import {
   EMPTY_REVIEWS,
   hydrateRoutePlaceInfo,
@@ -137,9 +142,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     useTravelRecordStore(s =>
       travelId ? s.reviewsByTravelId[travelId] : undefined,
     ) ?? EMPTY_REVIEWS;
-  const isPlanPublished = useTravelRecordStore(s =>
-    travelId ? s.isTravelPublished(travelId) : false,
-  );
+  const [isPlanPublished, setIsPlanPublished] = useState(false);
 
   const planPlaceIdsKey = useMemo(() => {
     if (!plan) {
@@ -151,6 +154,34 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
       .filter(Boolean)
       .join(',');
   }, [plan]);
+
+  useEffect(() => {
+    if (!planId || !accessToken || !isApiPlan || !travelId) {
+      setIsPlanPublished(false);
+      return;
+    }
+    let cancelled = false;
+    void fetchMyTravelRecords(accessToken)
+      .then(list => {
+        if (cancelled) {
+          return;
+        }
+        const match = list.find(
+          item =>
+            item.travelId === travelId &&
+            (item.status === 'PUBLISHED' || item.status === 'HIDDEN'),
+        );
+        setIsPlanPublished(Boolean(match));
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setIsPlanPublished(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [planId, accessToken, isApiPlan, travelId]);
 
   useEffect(() => {
     if (!planId || !accessToken || !isApiPlan) {
@@ -828,6 +859,67 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     [accessToken, plan, reviewFormRoute, displayName],
   );
 
+  const handleDeletePlaceReview = useCallback(() => {
+    return new Promise<void>((resolve, reject) => {
+      if (!plan || !reviewFormRoute) {
+        reject(new Error('no route'));
+        return;
+      }
+      const existing = getReviewForPlace(
+        planReviews,
+        reviewFormRoute.apiPlanPlaceId ?? reviewFormRoute.itemId,
+      );
+      alert({
+        title: reviewCopy.deleteReviewConfirmTitle,
+        message: reviewCopy.deleteReviewConfirmMessage,
+        buttons: [
+          {
+            label: reviewCopy.cancel,
+            variant: 'secondary',
+            onPress: () => reject(new Error('cancelled')),
+          },
+          {
+            label: reviewCopy.deleteReviewConfirm,
+            variant: 'danger',
+            onPress: () => {
+              void (async () => {
+                setSavingReview(true);
+                try {
+                  await deletePlaceReviewForTravel({
+                    accessToken,
+                    plan,
+                    route: reviewFormRoute,
+                    placeReviewId: existing?.placeReviewId,
+                  });
+                  resolve();
+                } catch (error) {
+                  alert({
+                    title:
+                      error instanceof PlaceReviewSyncError
+                        ? error.message
+                        : error instanceof Error
+                          ? error.message
+                          : 'Failed to delete review.',
+                  });
+                  reject(error);
+                } finally {
+                  setSavingReview(false);
+                }
+              })();
+            },
+          },
+        ],
+      });
+    });
+  }, [
+    accessToken,
+    plan,
+    reviewFormRoute,
+    planReviews,
+    alert,
+    reviewCopy,
+  ]);
+
   useEffect(() => {
     openRebootPendingRef.current = route.params?.openReboot === true;
   }, [route.params?.openReboot]);
@@ -988,6 +1080,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
                 destinationLabel={enrichedPlan.title}
                 isTripActive={enrichedPlan.status !== 'COMPLETED'}
                 onPublished={() => {
+                  setIsPlanPublished(true);
                   if (planId) {
                     completePlan(planId);
                   }
@@ -1091,6 +1184,15 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
           }
         }}
         onSave={handleSavePlaceReview}
+        onDelete={
+          reviewFormRoute &&
+          getReviewForPlace(
+            planReviews,
+            reviewFormRoute.apiPlanPlaceId ?? reviewFormRoute.itemId,
+          )
+            ? handleDeletePlaceReview
+            : undefined
+        }
       />
 
       <TravelInviteLinkModal

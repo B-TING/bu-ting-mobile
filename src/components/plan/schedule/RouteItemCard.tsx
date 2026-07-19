@@ -130,7 +130,14 @@ export function RouteItemCard({
           <View className="mt-2 flex-row flex-wrap items-center gap-2">
             <Pressable
               onPress={onWriteReview}
-              className="rounded-full bg-brand-primary px-3 py-1 active:opacity-90">
+              accessibilityLabel={recordReviewLabel}
+              className="flex-row items-center gap-1.5 rounded-full bg-brand-primary px-3 py-1 active:opacity-90">
+              <AppIcon
+                name={reviewRating > 0 ? 'pencil' : 'plus'}
+                size={12}
+                color="#FFFFFF"
+                strokeWidth={2.4}
+              />
               <Text className="text-[11px] font-bold text-white">{recordReviewLabel}</Text>
             </Pressable>
             {onQuickRating ? (
