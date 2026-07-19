@@ -3,7 +3,7 @@ import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-nati
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { RouteMapView } from '../../kakaoMap';
+import { ScheduleMapView } from '../../kakaoMap';
 import { TravelogueCommentsSection } from '../../components/feed/TravelogueCommentsSection';
 import { ImportPlanModal } from '../../components/feed/modals/ImportPlanModal';
 import { TravelogueCommentModal } from '../../components/feed/modals/TravelogueCommentModal';
@@ -13,20 +13,23 @@ import { useTravelogueSocialActions } from '../../components/feed/useTravelogueS
 import { BackButton } from '../../components/shared/buttons/BackButton';
 import { AppIcon } from '../../components/shared/icons/AppIcon';
 import { StarRating } from '../../components/shared/rating/StarRating';
+import { EVENT_ZONE_BY_ID } from '../../constants/eventZone/eventZone';
 import { ICON_COLOR_MUTED, ICON_COLOR_PRIMARY } from '../../constants/icons';
+import { getScheduleDayColor } from '../../constants/plan/scheduleDayColors';
 import type { CopyFor } from '../../i18n';
 import { useAppLanguage, useCopy } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
 import { loadTravelRecordDetail } from '../../services/travel/loadTravelRecordDetail';
 import { useAuthStore, usePlanStore, useTravelRecordStore } from '../../stores';
 import { selectReusableAccessToken } from '../../stores/useAuthStore';
-import type { PlaceReview, TravelRecord } from '../../types/travelReview';
+import type { PlaceReview, TravelRecord, TravelRecordPlace } from '../../types/travelReview';
+import type { DailyItinerary, RouteItem } from '../../types/travelPlan';
 import type { AppLanguage } from '../../types/user';
+import { resolveEventZoneForRoute } from '../../utils/eventZone/zoneResolver';
 import {
   averageRating,
   authorInitial,
   collectTravelRecordImages,
-  flattenTravelRecordPlaces,
   getReviewForTravelRecordPlace,
   resolveTravelRecordDays,
   snapshotToRouteItems,
@@ -37,6 +40,16 @@ import { formatWeekdayDate } from '../../utils/geo/geo';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'TravelRecordDetail'>;
 type Copy = CopyFor<'travelReview'>;
+
+const TRAVELOGUE_MAP_HEIGHT = 200;
+
+function sortTravelRecordPlaces(places: TravelRecordPlace[]): TravelRecordPlace[] {
+  return [...places].sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0));
+}
+
+function zoneBaseColorForRoute(route: RouteItem): string {
+  return EVENT_ZONE_BY_ID[resolveEventZoneForRoute(route)].baseColor;
+}
 
 function PlaceReviewBlock({
   review,
@@ -112,14 +125,31 @@ function TravelRecordDetailBody({
     importModalProps,
   } = useTravelogueSocialActions(travelRecord, copy, navigation);
 
-  const days = useMemo(
-    () => resolveTravelRecordDays(travelRecord, linkedPlan),
-    [travelRecord, linkedPlan],
-  );
+  const days = useMemo(() => {
+    const resolved = resolveTravelRecordDays(travelRecord, linkedPlan);
+    return resolved.map(day => ({
+      ...day,
+      places: sortTravelRecordPlaces(day.places),
+    }));
+  }, [travelRecord, linkedPlan]);
+
+  const scheduleItinerary = useMemo((): DailyItinerary[] => {
+    return days.map(day => ({
+      dailyId: day.travelRecordDayId,
+      dayNumber: day.dayNumber,
+      date: day.visitDate,
+      routes: snapshotToRouteItems(day.places),
+    }));
+  }, [days]);
 
   const mapRoutes = useMemo(
-    () => snapshotToRouteItems(flattenTravelRecordPlaces(days)),
-    [days],
+    () => scheduleItinerary.flatMap(day => day.routes),
+    [scheduleItinerary],
+  );
+
+  const routesByPlaceId = useMemo(
+    () => new Map(mapRoutes.map(route => [route.itemId, route] as const)),
+    [mapRoutes],
   );
 
   const feedImages = useMemo(() => collectTravelRecordImages(travelRecord), [travelRecord]);
@@ -127,6 +157,16 @@ function TravelRecordDetailBody({
   const destinationLabel = travelRecordDestinationLabel(travelRecord);
   const [commentOpen, setCommentOpen] = useState(false);
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
+
+  const selectedDayNumber = useMemo(() => {
+    if (!selectedRouteId) {
+      return undefined;
+    }
+    const day = scheduleItinerary.find(item =>
+      item.routes.some(route => route.itemId === selectedRouteId),
+    );
+    return day?.dayNumber;
+  }, [scheduleItinerary, selectedRouteId]);
 
   useEffect(() => {
     if (mapRoutes.length === 0) {
@@ -139,19 +179,12 @@ function TravelRecordDetailBody({
   }, [mapRoutes]);
 
   const totalDurationLabel = useMemo(() => {
-    if (days.length === 0) {
+    if (scheduleItinerary.length === 0) {
       return null;
     }
-    const minutes = computeTripTotalMinutes(
-      days.map(day => ({
-        dailyId: `day-${day.dayNumber}`,
-        dayNumber: day.dayNumber,
-        date: day.visitDate,
-        routes: snapshotToRouteItems(day.places),
-      })),
-    );
+    const minutes = computeTripTotalMinutes(scheduleItinerary);
     return copy.totalDuration(formatDurationMinutes(minutes, language));
-  }, [days, copy, language]);
+  }, [scheduleItinerary, copy, language]);
 
   const publishedDate = travelRecord.publishedAt
     ? new Date(travelRecord.publishedAt).toLocaleDateString()
@@ -160,8 +193,6 @@ function TravelRecordDetailBody({
     travelRecord.travelStartDate && travelRecord.travelEndDate
       ? copy.tripPeriod(travelRecord.travelStartDate, travelRecord.travelEndDate)
       : null;
-
-  let globalOrder = 0;
 
   return (
     <View className="flex-1 bg-brand-background" style={{ paddingTop: insets.top }}>
@@ -175,23 +206,27 @@ function TravelRecordDetailBody({
         </Text>
       </View>
 
-      {mapRoutes.length > 0 ? (
-        <View className="border-b border-brand-border bg-brand-surface px-4 py-3">
-          <RouteMapView
-            title={copy.mapTitle}
-            subtitle={copy.mapSubtitle}
-            routes={mapRoutes}
+      {scheduleItinerary.some(day => day.routes.length > 0) ? (
+        <View
+          className="shrink-0 border-b border-brand-border bg-brand-surface"
+          style={{ height: TRAVELOGUE_MAP_HEIGHT, overflow: 'hidden' }}>
+          <ScheduleMapView
+            itinerary={scheduleItinerary}
+            selectedDayNumber={selectedDayNumber}
             highlightItemId={selectedRouteId}
+            mapTitle={copy.mapTitle}
+            mapSubtitle={copy.mapSubtitle}
+            showFooter={false}
           />
         </View>
       ) : null}
 
       <ScrollView
-        className="flex-1"
+        className="flex-1 bg-brand-background"
         contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}>
-        <View className="flex-row items-center px-4 py-3">
+        <View className="flex-row items-center border-b border-brand-border bg-brand-surface px-4 py-3">
           <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-brand-primary">
             <Text className="text-sm font-bold text-white">
               {authorInitial(travelRecord.authorNickname)}
@@ -258,68 +293,71 @@ function TravelRecordDetailBody({
               <Text className="mb-3 mt-6 text-base font-bold text-brand-text">
                 {copy.itinerarySection}
               </Text>
-              {days.map(day => (
-                <View key={`day-${day.dayNumber}`} className="mb-4">
-                  <Text className="mb-2 text-sm font-bold text-brand-primary">
-                    {copy.dayLabel(day.dayNumber)} · {formatWeekdayDate(day.visitDate, language)}
-                  </Text>
-                  {day.places.map(place => {
-                    globalOrder += 1;
-                    const order = globalOrder;
-                    const review = getReviewForTravelRecordPlace(
-                      travelRecord.placeReviews,
-                      place,
-                    );
-                    const selected = selectedRouteId === place.travelRecordPlaceId;
+              {days.map(day => {
+                const dayColor = getScheduleDayColor(day.dayNumber);
+                return (
+                  <View key={`day-${day.dayNumber}`} className="mb-4">
+                    <Text
+                      className="mb-2 text-sm font-bold"
+                      style={{ color: dayColor.main }}>
+                      {copy.dayLabel(day.dayNumber)} ·{' '}
+                      {formatWeekdayDate(day.visitDate, language)}
+                    </Text>
+                    {day.places.map((place, index) => {
+                      const order = index + 1;
+                      const review = getReviewForTravelRecordPlace(
+                        travelRecord.placeReviews,
+                        place,
+                      );
+                      const selected = selectedRouteId === place.travelRecordPlaceId;
+                      const route = routesByPlaceId.get(place.travelRecordPlaceId);
+                      const zoneColor = route
+                        ? zoneBaseColorForRoute(route)
+                        : dayColor.main;
 
-                    return (
-                      <Pressable
-                        key={place.travelRecordPlaceId}
-                        onPress={() => setSelectedRouteId(place.travelRecordPlaceId)}
-                        className={`mb-2 rounded-2xl border p-4 ${
-                          selected
-                            ? 'border-brand-primary bg-brand-selected'
-                            : 'border-brand-border bg-brand-surface'
-                        } active:opacity-90`}>
-                        <View className="flex-row items-start">
-                          <View className="mr-3 h-8 w-8 items-center justify-center rounded-full bg-brand-primary">
-                            <Text className="text-sm font-bold text-white">{order}</Text>
-                          </View>
-                          <View className="min-w-0 flex-1">
-                            <View className="flex-row items-center gap-2">
-                              <Text className="flex-1 text-base font-bold text-brand-text">
+                      return (
+                        <Pressable
+                          key={place.travelRecordPlaceId}
+                          onPress={() => setSelectedRouteId(place.travelRecordPlaceId)}
+                          className="mb-2 rounded-2xl border bg-brand-surface p-4 active:opacity-90"
+                          style={
+                            selected
+                              ? {
+                                  borderColor: dayColor.main,
+                                  borderWidth: 2,
+                                  backgroundColor: dayColor.light,
+                                }
+                              : {
+                                  borderColor: '#E2E8F0',
+                                  borderLeftWidth: 4,
+                                  borderLeftColor: zoneColor,
+                                }
+                          }>
+                          <View className="flex-row items-start">
+                            <View
+                              className="mr-3 h-8 w-8 items-center justify-center rounded-full"
+                              style={{ backgroundColor: dayColor.main }}>
+                              <Text className="text-sm font-bold text-white">{order}</Text>
+                            </View>
+                            <View className="min-w-0 flex-1">
+                              <Text className="text-base font-bold text-brand-text">
                                 {place.placeName}
                               </Text>
-                              <View
-                                className={`rounded-full px-2 py-0.5 ${
-                                  place.visited ? 'bg-brand-selected' : 'bg-brand-border'
-                                }`}>
-                                <Text
-                                  className={`text-[10px] font-semibold ${
-                                    place.visited
-                                      ? 'text-brand-primary'
-                                      : 'text-brand-muted'
-                                  }`}>
-                                  {place.visited
-                                    ? copy.visitedBadge
-                                    : copy.notVisitedBadge}
+                              {review ? (
+                                <PlaceReviewBlock review={review} copy={copy} />
+                              ) : (
+                                <Text className="mt-2 text-xs text-brand-muted">
+                                  {copy.noReviewForPlace}
                                 </Text>
-                              </View>
+                              )}
                             </View>
-                            {review ? (
-                              <PlaceReviewBlock review={review} copy={copy} />
-                            ) : (
-                              <Text className="mt-2 text-xs text-brand-muted">
-                                {copy.noReviewForPlace}
-                              </Text>
-                            )}
                           </View>
-                        </View>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-              ))}
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                );
+              })}
             </>
           ) : (
             <>

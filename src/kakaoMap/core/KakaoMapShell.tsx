@@ -219,7 +219,7 @@ export function KakaoMapShell({
 
   const containerStyle =
     size === 'fill'
-      ? { flex: 1, width: '100%' as const, minHeight: 200 }
+      ? { flex: 1, width: '100%' as const }
       : { width: mapWidth, height: mapHeight };
 
   const mapBody = (

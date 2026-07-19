@@ -201,6 +201,12 @@ export function snapshotToRouteItems(places: TravelRecordPlace[]): RouteItem[] {
     },
     isVisited: place.visited ?? false,
     memo: place.memo ?? undefined,
+    placeInfo: {
+      description: '',
+      hours: '',
+      category: 'attraction',
+      address: place.address ?? undefined,
+    },
   }));
 }
 
