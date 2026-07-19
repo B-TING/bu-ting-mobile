@@ -3,8 +3,8 @@ import { Pressable, Text, View } from 'react-native';
 import { ICON_COLOR_PRIMARY } from '../../../constants/icons';
 import type { TravelRecord } from '../../../types/travelReview';
 import {
-  averageRating,
   travelRecordDestinationLabel,
+  travelRecordOverallRating,
   travelRecordThumbnailIcon,
 } from '../../../utils/review/travelReview';
 import { AppIcon } from '../../shared/icons/AppIcon';
@@ -17,7 +17,7 @@ type TravelogueCardProps = {
 
 export function TravelogueCard({ travelRecord, onPress }: TravelogueCardProps) {
   const icon = travelRecordThumbnailIcon(travelRecord);
-  const rating = averageRating(travelRecord.placeReviews);
+  const rating = travelRecordOverallRating(travelRecord);
   const destinationLabel = travelRecordDestinationLabel(travelRecord);
   const date = travelRecord.publishedAt
     ? new Date(travelRecord.publishedAt).toLocaleDateString()

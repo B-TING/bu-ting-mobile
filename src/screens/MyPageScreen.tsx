@@ -8,6 +8,8 @@ import {
   View,
 } from 'react-native';
 import type { NavigationProp } from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { NicknameEditModal } from '../components/mypage/NicknameEditModal';
 import {
@@ -15,6 +17,7 @@ import {
   MyTravelRecordGridEmpty,
 } from '../components/mypage/MyTravelRecordGrid';
 import { AppIcon } from '../components/shared/icons/AppIcon';
+import { getNavbarOverlayHeight } from '../components/shared/navigation/Navbar';
 import { useAppAlert } from '../components/shared/modals';
 import { useAppLanguage, useCopy } from '../i18n';
 import { summarizeOnboardingPreferences } from '../constants/setup/onboarding';
@@ -36,6 +39,11 @@ import {
   fetchMyTravelRecords,
   TravelRecordServiceError,
 } from '../services/travel/travelRecordService';
+import { fetchTravelSurveyProfile } from '../services/setup/travelSurveyService';
+import {
+  createEmptyOnboardingProfile,
+  hasAnsweredSurvey,
+} from '../services/setup/travelSurveyMapper';
 import { deleteMyAccount, updateMyProfile, UserServiceError } from '../services/user/userService';
 import { mapTravelRecordManageItem } from '../types/travelRecordApi';
 import type { TravelRecord } from '../types/travelReview';
@@ -117,6 +125,8 @@ function HeaderActionButton({
 }
 
 export function MyPageScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
+  const navbarClearance = getNavbarOverlayHeight(insets.bottom);
   const { alert } = useAppAlert();
   const language = useAppLanguage();
   const user = useAuthStore(selectAuthUser);
@@ -186,6 +196,36 @@ export function MyPageScreen({ navigation }: Props) {
       setRefreshing(false);
     }
   }, [loadMyRecords]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!accessToken || !user?.userId) {
+        return;
+      }
+      const userId = user.userId;
+      let cancelled = false;
+      void fetchTravelSurveyProfile(accessToken, userId, language)
+        .then(profile => {
+          if (cancelled) {
+            return;
+          }
+          if (profile && hasAnsweredSurvey(profile)) {
+            useAppStore.getState().saveUserOnboarding(userId, profile);
+            return;
+          }
+          // GET 데이터 없음 → 로컬도 비움 (skippedAll 캐시 제거)
+          useAppStore
+            .getState()
+            .saveUserOnboarding(userId, createEmptyOnboardingProfile(language, userId));
+        })
+        .catch(error => {
+          console.warn('[Bu-Ting] MyPage travel survey fetch failed', error);
+        });
+      return () => {
+        cancelled = true;
+      };
+    }, [accessToken, user?.userId, language]),
+  );
 
   const goToLogin = () => {
     navigation.reset({
@@ -297,7 +337,7 @@ export function MyPageScreen({ navigation }: Props) {
     <View className="flex-1 bg-brand-background" style={layout.screen}>
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ paddingBottom: 32 }}
+        contentContainerStyle={{ paddingBottom: navbarClearance + 24 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={ICON_COLOR_PRIMARY} />

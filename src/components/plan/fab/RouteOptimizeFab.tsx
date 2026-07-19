@@ -1,6 +1,7 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { ICON_COLOR_WHITE } from '../../../constants/icons';
+import { AnimatedFabPressable } from '../../shared/buttons/AnimatedFabPressable';
 import { AppIcon } from '../../shared/icons/AppIcon';
 
 const FAB_SIZE = 56;
@@ -40,37 +41,31 @@ export function RouteOptimizeFab({
       className="absolute right-4 z-20 items-center"
       style={{ bottom, gap }}
       pointerEvents="box-none">
-      <Pressable
+      <AnimatedFabPressable
         onPress={onPress}
-        accessibilityRole="button"
         accessibilityLabel={label}
-        style={({ pressed }) => [styles.pressable, pressed && styles.pressed]}>
+        style={styles.optimizeShadow}>
         <View style={[styles.fab, styles.optimizeFab]}>
           <AppIcon name="rotateCw" size={26} color={ICON_COLOR_WHITE} strokeWidth={2.5} />
         </View>
-      </Pressable>
+      </AnimatedFabPressable>
 
       {onAddPlace ? (
-        <Pressable
+        <AnimatedFabPressable
           onPress={onAddPlace}
-          accessibilityRole="button"
           accessibilityLabel={addPlaceLabel ?? 'Add place'}
-          style={({ pressed }) => [
-            styles.pressable,
-            styles.addFabShadow,
-            pressed && styles.pressed,
-          ]}>
+          style={styles.addShadow}>
           <View style={[styles.fab, styles.addFabBg]}>
             <AppIcon name="plus" size={28} color={ICON_COLOR_WHITE} strokeWidth={2.5} />
           </View>
-        </Pressable>
+        </AnimatedFabPressable>
       ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  pressable: {
+  optimizeShadow: {
     borderRadius: FAB_SIZE / 2,
     shadowColor: '#7C3AED',
     shadowOffset: { width: 0, height: 4 },
@@ -78,12 +73,13 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 10,
   },
-  addFabShadow: {
+  addShadow: {
+    borderRadius: FAB_SIZE / 2,
     shadowColor: '#0077B6',
-  },
-  pressed: {
-    opacity: 0.92,
-    transform: [{ scale: 0.96 }],
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 10,
   },
   fab: {
     width: FAB_SIZE,

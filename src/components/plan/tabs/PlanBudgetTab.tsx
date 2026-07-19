@@ -29,7 +29,8 @@ type PlanBudgetTabProps = {
   budgetEntries: BudgetEntry[];
   budgetTotal: number;
   members: PlanMember[];
-  onAddExpense: () => void;
+  onAddExpense?: () => void;
+  scrollBottomInset?: number;
 };
 
 const ROW = 'flex-row items-center px-4 py-3.5';
@@ -205,9 +206,11 @@ export function PlanBudgetTab({
   budgetTotal,
   members,
   onAddExpense,
+  scrollBottomInset = 0,
 }: PlanBudgetTabProps) {
   const [expandedEntryId, setExpandedEntryId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const listBottomPadding = 24 + scrollBottomInset;
 
   const categoryTotals = useMemo(
     () => sumBudgetByCategory(budgetEntries),
@@ -271,22 +274,24 @@ export function PlanBudgetTab({
           className="mt-3 flex-1"
           contentContainerStyle={
             dateTabs.length === 0
-              ? { paddingBottom: 24, flexGrow: 1 }
-              : { paddingBottom: 24 }
+              ? { paddingBottom: listBottomPadding, flexGrow: 1 }
+              : { paddingBottom: listBottomPadding }
           }
           showsVerticalScrollIndicator={false}
           nestedScrollEnabled>
           {dateTabs.length === 0 ? (
             <View className="justify-center">
               <Text className="text-center text-sm text-brand-muted">{copy.budgetEmpty}</Text>
-              <Pressable
-                onPress={onAddExpense}
-                className="mt-4 items-center rounded-2xl bg-brand-primary py-3 active:opacity-90">
-                <View className="flex-row items-center gap-1.5">
-                  <AppIcon name="plus" size={14} color={ICON_COLOR_WHITE} strokeWidth={2.5} />
-                  <Text className="font-bold text-white">{copy.budgetAdd}</Text>
-                </View>
-              </Pressable>
+              {onAddExpense ? (
+                <Pressable
+                  onPress={onAddExpense}
+                  className="mt-4 items-center rounded-2xl bg-brand-primary py-3 active:opacity-90">
+                  <View className="flex-row items-center gap-1.5">
+                    <AppIcon name="plus" size={14} color={ICON_COLOR_WHITE} strokeWidth={2.5} />
+                    <Text className="font-bold text-white">{copy.budgetAdd}</Text>
+                  </View>
+                </Pressable>
+              ) : null}
             </View>
           ) : selectedEntries.length === 0 ? (
             <View className="py-6">

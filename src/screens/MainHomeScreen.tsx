@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import type { NavigationProp } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { TransientBottomToast } from '../components/shared/feedback/TransientBottomToast';
 import { ActivePlanHeroBanner } from '../components/home/banners/ActivePlanHeroBanner';
@@ -10,6 +11,8 @@ import { HomeEventZoneSection } from '../components/home/sections/HomeEventZoneS
 import { QuickAccessRow } from '../components/home/sections/QuickAccessRow';
 import { TraveloguePreview } from '../components/home/sections/TraveloguePreview';
 import { HomeActionFabs, FAB_GAP, FAB_SIZE } from '../components/helpdesk/HomeActionFabs';
+import { ROUTE_FAB_BOTTOM_OFFSET } from '../components/plan/fab/RouteOptimizeFab';
+import { getNavbarOverlayHeight } from '../components/shared/navigation/Navbar';
 import { useAppAlert } from '../components/shared/modals';
 import { QUICK_ACCESS_ITEMS } from '../constants/home/mainHome';
 import { festivalToHomeEvent } from '../constants/festival/festivalCalendar';
@@ -47,6 +50,7 @@ type Props = {
 };
 
 export function MainHomeScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
   const { goToTab } = useMainTabNavigation();
   const { alert } = useAppAlert();
   const language = useAppLanguage();
@@ -169,12 +173,20 @@ export function MainHomeScreen({ navigation }: Props) {
     }
   };
 
+  /** 화면은 Navbar 아래로 이어지고, 스크롤·FAB만 글래스 바 위로 올림 */
+  const navbarClearance = getNavbarOverlayHeight(insets.bottom);
+  const fabBottom = navbarClearance + ROUTE_FAB_BOTTOM_OFFSET;
+
   return (
     <View className="flex-1 bg-brand-background" style={layout.screen}>
       <ScrollView
         className="flex-1 px-5"
         contentContainerStyle={{
-          paddingBottom: 16 + (showTripRebootFab ? FAB_SIZE + FAB_GAP : 0),
+          paddingBottom:
+            fabBottom +
+            FAB_SIZE +
+            (showTripRebootFab ? FAB_GAP + FAB_SIZE : 0) +
+            16,
         }}
         showsVerticalScrollIndicator={false}>
         {featuredPlan && featuredTravelStatus ? (
@@ -276,7 +288,7 @@ export function MainHomeScreen({ navigation }: Props) {
       </ScrollView>
 
       <HomeActionFabs
-        bottom={8}
+        bottom={fabBottom}
         helpLabel={helpCopy.fabLabel}
         showReboot={showTripRebootFab}
         onHelpPress={goToHelpDesk}
@@ -286,7 +298,7 @@ export function MainHomeScreen({ navigation }: Props) {
       <TransientBottomToast
         text={toastText}
         opacity={toastOpacity}
-        bottom={12}
+        bottom={fabBottom}
       />
     </View>
   );

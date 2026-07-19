@@ -4,10 +4,10 @@ import type { CopyFor } from '../../i18n';
 import type { TravelRecord, TravelRecordSocial } from '../../types/travelReview';
 import type { AppLanguage } from '../../types/user';
 import {
-  averageRating,
   authorInitial,
   collectTravelRecordImages,
   travelRecordDestinationLabel,
+  travelRecordOverallRating,
 } from '../../utils/review/travelReview';
 import { StarRating } from '../shared/rating/StarRating';
 import { TravelogueCommentsSection } from './TravelogueCommentsSection';
@@ -44,7 +44,7 @@ export function TravelogueFeedItem({
   variant = 'feed',
 }: TravelogueFeedItemProps) {
   const images = collectTravelRecordImages(travelRecord);
-  const rating = averageRating(travelRecord.placeReviews);
+  const rating = travelRecordOverallRating(travelRecord);
   const destinationLabel = travelRecordDestinationLabel(travelRecord);
   const publishedDate = travelRecord.publishedAt
     ? new Date(travelRecord.publishedAt).toLocaleDateString(

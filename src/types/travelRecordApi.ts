@@ -87,6 +87,7 @@ export type TravelRecordResponse = {
   title: string | null;
   content: string | null;
   coverImageUrl: string | null;
+  overallRating?: number | null;
   travelStartDate: string | null;
   travelEndDate: string | null;
   status: TravelRecordStatus;
@@ -106,6 +107,7 @@ export type TravelRecordFeedResponse = {
   title: string | null;
   content: string | null;
   coverImageUrl: string | null;
+  overallRating?: number | null;
   travelStartDate: string | null;
   travelEndDate: string | null;
   publishedAt: string | null;
@@ -128,6 +130,7 @@ export type TravelRecordManageResponse = {
   title: string | null;
   content: string | null;
   coverImageUrl: string | null;
+  overallRating?: number | null;
   travelStartDate: string | null;
   travelEndDate: string | null;
   status: TravelRecordStatus;
@@ -249,6 +252,7 @@ export function mapTravelRecordResponse(
     title: dto.title,
     content: dto.content,
     coverImageUrl: dto.coverImageUrl,
+    overallRating: normalizeOverallRating(dto.overallRating),
     travelStartDate: dto.travelStartDate,
     travelEndDate: dto.travelEndDate,
     status: dto.status,
@@ -271,6 +275,7 @@ export function mapTravelRecordFeedItem(dto: TravelRecordFeedResponse): TravelRe
     title: dto.title,
     content: dto.content,
     coverImageUrl: dto.coverImageUrl,
+    overallRating: normalizeOverallRating(dto.overallRating),
     travelStartDate: dto.travelStartDate,
     travelEndDate: dto.travelEndDate,
     status: 'PUBLISHED',
@@ -296,6 +301,7 @@ export function mapTravelRecordManageItem(
     title: dto.title,
     content: dto.content,
     coverImageUrl: dto.coverImageUrl,
+    overallRating: normalizeOverallRating(dto.overallRating),
     travelStartDate: dto.travelStartDate,
     travelEndDate: dto.travelEndDate,
     status: dto.status,
@@ -305,6 +311,13 @@ export function mapTravelRecordManageItem(
     days: [],
     placeReviews: [],
   };
+}
+
+function normalizeOverallRating(value: number | null | undefined): number | null {
+  if (typeof value !== 'number' || Number.isNaN(value) || value <= 0) {
+    return null;
+  }
+  return Math.round(value * 10) / 10;
 }
 
 export type { TravelRecordComment };

@@ -34,17 +34,21 @@ type AppState = {
   onboardingByUserId: Record<string, OnboardingProfile>;
   pendingTravelSurveyPrompt: boolean;
   hideUserIdOnMyPage: boolean;
+  /** 세션 전용 — 로그인 없이 로컬 일정 열람 */
+  offlineMode: boolean;
   _hasHydrated: boolean;
   setHasHydrated: (value: boolean) => void;
   setLanguage: (language: AppLanguage) => void;
   setHideUserIdOnMyPage: (hide: boolean) => void;
   setPendingTravelSurveyPrompt: (value: boolean) => void;
+  setOfflineMode: (value: boolean) => void;
   login: (payload: { userId: string; displayName: string }) => void;
   completeOnboarding: (
     profile: OnboardingProfile,
     options?: { userId?: string | null },
   ) => void;
   saveUserOnboarding: (userId: string, profile: OnboardingProfile) => void;
+  clearUserOnboarding: (userId: string) => void;
   setActiveOnboarding: (userId: string) => void;
   clearGuestOnboarding: () => void;
   resetSetup: () => void;
@@ -67,6 +71,7 @@ export const useAppStore = create<AppState>()(
       onboardingByUserId: {},
       pendingTravelSurveyPrompt: false,
       hideUserIdOnMyPage: false,
+      offlineMode: false,
       _hasHydrated: false,
       setHasHydrated: value => set({ _hasHydrated: value }),
       setLanguage: language => {
@@ -76,9 +81,11 @@ export const useAppStore = create<AppState>()(
       setHideUserIdOnMyPage: hideUserIdOnMyPage => set({ hideUserIdOnMyPage }),
       setPendingTravelSurveyPrompt: pendingTravelSurveyPrompt =>
         set({ pendingTravelSurveyPrompt }),
+      setOfflineMode: offlineMode => set({ offlineMode }),
       login: ({ userId, displayName }) =>
         set({
           auth: { isLoggedIn: true, userId, displayName },
+          offlineMode: false,
         }),
       completeOnboarding: (profile, options) => {
         const userId = options?.userId ?? null;
@@ -108,6 +115,16 @@ export const useAppStore = create<AppState>()(
           onboarding: record,
         }));
       },
+      clearUserOnboarding: userId =>
+        set(state => {
+          const { [userId]: _removed, ...rest } = state.onboardingByUserId;
+          const activeCleared =
+            state.onboarding?.ownerUserId === userId ? null : state.onboarding;
+          return {
+            onboardingByUserId: rest,
+            onboarding: activeCleared,
+          };
+        }),
       setActiveOnboarding: userId =>
         set(state => ({
           onboarding: state.onboardingByUserId[userId] ?? null,
@@ -121,6 +138,7 @@ export const useAppStore = create<AppState>()(
           guestOnboarding: null,
           onboardingByUserId: {},
           pendingTravelSurveyPrompt: false,
+          offlineMode: false,
         }),
     }),
     {
@@ -134,22 +152,26 @@ export const useAppStore = create<AppState>()(
         onboardingByUserId: state.onboardingByUserId,
         pendingTravelSurveyPrompt: state.pendingTravelSurveyPrompt,
         hideUserIdOnMyPage: state.hideUserIdOnMyPage,
+        // offlineMode는 persist하지 않음 (자동 로그인보다 우선되면 안 됨)
       }),
       onRehydrateStorage: () => (state, error) => {
         if (error) {
           console.warn('[Bu-Ting] persist rehydrate error', error);
         }
-        if (state?.onboarding && !state.guestOnboarding) {
-          const ownerId = state.onboarding.ownerUserId ?? null;
-          if (ownerId) {
-            if (!state.onboardingByUserId[ownerId]) {
-              state.onboardingByUserId = {
-                ...state.onboardingByUserId,
-                [ownerId]: state.onboarding,
-              };
+        if (state) {
+          state.offlineMode = false;
+          if (state.onboarding && !state.guestOnboarding) {
+            const ownerId = state.onboarding.ownerUserId ?? null;
+            if (ownerId) {
+              if (!state.onboardingByUserId[ownerId]) {
+                state.onboardingByUserId = {
+                  ...state.onboardingByUserId,
+                  [ownerId]: state.onboarding,
+                };
+              }
+            } else if (!state.guestOnboarding) {
+              state.guestOnboarding = state.onboarding;
             }
-          } else if (!state.guestOnboarding) {
-            state.guestOnboarding = state.onboarding;
           }
         }
         useAppStore.getState().setHasHydrated(true);
@@ -160,10 +182,14 @@ export const useAppStore = create<AppState>()(
 
 export function selectOnboardingForUser(userId: string | null | undefined) {
   return (state: AppState): OnboardingProfile | null => {
-    if (userId) {
-      return state.onboardingByUserId[userId] ?? null;
+    const profile = userId
+      ? state.onboardingByUserId[userId] ?? null
+      : state.guestOnboarding ?? state.onboarding;
+    // 과거 skippedAll: true 캐시는 취향 없음으로 취급
+    if (profile?.skippedAll) {
+      return null;
     }
-    return state.guestOnboarding ?? state.onboarding;
+    return profile;
   };
 }
 
@@ -174,10 +200,13 @@ export function selectSetupPhase(state: AppState): SetupPhase {
   if (!state.onboarding) {
     return 'onboarding';
   }
-  if (!selectIsAuthenticated(useAuthStore.getState())) {
-    return 'login';
+  if (selectIsAuthenticated(useAuthStore.getState())) {
+    return 'main';
   }
-  return 'main';
+  if (state.offlineMode) {
+    return 'main';
+  }
+  return 'login';
 }
 
 /** Zustand 도입 전 AsyncStorage 키 → 스토어 마이그레이션 */
@@ -229,5 +258,6 @@ export async function migrateLegacyStorage(): Promise<void> {
 export async function hydrateAppStore(): Promise<void> {
   await migrateLegacyStorage();
   await useAppStore.persist.rehydrate();
+  useAppStore.getState().setOfflineMode(false);
   useAppStore.getState().setHasHydrated(true);
 }

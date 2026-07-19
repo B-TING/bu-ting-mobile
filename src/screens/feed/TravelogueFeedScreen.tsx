@@ -19,6 +19,7 @@ import {
 import { BackButton } from '../../components/shared/buttons/BackButton';
 import { AppIcon } from '../../components/shared/icons/AppIcon';
 import { useAppAlert } from '../../components/shared/modals';
+import { getNavbarOverlayHeight } from '../../components/shared/navigation/Navbar';
 import { useAppLanguage, useCopy } from '../../i18n';
 import { ICON_COLOR_MUTED, ICON_COLOR_PRIMARY } from '../../constants/icons';
 import type { RootStackParamList } from '../../navigation/types';
@@ -133,7 +134,9 @@ export function TravelogueFeedScreen({ navigation, embeddedInMainTabs = false }:
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const bottomPadding = embeddedInMainTabs ? 16 : insets.bottom + 16;
+  const bottomPadding = embeddedInMainTabs
+    ? getNavbarOverlayHeight(insets.bottom) + 16
+    : insets.bottom + 16;
 
   const loadFeed = useCallback(async () => {
     const page = await fetchTravelRecordFeed(

@@ -7,6 +7,7 @@ import { useAppStore } from '../stores/useAppStore';
 export function useSetupPhase(): SetupPhase {
   const language = useAppStore(state => state.language);
   const onboarding = useAppStore(state => state.onboarding);
+  const offlineMode = useAppStore(state => state.offlineMode);
   const isAuthenticated = useAuthStore(selectIsAuthenticated);
 
   return useMemo(() => {
@@ -16,9 +17,12 @@ export function useSetupPhase(): SetupPhase {
     if (!onboarding) {
       return 'onboarding';
     }
-    if (!isAuthenticated) {
-      return 'login';
+    if (isAuthenticated) {
+      return 'main';
     }
-    return 'main';
-  }, [language, isAuthenticated, onboarding]);
+    if (offlineMode) {
+      return 'main';
+    }
+    return 'login';
+  }, [language, isAuthenticated, offlineMode, onboarding]);
 }

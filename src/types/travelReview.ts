@@ -107,6 +107,8 @@ export type TravelRecord = {
   title: string | null;
   content: string | null;
   coverImageUrl: string | null;
+  /** 서버 종합 평점 (피드/목록). 없으면 placeReviews 평균 사용 */
+  overallRating: number | null;
   travelStartDate: string | null;
   travelEndDate: string | null;
   status: TravelRecordStatus;

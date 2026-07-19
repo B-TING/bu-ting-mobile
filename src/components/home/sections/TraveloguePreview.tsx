@@ -3,8 +3,8 @@ import { Pressable, Text, View } from 'react-native';
 import { ICON_COLOR_PRIMARY } from '../../../constants/icons';
 import type { TravelRecord } from '../../../types/travelReview';
 import {
-  averageRating,
   travelRecordDestinationLabel,
+  travelRecordOverallRating,
   travelRecordThumbnailIcon,
 } from '../../../utils/review/travelReview';
 import { AppIcon } from '../../shared/icons/AppIcon';
@@ -62,7 +62,7 @@ export function TraveloguePreview({
     );
   }
 
-  const rating = averageRating(latestTravelogue.placeReviews);
+  const rating = travelRecordOverallRating(latestTravelogue);
 
   return (
     <View className="mb-4">

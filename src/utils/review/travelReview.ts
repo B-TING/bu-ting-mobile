@@ -19,6 +19,18 @@ export function averageRating(reviews: PlaceReview[]): number {
   return Math.round((sum / reviews.length) * 10) / 10;
 }
 
+/** 서버 overallRating 우선, 없으면 장소 후기 평균 */
+export function travelRecordOverallRating(travelRecord: TravelRecord): number {
+  if (
+    typeof travelRecord.overallRating === 'number' &&
+    !Number.isNaN(travelRecord.overallRating) &&
+    travelRecord.overallRating > 0
+  ) {
+    return travelRecord.overallRating;
+  }
+  return averageRating(travelRecord.placeReviews);
+}
+
 export function reviewMatchesPlaceKey(
   review: PlaceReview,
   placeKey: string,

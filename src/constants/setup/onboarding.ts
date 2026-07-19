@@ -696,7 +696,17 @@ export function summarizeOnboardingPreferences(
   language: AppLanguage,
   labels: OnboardingPreferenceLabels,
 ): OnboardingPreferenceRow[] | null {
-  if (!profile || profile.skippedAll) {
+  if (
+    !profile ||
+    !(
+      profile.travelStyle !== null ||
+      profile.schedulePace !== null ||
+      profile.companions !== null ||
+      profile.luggage !== null ||
+      profile.purposes.length > 0 ||
+      profile.busanFamiliarity !== null
+    )
+  ) {
     return null;
   }
 
@@ -779,6 +789,9 @@ export const SETUP_COPY: Record<
     welcomeSubtitle: string;
     loginTitle: string;
     loginSubtitle: string;
+    offlineMode: string;
+    offlineModeHint: string;
+    offlineModeEmpty: string;
     email: string;
     password: string;
     login: string;
@@ -808,6 +821,9 @@ export const SETUP_COPY: Record<
     welcomeSubtitle: '부팅과 함께 나만의 부산 여행을 준비해 보세요. 몇 가지 질문으로 맞춤 안내를 도와드릴게요.',
     loginTitle: '로그인',
     loginSubtitle: '일정 동기화와 Route Feed를 위해 로그인하세요',
+    offlineMode: '오프라인 모드',
+    offlineModeHint: '저장된 최근 일정만 열람합니다',
+    offlineModeEmpty: '열람할 저장된 일정이 없습니다.',
     email: '이메일',
     password: '비밀번호',
     login: '로그인',
@@ -838,6 +854,9 @@ export const SETUP_COPY: Record<
     welcomeSubtitle: 'Plan your Busan trip with Bu-Ting. A few quick questions help us personalize your experience.',
     loginTitle: 'Sign in',
     loginSubtitle: 'Sync itineraries and share on Route Feed',
+    offlineMode: 'Offline mode',
+    offlineModeHint: 'View your latest saved itinerary only',
+    offlineModeEmpty: 'No saved itinerary to browse.',
     email: 'Email',
     password: 'Password',
     login: 'Sign in',
@@ -868,6 +887,9 @@ export const SETUP_COPY: Record<
     welcomeSubtitle: 'BU-TINGで釜山旅行を始めましょう。いくつかの質問であなたに合った案内をします。',
     loginTitle: 'ログイン',
     loginSubtitle: '行程の同期とRoute Feedのために',
+    offlineMode: 'オフラインモード',
+    offlineModeHint: '保存した最新の行程のみ閲覧できます',
+    offlineModeEmpty: '閲覧できる行程がありません。',
     email: 'メール',
     password: 'パスワード',
     login: 'ログイン',
@@ -898,6 +920,9 @@ export const SETUP_COPY: Record<
     welcomeSubtitle: '与 BU-TING 一起规划釜山之旅。回答几个问题，我们将为您提供个性化指引。',
     loginTitle: '登录',
     loginSubtitle: '同步行程并分享至 Route Feed',
+    offlineMode: '离线模式',
+    offlineModeHint: '仅可浏览最近保存的行程',
+    offlineModeEmpty: '没有可浏览的已保存行程。',
     email: '邮箱',
     password: '密码',
     login: '登录',

@@ -39,12 +39,12 @@ import type { DailyItinerary, RouteItem, TravelPlan } from '../../types/travelPl
 import type { AppLanguage } from '../../types/user';
 import { resolveEventZoneForRoute } from '../../utils/eventZone/zoneResolver';
 import {
-  averageRating,
   authorInitial,
   collectTravelRecordImages,
   getReviewForTravelRecordPlace,
   snapshotToRouteItems,
   travelRecordDestinationLabel,
+  travelRecordOverallRating,
 } from '../../utils/review/travelReview';
 import { computeTripTotalMinutes, formatDurationMinutes } from '../../utils/geo/tripDuration';
 import { formatWeekdayDate } from '../../utils/geo/geo';
@@ -239,7 +239,7 @@ function TravelRecordDetailBody({
   );
 
   const feedImages = useMemo(() => collectTravelRecordImages(travelRecord), [travelRecord]);
-  const rating = averageRating(travelRecord.placeReviews);
+  const rating = travelRecordOverallRating(travelRecord);
   const destinationLabel = travelRecordDestinationLabel(travelRecord);
   const [commentOpen, setCommentOpen] = useState(false);
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
