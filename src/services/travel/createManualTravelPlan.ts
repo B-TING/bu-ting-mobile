@@ -51,12 +51,12 @@ export async function createManualTravelPlan(
     const dayPlans = [];
 
     for (const planBody of planRequests) {
-      const plan = await createTravelPlan(accessToken, travel.id, planBody);
+      const plan = await createTravelPlan(accessToken, travel.travelId, planBody);
       dayPlans.push(plan);
     }
 
     try {
-      await createTravelRecordDraft(accessToken, travel.id, {
+      await createTravelRecordDraft(accessToken, travel.travelId, {
         title: travel.title ?? travelBody.title ?? null,
       });
     } catch (draftError) {

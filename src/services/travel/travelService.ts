@@ -94,8 +94,8 @@ export async function createTravel(
     body,
     ...travelPlanLogHooks('POST', url, accessToken, { requestBody: body }),
   });
-  if (!data?.id) {
-    throw new TravelServiceError('Travel create response missing id');
+  if (!data?.travelId) {
+    throw new TravelServiceError('Travel create response missing travelId');
   }
   return data;
 }
@@ -155,8 +155,8 @@ export async function updateTravelStatus(
     body,
     ...travelPlanLogHooks('PATCH', url, accessToken, { travelId, requestBody: body }),
   });
-  if (!data?.id) {
-    throw new TravelServiceError('Travel status response missing id');
+  if (!data?.travelId) {
+    throw new TravelServiceError('Travel status response missing travelId');
   }
   return data;
 }

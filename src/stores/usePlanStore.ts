@@ -318,8 +318,8 @@ export const usePlanStore = create<PlanState>()(
           ),
         })),
       importPlanFromTravelRecord: (travelRecord, member) => {
-        const linked = travelRecord.originalTravelId
-          ? (get().plans.find(p => p.planId === travelRecord.originalTravelId) ?? null)
+        const linked = travelRecord.travelId
+          ? (get().plans.find(p => p.planId === travelRecord.travelId) ?? null)
           : null;
         const plan = buildPlanFromTravelRecord(travelRecord, linked, member, createId);
         if (!plan) {

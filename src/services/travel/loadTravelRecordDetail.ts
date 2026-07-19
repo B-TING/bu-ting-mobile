@@ -31,7 +31,7 @@ function mapDtoToPlaceReview(
 ): PlaceReview {
   return {
     placeReviewId: dto.placeReviewId,
-    planPlaceId: dto.planPlaceId ?? place.originalPlanPlaceId,
+    planPlaceId: dto.planPlaceId ?? place.planPlaceId,
     travelRecordPlaceId: dto.travelRecordPlaceId ?? place.travelRecordPlaceId,
     rating: dto.rating,
     stayMinutes: dto.stayMinutes ?? null,
@@ -52,12 +52,13 @@ function mapSummaryItemToPlaceReview(
     planPlaceId: null,
     travelRecordPlaceId: item.travelRecordPlaceId,
     rating: item.rating,
+    stayMinutes: item.stayMinutes ?? null,
     content: item.content,
     tags: item.tags ?? [],
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
     placeName: item.placeName,
-    media: [],
+    media: mediaFromUrls(item.placeReviewId, item.mediaUrls),
   };
 }
 
@@ -79,13 +80,13 @@ async function fetchPlaceReviewsForRecord(options: {
     return travelRecord.placeReviews ?? [];
   }
 
-  const travelId = travelRecord.originalTravelId;
+  const travelId = travelRecord.travelId;
   const canUseAuthorApi = Boolean(accessToken?.trim() && travelId);
 
   if (canUseAuthorApi) {
     const results = await Promise.all(
       places.map(async place => {
-        const planPlaceId = place.originalPlanPlaceId;
+        const planPlaceId = place.planPlaceId;
         if (!planPlaceId) {
           return null;
         }

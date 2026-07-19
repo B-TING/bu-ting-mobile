@@ -2,7 +2,7 @@ import type { ChatZone } from './eventZone';
 
 /**
  * 백엔드 채팅 스펙 타입 (REST + STOMP).
- * REST 히스토리(GET messages)는 `id`, STOMP 브로드캐스트는 `messageId` 필드를 사용합니다.
+ * `ChatMessageResponse`: messageId, senderId (구 id / userId 는 Raw 호환용으로만 수용).
  */
 
 /** GET /api/v1/chat/rooms/zone?zone={ChatZone} 응답 item */
@@ -16,11 +16,13 @@ export type ChatRoomSummary = {
   [key: string]: unknown;
 };
 
-/** 백엔드 원본 메시지 (REST messages · STOMP MESSAGE) */
+/** 백엔드 원본 메시지 (REST messages · STOMP MESSAGE) — 구 필드명 호환 */
 export type ChatMessageRaw = {
   messageId?: string;
+  /** @deprecated 호환용 — messageId 사용 */
   id?: string;
   roomId?: string;
+  /** @deprecated 호환용 — senderId 사용 */
   userId?: string;
   senderId?: string;
   senderNickname?: string;
@@ -35,11 +37,11 @@ export type ChatMessageRaw = {
   [key: string]: unknown;
 };
 
-/** 앱 내부 정규화 메시지 */
+/** 앱 내부 정규화 메시지 (`ChatMessageResponse`) */
 export type ChatMessage = {
   messageId: string;
   roomId: string;
-  userId: string;
+  senderId: string;
   senderNickname: string;
   content: string;
   createdAt: string;
@@ -69,10 +71,10 @@ export type ChatSendPayload = {
 export function normalizeChatMessage(raw: ChatMessageRaw): ChatMessage {
   const messageId = raw.messageId ?? raw.id;
   if (!messageId) {
-    throw new Error('Chat message missing id/messageId');
+    throw new Error('Chat message missing messageId');
   }
 
-  const userId = raw.userId ?? raw.senderId ?? '';
+  const senderId = raw.senderId ?? raw.userId ?? '';
   const senderNickname =
     raw.senderNickname ?? raw.nickname ?? raw.senderName ?? 'Unknown';
   const content = raw.content ?? raw.message ?? raw.text ?? '';
@@ -81,7 +83,7 @@ export function normalizeChatMessage(raw: ChatMessageRaw): ChatMessage {
   return {
     messageId,
     roomId: raw.roomId ?? '',
-    userId,
+    senderId,
     senderNickname,
     content,
     createdAt,
@@ -89,7 +91,7 @@ export function normalizeChatMessage(raw: ChatMessageRaw): ChatMessage {
   };
 }
 
-/** REST 응답 본문에서 메시지 배열 추출 ({ data: [...] } · { data: { messages } } 등) */
+/** REST 응답 본문에서 메시지 배열 추출 (`data.messages` · 구 배열 직접 반환 호환) */
 export function extractChatMessageList(body: unknown): ChatMessageRaw[] {
   if (Array.isArray(body)) {
     return body as ChatMessageRaw[];

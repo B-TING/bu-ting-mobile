@@ -3,7 +3,7 @@ import { normalizeChatMessage } from '../../types/chatApi';
 import type { EventZoneChatMessage } from '../../types/eventZone';
 import type { ZoneChatParticipant } from '../../types/zoneChatWebSocket';
 
-/** 백엔드 ChatMessage 가 현재 사용자 것인지 (userId 기준) */
+/** 백엔드 ChatMessageResponse 가 현재 사용자 것인지 (senderId 기준) */
 export function isZoneChatMessageMine(
   message: ChatMessage,
   participant: ZoneChatParticipant,
@@ -11,8 +11,8 @@ export function isZoneChatMessageMine(
   if (typeof message.isMine === 'boolean') {
     return message.isMine;
   }
-  if (participant.userId && message.userId) {
-    return message.userId === participant.userId;
+  if (participant.userId && message.senderId) {
+    return message.senderId === participant.userId;
   }
   return false;
 }
@@ -25,7 +25,7 @@ export function mapServerMessageToEventZoneChat(
   return {
     id: message.messageId,
     roomId: message.roomId,
-    authorId: message.userId,
+    authorId: message.senderId,
     authorNickname: message.senderNickname,
     text: message.content,
     sentAt: message.createdAt,

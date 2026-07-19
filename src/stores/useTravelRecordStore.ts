@@ -141,7 +141,7 @@ export const useTravelRecordStore = create<TravelRecordState>()((set, get) => ({
           ...state.publishedTravelIds,
           ...records
             .filter(r => isPublishedStatus(r.status))
-            .map(r => r.originalTravelId)
+            .map(r => r.travelId)
             .filter((id): id is string => Boolean(id)),
         ]),
       ];
@@ -155,7 +155,7 @@ export const useTravelRecordStore = create<TravelRecordState>()((set, get) => ({
         ...new Set(
           records
             .filter(r => isPublishedStatus(r.status))
-            .map(r => r.originalTravelId)
+            .map(r => r.travelId)
             .filter((id): id is string => Boolean(id)),
         ),
       ],
@@ -170,7 +170,7 @@ export const useTravelRecordStore = create<TravelRecordState>()((set, get) => ({
     });
   },
   getTravelRecordForTravel: travelId =>
-    get().publishedTravelRecords.find(t => t.originalTravelId === travelId),
+    get().publishedTravelRecords.find(t => t.travelId === travelId),
   isTravelPublished: travelId => {
     const record = get().getTravelRecordForTravel(travelId);
     if (record) {

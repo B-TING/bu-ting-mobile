@@ -40,14 +40,13 @@ export function getReviewForTravelRecordPlace(
   reviews: PlaceReview[],
   place: {
     travelRecordPlaceId: string;
-    originalPlanPlaceId?: string | null;
+    planPlaceId?: string | null;
   },
 ): PlaceReview | undefined {
   return reviews.find(
     r =>
       reviewMatchesPlaceKey(r, place.travelRecordPlaceId) ||
-      (place.originalPlanPlaceId != null &&
-        reviewMatchesPlaceKey(r, place.originalPlanPlaceId)),
+      (place.planPlaceId != null && reviewMatchesPlaceKey(r, place.planPlaceId)),
   );
 }
 
@@ -134,7 +133,7 @@ export function buildTravelRecordDays(plan: TravelPlan): TravelRecordDay[] {
       .map(
         (r): TravelRecordPlace => ({
           travelRecordPlaceId: r.apiPlanPlaceId ?? r.itemId,
-          originalPlanPlaceId: r.apiPlanPlaceId ?? r.itemId,
+          planPlaceId: r.apiPlanPlaceId ?? r.itemId,
           sequence: r.sequence,
           placeName: r.placeName,
           address: r.placeInfo?.address ?? null,
@@ -190,7 +189,7 @@ export const resolveTravelogueItinerary = resolveTravelRecordDays;
 export function snapshotToRouteItems(places: TravelRecordPlace[]): RouteItem[] {
   return places.map((place, index) => ({
     itemId: place.travelRecordPlaceId,
-    apiPlanPlaceId: place.originalPlanPlaceId ?? undefined,
+    apiPlanPlaceId: place.planPlaceId ?? undefined,
     apiProvider: place.provider,
     sequence: place.sequence ?? index,
     placeId: place.providerPlaceId,

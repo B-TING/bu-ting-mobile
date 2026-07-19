@@ -65,7 +65,7 @@ function summarizeTravelCreateRequest(body: TravelCreateRequest): Record<string,
     preferFlatTerrain: body.preferFlatTerrain,
     pace: body.pace,
     companionCount: body.companionCount,
-    companionTypes: body.companionTypes,
+    companionType: body.companionType,
     preferredFoods: body.preferredFoods,
     accommodationArea: body.accommodationArea,
   };
@@ -203,10 +203,10 @@ function summarizeResponseBody(body: unknown): Record<string, unknown> | undefin
       ? (record.data as Record<string, unknown>)
       : record;
 
-  if ('id' in data && 'status' in data) {
-    const travel = data as TravelResponse;
+  if (('travelId' in data || 'id' in data) && 'status' in data) {
+    const travel = data as TravelResponse & { id?: string };
     return {
-      id: travel.id,
+      travelId: travel.travelId ?? travel.id,
       status: travel.status,
       title: travel.title,
       startDate: travel.startDate,

@@ -55,7 +55,7 @@ export type TravelRecordRouteDto = {
 
 export type TravelRecordPlaceDto = {
   travelRecordPlaceId: string;
-  originalPlanPlaceId: string | null;
+  planPlaceId: string | null;
   sequence: number | null;
   placeName: string;
   address: string | null;
@@ -81,8 +81,9 @@ export type TravelRecordDayDto = {
 /** OpenAPI `TravelRecordResponse` */
 export type TravelRecordResponse = {
   travelRecordId: string;
-  originalTravelId: string | null;
+  travelId: string | null;
   authorId: string;
+  authorNickname?: string;
   title: string | null;
   content: string | null;
   coverImageUrl: string | null;
@@ -92,13 +93,14 @@ export type TravelRecordResponse = {
   publishedAt: string | null;
   likeCount: number;
   viewCount: number;
+  likedByMe?: boolean;
   days: TravelRecordDayDto[];
 };
 
 /** OpenAPI `TravelRecordFeedResponse` */
 export type TravelRecordFeedResponse = {
   travelRecordId: string;
-  originalTravelId: string | null;
+  travelId: string | null;
   authorId: string;
   authorNickname: string;
   title: string | null;
@@ -121,7 +123,7 @@ export type TravelRecordFeedPageResponse = {
 /** OpenAPI `TravelRecordManageResponse` */
 export type TravelRecordManageResponse = {
   travelRecordId: string;
-  originalTravelId: string | null;
+  travelId: string | null;
   authorId: string;
   title: string | null;
   content: string | null;
@@ -171,8 +173,10 @@ export type PlaceReviewSummaryItemResponse = {
   travelRecordPlaceId: string;
   placeName: string;
   rating: number;
+  stayMinutes?: number | null;
   content: string | null;
   tags: string[];
+  mediaUrls?: string[];
   createdAt: string;
   updatedAt: string;
 };
@@ -227,9 +231,9 @@ export function mapTravelRecordResponse(
 ): TravelRecord {
   return {
     travelRecordId: dto.travelRecordId,
-    originalTravelId: dto.originalTravelId,
+    travelId: dto.travelId,
     authorId: dto.authorId,
-    authorNickname: extras?.authorNickname ?? '',
+    authorNickname: dto.authorNickname ?? extras?.authorNickname ?? '',
     title: dto.title,
     content: dto.content,
     coverImageUrl: dto.coverImageUrl,
@@ -239,7 +243,7 @@ export function mapTravelRecordResponse(
     publishedAt: dto.publishedAt,
     likeCount: dto.likeCount,
     viewCount: dto.viewCount,
-    likedByMe: extras?.likedByMe,
+    likedByMe: dto.likedByMe ?? extras?.likedByMe,
     days: mapDays(dto.days),
     placeReviews: extras?.placeReviews ?? [],
   };
@@ -249,7 +253,7 @@ export function mapTravelRecordResponse(
 export function mapTravelRecordFeedItem(dto: TravelRecordFeedResponse): TravelRecord {
   return {
     travelRecordId: dto.travelRecordId,
-    originalTravelId: dto.originalTravelId,
+    travelId: dto.travelId,
     authorId: dto.authorId,
     authorNickname: dto.authorNickname,
     title: dto.title,
@@ -274,7 +278,7 @@ export function mapTravelRecordManageItem(
 ): TravelRecord {
   return {
     travelRecordId: dto.travelRecordId,
-    originalTravelId: dto.originalTravelId,
+    travelId: dto.travelId,
     authorId: dto.authorId,
     authorNickname,
     title: dto.title,

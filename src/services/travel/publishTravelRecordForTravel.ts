@@ -74,7 +74,7 @@ async function resolveOrCreateDraft(
   }
 
   const mine = await fetchMyTravelRecords(accessToken);
-  const match = mine.find(item => item.originalTravelId === travelId);
+  const match = mine.find(item => item.travelId === travelId);
   if (match) {
     const fromList = await loadDetail(match.travelRecordId);
     if (fromList) {

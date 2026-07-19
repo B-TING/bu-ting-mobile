@@ -70,7 +70,7 @@ export function PlanRecordsTab({
   const publishedTravelRecord = useTravelRecordStore(s =>
     s.publishedTravelRecords.find(
       t =>
-        t.originalTravelId === travelId &&
+        t.travelId === travelId &&
         (t.status === 'PUBLISHED' || t.status === 'HIDDEN'),
     ),
   );

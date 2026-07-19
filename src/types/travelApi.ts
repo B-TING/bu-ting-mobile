@@ -23,12 +23,12 @@ export type TravelCreateRequest = {
   pace?: TravelPaceDto | null;
   companionCount?: number | null;
   preferredFoods?: string | null;
-  companionTypes?: CompanionTypeDto | null;
+  companionType?: CompanionTypeDto | null;
   accommodationArea?: string | null;
 };
 
 export type TravelResponse = TravelCreateRequest & {
-  id: string;
+  travelId: string;
   status: TravelStatusDto;
   createdAt?: string | null;
 };
@@ -139,6 +139,7 @@ export type TravelPlanPlaceDto = {
   providerPlaceId: string;
   durationMinutes?: number | null;
   memo?: string | null;
+  scheduledTime?: string | null;
   visited?: boolean | null;
   routeToNext?: {
     transportType?: string;

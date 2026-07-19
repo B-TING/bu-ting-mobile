@@ -44,7 +44,7 @@ export type TravelRecordRoute = {
 /** OpenAPI `TravelRecordPlaceResponse` (+ client route type for plan import) */
 export type TravelRecordPlace = {
   travelRecordPlaceId: string;
-  originalPlanPlaceId: string | null;
+  planPlaceId: string | null;
   sequence: number | null;
   placeName: string;
   address: string | null;
@@ -97,7 +97,8 @@ export type TravelRecordSocial = {
  */
 export type TravelRecord = {
   travelRecordId: string;
-  originalTravelId: string | null;
+  /** 이 여행기가 생성된 원본 Travel ID */
+  travelId: string | null;
   authorId: string;
   authorNickname: string;
   title: string | null;

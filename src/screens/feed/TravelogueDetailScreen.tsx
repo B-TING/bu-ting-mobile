@@ -96,7 +96,7 @@ function TravelRecordDetailBody({
   insets: { top: number; bottom: number };
 }) {
   const linkedPlan = usePlanStore(s => {
-    const id = travelRecord.originalTravelId;
+    const id = travelRecord.travelId;
     if (!id) {
       return null;
     }

@@ -106,3 +106,6 @@ assets/map/busan-sigungu.geojson
 
 # 채팅 로컬 통합 테스트 스크립트
 scripts/test-zone*.cjs
+
+# API Swagger
+openapi3.yaml
