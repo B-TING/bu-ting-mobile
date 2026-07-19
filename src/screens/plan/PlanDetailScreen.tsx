@@ -988,7 +988,10 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
                 destinationLabel={enrichedPlan.title}
                 isTripActive={enrichedPlan.status !== 'COMPLETED'}
                 onPublished={() => {
-                  void handleCompletePlan();
+                  if (planId) {
+                    completePlan(planId);
+                  }
+                  navigateToMainTab(navigation, 'home');
                 }}
                 onEndTrip={requestCompletePlan}
                 onViewFeed={() => navigateToMainTab(navigation, 'feed')}

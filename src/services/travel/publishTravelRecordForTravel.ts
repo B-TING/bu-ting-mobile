@@ -1,3 +1,4 @@
+import { usePlanStore } from '../../stores/usePlanStore';
 import { useTravelRecordStore } from '../../stores/useTravelRecordStore';
 import type { TravelPlan } from '../../types/travelPlan';
 import { mapTravelRecordResponse } from '../../types/travelRecordApi';
@@ -11,6 +12,7 @@ import {
   publishTravelRecord,
   updateTravelRecordDraft,
 } from './travelRecordService';
+import { updateTravelStatus } from './travelService';
 
 export class PublishTravelRecordError extends Error {
   cause?: unknown;
@@ -34,6 +36,24 @@ export type PublishTravelRecordInput = {
 
 function travelIdOf(plan: TravelPlan): string {
   return plan.apiTravelId ?? plan.planId;
+}
+
+function isTravelCompleted(plan: TravelPlan): boolean {
+  return plan.status === 'COMPLETED' || plan.travelStatus === 'COMPLETED';
+}
+
+/** 게시 전 여행을 COMPLETED로 맞춤 (이미 완료면 no-op) */
+async function ensureTravelCompleted(
+  accessToken: string,
+  plan: TravelPlan,
+): Promise<void> {
+  if (isTravelCompleted(plan)) {
+    return;
+  }
+
+  const travelId = travelIdOf(plan);
+  await updateTravelStatus(accessToken, travelId, { status: 'COMPLETED' });
+  usePlanStore.getState().completePlan(plan.planId);
 }
 
 async function resolveOrCreateDraft(
@@ -90,7 +110,7 @@ async function resolveOrCreateDraft(
 }
 
 /**
- * 여행기 제목/본문 저장 후 게시(또는 비공개). 로컬 전용 저장 없음.
+ * 여행 완료 처리 → 여행기 제목/본문 저장 → 게시(또는 비공개).
  */
 export async function publishTravelRecordForTravel(
   input: PublishTravelRecordInput,
@@ -109,6 +129,8 @@ export async function publishTravelRecordForTravel(
   const store = useTravelRecordStore.getState();
 
   try {
+    await ensureTravelCompleted(accessToken, plan);
+
     const draft = await resolveOrCreateDraft(
       accessToken,
       plan,
