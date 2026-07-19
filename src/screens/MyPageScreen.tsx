@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import type { NavigationProp } from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { NicknameEditModal } from '../components/mypage/NicknameEditModal';
@@ -16,6 +17,11 @@ import { selectOnboardingForUser, useAppStore, useAuthStore } from '../stores';
 import { selectAuthUser, selectIsAuthenticated, selectReusableAccessToken } from '../stores/useAuthStore';
 import type { RootStackParamList } from '../navigation/types';
 import { logoutSession } from '../services/auth/authSession';
+import { fetchTravelSurveyProfile } from '../services/setup/travelSurveyService';
+import {
+  createEmptyOnboardingProfile,
+  hasAnsweredSurvey,
+} from '../services/setup/travelSurveyMapper';
 import { deleteMyAccount, updateMyProfile, UserServiceError } from '../services/user/userService';
 import { cn } from '../utils/common/cn';
 
@@ -108,6 +114,36 @@ export function MyPageScreen({ navigation }: Props) {
   const [nicknameModalOpen, setNicknameModalOpen] = useState(false);
   const [savingNickname, setSavingNickname] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!accessToken || !user?.userId) {
+        return;
+      }
+      const userId = user.userId;
+      let cancelled = false;
+      void fetchTravelSurveyProfile(accessToken, userId, language)
+        .then(profile => {
+          if (cancelled) {
+            return;
+          }
+          if (profile && hasAnsweredSurvey(profile)) {
+            useAppStore.getState().saveUserOnboarding(userId, profile);
+            return;
+          }
+          // GET 데이터 없음 → 로컬도 비움 (skippedAll 캐시 제거)
+          useAppStore
+            .getState()
+            .saveUserOnboarding(userId, createEmptyOnboardingProfile(language, userId));
+        })
+        .catch(error => {
+          console.warn('[Bu-Ting] MyPage travel survey fetch failed', error);
+        });
+      return () => {
+        cancelled = true;
+      };
+    }, [accessToken, user?.userId, language]),
+  );
 
   const goToLogin = () => {
     navigation.reset({
@@ -214,11 +250,7 @@ export function MyPageScreen({ navigation }: Props) {
     notSet: copy.preferenceFields.notSet,
     skipped: copy.preferenceFields.skipped,
   });
-  const preferencesMessage = !onboarding
-    ? copy.preferencesEmpty
-    : onboarding.skippedAll
-      ? copy.preferencesSkippedAll
-      : null;
+  const preferencesMessage = preferenceRows ? null : copy.preferencesEmpty;
 
   return (
     <View className="flex-1 bg-brand-background" style={layout.screen}>

@@ -696,7 +696,17 @@ export function summarizeOnboardingPreferences(
   language: AppLanguage,
   labels: OnboardingPreferenceLabels,
 ): OnboardingPreferenceRow[] | null {
-  if (!profile || profile.skippedAll) {
+  if (
+    !profile ||
+    !(
+      profile.travelStyle !== null ||
+      profile.schedulePace !== null ||
+      profile.companions !== null ||
+      profile.luggage !== null ||
+      profile.purposes.length > 0 ||
+      profile.busanFamiliarity !== null
+    )
+  ) {
     return null;
   }
 
