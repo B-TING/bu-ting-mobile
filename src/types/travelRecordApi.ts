@@ -20,6 +20,7 @@ export type TravelRecordUpdateRequest = {
   title?: string | null;
   content?: string | null;
   coverImageUrl?: string | null;
+  overallRating?: number | null;
 };
 
 export type PlaceReviewCreateRequest = {

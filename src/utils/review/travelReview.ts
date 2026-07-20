@@ -19,6 +19,42 @@ export function averageRating(reviews: PlaceReview[]): number {
   return Math.round((sum / reviews.length) * 10) / 10;
 }
 
+/** API overallRating (1–5 정수). 후기 없으면 null */
+export function overallRatingForApi(reviews: PlaceReview[]): number | null {
+  const avg = averageRating(reviews);
+  if (avg <= 0) {
+    return null;
+  }
+  return Math.min(5, Math.max(1, Math.round(avg)));
+}
+
+/** 여행기 작성 모달 초기 종합 평점 (기존 값 우선, 없으면 후기 평균 반올림) */
+export function defaultComposeOverallRating(
+  placeReviews: PlaceReview[],
+  existing?: number | null,
+): number {
+  if (
+    typeof existing === 'number' &&
+    !Number.isNaN(existing) &&
+    existing >= 1 &&
+    existing <= 5
+  ) {
+    return existing;
+  }
+  const avg = averageRating(placeReviews);
+  if (avg > 0) {
+    return Math.min(5, Math.max(1, Math.round(avg)));
+  }
+  return 0;
+}
+
+export function overallRatingToApi(value: number): number | null {
+  if (!Number.isFinite(value) || value < 1 || value > 5) {
+    return null;
+  }
+  return Math.round(value);
+}
+
 /** 서버 overallRating 우선, 없으면 장소 후기 평균 */
 export function travelRecordOverallRating(travelRecord: TravelRecord): number {
   if (

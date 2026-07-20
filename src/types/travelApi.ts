@@ -116,7 +116,10 @@ export type PlanPlaceUpdateRequest = {
   memo?: string | null;
   durationMinutes?: number | null;
   scheduledTime?: string | null;
-  visited?: boolean | null;
+};
+
+export type PlanPlaceVisitedUpdateRequest = {
+  visited: boolean;
 };
 
 export type PlanPlaceUpdatePlaceRequest = {

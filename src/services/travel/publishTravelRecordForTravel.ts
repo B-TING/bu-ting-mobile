@@ -3,6 +3,7 @@ import { useTravelRecordStore } from '../../stores/useTravelRecordStore';
 import type { TravelPlan } from '../../types/travelPlan';
 import { mapTravelRecordResponse } from '../../types/travelRecordApi';
 import type { TravelRecord, TravelRecordStatus } from '../../types/travelReview';
+import { overallRatingToApi } from '../../utils/review/travelReview';
 import {
   createTravelRecordDraft,
   fetchMyTravelRecord,
@@ -32,6 +33,7 @@ export type PublishTravelRecordInput = {
   content: string;
   status: Extract<TravelRecordStatus, 'PUBLISHED' | 'HIDDEN'>;
   coverImageUrl?: string | null;
+  overallRating: number;
 };
 
 function travelIdOf(plan: TravelPlan): string {
@@ -108,7 +110,7 @@ async function resolveOrCreateDraft(
 export async function publishTravelRecordForTravel(
   input: PublishTravelRecordInput,
 ): Promise<TravelRecord> {
-  const { accessToken, plan, authorNickname, title, content, status, coverImageUrl } =
+  const { accessToken, plan, authorNickname, title, content, status, coverImageUrl, overallRating } =
     input;
 
   if (!accessToken?.trim()) {
@@ -134,6 +136,7 @@ export async function publishTravelRecordForTravel(
       title,
       content: content || null,
       coverImageUrl: coverImageUrl ?? draft.coverImageUrl ?? null,
+      overallRating: overallRatingToApi(overallRating),
     });
 
     let dto = await publishTravelRecord(

@@ -236,6 +236,7 @@ export function PlanRecordsTab({
   const handlePublish = async (payload: {
     title: string;
     content: string;
+    overallRating: number;
     status: Extract<TravelRecordStatus, 'PUBLISHED' | 'HIDDEN'>;
   }) => {
     if (!accessToken?.trim()) {
@@ -267,6 +268,7 @@ export function PlanRecordsTab({
           currentStatus: publishedTravelRecord.status,
           coverImageUrl:
             coverImageUrl ?? publishedTravelRecord.coverImageUrl ?? null,
+          overallRating: payload.overallRating,
         });
         setPublishedTravelRecord(updated);
         setSuccessMsg(
@@ -283,6 +285,7 @@ export function PlanRecordsTab({
           content: payload.content,
           status: payload.status,
           coverImageUrl,
+          overallRating: payload.overallRating,
         });
         setPublishedTravelRecord(published);
         setSuccessMsg(
@@ -474,6 +477,9 @@ export function PlanRecordsTab({
             publishedTravelRecord?.status === 'HIDDEN')
             ? publishedTravelRecord.status
             : undefined
+        }
+        initialOverallRating={
+          composeMode === 'edit' ? publishedTravelRecord?.overallRating : undefined
         }
         totalDurationLabel={totalDurationLabel}
         publishing={publishing}

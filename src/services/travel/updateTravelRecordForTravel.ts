@@ -1,6 +1,7 @@
 import { useTravelRecordStore } from '../../stores/useTravelRecordStore';
 import { mapTravelRecordResponse } from '../../types/travelRecordApi';
 import type { TravelRecord, TravelRecordStatus } from '../../types/travelReview';
+import { overallRatingToApi } from '../../utils/review/travelReview';
 import {
   hideMyTravelRecord,
   republishMyTravelRecord,
@@ -20,6 +21,7 @@ export type UpdateTravelRecordInput = {
   /** 현재 서버 상태 */
   currentStatus: TravelRecordStatus;
   coverImageUrl?: string | null;
+  overallRating: number;
 };
 
 /**
@@ -39,6 +41,7 @@ export async function updateTravelRecordForTravel(
     status,
     currentStatus,
     coverImageUrl,
+    overallRating,
   } = input;
 
   if (!accessToken?.trim()) {
@@ -46,10 +49,12 @@ export async function updateTravelRecordForTravel(
   }
 
   try {
+    const placeReviews = useTravelRecordStore.getState().getReviewsForTravel(travelId);
     let dto = await updateMyTravelRecord(accessToken, travelRecordId, {
       title,
       content: content || null,
       coverImageUrl: coverImageUrl ?? null,
+      overallRating: overallRatingToApi(overallRating),
     });
 
     if (status === 'HIDDEN' && currentStatus === 'PUBLISHED') {

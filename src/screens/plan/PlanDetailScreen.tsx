@@ -549,14 +549,12 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
       toggleVisited(planId, itemId);
 
       if (isApiPlan && accessToken && route.apiPlanPlaceId) {
-        void updatePlanPlaceVisitedOnApi(accessToken, route, nextVisited).catch(
-          error => {
-            // OpenAPI UpdateRequest에 visited가 없는 환경도 있어, 로컬 체크는 유지한다.
-            if (__DEV__) {
-              console.warn('[PlanDetail] visited PATCH skipped/failed', error);
-            }
-          },
-        );
+        void updatePlanPlaceVisitedOnApi(accessToken, route, nextVisited).catch(error => {
+          toggleVisited(planId, itemId);
+          if (__DEV__) {
+            console.warn('[PlanDetail] visited PATCH failed', error);
+          }
+        });
       }
     },
     [

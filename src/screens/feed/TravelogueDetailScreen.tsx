@@ -346,6 +346,7 @@ function TravelRecordDetailBody({
   const handleSaveTravelogue = async (payload: {
     title: string;
     content: string;
+    overallRating: number;
     status: 'PUBLISHED' | 'HIDDEN';
   }) => {
     if (!accessToken?.trim() || !travelRecord.travelId) {
@@ -367,6 +368,7 @@ function TravelRecordDetailBody({
         status: payload.status,
         currentStatus: travelRecord.status,
         coverImageUrl: travelRecord.coverImageUrl,
+        overallRating: payload.overallRating,
       });
       onTravelRecordChange({
         ...updated,
@@ -811,6 +813,7 @@ function TravelRecordDetailBody({
             initialStatus={
               travelRecord.status === 'HIDDEN' ? 'HIDDEN' : 'PUBLISHED'
             }
+            initialOverallRating={travelRecord.overallRating}
             publishing={publishing}
             onClose={() => {
               if (!publishing) {

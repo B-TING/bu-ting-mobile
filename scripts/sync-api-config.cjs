@@ -94,6 +94,7 @@ export const TRAVEL_ENDPOINTS = {
   planPlaceSequence: (planId: string) => \`/api/v1/plans/\${planId}/places/sequence\`,
   planPlaceById: (planPlaceId: string) => \`/api/v1/plans/places/\${planPlaceId}\`,
   planPlacePlace: (planPlaceId: string) => \`/api/v1/plans/places/\${planPlaceId}/place\`,
+  planPlaceVisited: (planPlaceId: string) => \`/api/v1/plans/places/\${planPlaceId}/visited\`,
 } as const;
 
 export const TRAVEL_TEAM_ENDPOINTS = {

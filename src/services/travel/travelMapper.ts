@@ -321,8 +321,6 @@ export function mergeApiTravelPlanWithLocal(
           }
           return {
             ...route,
-            // 서버 visited 미반영·동기화 레이스 시 로컬 방문 체크가 풀리지 않도록 유지
-            isVisited: prev.isVisited,
             legMode: prev.legMode,
             placeInfo: prev.placeInfo ?? route.placeInfo,
             type: prev.type,

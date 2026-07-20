@@ -43,6 +43,7 @@ export const TRAVEL_REVIEW_COPY: Record<
     travelogueTitle: string;
     travelogueTitlePlaceholder: string;
     overallRating: string;
+    overallRatingHint: string;
     overallReview: string;
     overallReviewPlaceholder: string;
     authorLabel: string;
@@ -154,6 +155,7 @@ export const TRAVEL_REVIEW_COPY: Record<
     travelogueTitle: '제목',
     travelogueTitlePlaceholder: '예: 부산 3박 4일 맛집 투어',
     overallRating: '종합 평점',
+    overallRatingHint: '별을 눌러 종합 평점을 설정하세요',
     overallReview: '종합 후기',
     overallReviewPlaceholder: '이번 여행을 한 줄로 요약해 주세요',
     authorLabel: '작성자',
@@ -267,6 +269,7 @@ export const TRAVEL_REVIEW_COPY: Record<
     travelogueTitle: 'Title',
     travelogueTitlePlaceholder: 'e.g. 4-day Busan food tour',
     overallRating: 'Overall rating',
+    overallRatingHint: 'Tap the stars to set your overall rating',
     overallReview: 'Overall review',
     overallReviewPlaceholder: 'Summarize this trip in a few sentences',
     authorLabel: 'Author',
@@ -380,6 +383,7 @@ export const TRAVEL_REVIEW_COPY: Record<
     travelogueTitle: 'タイトル',
     travelogueTitlePlaceholder: '例：釜山3泊4日グルメ旅',
     overallRating: '総合評価',
+    overallRatingHint: '星をタップして総合評価を設定してください',
     overallReview: '総合レビュー',
     overallReviewPlaceholder: '今回の旅行をまとめてください',
     authorLabel: '投稿者',
@@ -492,6 +496,7 @@ export const TRAVEL_REVIEW_COPY: Record<
     travelogueTitle: '标题',
     travelogueTitlePlaceholder: '例：釜山四天美食之旅',
     overallRating: '综合评分',
+    overallRatingHint: '点击星星设置综合评分',
     overallReview: '综合点评',
     overallReviewPlaceholder: '用几句话总结这次旅行',
     authorLabel: '作者',

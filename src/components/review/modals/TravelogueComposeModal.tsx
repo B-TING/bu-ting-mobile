@@ -5,9 +5,9 @@ import type { CopyFor } from '../../../i18n';
 import type { AppLanguage } from '../../../types/user';
 import type { PlaceReview, TravelRecordStatus } from '../../../types/travelReview';
 import {
-  averageRating,
   buildDefaultContent,
   buildDefaultTravelRecordTitle,
+  defaultComposeOverallRating,
 } from '../../../utils/review/travelReview';
 import { StarRating } from '../../shared/rating/StarRating';
 import { AppModal, AppModalActions } from '../../shared/modals';
@@ -26,6 +26,7 @@ type TravelogueComposeModalProps = {
   initialTitle?: string | null;
   initialContent?: string | null;
   initialStatus?: Extract<TravelRecordStatus, 'PUBLISHED' | 'HIDDEN'>;
+  initialOverallRating?: number | null;
   mode?: 'create' | 'edit';
   totalDurationLabel?: string | null;
   publishing?: boolean;
@@ -33,6 +34,7 @@ type TravelogueComposeModalProps = {
   onPublish: (payload: {
     title: string;
     content: string;
+    overallRating: number;
     status: Extract<TravelRecordStatus, 'PUBLISHED' | 'HIDDEN'>;
   }) => void | Promise<void>;
 };
@@ -48,6 +50,7 @@ export function TravelogueComposeModal({
   initialTitle,
   initialContent,
   initialStatus,
+  initialOverallRating,
   mode = 'create',
   totalDurationLabel,
   publishing = false,
@@ -55,15 +58,16 @@ export function TravelogueComposeModal({
   onPublish,
 }: TravelogueComposeModalProps) {
   const isEdit = mode === 'edit';
-  const computedRating = averageRating(placeReviews);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [overallRating, setOverallRating] = useState(0);
   const [isPublic, setIsPublic] = useState(true);
 
   useEffect(() => {
     if (!visible) {
       return;
     }
+    setOverallRating(defaultComposeOverallRating(placeReviews, initialOverallRating));
     if (isEdit) {
       setTitle(
         (initialTitle ?? defaultTitle ?? '').trim() ||
@@ -82,6 +86,7 @@ export function TravelogueComposeModal({
     initialTitle,
     initialContent,
     initialStatus,
+    initialOverallRating,
     defaultTitle,
     destinationLabel,
     language,
@@ -90,13 +95,14 @@ export function TravelogueComposeModal({
 
   const handlePublish = () => {
     const trimmedTitle = title.trim();
-    if (!trimmedTitle || publishing) {
+    if (!trimmedTitle || publishing || overallRating < 1) {
       return;
     }
     void Promise.resolve(
       onPublish({
         title: trimmedTitle,
         content: content.trim(),
+        overallRating,
         status: isPublic ? 'PUBLISHED' : 'HIDDEN',
       }),
     )
@@ -139,7 +145,7 @@ export function TravelogueComposeModal({
                   : copy.publish,
               onPress: handlePublish,
               variant: 'primary',
-              disabled: publishing,
+              disabled: publishing || !title.trim() || overallRating < 1,
             },
           ]}
         />
@@ -168,14 +174,12 @@ export function TravelogueComposeModal({
 
         <Text className="mb-2 text-xs font-bold text-brand-muted">{copy.overallRating}</Text>
         <View className="mb-1 flex-row items-center gap-2">
-          <StarRating value={computedRating} readonly />
-          <Text className="text-sm font-bold text-brand-primary">{copy.stars(computedRating)}</Text>
+          <StarRating value={overallRating} onChange={setOverallRating} />
+          <Text className="text-sm font-bold text-brand-primary">
+            {overallRating > 0 ? copy.stars(overallRating) : '—'}
+          </Text>
         </View>
-        <Text className="mb-4 text-[10px] text-brand-muted">
-          {placeReviews.length > 0
-            ? `${placeReviews.length} places · auto average`
-            : copy.noReviewsYet}
-        </Text>
+        <Text className="mb-4 text-[10px] text-brand-muted">{copy.overallRatingHint}</Text>
 
         <Text className="mb-2 text-xs font-bold text-brand-muted">{copy.visibilityLabel}</Text>
         <View className="mb-2 flex-row gap-2">

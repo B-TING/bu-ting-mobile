@@ -5,6 +5,7 @@ import type {
   PlanPlaceSequenceUpdateRequest,
   PlanPlaceUpdatePlaceRequest,
   PlanPlaceUpdateRequest,
+  PlanPlaceVisitedUpdateRequest,
   TravelCreateRequest,
   TravelPlansResponse,
   TravelResponse,
@@ -112,6 +113,13 @@ function summarizePlanPlaceUpdateRequest(body: PlanPlaceUpdateRequest): Record<s
     memo: body.memo,
     durationMinutes: body.durationMinutes,
     scheduledTime: body.scheduledTime,
+  };
+}
+
+function summarizePlanPlaceVisitedUpdateRequest(
+  body: PlanPlaceVisitedUpdateRequest,
+): Record<string, unknown> {
+  return {
     visited: body.visited,
   };
 }
@@ -282,7 +290,10 @@ function summarizeRequestBody(body: unknown): Record<string, unknown> | undefine
   if ('planPlaceIds' in body) {
     return summarizePlanPlaceSequenceRequest(body as PlanPlaceSequenceUpdateRequest);
   }
-  if ('memo' in body || 'durationMinutes' in body || 'scheduledTime' in body || 'visited' in body) {
+  if ('visited' in body && Object.keys(body).length === 1) {
+    return summarizePlanPlaceVisitedUpdateRequest(body as PlanPlaceVisitedUpdateRequest);
+  }
+  if ('memo' in body || 'durationMinutes' in body || 'scheduledTime' in body) {
     return summarizePlanPlaceUpdateRequest(body as PlanPlaceUpdateRequest);
   }
 
