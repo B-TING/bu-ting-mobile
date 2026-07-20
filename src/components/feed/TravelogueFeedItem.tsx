@@ -13,6 +13,11 @@ import {
   travelRecordDestinationLabel,
   travelRecordOverallRating,
 } from '../../utils/review/travelReview';
+import {
+  ICON_COLOR_MUTED,
+  ICON_COLOR_PRIMARY,
+} from '../../constants/icons';
+import { AppIcon } from '../shared/icons/AppIcon';
 import { StarRating } from '../shared/rating/StarRating';
 import { TravelogueCommentsSection } from './TravelogueCommentsSection';
 import { TravelogueImageCarousel } from './TravelogueImageCarousel';
@@ -29,6 +34,8 @@ type TravelogueFeedItemProps = {
   userName: string;
   onPressDetail: () => void;
   onToggleLike: () => void;
+  onToggleBookmark?: () => void;
+  bookmarkedByMe?: boolean;
   onImportPlan: () => void;
   onOpenComposer?: () => void;
   onEditComment?: (comment: TravelRecordComment) => void;
@@ -45,6 +52,8 @@ export function TravelogueFeedItem({
   userName,
   onPressDetail,
   onToggleLike,
+  onToggleBookmark,
+  bookmarkedByMe = false,
   onImportPlan,
   onOpenComposer,
   onEditComment,
@@ -104,16 +113,38 @@ export function TravelogueFeedItem({
           <Text className="mb-2 mt-3 text-xs text-brand-muted">{publishedDate}</Text>
         ) : null}
 
-        <Pressable onPress={onPressDetail} className="active:opacity-90">
-          <Text className="mb-1 text-base font-bold text-brand-text">
-            {travelRecord.title ?? ''}
-          </Text>
-          <View className="mb-2 flex-row items-center gap-2">
-            <StarRating value={rating} readonly size="sm" />
-            <Text className="text-xs font-semibold text-brand-primary">
-              {copy.stars(rating)}
+        <View className="mb-1 flex-row items-center justify-between gap-3">
+          <Pressable onPress={onPressDetail} className="min-w-0 flex-1 active:opacity-90">
+            <Text className="text-base font-bold text-brand-text" numberOfLines={2}>
+              {travelRecord.title ?? ''}
             </Text>
-          </View>
+          </Pressable>
+          {onToggleBookmark ? (
+            <Pressable
+              onPress={onToggleBookmark}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={bookmarkedByMe ? copy.unbookmark : copy.bookmark}
+              accessibilityState={{ selected: bookmarkedByMe }}
+              className="h-9 w-9 shrink-0 items-center justify-center rounded-full active:opacity-80">
+              <AppIcon
+                name="bookmark"
+                size={20}
+                color={bookmarkedByMe ? ICON_COLOR_PRIMARY : ICON_COLOR_MUTED}
+                filled={bookmarkedByMe}
+              />
+            </Pressable>
+          ) : null}
+        </View>
+        <Pressable onPress={onPressDetail} className="active:opacity-90">
+          {rating > 0 ? (
+            <View className="mb-2 flex-row items-center gap-2">
+              <StarRating value={rating} readonly size="sm" />
+              <Text className="text-xs font-semibold text-brand-primary">
+                {copy.stars(rating)}
+              </Text>
+            </View>
+          ) : null}
           {travelRecord.content ? (
             <Text
               className="text-sm leading-6 text-brand-text"

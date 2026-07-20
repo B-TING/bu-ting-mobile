@@ -61,6 +61,8 @@ function TravelogueFeedRow({
     userName,
     commenting,
     handleToggleLike,
+    handleToggleBookmark,
+    bookmarkedByMe,
     handleAddComment,
     handleUpdateComment,
     handleDeleteComment,
@@ -71,6 +73,17 @@ function TravelogueFeedRow({
       onPatchRecord(travelRecord.travelRecordId, patch);
     },
   });
+
+  const onToggleBookmark = () => {
+    void handleToggleBookmark().catch(error => {
+      alert({
+        title:
+          error instanceof TravelogueSocialError
+            ? error.message
+            : copy.socialBookmarkFailed,
+      });
+    });
+  };
 
   const onToggleLike = () => {
     void handleToggleLike().catch(error => {
@@ -147,6 +160,8 @@ function TravelogueFeedRow({
           })
         }
         onToggleLike={onToggleLike}
+        onToggleBookmark={onToggleBookmark}
+        bookmarkedByMe={bookmarkedByMe}
         onImportPlan={handleImportPlan}
         onOpenComposer={() => {
           setEditingComment(null);

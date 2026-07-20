@@ -289,6 +289,16 @@ export function mapTravelRecordFeedItem(dto: TravelRecordFeedResponse): TravelRe
   };
 }
 
+/** 북마크 목록 → 앱 TravelRecord */
+export function mapTravelRecordBookmarkItem(
+  dto: TravelRecordBookmarkResponse,
+): TravelRecord {
+  return {
+    ...mapTravelRecordFeedItem(dto.travelRecord),
+    bookmarkedByMe: true,
+  };
+}
+
 /** 내 기록 관리 목록 → 앱 TravelRecord */
 export function mapTravelRecordManageItem(
   dto: TravelRecordManageResponse,

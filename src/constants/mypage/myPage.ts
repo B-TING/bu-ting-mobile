@@ -11,6 +11,9 @@ export const MY_PAGE_COPY: Record<
     editProfile: string;
     editPreferences: string;
     myRecords: string;
+    savedRecords: string;
+    savedRecordsEmpty: string;
+    savedRecordsEmptySub: string;
     recordsEmpty: string;
     recordsEmptySub: string;
     recordsLoadError: string;
@@ -67,6 +70,9 @@ export const MY_PAGE_COPY: Record<
     editProfile: '프로필 편집',
     editPreferences: '여행 성향',
     myRecords: '내 여행 기록',
+    savedRecords: '저장됨',
+    savedRecordsEmpty: '저장한 여행기가 없어요',
+    savedRecordsEmptySub: '피드에서 마음에 드는 여행기를 북마크해 보세요.',
     recordsEmpty: '아직 여행 기록이 없어요',
     recordsEmptySub: '여행을 마치고 여행기를 올리면 여기에 표시됩니다.',
     recordsLoadError: '여행 기록을 불러오지 못했어요.',
@@ -127,6 +133,9 @@ export const MY_PAGE_COPY: Record<
     editProfile: 'Edit profile',
     editPreferences: 'Preferences',
     myRecords: 'My travel records',
+    savedRecords: 'Saved',
+    savedRecordsEmpty: 'No saved travelogues yet',
+    savedRecordsEmptySub: 'Bookmark travelogues from the feed to see them here.',
     recordsEmpty: 'No travel records yet',
     recordsEmptySub: 'Publish a travelogue after your trip to see it here.',
     recordsLoadError: 'Could not load travel records.',
@@ -187,6 +196,9 @@ export const MY_PAGE_COPY: Record<
     editProfile: 'プロフィール編集',
     editPreferences: '旅行の好み',
     myRecords: '自分の旅行記',
+    savedRecords: '保存済み',
+    savedRecordsEmpty: '保存した旅行記がありません',
+    savedRecordsEmptySub: 'フィードから気に入った旅行記をブックマークしてみましょう。',
     recordsEmpty: 'まだ旅行記がありません',
     recordsEmptySub: '旅行後に旅行記を公開するとここに表示されます。',
     recordsLoadError: '旅行記を読み込めませんでした。',
@@ -247,6 +259,9 @@ export const MY_PAGE_COPY: Record<
     editProfile: '编辑资料',
     editPreferences: '旅行偏好',
     myRecords: '我的旅行记录',
+    savedRecords: '已收藏',
+    savedRecordsEmpty: '暂无收藏的游记',
+    savedRecordsEmptySub: '在动态中收藏喜欢的游记，会显示在这里。',
     recordsEmpty: '暂无旅行记录',
     recordsEmptySub: '完成旅行并发布游记后会显示在这里。',
     recordsLoadError: '无法加载旅行记录。',

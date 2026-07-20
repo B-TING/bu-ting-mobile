@@ -174,6 +174,8 @@ function TravelRecordDetailBody({
     userName,
     commenting,
     handleToggleLike,
+    handleToggleBookmark,
+    bookmarkedByMe,
     handleAddComment,
     handleUpdateComment,
     handleDeleteComment,
@@ -194,6 +196,17 @@ function TravelRecordDetailBody({
   const [publishing, setPublishing] = useState(false);
   const [reviewRoute, setReviewRoute] = useState<RouteItem | null>(null);
   const [savingReview, setSavingReview] = useState(false);
+
+  const onToggleBookmark = () => {
+    void handleToggleBookmark().catch(error => {
+      alert({
+        title:
+          error instanceof TravelogueSocialError
+            ? error.message
+            : copy.socialBookmarkFailed,
+      });
+    });
+  };
 
   const onToggleLike = () => {
     void handleToggleLike().catch(error => {
@@ -563,24 +576,40 @@ function TravelRecordDetailBody({
           <Text className="text-[10px] font-bold tracking-wide text-brand-primary">
             TRAVELOGUE
           </Text>
-          <View className="mt-1 flex-row items-start gap-2">
+          <View className="mt-1 flex-row items-start justify-between gap-2">
             <Text className="min-w-0 flex-1 text-2xl font-bold text-brand-text">
               {travelRecord.title ?? ''}
             </Text>
-            {isOwner ? (
+            <View className="shrink-0 flex-row items-center gap-1">
+              {isOwner ? (
+                <Pressable
+                  onPress={() => setComposeOpen(true)}
+                  accessibilityLabel={copy.editTravelogue}
+                  hitSlop={8}
+                  className="h-9 w-9 items-center justify-center rounded-full bg-brand-selected active:opacity-80">
+                  <AppIcon
+                    name="pencil"
+                    size={18}
+                    color={ICON_COLOR_PRIMARY}
+                    strokeWidth={2.2}
+                  />
+                </Pressable>
+              ) : null}
               <Pressable
-                onPress={() => setComposeOpen(true)}
-                accessibilityLabel={copy.editTravelogue}
+                onPress={onToggleBookmark}
                 hitSlop={8}
-                className="mt-1 h-9 w-9 items-center justify-center rounded-full bg-brand-selected active:opacity-80">
+                accessibilityRole="button"
+                accessibilityLabel={bookmarkedByMe ? copy.unbookmark : copy.bookmark}
+                accessibilityState={{ selected: bookmarkedByMe }}
+                className="h-9 w-9 items-center justify-center rounded-full active:opacity-80">
                 <AppIcon
-                  name="pencil"
-                  size={18}
-                  color={ICON_COLOR_PRIMARY}
-                  strokeWidth={2.2}
+                  name="bookmark"
+                  size={20}
+                  color={bookmarkedByMe ? ICON_COLOR_PRIMARY : ICON_COLOR_MUTED}
+                  filled={bookmarkedByMe}
                 />
               </Pressable>
-            ) : null}
+            </View>
           </View>
           <Text className="mt-2 text-sm text-brand-muted">
             {copy.detailBy(travelRecord.authorNickname)} · {destinationLabel}
@@ -595,23 +624,30 @@ function TravelRecordDetailBody({
             </Text>
           ) : null}
 
-          <View className="mt-4 rounded-2xl border border-brand-border bg-brand-surface p-4">
-            <Text className="mb-2 text-xs font-bold text-brand-muted">{copy.overallRating}</Text>
-            <View className="flex-row items-center gap-2">
-              <StarRating value={rating} readonly />
-              <Text className="text-sm font-bold text-brand-primary">
-                {copy.stars(rating)}
-              </Text>
-            </View>
-            {travelRecord.content ? (
-              <>
-                <Text className="mb-2 mt-4 text-xs font-bold text-brand-muted">
-                  {copy.overallSummary}
+          {rating > 0 ? (
+            <View className="mt-4 rounded-2xl border border-brand-border bg-brand-surface p-4">
+              <Text className="mb-2 text-xs font-bold text-brand-muted">{copy.overallRating}</Text>
+              <View className="flex-row items-center gap-2">
+                <StarRating value={rating} readonly />
+                <Text className="text-sm font-bold text-brand-primary">
+                  {copy.stars(rating)}
                 </Text>
-                <Text className="text-sm leading-6 text-brand-text">{travelRecord.content}</Text>
-              </>
-            ) : null}
-          </View>
+              </View>
+              {travelRecord.content ? (
+                <>
+                  <Text className="mb-2 mt-4 text-xs font-bold text-brand-muted">
+                    {copy.overallSummary}
+                  </Text>
+                  <Text className="text-sm leading-6 text-brand-text">{travelRecord.content}</Text>
+                </>
+              ) : null}
+            </View>
+          ) : travelRecord.content ? (
+            <View className="mt-4 rounded-2xl border border-brand-border bg-brand-surface p-4">
+              <Text className="mb-2 text-xs font-bold text-brand-muted">{copy.overallSummary}</Text>
+              <Text className="text-sm leading-6 text-brand-text">{travelRecord.content}</Text>
+            </View>
+          ) : null}
 
           {days.length > 0 ? (
             <>

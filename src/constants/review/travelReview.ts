@@ -119,6 +119,9 @@ export const TRAVEL_REVIEW_COPY: Record<
     socialCommentFailed: string;
     socialCommentUpdateFailed: string;
     socialCommentDeleteFailed: string;
+    bookmark: string;
+    unbookmark: string;
+    socialBookmarkFailed: string;
   }
 > = {
   ko: {
@@ -234,6 +237,9 @@ export const TRAVEL_REVIEW_COPY: Record<
     socialCommentFailed: '댓글 등록에 실패했어요.',
     socialCommentUpdateFailed: '댓글 수정에 실패했어요.',
     socialCommentDeleteFailed: '댓글 삭제에 실패했어요.',
+    bookmark: '북마크',
+    unbookmark: '북마크 해제',
+    socialBookmarkFailed: '북마크 처리에 실패했어요.',
   },
   en: {
     writeReview: 'Write review',
@@ -348,6 +354,9 @@ export const TRAVEL_REVIEW_COPY: Record<
     socialCommentFailed: 'Could not post comment.',
     socialCommentUpdateFailed: 'Could not update comment.',
     socialCommentDeleteFailed: 'Could not delete comment.',
+    bookmark: 'Bookmark',
+    unbookmark: 'Remove bookmark',
+    socialBookmarkFailed: 'Could not update bookmark.',
   },
   ja: {
     writeReview: 'レビューを書く',
@@ -462,6 +471,9 @@ export const TRAVEL_REVIEW_COPY: Record<
     socialCommentFailed: 'コメント投稿に失敗しました。',
     socialCommentUpdateFailed: 'コメントの編集に失敗しました。',
     socialCommentDeleteFailed: 'コメントの削除に失敗しました。',
+    bookmark: 'ブックマーク',
+    unbookmark: 'ブックマーク解除',
+    socialBookmarkFailed: 'ブックマークの更新に失敗しました。',
   },
   zh: {
     writeReview: '写点评',
@@ -573,5 +585,8 @@ export const TRAVEL_REVIEW_COPY: Record<
     socialCommentFailed: '评论发布失败。',
     socialCommentUpdateFailed: '评论修改失败。',
     socialCommentDeleteFailed: '评论删除失败。',
+    bookmark: '收藏',
+    unbookmark: '取消收藏',
+    socialBookmarkFailed: '收藏更新失败。',
   },
 };

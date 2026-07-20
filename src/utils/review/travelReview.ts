@@ -55,7 +55,7 @@ export function overallRatingToApi(value: number): number | null {
   return Math.round(value);
 }
 
-/** 서버 overallRating 우선, 없으면 장소 후기 평균 */
+/** API overallRating만 표시 (장소 후기 평균·로컬 캐시 사용 안 함) */
 export function travelRecordOverallRating(travelRecord: TravelRecord): number {
   if (
     typeof travelRecord.overallRating === 'number' &&
@@ -64,7 +64,7 @@ export function travelRecordOverallRating(travelRecord: TravelRecord): number {
   ) {
     return travelRecord.overallRating;
   }
-  return averageRating(travelRecord.placeReviews);
+  return 0;
 }
 
 export function reviewMatchesPlaceKey(

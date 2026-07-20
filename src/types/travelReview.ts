@@ -116,6 +116,7 @@ export type TravelRecord = {
   likeCount: number;
   viewCount: number;
   likedByMe?: boolean;
+  bookmarkedByMe?: boolean;
   days: TravelRecordDay[];
   placeReviews: PlaceReview[];
 };

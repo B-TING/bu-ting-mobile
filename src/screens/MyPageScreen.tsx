@@ -22,11 +22,12 @@ import { useAppAlert } from '../components/shared/modals';
 import { useAppLanguage, useCopy } from '../i18n';
 import { summarizeOnboardingPreferences } from '../constants/setup/onboarding';
 import { layout } from '../constants/common/layout';
-import { ICON_COLOR_MUTED, ICON_COLOR_PRIMARY, ICON_COLOR_WHITE } from '../constants/icons';
+import { ICON_COLOR_DEFAULT, ICON_COLOR_MUTED, ICON_COLOR_PRIMARY, ICON_COLOR_WHITE } from '../constants/icons';
 import {
   selectOnboardingForUser,
   useAppStore,
   useAuthStore,
+  useTravelRecordBookmarkStore,
 } from '../stores';
 import {
   selectAuthUser,
@@ -145,6 +146,11 @@ export function MyPageScreen({ navigation }: Props) {
   const [records, setRecords] = useState<TravelRecord[]>([]);
   const [loadingRecords, setLoadingRecords] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [recordsTab, setRecordsTab] = useState<'mine' | 'saved'>('mine');
+
+  const bookmarkedRecords = useTravelRecordBookmarkStore(s => s.bookmarkedRecords);
+  const bookmarksLoading = useTravelRecordBookmarkStore(s => s.loading);
+  const hydrateBookmarks = useTravelRecordBookmarkStore(s => s.hydrate);
 
   const nickname = user?.nickname || user?.email?.split('@')[0] || 'User';
 
@@ -156,7 +162,8 @@ export function MyPageScreen({ navigation }: Props) {
     const list = await fetchMyTravelRecords(accessToken);
     const mapped = list.map(item => mapTravelRecordManageItem(item, nickname));
     setRecords(mapped);
-  }, [accessToken, nickname]);
+    await hydrateBookmarks(accessToken);
+  }, [accessToken, nickname, hydrateBookmarks]);
 
   useEffect(() => {
     let cancelled = false;
@@ -420,23 +427,69 @@ export function MyPageScreen({ navigation }: Props) {
         {/* Feed grid */}
         {isAuthenticated ? (
           <View>
-            <View className="mb-2 flex-row items-center justify-between border-t border-brand-border px-5 pt-3">
-              <Text className="text-sm font-bold text-brand-text">{copy.myRecords}</Text>
-              <AppIcon name="layoutGrid" size={18} color={ICON_COLOR_MUTED} />
+            <View className="flex-row border-t border-brand-border">
+              <Pressable
+                onPress={() => setRecordsTab('mine')}
+                className={cn(
+                  'flex-1 items-center border-b-2 py-3 active:opacity-80',
+                  recordsTab === 'mine' ? 'border-brand-text' : 'border-transparent',
+                )}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: recordsTab === 'mine' }}>
+                <AppIcon
+                  name="layoutGrid"
+                  size={20}
+                  color={recordsTab === 'mine' ? ICON_COLOR_DEFAULT : ICON_COLOR_MUTED}
+                />
+              </Pressable>
+              <Pressable
+                onPress={() => setRecordsTab('saved')}
+                className={cn(
+                  'flex-1 items-center border-b-2 py-3 active:opacity-80',
+                  recordsTab === 'saved' ? 'border-brand-text' : 'border-transparent',
+                )}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: recordsTab === 'saved' }}>
+                <AppIcon
+                  name="bookmark"
+                  size={20}
+                  color={recordsTab === 'saved' ? ICON_COLOR_DEFAULT : ICON_COLOR_MUTED}
+                  filled={recordsTab === 'saved'}
+                />
+              </Pressable>
             </View>
 
-            {loadingRecords && records.length === 0 ? (
+            {recordsTab === 'mine' ? (
+              loadingRecords && records.length === 0 ? (
+                <View className="items-center py-16">
+                  <ActivityIndicator color={ICON_COLOR_PRIMARY} />
+                </View>
+              ) : records.length === 0 ? (
+                <MyTravelRecordGridEmpty
+                  title={copy.recordsEmpty}
+                  subtitle={copy.recordsEmptySub}
+                />
+              ) : (
+                <MyTravelRecordGrid
+                  records={records}
+                  statusLabels={copy.statusLabels}
+                  onPressRecord={travelRecordId =>
+                    navigation.navigate('TravelRecordDetail', { travelRecordId })
+                  }
+                />
+              )
+            ) : bookmarksLoading && bookmarkedRecords.length === 0 ? (
               <View className="items-center py-16">
                 <ActivityIndicator color={ICON_COLOR_PRIMARY} />
               </View>
-            ) : records.length === 0 ? (
+            ) : bookmarkedRecords.length === 0 ? (
               <MyTravelRecordGridEmpty
-                title={copy.recordsEmpty}
-                subtitle={copy.recordsEmptySub}
+                title={copy.savedRecordsEmpty}
+                subtitle={copy.savedRecordsEmptySub}
               />
             ) : (
               <MyTravelRecordGrid
-                records={records}
+                records={bookmarkedRecords}
                 statusLabels={copy.statusLabels}
                 onPressRecord={travelRecordId =>
                   navigation.navigate('TravelRecordDetail', { travelRecordId })

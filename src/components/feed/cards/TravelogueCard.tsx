@@ -41,8 +41,14 @@ export function TravelogueCard({ travelRecord, onPress }: TravelogueCardProps) {
           {travelRecord.authorNickname} · {destinationLabel}
         </Text>
         <View className="mt-2 flex-row items-center gap-2">
-          <StarRating value={rating} readonly size="sm" />
-          {date ? <Text className="text-[10px] text-brand-muted">{date}</Text> : null}
+          {rating > 0 ? (
+            <>
+              <StarRating value={rating} readonly size="sm" />
+              {date ? <Text className="text-[10px] text-brand-muted">{date}</Text> : null}
+            </>
+          ) : date ? (
+            <Text className="text-[10px] text-brand-muted">{date}</Text>
+          ) : null}
         </View>
       </View>
     </Pressable>

@@ -17,6 +17,7 @@ import {
   useAuthStore,
   usePlanStore,
 } from '../../stores';
+import { useTravelRecordBookmarkStore } from '../../stores/useTravelRecordBookmarkStore';
 import {
   selectAuthUser,
   selectReusableAccessToken,
@@ -68,7 +69,20 @@ export function useTravelogueSocialActions(
   const [likeCount, setLikeCount] = useState(travelRecord.likeCount);
   const [likedByMe, setLikedByMe] = useState(Boolean(travelRecord.likedByMe));
   const [liking, setLiking] = useState(false);
+  const [bookmarking, setBookmarking] = useState(false);
   const [commenting, setCommenting] = useState(false);
+
+  const bookmarkedByMe = useTravelRecordBookmarkStore(state =>
+    state.isBookmarked(travelRecord.travelRecordId),
+  );
+  const hydrateBookmarks = useTravelRecordBookmarkStore(state => state.hydrate);
+  const toggleBookmarkInStore = useTravelRecordBookmarkStore(
+    state => state.toggleBookmark,
+  );
+
+  useEffect(() => {
+    void hydrateBookmarks(accessToken);
+  }, [accessToken, hydrateBookmarks]);
 
   useEffect(() => {
     setLikeCount(travelRecord.likeCount);
@@ -364,6 +378,40 @@ export function useTravelogueSocialActions(
     ],
   );
 
+  const handleToggleBookmark = useCallback(async () => {
+    if (!accessToken?.trim() || !userId) {
+      requireLogin();
+      return;
+    }
+    if (bookmarking) {
+      return;
+    }
+    setBookmarking(true);
+    try {
+      const nextBookmarked = await toggleBookmarkInStore(
+        accessToken,
+        travelRecord.travelRecordId,
+      );
+      onPatchRef.current?.({ bookmarkedByMe: nextBookmarked });
+    } catch (error) {
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : copy.socialBookmarkFailed;
+      throw new TravelogueSocialError(message);
+    } finally {
+      setBookmarking(false);
+    }
+  }, [
+    accessToken,
+    userId,
+    bookmarking,
+    travelRecord.travelRecordId,
+    toggleBookmarkInStore,
+    requireLogin,
+    copy.socialBookmarkFailed,
+  ]);
+
   const handleImportPlan = () => {
     setImportModalPhase('confirm');
   };
@@ -408,8 +456,11 @@ export function useTravelogueSocialActions(
     commentsLoading,
     commenting,
     liking,
+    bookmarking,
+    bookmarkedByMe,
     reloadComments,
     handleToggleLike,
+    handleToggleBookmark,
     handleAddComment,
     handleUpdateComment,
     handleDeleteComment,

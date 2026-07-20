@@ -76,7 +76,7 @@ async function fetchPlaceReviewsForRecord(options: {
   const { travelRecord, accessToken } = options;
   const places = flattenPlaces(travelRecord);
   if (places.length === 0) {
-    return travelRecord.placeReviews ?? [];
+    return [];
   }
 
   const travelId = travelRecord.travelId;
@@ -107,7 +107,7 @@ async function fetchPlaceReviewsForRecord(options: {
     ...new Set(places.map(p => p.providerPlaceId).filter(Boolean)),
   ];
   if (providerIds.length === 0) {
-    return travelRecord.placeReviews ?? [];
+    return [];
   }
 
   const summaries = await Promise.all(
@@ -133,7 +133,7 @@ async function fetchPlaceReviewsForRecord(options: {
     return matched;
   }
 
-  return travelRecord.placeReviews ?? [];
+  return [];
 }
 
 export type LoadTravelRecordDetailInput = {
