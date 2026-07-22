@@ -4,6 +4,8 @@ import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ICON_COLOR_MUTED, ICON_COLOR_PRIMARY, NAVBAR_TAB_ICONS } from '../../../constants/icons';
+import { GUIDE_TARGET } from '../../guide/guideTypes';
+import { GuideTarget } from '../../guide/GuideTarget';
 import { cn } from '../../../utils/common/cn';
 import { AppIcon } from '../icons/AppIcon';
 
@@ -87,9 +89,14 @@ export function Navbar({ activeTab, language = 'ko', onTabPress }: NavbarProps) 
         {TABS.map(tab => {
           const active = tab.id === activeTab;
           const label = language === 'ko' ? tab.labelKo : tab.labelEn;
-          return (
+          const guideId =
+            tab.id === 'route'
+              ? GUIDE_TARGET.navbarRoute
+              : tab.id === 'feed'
+                ? GUIDE_TARGET.navbarFeed
+                : null;
+          const tabButton = (
             <Pressable
-              key={tab.id}
               onPress={() => onTabPress(tab.id)}
               className="min-w-[56px] flex-1 items-center py-1 active:opacity-70"
               accessibilityRole="button"
@@ -107,6 +114,20 @@ export function Navbar({ activeTab, language = 'ko', onTabPress }: NavbarProps) 
                 {label}
               </Text>
             </Pressable>
+          );
+
+          if (!guideId) {
+            return (
+              <View key={tab.id} className="min-w-[56px] flex-1">
+                {tabButton}
+              </View>
+            );
+          }
+
+          return (
+            <GuideTarget key={tab.id} id={guideId} className="min-w-[56px] flex-1">
+              {tabButton}
+            </GuideTarget>
           );
         })}
       </View>
