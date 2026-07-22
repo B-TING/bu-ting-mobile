@@ -510,25 +510,41 @@ export function getFeatureStepContent(
 type Option<T extends string> = {
   value: T;
   label: Record<AppLanguage, string>;
+  description?: Record<AppLanguage, string>;
+  emoji?: string;
 };
 
 export const TRAVEL_STYLE_OPTIONS: Option<TravelStyle>[] = [
   {
     value: 'planned',
+    emoji: '📋',
     label: {
       ko: '계획적인 편',
       en: 'I plan ahead',
       ja: '計画的',
       zh: '喜欢提前规划',
     },
+    description: {
+      ko: '일정·동선을 미리 짜요',
+      en: 'Plan routes ahead',
+      ja: 'あらかじめ計画する',
+      zh: '提前安排行程',
+    },
   },
   {
     value: 'spontaneous',
+    emoji: '🎲',
     label: {
       ko: '즉흥적인 편',
       en: 'I go with the flow',
       ja: 'その場の気分で',
       zh: '随性而行',
+    },
+    description: {
+      ko: '현장에서 결정을 내려요',
+      en: 'Decide on the spot',
+      ja: '現地で決める',
+      zh: '到现场再决定',
     },
   },
 ];
@@ -536,20 +552,34 @@ export const TRAVEL_STYLE_OPTIONS: Option<TravelStyle>[] = [
 export const SCHEDULE_PACE_OPTIONS: Option<SchedulePace>[] = [
   {
     value: 'relaxed',
+    emoji: '🐢',
     label: {
       ko: '여유롭게',
       en: 'Relaxed pace',
       ja: 'ゆったり',
       zh: '宽松悠闲',
     },
+    description: {
+      ko: '2~3곳/일',
+      en: '2–3 spots/day',
+      ja: '1日2〜3か所',
+      zh: '每天2–3处',
+    },
   },
   {
     value: 'packed',
+    emoji: '⚡',
     label: {
       ko: '빡빡하게',
       en: 'Packed schedule',
       ja: 'ぎゅうぎゅう',
       zh: '紧凑满满',
+    },
+    description: {
+      ko: '많은 곳을 돌아다녀요',
+      en: 'See more each day',
+      ja: 'たくさん巡る',
+      zh: '每天多逛几处',
     },
   },
 ];
@@ -557,20 +587,34 @@ export const SCHEDULE_PACE_OPTIONS: Option<SchedulePace>[] = [
 export const COMPANION_OPTIONS: Option<CompanionType>[] = [
   {
     value: 'solo',
+    emoji: '🙋',
     label: {
       ko: '혼자 여행',
       en: 'Solo',
       ja: 'ひとり旅',
       zh: '独自旅行',
     },
+    description: {
+      ko: '솔로 여행',
+      en: 'Just me',
+      ja: 'ソロ',
+      zh: '一个人',
+    },
   },
   {
     value: 'group',
+    emoji: '👥',
     label: {
       ko: '함께 여행',
       en: 'With others',
       ja: '誰かと一緒',
       zh: '与他人同行',
+    },
+    description: {
+      ko: '동행과 함께',
+      en: 'Travel companions',
+      ja: '同行者と',
+      zh: '结伴同行',
     },
   },
 ];
@@ -578,20 +622,34 @@ export const COMPANION_OPTIONS: Option<CompanionType>[] = [
 export const LUGGAGE_OPTIONS: Option<LuggageLevel>[] = [
   {
     value: 'light',
+    emoji: '🎒',
     label: {
       ko: '가볍게',
       en: 'Travel light',
       ja: '少なめ',
       zh: '轻装',
     },
+    description: {
+      ko: '백팩·소형 가방',
+      en: 'Backpack / small bag',
+      ja: 'リュックなど',
+      zh: '背包或小包',
+    },
   },
   {
     value: 'heavy',
+    emoji: '🧳',
     label: {
       ko: '많이 챙김',
       en: 'Pack a lot',
       ja: '多めに持つ',
       zh: '行李较多',
+    },
+    description: {
+      ko: '캐리어',
+      en: 'Suitcase',
+      ja: 'キャリーケース',
+      zh: '行李箱',
     },
   },
 ];
@@ -599,47 +657,103 @@ export const LUGGAGE_OPTIONS: Option<LuggageLevel>[] = [
 export const PURPOSE_OPTIONS: Option<VisitPurpose>[] = [
   {
     value: 'food',
+    emoji: '🍜',
     label: { ko: '음식', en: 'Food', ja: 'グルメ', zh: '美食' },
+    description: {
+      ko: '현지 맛집',
+      en: 'Local eats',
+      ja: '地元グルメ',
+      zh: '当地美食',
+    },
   },
   {
     value: 'scenery',
+    emoji: '📸',
     label: { ko: '풍경', en: 'Scenery', ja: '景色', zh: '风景' },
+    description: {
+      ko: '포토스팟',
+      en: 'Photo spots',
+      ja: 'フォトスポット',
+      zh: '打卡景点',
+    },
   },
   {
     value: 'culture',
+    emoji: '🎭',
     label: { ko: '문화체험', en: 'Culture', ja: '文化体験', zh: '文化体验' },
+    description: {
+      ko: '유적·박물관',
+      en: 'Heritage & museums',
+      ja: '遺跡・博物館',
+      zh: '古迹与博物馆',
+    },
   },
   {
     value: 'shopping',
+    emoji: '🛍️',
     label: { ko: '쇼핑', en: 'Shopping', ja: 'ショッピング', zh: '购物' },
+    description: {
+      ko: '시장·편집숍',
+      en: 'Markets & shops',
+      ja: '市場・セレクトショップ',
+      zh: '市场与买手店',
+    },
   },
   {
     value: 'nightlife',
+    emoji: '🌃',
     label: { ko: '나이트라이프', en: 'Nightlife', ja: 'ナイトライフ', zh: '夜生活' },
+    description: {
+      ko: '야경·밤 문화',
+      en: 'Night scenes',
+      ja: '夜のスポット',
+      zh: '夜景与夜生活',
+    },
   },
   {
     value: 'relaxation',
+    emoji: '😌',
     label: { ko: '휴식', en: 'Relaxation', ja: 'リラックス', zh: '休闲' },
+    description: {
+      ko: '여유로운 쉼',
+      en: 'Slow & restful',
+      ja: 'のんびり',
+      zh: '轻松休息',
+    },
   },
 ];
 
 export const FAMILIARITY_OPTIONS: Option<BusanFamiliarity>[] = [
   {
     value: 'novice',
+    emoji: '🗺️',
     label: {
       ko: '잘 모른다',
       en: "Don't know well",
       ja: 'あまり知らない',
       zh: '不太了解',
     },
+    description: {
+      ko: '처음이거나 낯선 편',
+      en: 'New or unfamiliar',
+      ja: '初めて・あまり知らない',
+      zh: '初次或不太熟',
+    },
   },
   {
     value: 'familiar',
+    emoji: '📍',
     label: {
       ko: '아는 편이다',
       en: 'Know it fairly well',
       ja: 'だいたい知っている',
       zh: '比较了解',
+    },
+    description: {
+      ko: '부산이 익숙해요',
+      en: 'Already familiar',
+      ja: 'ある程度知っている',
+      zh: '已经比较熟',
     },
   },
 ];
@@ -784,6 +898,7 @@ export const SETUP_COPY: Record<
   {
     languageTitle: string;
     languageSubtitle: string;
+    languageSlogan: string;
     continue: string;
     welcomeTitle: string;
     welcomeSubtitle: string;
@@ -821,9 +936,10 @@ export const SETUP_COPY: Record<
   }
 > = {
   ko: {
-    languageTitle: '언어를 선택해 주세요',
-    languageSubtitle: '앱 안내와 관광 정보 언어에 사용됩니다',
-    continue: '계속',
+    languageTitle: '언어를 선택하세요',
+    languageSubtitle: 'Select · 言語を選択 · 请选择语言',
+    languageSlogan: '부팅 — 부산 AI 여행 동반자',
+    continue: '계속하기',
     welcomeTitle: '환영합니다!',
     welcomeSubtitle: '부팅과 함께 나만의 부산 여행을 준비해 보세요. 몇 가지 질문으로 맞춤 안내를 도와드릴게요.',
     loginTitle: '로그인',
@@ -845,7 +961,7 @@ export const SETUP_COPY: Record<
     skipAll: '온보딩 전체 건너뛰기',
     next: '다음',
     back: '이전',
-    finish: '시작하기',
+    finish: 'BU-TING 시작! ✨',
     save: '저장',
     cancelEdit: '취소',
     stepOf: (c, t) => `${c} / ${t}`,
@@ -862,7 +978,8 @@ export const SETUP_COPY: Record<
   },
   en: {
     languageTitle: 'Choose your language',
-    languageSubtitle: 'Used for app UI and tourism content',
+    languageSubtitle: 'Select · 言語を選択 · 请选择语言',
+    languageSlogan: 'BU-TING — Busan AI travel companion',
     continue: 'Continue',
     welcomeTitle: 'Welcome!',
     welcomeSubtitle: 'Plan your Busan trip with Bu-Ting. A few quick questions help us personalize your experience.',
@@ -885,7 +1002,7 @@ export const SETUP_COPY: Record<
     skipAll: 'Skip all onboarding',
     next: 'Next',
     back: 'Back',
-    finish: 'Get started',
+    finish: 'Start BU-TING! ✨',
     save: 'Save',
     cancelEdit: 'Cancel',
     stepOf: (c, t) => `${c} / ${t}`,
@@ -902,7 +1019,8 @@ export const SETUP_COPY: Record<
   },
   ja: {
     languageTitle: '言語を選択',
-    languageSubtitle: 'アプリと観光情報の表示言語に使用',
+    languageSubtitle: 'Select · 言語を選択 · 请选择语言',
+    languageSlogan: 'BU-TING — 釜山AIトラベルパートナー',
     continue: '続ける',
     welcomeTitle: 'ようこそ！',
     welcomeSubtitle: 'BU-TINGで釜山旅行を始めましょう。いくつかの質問であなたに合った案内をします。',
@@ -925,7 +1043,7 @@ export const SETUP_COPY: Record<
     skipAll: 'オンボーディングをすべてスキップ',
     next: '次へ',
     back: '戻る',
-    finish: 'はじめる',
+    finish: 'BU-TINGを始める! ✨',
     save: '保存',
     cancelEdit: 'キャンセル',
     stepOf: (c, t) => `${c} / ${t}`,
@@ -941,8 +1059,9 @@ export const SETUP_COPY: Record<
     travelSurveySaveError: '好みの保存に失敗しました。もう一度お試しください。',
   },
   zh: {
-    languageTitle: '选择语言',
-    languageSubtitle: '用于应用界面与旅游信息',
+    languageTitle: '请选择语言',
+    languageSubtitle: 'Select · 言語を選択 · 请选择语言',
+    languageSlogan: 'BU-TING — 釜山 AI 旅行伙伴',
     continue: '继续',
     welcomeTitle: '欢迎！',
     welcomeSubtitle: '与 BU-TING 一起规划釜山之旅。回答几个问题，我们将为您提供个性化指引。',
@@ -965,7 +1084,7 @@ export const SETUP_COPY: Record<
     skipAll: '跳过全部引导',
     next: '下一步',
     back: '上一步',
-    finish: '开始',
+    finish: '开始 BU-TING! ✨',
     save: '保存',
     cancelEdit: '取消',
     stepOf: (c, t) => `${c} / ${t}`,
