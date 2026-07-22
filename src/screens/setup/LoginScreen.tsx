@@ -1,17 +1,20 @@
 import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
+  ImageBackground,
   Pressable,
+  StyleSheet,
   Text,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { OAuthProviderList } from '../../components/setup/OAuthProviderButton';
+import { BrandIcon } from '../../components/shared/brand/BrandIcon';
 import { BrandLogo } from '../../components/shared/brand/BrandLogo';
 import { AppIcon } from '../../components/shared/icons/AppIcon';
-import { layout } from '../../constants/common/layout';
 import { ICON_COLOR_WHITE } from '../../constants/icons';
 import { useAppLanguage, useCopy } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
@@ -23,10 +26,13 @@ import type { OAuthProvider } from '../../types/auth';
 import { logAuth } from '../../utils/auth/authLogger';
 import { cn } from '../../utils/common/cn';
 
+const heroImage = require('../../../assets/images/home-hero.jpg');
+
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
 export function LoginScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
   const language = useAppLanguage();
   const copy = useCopy('setup');
   const setOfflineMode = useAppStore(state => state.setOfflineMode);
@@ -36,6 +42,7 @@ export function LoginScreen({ navigation }: Props) {
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const isLoading = loadingProvider !== null;
+  const heroHeight = Math.max(240, Math.round(windowHeight * 0.38));
 
   const onProviderLogin = useCallback(
     async (provider: OAuthProvider) => {
@@ -98,20 +105,34 @@ export function LoginScreen({ navigation }: Props) {
   }, [copy.offlineModeEmpty, navigation, setOfflineMode]);
 
   return (
-    <View
-      className="flex-1 bg-brand-background px-6"
-      style={[layout.screenPad24, { paddingTop: insets.top + 32 }]}>
-      <View className="mb-8">
-        <BrandLogo height={32} style={{ marginBottom: 20 }} />
-        <Text className="mb-2 text-[28px] font-bold text-brand-text">
-          {copy.loginTitle}
-        </Text>
-        <Text className="text-[15px] leading-[22px] text-brand-muted">
-          {copy.loginSubtitle}
-        </Text>
+    <View className="flex-1 bg-white">
+      <View style={[styles.heroShadow, { height: heroHeight + insets.top }]}>
+        <ImageBackground
+          source={heroImage}
+          style={StyleSheet.absoluteFill}
+          resizeMode="cover">
+          <View style={{ flex: 1, paddingTop: insets.top }}>
+            <View style={styles.logoScrim}>
+              <View className="px-6 pb-7 pt-5">
+                <View className="mb-2 flex-row items-center gap-2.5">
+                  <BrandIcon size={36} />
+                  <BrandLogo height={26} style={{ tintColor: '#FFFFFF' }} />
+                </View>
+                <Text className="text-sm font-medium text-white/90">{copy.loginSlogan}</Text>
+              </View>
+            </View>
+          </View>
+        </ImageBackground>
       </View>
 
-      <View className="flex-1">
+      <View
+        className="-mt-5 flex-1 bg-white px-6 pt-7"
+        style={{ paddingBottom: insets.bottom + 16 }}>
+        <Text className="mb-2 text-[28px] font-bold text-brand-text">{copy.loginTitle}</Text>
+        <Text className="mb-6 text-[15px] leading-[22px] text-brand-muted">
+          {copy.loginSubtitle}
+        </Text>
+
         <OAuthProviderList
           language={language}
           disabled={isLoading}
@@ -121,7 +142,7 @@ export function LoginScreen({ navigation }: Props) {
         <Pressable
           disabled={isLoading}
           onPress={() => setRememberMe(current => !current)}
-          className="mt-2 flex-row items-center active:opacity-80">
+          className="mb-1 mt-1 flex-row items-center active:opacity-80">
           <View
             className={cn(
               'mr-3 h-5 w-5 items-center justify-center rounded border-2 border-brand-border',
@@ -137,39 +158,59 @@ export function LoginScreen({ navigation }: Props) {
         </Pressable>
 
         {errorMessage ? (
-          <Text className="mt-4 text-sm text-red-600">{errorMessage}</Text>
+          <Text className="mt-3 text-sm text-red-600">{errorMessage}</Text>
         ) : null}
 
         {isLoading ? (
           <ActivityIndicator
             size="small"
             color="#0077B6"
-            style={{ marginTop: 16 }}
+            style={{ marginTop: 12 }}
           />
         ) : null}
-      </View>
 
-      <View className="items-center pt-2" style={{ paddingBottom: insets.bottom + 20 }}>
-        <Text className="mb-4 text-center text-xs text-brand-muted">
-          {language === 'ko'
-            ? '소셜 계정으로 가입·로그인합니다. 최초 로그인 시 자동으로 회원가입됩니다.'
-            : 'Sign up or sign in with a social account. First sign-in creates your account.'}
-        </Text>
+        <View className="my-5 flex-row items-center">
+          <View className="h-px flex-1 bg-brand-border" />
+          <Text className="mx-3 text-xs font-medium text-brand-muted">{copy.loginOr}</Text>
+          <View className="h-px flex-1 bg-brand-border" />
+        </View>
 
         <Pressable
           disabled={isLoading}
           onPress={onEnterOfflineMode}
           accessibilityRole="button"
           accessibilityLabel={copy.offlineMode}
-          className="active:opacity-70">
-          <Text className="text-center text-sm font-semibold text-brand-primary">
-            {copy.offlineMode}
-          </Text>
-          <Text className="mt-1 text-center text-xs text-brand-muted">
-            {copy.offlineModeHint}
-          </Text>
+          className={cn(
+            'mb-auto items-center rounded-xl border border-brand-border bg-white py-3.5 active:opacity-80',
+            isLoading && 'opacity-50',
+          )}>
+          <Text className="text-base font-semibold text-brand-text">{copy.offlineMode}</Text>
         </Pressable>
+
+        <Text className="mt-6 text-center text-xs leading-5 text-brand-muted">
+          {copy.loginTermsPrefix}
+          <Text className="font-semibold text-brand-primary">{copy.loginTermsOfService}</Text>
+          {copy.loginTermsMiddle}
+          <Text className="font-semibold text-brand-primary">{copy.loginPrivacyPolicy}</Text>
+          {copy.loginTermsSuffix}
+        </Text>
       </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  heroShadow: {
+    overflow: 'visible',
+    zIndex: 1,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  logoScrim: {
+    marginTop: 'auto',
+    backgroundColor: 'rgba(0, 0, 0, 0.42)',
+  },
+});

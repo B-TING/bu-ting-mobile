@@ -4,6 +4,8 @@ import { ICON_COLOR_PRIMARY } from '../../../constants/icons';
 import type { MockTravelogue, MockSpecialOffer } from '../../../constants/home/mainHome';
 import type { Travelogue } from '../../../types/travelReview';
 import { travelogueThumbnailIcon } from '../../../utils/review/travelReview';
+import { GUIDE_TARGET } from '../../guide/guideTypes';
+import { GuideTarget } from '../../guide/GuideTarget';
 import { AppIcon } from '../../shared/icons/AppIcon';
 import { StarRating } from '../../shared/rating/StarRating';
 
@@ -45,7 +47,7 @@ export function TraveloguePreviewMock({
   const oSub = language === 'ko' ? specialOffer.subtitleKo : specialOffer.subtitleEn;
 
   return (
-    <View className="mb-4">
+    <GuideTarget id={GUIDE_TARGET.traveloguePreview} className="mb-4">
       <View className="mb-3 flex-row items-center justify-between">
         <Text className="text-base font-bold text-brand-text">{trendingTitle}</Text>
         {onFeedPress ? (
@@ -111,6 +113,6 @@ export function TraveloguePreviewMock({
             ? '여행기·상품 미리보기는 목업입니다.'
             : 'Travelogue and offer previews are mockups.'}
       </Text>
-    </View>
+    </GuideTarget>
   );
 }

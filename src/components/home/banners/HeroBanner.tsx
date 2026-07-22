@@ -7,6 +7,8 @@ import {
 } from 'react-native';
 
 import { ICON_COLOR_WHITE } from '../../../constants/icons';
+import { GUIDE_TARGET } from '../../guide/guideTypes';
+import { GuideTarget } from '../../guide/GuideTarget';
 import { AppIcon } from '../../shared/icons/AppIcon';
 
 const heroImage = require('../../../../assets/images/home-hero.jpg');
@@ -25,13 +27,15 @@ export function HeroBanner({ title, subtitle, ctaLabel, onCtaPress }: HeroBanner
         <View style={styles.overlay} className="justify-end p-5">
           <Text className="mb-1 text-lg font-bold leading-snug text-white">{title}</Text>
           <Text className="mb-4 text-xs leading-relaxed text-white/90">{subtitle}</Text>
-          <Pressable
-            onPress={onCtaPress}
-            className="flex-row items-center self-start rounded-xl bg-brand-primary px-4 py-2.5 active:opacity-90"
-            accessibilityRole="button">
-            <AppIcon name="sparkles" size={16} color={ICON_COLOR_WHITE} />
-            <Text className="text-sm font-bold text-white">{ctaLabel}</Text>
-          </Pressable>
+          <GuideTarget id={GUIDE_TARGET.plannerHeroCta} className="self-start">
+            <Pressable
+              onPress={onCtaPress}
+              className="flex-row items-center rounded-xl bg-brand-primary px-4 py-2.5 active:opacity-90"
+              accessibilityRole="button">
+              <AppIcon name="sparkles" size={16} color={ICON_COLOR_WHITE} />
+              <Text className="text-sm font-bold text-white">{ctaLabel}</Text>
+            </Pressable>
+          </GuideTarget>
         </View>
       </ImageBackground>
     </View>
