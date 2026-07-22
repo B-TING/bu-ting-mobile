@@ -140,7 +140,7 @@ export const QUICK_ACCESS_ICONS = {
   hotels: 'hotel',
   attractions: 'landmark',
   festivals: 'calendar',
-  eventZone: 'map',
+  restaurants: 'utensils',
   luggage: 'luggage',
 } as const satisfies Record<string, LucideIconName>;
 

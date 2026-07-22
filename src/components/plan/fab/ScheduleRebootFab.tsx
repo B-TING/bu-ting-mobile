@@ -2,6 +2,8 @@ import { useRef } from 'react';
 import { Animated, Pressable, StyleSheet, View } from 'react-native';
 
 import { ICON_COLOR_WHITE } from '../../../constants/icons';
+import { GUIDE_TARGET } from '../../guide/guideTypes';
+import { GuideTarget } from '../../guide/GuideTarget';
 import { AppIcon } from '../../shared/icons/AppIcon';
 
 const FAB_SIZE = 56;
@@ -62,7 +64,8 @@ export function ScheduleRebootFab({ onPress, bottom }: ScheduleRebootFabProps) {
   };
 
   return (
-    <View
+    <GuideTarget
+      id={GUIDE_TARGET.rebootFab}
       className="absolute right-4 z-20"
       style={{ bottom }}
       pointerEvents="box-none">
@@ -84,7 +87,7 @@ export function ScheduleRebootFab({ onPress, bottom }: ScheduleRebootFabProps) {
           </Animated.View>
         </Pressable>
       </View>
-    </View>
+    </GuideTarget>
   );
 }
 
