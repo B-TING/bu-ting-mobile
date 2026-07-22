@@ -7,6 +7,8 @@ import {
   travelRecordOverallRating,
   travelRecordThumbnailIcon,
 } from '../../../utils/review/travelReview';
+import { GUIDE_TARGET } from '../../guide/guideTypes';
+import { GuideTarget } from '../../guide/GuideTarget';
 import { AppIcon } from '../../shared/icons/AppIcon';
 import { StarRating } from '../../shared/rating/StarRating';
 
@@ -19,6 +21,9 @@ type TraveloguePreviewProps = {
   onFeedPress?: () => void;
 };
 
+const SEE_ALL_KO = '\uC804\uCCB4 \uBCF4\uAE30';
+const EMPTY_KO = '\uC544\uC9C1 \uAC8C\uC2DC\uB41C \uC5EC\uD589\uAE30\uAC00 \uC5C6\uC5B4\uC694';
+
 export function TraveloguePreview({
   trendingTitle,
   language = 'ko',
@@ -29,22 +34,22 @@ export function TraveloguePreview({
 }: TraveloguePreviewProps) {
   if (loading) {
     return (
-      <View className="mb-4">
+      <GuideTarget id={GUIDE_TARGET.traveloguePreview} className="mb-4">
         <Text className="mb-3 text-base font-bold text-brand-text">{trendingTitle}</Text>
         <View className="h-24 rounded-2xl border border-brand-border bg-brand-surface" />
-      </View>
+      </GuideTarget>
     );
   }
 
   if (!latestTravelogue) {
     return (
-      <View className="mb-4">
+      <GuideTarget id={GUIDE_TARGET.traveloguePreview} className="mb-4">
         <View className="mb-3 flex-row items-center justify-between">
           <Text className="text-base font-bold text-brand-text">{trendingTitle}</Text>
           {onFeedPress ? (
             <Pressable onPress={onFeedPress} className="active:opacity-80">
               <Text className="text-xs font-bold text-brand-primary">
-                {language === 'ko' ? '전체 보기' : 'See all'}
+                {language === 'ko' ? SEE_ALL_KO : 'See all'}
               </Text>
             </Pressable>
           ) : null}
@@ -53,25 +58,23 @@ export function TraveloguePreview({
           onPress={onFeedPress}
           className="items-center rounded-2xl border border-dashed border-brand-border bg-brand-surface px-4 py-8 active:opacity-90">
           <Text className="text-sm text-brand-muted">
-            {language === 'ko'
-              ? '아직 게시된 여행기가 없어요'
-              : 'No travelogues yet'}
+            {language === 'ko' ? EMPTY_KO : 'No travelogues yet'}
           </Text>
         </Pressable>
-      </View>
+      </GuideTarget>
     );
   }
 
   const rating = travelRecordOverallRating(latestTravelogue);
 
   return (
-    <View className="mb-4">
+    <GuideTarget id={GUIDE_TARGET.traveloguePreview} className="mb-4">
       <View className="mb-3 flex-row items-center justify-between">
         <Text className="text-base font-bold text-brand-text">{trendingTitle}</Text>
         {onFeedPress ? (
           <Pressable onPress={onFeedPress} className="active:opacity-80">
             <Text className="text-xs font-bold text-brand-primary">
-              {language === 'ko' ? '전체 보기' : 'See all'}
+              {language === 'ko' ? SEE_ALL_KO : 'See all'}
             </Text>
           </Pressable>
         ) : null}
@@ -96,7 +99,7 @@ export function TraveloguePreview({
             {latestTravelogue.title}
           </Text>
           <Text className="mt-1 text-xs text-brand-muted" numberOfLines={2}>
-            {latestTravelogue.authorNickname} ·{' '}
+            {latestTravelogue.authorNickname} �{' '}
             {travelRecordDestinationLabel(latestTravelogue)}
           </Text>
           {rating > 0 ? (
@@ -106,6 +109,6 @@ export function TraveloguePreview({
           ) : null}
         </View>
       </Pressable>
-    </View>
+    </GuideTarget>
   );
 }

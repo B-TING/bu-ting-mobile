@@ -182,10 +182,10 @@ export const QUICK_ACCESS_ITEMS: QuickAccessItem[] = [
     labelEn: 'Festivals',
   },
   {
-    id: 'eventZone',
-    icon: QUICK_ACCESS_ICONS.eventZone,
-    labelKo: '이벤트 존',
-    labelEn: 'Event Zone',
+    id: 'restaurants',
+    icon: QUICK_ACCESS_ICONS.restaurants,
+    labelKo: '식당',
+    labelEn: 'Restaurants',
   },
   {
     id: 'luggage',
