@@ -5,8 +5,8 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { PrimaryButton } from '../../components/shared/buttons/PrimaryButton';
 import { BrandLogo } from '../../components/shared/brand/BrandLogo';
-import { FeatureHighlightCard } from '../../components/shared/cards/FeatureHighlightCard';
 import { OptionCard } from '../../components/shared/cards/OptionCard';
+import { OnboardingFeatureGuide } from '../../components/setup/OnboardingFeatureGuide';
 import { OnboardingStepLayout } from '../../components/shared/layout/OnboardingStepLayout';
 import { OnboardingThankYouView } from '../../components/shared/layout/OnboardingThankYouView';
 import { useAppAlert } from '../../components/shared/modals';
@@ -502,28 +502,6 @@ export function OnboardingScreen({ navigation, route }: Props) {
       ? getFeatureStepContent(stepConfig.forQuestion, answers)
       : null;
 
-  const renderFeatureHighlights = () => {
-    if (!featureContent) {
-      return null;
-    }
-    return (
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View className="flex-row flex-wrap justify-between">
-          {featureContent.features.map(feature => (
-            <FeatureHighlightCard
-              key={feature.title.en}
-              grid
-              icon={feature.icon}
-              title={feature.title[language]}
-              description={feature.description[language]}
-              emphasized={feature.emphasized}
-            />
-          ))}
-        </View>
-      </ScrollView>
-    );
-  };
-
   const title = useMemo(() => {
     if (stepConfig.kind === 'welcome') {
       return copy.welcomeTitle;
@@ -570,6 +548,22 @@ export function OnboardingScreen({ navigation, route }: Props) {
     );
   }
 
+  if (isFeatureStep && featureContent) {
+    return (
+      <OnboardingFeatureGuide
+        features={featureContent.features}
+        language={language}
+        nextLabel={footerLabel}
+        skipLabel={copy.skip}
+        onNext={goNext}
+        onSkip={onSkipStep}
+        onBack={goPrevious}
+        backLabel={copy.back}
+        navigation={navigation}
+      />
+    );
+  }
+
   return (
     <OnboardingStepLayout
       stepIndex={step}
@@ -600,8 +594,6 @@ export function OnboardingScreen({ navigation, route }: Props) {
                 : 'You can skip anytime to get started faster.'}
             </Text>
           </View>
-        ) : isFeatureStep ? (
-          renderFeatureHighlights()
         ) : (
           renderOptions()
         )}

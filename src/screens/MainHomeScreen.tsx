@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { ScrollView, View } from 'react-native';
 import type { NavigationProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,6 +11,7 @@ import { HomeEventZoneSection } from '../components/home/sections/HomeEventZoneS
 import { QuickAccessRow } from '../components/home/sections/QuickAccessRow';
 import { TraveloguePreviewMock } from '../components/home/sections/TraveloguePreviewMock';
 import { HomeActionFabs, FAB_GAP, FAB_SIZE } from '../components/helpdesk/HomeActionFabs';
+import { GUIDE_TARGET } from '../components/guide/guideTypes';
 import { ROUTE_FAB_BOTTOM_OFFSET } from '../components/plan/fab/RouteOptimizeFab';
 import { getNavbarOverlayHeight } from '../components/shared/navigation/Navbar';
 import { useAppAlert } from '../components/shared/modals';
@@ -40,12 +41,25 @@ import type { EventZoneId } from '../types/eventZone';
 
 type Props = {
   navigation: NavigationProp<RootStackParamList>;
+  /** 온보딩 가이드 등 Navbar 미표시 시 하단 clearance 제거 */
+  suppressNavbarClearance?: boolean;
+  /** 온보딩 가이드에서 리부트 FAB을 임시로 표시 */
+  forceShowRebootFab?: boolean;
+  /** 온보딩 가이드: 해당 타깃이 보이도록 홈 스크롤 */
+  guideScrollTargetId?: string | null;
 };
 
-export function MainHomeScreen({ navigation }: Props) {
+export function MainHomeScreen({
+  navigation,
+  suppressNavbarClearance = false,
+  forceShowRebootFab = false,
+  guideScrollTargetId = null,
+}: Props) {
   const insets = useSafeAreaInsets();
   const { goToTab } = useMainTabNavigation();
   const { alert } = useAppAlert();
+  const scrollRef = useRef<ScrollView>(null);
+  const travelogueOffsetY = useRef(0);
   const language = useAppLanguage();
   const copy = useCopy('mainHome');
   const planDetailCopy = useCopy('planDetail');
@@ -60,7 +74,8 @@ export function MainHomeScreen({ navigation }: Props) {
     () => (featuredPlan ? resolvePlanTravelStatus(featuredPlan) : null),
     [featuredPlan],
   );
-  const showTripRebootFab = featuredTravelStatus === 'IN_PROGRESS';
+  const showTripRebootFab =
+    forceShowRebootFab || featuredTravelStatus === 'IN_PROGRESS';
   const showSyncStatus = Boolean(featuredPlan && isServerBackedPlan(featuredPlan));
   const { toastText, toastOpacity } =
     usePlanOfflineSyncFeedback({
@@ -102,6 +117,36 @@ export function MainHomeScreen({ navigation }: Props) {
     setPendingTravelSurveyPrompt,
   ]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const scrollHome = (y: number, animated: boolean) => {
+      scrollRef.current?.scrollTo({ y, animated });
+    };
+
+    if (guideScrollTargetId !== GUIDE_TARGET.traveloguePreview) {
+      scrollHome(0, true);
+      return;
+    }
+
+    const tryScrollToTravelogue = (attempt: number) => {
+      if (cancelled) {
+        return;
+      }
+      const y = travelogueOffsetY.current;
+      if (y > 0 || attempt >= 10) {
+        scrollHome(Math.max(0, y - 72), true);
+        return;
+      }
+      setTimeout(() => tryScrollToTravelogue(attempt + 1), 40);
+    };
+
+    tryScrollToTravelogue(0);
+    return () => {
+      cancelled = true;
+    };
+  }, [guideScrollTargetId]);
+
   const upcomingStop = useMemo(
     () =>
       featuredPlan && featuredTravelStatus === 'IN_PROGRESS'
@@ -141,19 +186,25 @@ export function MainHomeScreen({ navigation }: Props) {
   };
 
   /** 화면은 Navbar 아래로 이어지고, 스크롤·FAB만 글래스 바 위로 올림 */
-  const navbarClearance = getNavbarOverlayHeight(insets.bottom);
+  const navbarClearance = suppressNavbarClearance
+    ? Math.max(insets.bottom, 8)
+    : getNavbarOverlayHeight(insets.bottom);
   const fabBottom = navbarClearance + ROUTE_FAB_BOTTOM_OFFSET;
+  const guideTraveloguePad =
+    guideScrollTargetId === GUIDE_TARGET.traveloguePreview ? 140 : 0;
 
   return (
     <View className="flex-1 bg-brand-background" style={layout.screen}>
       <ScrollView
+        ref={scrollRef}
         className="flex-1 px-5"
         contentContainerStyle={{
           paddingBottom:
             fabBottom +
             FAB_SIZE +
             (showTripRebootFab ? FAB_GAP + FAB_SIZE : 0) +
-            16,
+            16 +
+            guideTraveloguePad,
         }}
         showsVerticalScrollIndicator={false}>
         {featuredPlan && featuredTravelStatus ? (
@@ -236,23 +287,28 @@ export function MainHomeScreen({ navigation }: Props) {
           }}
         />
 
-        <TraveloguePreviewMock
-          trendingTitle={copy.trendingTitle}
-          travelogue={MOCK_TRAVELOGUE}
-          specialOffer={MOCK_SPECIAL_OFFER}
-          language={language}
-          latestTravelogue={latestTravelogue}
-          onTraveloguePress={() => {
-            if (latestTravelogue) {
-              navigation.navigate('TravelogueDetail', {
-                travelogueId: latestTravelogue.travelogueId,
-              });
-            } else {
-              goToTab('feed');
-            }
-          }}
-          onFeedPress={() => goToTab('feed')}
-        />
+        <View
+          onLayout={e => {
+            travelogueOffsetY.current = e.nativeEvent.layout.y;
+          }}>
+          <TraveloguePreviewMock
+            trendingTitle={copy.trendingTitle}
+            travelogue={MOCK_TRAVELOGUE}
+            specialOffer={MOCK_SPECIAL_OFFER}
+            language={language}
+            latestTravelogue={latestTravelogue}
+            onTraveloguePress={() => {
+              if (latestTravelogue) {
+                navigation.navigate('TravelogueDetail', {
+                  travelogueId: latestTravelogue.travelogueId,
+                });
+              } else {
+                goToTab('feed');
+              }
+            }}
+            onFeedPress={() => goToTab('feed')}
+          />
+        </View>
       </ScrollView>
 
       <HomeActionFabs

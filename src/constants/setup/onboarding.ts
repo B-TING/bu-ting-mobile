@@ -146,6 +146,7 @@ export const ONBOARDING_STEP_COUNT = ONBOARDING_FLOW.length;
 export const ONBOARDING_COMPLETE_DELAY_MS = 2400;
 
 export type FeatureHighlight = {
+  id: string;
   icon: LucideIconName;
   title: Record<AppLanguage, string>;
   description: Record<AppLanguage, string>;
@@ -267,16 +268,31 @@ const featureCopy = {
   festivals: {
     icon: 'partyPopper',
     title: {
-      ko: '축제·이벤트',
-      en: 'Festivals & events',
-      ja: '祭り・イベント',
-      zh: '节庆活动',
+      ko: '축제 캘린더',
+      en: 'Festival calendar',
+      ja: '祭りカレンダー',
+      zh: '节庆日历',
     },
     description: {
-      ko: '방문 시기에 맞는 축제와 문화 행사를 리스트업해 드려요.',
-      en: 'See festivals and cultural events that fit your visit dates.',
-      ja: '訪問時期に合う祭りや文化イベントを一覧表示します。',
-      zh: '列出与您行程日期匹配的节庆与文化活动的清单。',
+      ko: '방문 시기에 맞는 부산 축제·문화 행사를 캘린더에서 모아 볼 수 있어요.',
+      en: 'Browse Busan festivals and cultural events that fit your visit dates.',
+      ja: '訪問時期に合う釜山の祭り・文化イベントをカレンダーで確認できます。',
+      zh: '在日历中查看与您行程日期匹配的釜山节庆与文化活动。',
+    },
+  },
+  eventZone: {
+    icon: 'map',
+    title: {
+      ko: '이벤트 존',
+      en: 'Event Zone',
+      ja: 'イベントゾーン',
+      zh: '活动区域',
+    },
+    description: {
+      ko: '구역별 현장 분위기와 채팅으로 같은 지역의 여행자와 소통할 수 있어요.',
+      en: 'Check each zone’s vibe and chat with travelers in the same area.',
+      ja: 'エリアごとの雰囲気を確認し、同じ地域の旅行者とチャットできます。',
+      zh: '查看各区域现场氛围，并与同区旅客聊天互动。',
     },
   },
   sceneryList: {
@@ -332,10 +348,12 @@ export function getFeatureStepContent(
   answers: OnboardingAnswers,
 ): FeatureStepContent {
   const emphasize = (key: keyof typeof featureCopy): FeatureHighlight => ({
+    id: key,
     ...featureCopy[key],
     emphasized: true,
   });
   const plain = (key: keyof typeof featureCopy): FeatureHighlight => ({
+    id: key,
     ...featureCopy[key],
   });
 
@@ -454,13 +472,17 @@ export function getFeatureStepContent(
         purposes.includes('culture') ||
         purposes.includes('nightlife')
       ) {
-        features.push(emphasize('festivals'));
+        features.push(emphasize('festivals'), emphasize('eventZone'));
       }
       if (purposes.includes('scenery')) {
         features.push(emphasize('sceneryList'));
       }
       if (features.length === 0) {
-        features.push(emphasize('restaurants'), plain('festivals'));
+        features.push(
+          emphasize('restaurants'),
+          plain('festivals'),
+          plain('eventZone'),
+        );
       }
       return {
         title: {
@@ -470,10 +492,10 @@ export function getFeatureStepContent(
           zh: '契合您目的的功能',
         },
         subtitle: {
-          ko: '선택하신 관심사에 맞춰 맛집·축제·명소를 추천해 드려요',
-          en: 'We tailor restaurants, events, and sights to what you picked',
-          ja: '選んだ関心に合わせて飲食店・イベント・名所をおすすめします',
-          zh: '根据您选择的兴趣推荐餐厅、活动与景点',
+          ko: '선택하신 관심사에 맞춰 맛집·축제 캘린더·이벤트 존·명소를 안내해요',
+          en: 'We tailor restaurants, festival calendar, Event Zone, and sights to what you picked',
+          ja: '選んだ関心に合わせて飲食店・祭りカレンダー・イベントゾーン・名所をご案内します',
+          zh: '根据您选择的兴趣推荐餐厅、节庆日历、活动区域与景点',
         },
         features,
       };
