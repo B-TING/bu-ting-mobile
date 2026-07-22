@@ -789,6 +789,13 @@ export const SETUP_COPY: Record<
     welcomeSubtitle: string;
     loginTitle: string;
     loginSubtitle: string;
+    loginSlogan: string;
+    loginOr: string;
+    loginTermsPrefix: string;
+    loginTermsOfService: string;
+    loginTermsMiddle: string;
+    loginPrivacyPolicy: string;
+    loginTermsSuffix: string;
     offlineMode: string;
     offlineModeHint: string;
     offlineModeEmpty: string;
@@ -820,8 +827,15 @@ export const SETUP_COPY: Record<
     welcomeTitle: '환영합니다!',
     welcomeSubtitle: '부팅과 함께 나만의 부산 여행을 준비해 보세요. 몇 가지 질문으로 맞춤 안내를 도와드릴게요.',
     loginTitle: '로그인',
-    loginSubtitle: '일정 동기화와 Route Feed를 위해 로그인하세요',
-    offlineMode: '오프라인 모드',
+    loginSubtitle: 'AI 일정 동기화 · Route Feed 공유를 위해 로그인하세요',
+    loginSlogan: '부산 여행의 새로운 시작',
+    loginOr: '또는',
+    loginTermsPrefix: '계속하면 ',
+    loginTermsOfService: '이용약관',
+    loginTermsMiddle: ' 및 ',
+    loginPrivacyPolicy: '개인정보처리방침',
+    loginTermsSuffix: '에 동의합니다',
+    offlineMode: '오프라인으로 일정 보기',
     offlineModeHint: '저장된 최근 일정만 열람합니다',
     offlineModeEmpty: '열람할 저장된 일정이 없습니다.',
     email: '이메일',
@@ -853,8 +867,15 @@ export const SETUP_COPY: Record<
     welcomeTitle: 'Welcome!',
     welcomeSubtitle: 'Plan your Busan trip with Bu-Ting. A few quick questions help us personalize your experience.',
     loginTitle: 'Sign in',
-    loginSubtitle: 'Sync itineraries and share on Route Feed',
-    offlineMode: 'Offline mode',
+    loginSubtitle: 'Sign in to sync AI itineraries and share on Route Feed',
+    loginSlogan: 'A new start for Busan travel',
+    loginOr: 'or',
+    loginTermsPrefix: 'By continuing, you agree to the ',
+    loginTermsOfService: 'Terms of Service',
+    loginTermsMiddle: ' and ',
+    loginPrivacyPolicy: 'Privacy Policy',
+    loginTermsSuffix: '',
+    offlineMode: 'View itinerary offline',
     offlineModeHint: 'View your latest saved itinerary only',
     offlineModeEmpty: 'No saved itinerary to browse.',
     email: 'Email',
@@ -886,8 +907,15 @@ export const SETUP_COPY: Record<
     welcomeTitle: 'ようこそ！',
     welcomeSubtitle: 'BU-TINGで釜山旅行を始めましょう。いくつかの質問であなたに合った案内をします。',
     loginTitle: 'ログイン',
-    loginSubtitle: '行程の同期とRoute Feedのために',
-    offlineMode: 'オフラインモード',
+    loginSubtitle: 'AI行程の同期とRoute Feed共有のためにログインしてください',
+    loginSlogan: '釜山旅行の新しいはじまり',
+    loginOr: 'または',
+    loginTermsPrefix: '続行すると',
+    loginTermsOfService: '利用規約',
+    loginTermsMiddle: 'および',
+    loginPrivacyPolicy: 'プライバシーポリシー',
+    loginTermsSuffix: 'に同意したものとみなされます',
+    offlineMode: 'オフラインで行程を見る',
     offlineModeHint: '保存した最新の行程のみ閲覧できます',
     offlineModeEmpty: '閲覧できる行程がありません。',
     email: 'メール',
@@ -919,8 +947,15 @@ export const SETUP_COPY: Record<
     welcomeTitle: '欢迎！',
     welcomeSubtitle: '与 BU-TING 一起规划釜山之旅。回答几个问题，我们将为您提供个性化指引。',
     loginTitle: '登录',
-    loginSubtitle: '同步行程并分享至 Route Feed',
-    offlineMode: '离线模式',
+    loginSubtitle: '登录以同步 AI 行程并分享至 Route Feed',
+    loginSlogan: '釜山旅行的全新开始',
+    loginOr: '或',
+    loginTermsPrefix: '继续即表示同意',
+    loginTermsOfService: '服务条款',
+    loginTermsMiddle: '与',
+    loginPrivacyPolicy: '隐私政策',
+    loginTermsSuffix: '',
+    offlineMode: '离线查看行程',
     offlineModeHint: '仅可浏览最近保存的行程',
     offlineModeEmpty: '没有可浏览的已保存行程。',
     email: '邮箱',
