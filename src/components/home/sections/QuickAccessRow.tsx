@@ -15,7 +15,7 @@ type QuickAccessRowProps = {
 const QUICK_GUIDE_IDS: Record<string, string> = {
   luggage: GUIDE_TARGET.quickLuggage,
   festivals: GUIDE_TARGET.quickFestivals,
-  eventZone: GUIDE_TARGET.quickEventZone,
+  restaurants: GUIDE_TARGET.quickRestaurants,
   attractions: GUIDE_TARGET.quickAttractions,
   hotels: GUIDE_TARGET.quickHotels,
 };

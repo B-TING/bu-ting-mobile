@@ -33,9 +33,9 @@ export const ONBOARDING_GUIDE_TARGETS: Record<
   offline: { tab: 'home', targetId: GUIDE_TARGET.syncDot },
   locker: { tab: 'home', targetId: GUIDE_TARGET.quickLuggage },
   festivals: { tab: 'home', targetId: GUIDE_TARGET.quickFestivals },
-  eventZone: { tab: 'home', targetId: GUIDE_TARGET.quickEventZone },
+  eventZone: { tab: 'home', targetId: GUIDE_TARGET.homeEventZone },
   sceneryList: { tab: 'home', targetId: GUIDE_TARGET.quickAttractions },
-  restaurants: { tab: 'home', targetId: GUIDE_TARGET.quickHotels },
+  restaurants: { tab: 'home', targetId: GUIDE_TARGET.quickRestaurants },
   travelJournal: { tab: 'home', targetId: GUIDE_TARGET.traveloguePreview },
 };
 

@@ -256,8 +256,10 @@ export function MainHomeScreen({
                 contentTypeId: PLACE_CONTENT_TYPE.attraction,
               });
             }
-            if (id === 'eventZone') {
-              navigation.navigate('EventZone');
+            if (id === 'restaurants') {
+              navigation.navigate('PlaceMapSearch', {
+                contentTypeId: PLACE_CONTENT_TYPE.restaurant,
+              });
             }
             if (id === 'help') {
               goToHelpDesk();
