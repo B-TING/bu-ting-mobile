@@ -109,7 +109,7 @@ export function LoginScreen({ navigation }: Props) {
       <View style={[styles.heroShadow, { height: heroHeight + insets.top }]}>
         <ImageBackground
           source={heroImage}
-          style={StyleSheet.absoluteFillObject}
+          style={StyleSheet.absoluteFill}
           resizeMode="cover">
           <View style={{ flex: 1, paddingTop: insets.top }}>
             <View style={styles.logoScrim}>
