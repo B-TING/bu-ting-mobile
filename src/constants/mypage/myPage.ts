@@ -8,8 +8,14 @@ export const MY_PAGE_COPY: Record<
     title: string;
     posts: string;
     postsCount: (n: number) => string;
+    travelogueStat: string;
+    visitStat: string;
     editProfile: string;
     editPreferences: string;
+    settings: string;
+    notificationSettings: string;
+    languageSettings: string;
+    notificationUnavailable: string;
     myRecords: string;
     savedRecords: string;
     savedRecordsEmpty: string;
@@ -67,10 +73,16 @@ export const MY_PAGE_COPY: Record<
     title: '마이페이지',
     posts: '게시물',
     postsCount: n => `${n}`,
+    travelogueStat: '여행기',
+    visitStat: '방문 기록',
     editProfile: '프로필 편집',
-    editPreferences: '여행 성향',
+    editPreferences: '여행 취향 수정',
+    settings: '설정',
+    notificationSettings: '알림 설정',
+    languageSettings: '언어 설정',
+    notificationUnavailable: '알림 설정은 준비 중이에요.',
     myRecords: '내 여행 기록',
-    savedRecords: '저장됨',
+    savedRecords: '북마크한 기록',
     savedRecordsEmpty: '저장한 여행기가 없어요',
     savedRecordsEmptySub: '피드에서 마음에 드는 여행기를 북마크해 보세요.',
     recordsEmpty: '아직 여행 기록이 없어요',
@@ -130,10 +142,16 @@ export const MY_PAGE_COPY: Record<
     title: 'My page',
     posts: 'Posts',
     postsCount: n => `${n}`,
+    travelogueStat: 'Travelogues',
+    visitStat: 'Visits',
     editProfile: 'Edit profile',
-    editPreferences: 'Preferences',
+    editPreferences: 'Edit travel preferences',
+    settings: 'Settings',
+    notificationSettings: 'Notifications',
+    languageSettings: 'Language',
+    notificationUnavailable: 'Notification settings are coming soon.',
     myRecords: 'My travel records',
-    savedRecords: 'Saved',
+    savedRecords: 'Bookmarked',
     savedRecordsEmpty: 'No saved travelogues yet',
     savedRecordsEmptySub: 'Bookmark travelogues from the feed to see them here.',
     recordsEmpty: 'No travel records yet',
@@ -193,10 +211,16 @@ export const MY_PAGE_COPY: Record<
     title: 'マイページ',
     posts: '投稿',
     postsCount: n => `${n}`,
+    travelogueStat: '旅行記',
+    visitStat: '訪問記録',
     editProfile: 'プロフィール編集',
-    editPreferences: '旅行の好み',
+    editPreferences: '旅行の好みを編集',
+    settings: '設定',
+    notificationSettings: '通知設定',
+    languageSettings: '言語設定',
+    notificationUnavailable: '通知設定は準備中です。',
     myRecords: '自分の旅行記',
-    savedRecords: '保存済み',
+    savedRecords: 'ブックマーク',
     savedRecordsEmpty: '保存した旅行記がありません',
     savedRecordsEmptySub: 'フィードから気に入った旅行記をブックマークしてみましょう。',
     recordsEmpty: 'まだ旅行記がありません',
@@ -256,8 +280,14 @@ export const MY_PAGE_COPY: Record<
     title: '我的',
     posts: '帖子',
     postsCount: n => `${n}`,
+    travelogueStat: '游记',
+    visitStat: '访问记录',
     editProfile: '编辑资料',
-    editPreferences: '旅行偏好',
+    editPreferences: '修改旅行偏好',
+    settings: '设置',
+    notificationSettings: '通知设置',
+    languageSettings: '语言设置',
+    notificationUnavailable: '通知设置即将推出。',
     myRecords: '我的旅行记录',
     savedRecords: '已收藏',
     savedRecordsEmpty: '暂无收藏的游记',

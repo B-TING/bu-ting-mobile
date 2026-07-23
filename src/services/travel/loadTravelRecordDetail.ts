@@ -184,3 +184,29 @@ export async function loadTravelRecordDetail(
     loadedAsOwner,
   };
 }
+
+/** 내 여행기들에 등록된 장소 방문 후기 총개수 */
+export async function countPlaceReviewsForMyTravelRecords(
+  accessToken: string,
+  travelRecordIds: string[],
+): Promise<number> {
+  if (!accessToken.trim() || travelRecordIds.length === 0) {
+    return 0;
+  }
+
+  const counts = await Promise.all(
+    travelRecordIds.map(async travelRecordId => {
+      try {
+        const { record } = await loadTravelRecordDetail({
+          travelRecordId,
+          accessToken,
+        });
+        return record.placeReviews.length;
+      } catch {
+        return 0;
+      }
+    }),
+  );
+
+  return counts.reduce((sum, n) => sum + n, 0);
+}

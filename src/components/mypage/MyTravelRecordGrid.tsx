@@ -5,8 +5,10 @@ import type { TravelRecord, TravelRecordStatus } from '../../types/travelReview'
 import { travelRecordThumbnailIcon } from '../../utils/review/travelReview';
 import { AppIcon } from '../shared/icons/AppIcon';
 
-const GAP = 2;
+const H_PAD = 20;
+const GAP = 8;
 const COLS = 3;
+const RADIUS = 16;
 
 type MyTravelRecordGridProps = {
   records: TravelRecord[];
@@ -30,10 +32,10 @@ export function MyTravelRecordGrid({
   onPressRecord,
 }: MyTravelRecordGridProps) {
   const { width } = useWindowDimensions();
-  const cell = Math.floor((width - GAP * (COLS - 1)) / COLS);
+  const cell = Math.floor((width - H_PAD * 2 - GAP * (COLS - 1)) / COLS);
 
   return (
-    <View className="flex-row flex-wrap" style={{ gap: GAP }}>
+    <View className="flex-row flex-wrap px-5" style={{ gap: GAP }}>
       {records.map(record => {
         const icon = travelRecordThumbnailIcon(record);
         const cover = record.coverImageUrl;
@@ -42,7 +44,7 @@ export function MyTravelRecordGrid({
           <Pressable
             key={record.travelRecordId}
             onPress={() => onPressRecord(record.travelRecordId)}
-            style={{ width: cell, height: cell }}
+            style={{ width: cell, height: cell, borderRadius: RADIUS }}
             className="overflow-hidden bg-brand-selected active:opacity-85"
             accessibilityRole="button">
             {cover && !cover.startsWith('local://') ? (
@@ -60,7 +62,7 @@ export function MyTravelRecordGrid({
                 </Text>
               </View>
             ) : null}
-            <View className="absolute bottom-1 right-1.5 flex-row items-center gap-0.5">
+            <View className="absolute bottom-1.5 right-1.5 flex-row items-center gap-0.5">
               <AppIcon name="heart" size={10} color={ICON_COLOR_WHITE} filled />
               <Text className="text-[10px] font-bold text-white">{record.likeCount}</Text>
             </View>
@@ -85,7 +87,7 @@ type EmptyGridProps = {
 
 export function MyTravelRecordGridEmpty({ title, subtitle }: EmptyGridProps) {
   return (
-    <View className="items-center px-8 py-16">
+    <View className="items-center px-8 py-12">
       <View className="mb-4 h-16 w-16 items-center justify-center rounded-full border border-brand-border">
         <AppIcon name="map" size={28} color={ICON_COLOR_MUTED} />
       </View>
