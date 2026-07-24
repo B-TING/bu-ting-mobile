@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PlanSyncStatusDot } from '../../components/plan/PlanSyncStatusDot';
 import { TransientBottomToast } from '../../components/shared/feedback/TransientBottomToast';
 import { BackButton } from '../../components/shared/buttons/BackButton';
-import { BudgetEntryModal } from '../../components/plan/modals/BudgetEntryModal';
+import { BudgetEntryModal, type BudgetEntryDraft } from '../../components/plan/modals/BudgetEntryModal';
 import { PlacePickModal } from '../../components/plan/modals/PlacePickModal';
 import { TravelInviteLinkModal } from '../../components/plan/modals/TravelInviteLinkModal';
 import { RouteOptimizeFab, routeFabBottom } from '../../components/plan/fab/RouteOptimizeFab';
@@ -24,6 +24,7 @@ import { type PlanDetailTab } from '../../constants/plan/planDetail';
 import { useAppLanguage, useCopy } from '../../i18n';
 import { useAppAlert } from '../../components/shared/modals';
 import { usePlanRoutePlaceDetails } from '../../hooks/usePlanRoutePlaceDetails';
+import { useTravelExpensesSync } from '../../hooks/useTravelExpensesSync';
 import { useTravelMembersSync } from '../../hooks/useTravelMembersSync';
 import type { RootStackParamList } from '../../navigation/types';
 import { navigateToMainTab } from '../../navigation/navigateToMainTab';
@@ -35,6 +36,11 @@ import {
   computeNextPlanDay,
   removePlanDayOnApi,
 } from '../../services/travel/planDaySync';
+import {
+  budgetEntryToCreateRequest,
+  expenseCreateResponseToBudgetEntry,
+} from '../../services/travel/travelExpenseMapper';
+import { createTravelExpense } from '../../services/travel/travelExpenseService';
 import { resolveTravelInviteLink } from '../../services/travel/travelTeamService';
 import { updateTravelStatus } from '../../services/travel/travelService';
 import {
@@ -52,6 +58,11 @@ import { usePlanOfflineSyncFeedback } from '../../hooks/usePlanOfflineSyncFeedba
 import type { BudgetEntry, RouteItem, TravelLegMode } from '../../types/travelPlan';
 import { sortedRoutes } from '../../utils/plan/planItinerary';
 import { optimizeRouteOrder } from '../../utils/plan/routeOptimize';
+import {
+  buildMemberSummariesFromBudgetEntries,
+  buildTransfersFromMemberSummaries,
+  pickCurrencyMemberSummaries,
+} from '../../utils/plan/budgetSettlementPreview';
 import {
   candidateToRouteItem,
   type RebootPlaceCandidate,
@@ -133,6 +144,21 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     accessToken,
     enabled: isApiPlan && !offlineMode,
   });
+  const {
+    syncExpenses,
+    refreshSettlementPreview,
+    settlement,
+    summary,
+    settlementLoading,
+    settlementError,
+    confirming,
+    confirmSettlement,
+  } = useTravelExpensesSync({
+    planId,
+    travelId,
+    accessToken,
+    enabled: isApiPlan && !offlineMode,
+  });
   const planReviews =
     useTravelogueStore(s => (planId ? s.reviewsByPlan[planId] : undefined)) ??
     EMPTY_REVIEWS;
@@ -169,6 +195,46 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     );
   }, [authUser?.userId, isApiPlan, plan]);
 
+  const settlementConfirmed = settlement?.confirmed === true;
+  const canConfirmSettlement = canInvite && !settlementConfirmed && !offlineMode;
+
+  const settlementMemberSummaries = useMemo(() => {
+    const fromApi = pickCurrencyMemberSummaries(summary?.currencySummaries);
+    if (fromApi.length > 0) {
+      return fromApi;
+    }
+    if (!plan || budgetEntries.length === 0) {
+      return [];
+    }
+    return buildMemberSummariesFromBudgetEntries(budgetEntries, plan.members);
+  }, [budgetEntries, plan, summary]);
+
+  const settlementForDisplay = useMemo(() => {
+    if (!settlement && settlementMemberSummaries.length === 0) {
+      return null;
+    }
+
+    const apiTransfers = settlement?.transfers ?? [];
+    if (apiTransfers.length > 0 || settlementConfirmed) {
+      return (
+        settlement ?? {
+          travelId: travelId ?? '',
+          confirmed: false,
+          transfers: [],
+        }
+      );
+    }
+
+    const localTransfers = buildTransfersFromMemberSummaries(settlementMemberSummaries);
+    return {
+      travelId: settlement?.travelId ?? travelId ?? '',
+      confirmed: settlement?.confirmed ?? false,
+      confirmedById: settlement?.confirmedById,
+      confirmedAt: settlement?.confirmedAt,
+      transfers: localTransfers,
+    };
+  }, [settlement, settlementConfirmed, settlementMemberSummaries, travelId]);
+
   const loadInviteLink = useCallback(async () => {
     if (!accessToken || !travelId) {
       return;
@@ -196,6 +262,98 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     setInviteModalOpen(true);
     void loadInviteLink();
   }, [alert, canInvite, copy.inviteLeaderOnly, copy.inviteMembers, loadInviteLink]);
+
+  const handleSaveBudgetEntry = useCallback(
+    async (entry: BudgetEntryDraft) => {
+      if (!isApiPlan || !accessToken || !travelId) {
+        addBudgetEntry(entry);
+        return;
+      }
+
+      if (settlementConfirmed) {
+        alert({
+          title: copy.budgetAdd,
+          message: copy.budgetSettlementLocked,
+        });
+        return;
+      }
+
+      try {
+        const request = budgetEntryToCreateRequest(entry);
+        const created = await createTravelExpense(accessToken, travelId, request);
+        addBudgetEntry(
+          expenseCreateResponseToBudgetEntry(created, planId, request.participantIds),
+        );
+        // 정산 미리보기를 먼저 맞추고, 전체 목록은 백그라운드로 재동기화
+        await refreshSettlementPreview();
+        void syncExpenses();
+      } catch (error) {
+        alert({
+          title: copy.budgetAdd,
+          message: error instanceof Error ? error.message : copy.budgetAdd,
+        });
+      }
+    },
+    [
+      accessToken,
+      addBudgetEntry,
+      alert,
+      copy.budgetAdd,
+      copy.budgetSettlementLocked,
+      isApiPlan,
+      planId,
+      refreshSettlementPreview,
+      settlementConfirmed,
+      syncExpenses,
+      travelId,
+    ],
+  );
+
+  const handleConfirmSettlement = useCallback(() => {
+    if (!canConfirmSettlement) {
+      alert({
+        title: copy.budgetSettlementConfirm,
+        message: copy.budgetSettlementLeaderOnly,
+      });
+      return;
+    }
+
+    alert({
+      title: copy.budgetSettlementConfirmTitle,
+      message: copy.budgetSettlementConfirmMessage,
+      buttons: [
+        { label: copy.budgetCancel, variant: 'secondary', onPress: () => {} },
+        {
+          label: copy.budgetSettlementConfirmAction,
+          variant: 'primary',
+          onPress: () => {
+            void (async () => {
+              try {
+                await confirmSettlement();
+              } catch (error) {
+                alert({
+                  title: copy.budgetSettlementConfirm,
+                  message:
+                    error instanceof Error ? error.message : copy.budgetSettlementError,
+                });
+              }
+            })();
+          },
+        },
+      ],
+    });
+  }, [
+    alert,
+    canConfirmSettlement,
+    confirmSettlement,
+    copy.budgetCancel,
+    copy.budgetSettlementConfirm,
+    copy.budgetSettlementConfirmAction,
+    copy.budgetSettlementConfirmMessage,
+    copy.budgetSettlementConfirmTitle,
+    copy.budgetSettlementError,
+    copy.budgetSettlementLeaderOnly,
+  ]);
 
   const closeInviteModal = useCallback(() => {
     setInviteModalOpen(false);
@@ -962,8 +1120,21 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
               budgetTotal={budgetTotal}
               members={enrichedPlan.members}
               onAddExpense={
-                offlineMode ? undefined : () => setBudgetModalOpen(true)
+                offlineMode || settlementConfirmed
+                  ? undefined
+                  : () => setBudgetModalOpen(true)
               }
+              showSettlement={isApiPlan && !offlineMode}
+              settlement={settlementForDisplay}
+              memberSummaries={settlementMemberSummaries}
+              settlementLoading={settlementLoading}
+              settlementError={settlementError}
+              canConfirmSettlement={canConfirmSettlement}
+              confirmingSettlement={confirming}
+              onConfirmSettlement={handleConfirmSettlement}
+              onRetrySettlement={() => {
+                void syncExpenses();
+              }}
             />
           ),
           records: (
@@ -1014,7 +1185,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
         defaultDate={day?.date ?? enrichedPlan.startDate}
         planId={planId}
         onClose={() => setBudgetModalOpen(false)}
-        onSave={entry => addBudgetEntry(entry)}
+        onSave={handleSaveBudgetEntry}
       />
 
       <PlacePickModal
