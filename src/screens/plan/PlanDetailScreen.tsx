@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PlanSyncStatusDot } from '../../components/plan/PlanSyncStatusDot';
 import { TransientBottomToast } from '../../components/shared/feedback/TransientBottomToast';
 import { BackButton } from '../../components/shared/buttons/BackButton';
-import { BudgetEntryModal } from '../../components/plan/modals/BudgetEntryModal';
+import { BudgetEntryModal, type BudgetEntryDraft } from '../../components/plan/modals/BudgetEntryModal';
 import { PlacePickModal } from '../../components/plan/modals/PlacePickModal';
 import { TravelInviteLinkModal } from '../../components/plan/modals/TravelInviteLinkModal';
 import { RouteOptimizeFab, routeFabBottom } from '../../components/plan/fab/RouteOptimizeFab';
@@ -24,6 +24,7 @@ import { type PlanDetailTab } from '../../constants/plan/planDetail';
 import { useAppLanguage, useCopy } from '../../i18n';
 import { useAppAlert } from '../../components/shared/modals';
 import { usePlanRoutePlaceDetails } from '../../hooks/usePlanRoutePlaceDetails';
+import { useTravelExpensesSync } from '../../hooks/useTravelExpensesSync';
 import { useTravelMembersSync } from '../../hooks/useTravelMembersSync';
 import type { RootStackParamList } from '../../navigation/types';
 import { navigateToMainTab } from '../../navigation/navigateToMainTab';
@@ -35,6 +36,11 @@ import {
   computeNextPlanDay,
   removePlanDayOnApi,
 } from '../../services/travel/planDaySync';
+import {
+  budgetEntryToCreateRequest,
+  expenseCreateResponseToBudgetEntry,
+} from '../../services/travel/travelExpenseMapper';
+import { createTravelExpense } from '../../services/travel/travelExpenseService';
 import { resolveTravelInviteLink } from '../../services/travel/travelTeamService';
 import { updateTravelStatus } from '../../services/travel/travelService';
 import {
@@ -133,6 +139,12 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     accessToken,
     enabled: isApiPlan && !offlineMode,
   });
+  useTravelExpensesSync({
+    planId,
+    travelId,
+    accessToken,
+    enabled: isApiPlan && !offlineMode,
+  });
   const planReviews =
     useTravelogueStore(s => (planId ? s.reviewsByPlan[planId] : undefined)) ??
     EMPTY_REVIEWS;
@@ -196,6 +208,37 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     setInviteModalOpen(true);
     void loadInviteLink();
   }, [alert, canInvite, copy.inviteLeaderOnly, copy.inviteMembers, loadInviteLink]);
+
+  const handleSaveBudgetEntry = useCallback(
+    async (entry: BudgetEntryDraft) => {
+      if (!isApiPlan || !accessToken || !travelId) {
+        addBudgetEntry(entry);
+        return;
+      }
+
+      try {
+        const request = budgetEntryToCreateRequest(entry);
+        const created = await createTravelExpense(accessToken, travelId, request);
+        addBudgetEntry(
+          expenseCreateResponseToBudgetEntry(created, planId, request.participantIds),
+        );
+      } catch (error) {
+        alert({
+          title: copy.budgetAdd,
+          message: error instanceof Error ? error.message : copy.budgetAdd,
+        });
+      }
+    },
+    [
+      accessToken,
+      addBudgetEntry,
+      alert,
+      copy.budgetAdd,
+      isApiPlan,
+      planId,
+      travelId,
+    ],
+  );
 
   const closeInviteModal = useCallback(() => {
     setInviteModalOpen(false);
@@ -1014,7 +1057,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
         defaultDate={day?.date ?? enrichedPlan.startDate}
         planId={planId}
         onClose={() => setBudgetModalOpen(false)}
-        onSave={entry => addBudgetEntry(entry)}
+        onSave={handleSaveBudgetEntry}
       />
 
       <PlacePickModal

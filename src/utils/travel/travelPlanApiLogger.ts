@@ -12,7 +12,7 @@ import type {
 } from '../../types/travelApi';
 
 type TravelPlanApiLogLevel = 'info' | 'warn' | 'error';
-type TravelPlanHttpMethod = 'GET' | 'POST' | 'PATCH' | 'DELETE';
+type TravelPlanHttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 function maskToken(value: string | null | undefined): string | undefined {
   if (!value) {
