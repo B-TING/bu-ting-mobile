@@ -139,6 +139,29 @@ export const PLAN_DETAIL_COPY: Record<
     budgetOcrSoon: string;
     budgetSave: string;
     budgetCancel: string;
+    budgetSettlementTitle: string;
+    budgetSettlementPreview: string;
+    budgetSettlementPreviewBadge: string;
+    budgetSettlementConfirmed: string;
+    budgetSettlementConfirmedAt: (date: string) => string;
+    budgetSettlementEmpty: string;
+    budgetSettlementNoTransfers: string;
+    budgetSettlementTransfers: string;
+    budgetSettlementBalances: string;
+    budgetSettlementPaid: string;
+    budgetSettlementShare: string;
+    budgetSettlementReceive: string;
+    budgetSettlementOwe: string;
+    budgetSettlementEven: string;
+    budgetSettlementTransfer: (from: string, to: string) => string;
+    budgetSettlementConfirm: string;
+    budgetSettlementConfirmTitle: string;
+    budgetSettlementConfirmMessage: string;
+    budgetSettlementConfirmAction: string;
+    budgetSettlementLocked: string;
+    budgetSettlementLeaderOnly: string;
+    budgetSettlementLoading: string;
+    budgetSettlementError: string;
     dayDuration: (m: string) => string;
     dayZoneCount: (n: number) => string;
     offlineSyncNotice: string;
@@ -276,6 +299,31 @@ export const PLAN_DETAIL_COPY: Record<
     budgetOcrSoon: '곧 제공 예정',
     budgetSave: '저장',
     budgetCancel: '취소',
+    budgetSettlementTitle: '정산',
+    budgetSettlementPreview: '현재 경비 기준 미리보기입니다. 확정 전에도 확인할 수 있어요.',
+    budgetSettlementPreviewBadge: '미리보기',
+    budgetSettlementConfirmed: '확정됨',
+    budgetSettlementConfirmedAt: date =>
+      date ? `확정 일시 ${date}` : '정산이 확정되었습니다',
+    budgetSettlementEmpty: '정산할 내역이 아직 없어요',
+    budgetSettlementNoTransfers: '송금이 필요한 내역이 없어요',
+    budgetSettlementTransfers: '송금 목록',
+    budgetSettlementBalances: '멤버별 잔액',
+    budgetSettlementPaid: '결제',
+    budgetSettlementShare: '부담',
+    budgetSettlementReceive: '받을 금액',
+    budgetSettlementOwe: '보낼 금액',
+    budgetSettlementEven: '정산 완료',
+    budgetSettlementTransfer: (from, to) => `${from} → ${to}`,
+    budgetSettlementConfirm: '정산 확정',
+    budgetSettlementConfirmTitle: '정산을 확정할까요?',
+    budgetSettlementConfirmMessage:
+      '확정하면 송금 목록이 저장되고, 이후에는 경비를 추가·수정·삭제할 수 없습니다.',
+    budgetSettlementConfirmAction: '확정',
+    budgetSettlementLocked: '정산이 확정되어 경비를 변경할 수 없습니다',
+    budgetSettlementLeaderOnly: '정산 확정은 방장만 할 수 있어요',
+    budgetSettlementLoading: '정산 정보를 불러오는 중…',
+    budgetSettlementError: '정산 정보를 불러오지 못했어요',
     dayDuration: m => `예상 소요 ${m}`,
     dayZoneCount: n => `방문 영역 ${n}곳`,
     offlineSyncNotice:
@@ -414,6 +462,31 @@ export const PLAN_DETAIL_COPY: Record<
     budgetOcrSoon: 'Coming soon',
     budgetSave: 'Save',
     budgetCancel: 'Cancel',
+    budgetSettlementTitle: 'Settlement',
+    budgetSettlementPreview: 'Preview based on current expenses. You can review before confirming.',
+    budgetSettlementPreviewBadge: 'Preview',
+    budgetSettlementConfirmed: 'Confirmed',
+    budgetSettlementConfirmedAt: date =>
+      date ? `Confirmed at ${date}` : 'Settlement confirmed',
+    budgetSettlementEmpty: 'Nothing to settle yet',
+    budgetSettlementNoTransfers: 'No transfers needed',
+    budgetSettlementTransfers: 'Transfers',
+    budgetSettlementBalances: 'Member balances',
+    budgetSettlementPaid: 'Paid',
+    budgetSettlementShare: 'Share',
+    budgetSettlementReceive: 'To receive',
+    budgetSettlementOwe: 'To pay',
+    budgetSettlementEven: 'Settled',
+    budgetSettlementTransfer: (from, to) => `${from} → ${to}`,
+    budgetSettlementConfirm: 'Confirm settlement',
+    budgetSettlementConfirmTitle: 'Confirm settlement?',
+    budgetSettlementConfirmMessage:
+      'Once confirmed, transfers are saved and expenses can no longer be added, edited, or deleted.',
+    budgetSettlementConfirmAction: 'Confirm',
+    budgetSettlementLocked: 'Settlement is confirmed — expenses are locked',
+    budgetSettlementLeaderOnly: 'Only the trip leader can confirm settlement',
+    budgetSettlementLoading: 'Loading settlement…',
+    budgetSettlementError: 'Could not load settlement',
     dayDuration: m => `Est. ${m}`,
     dayZoneCount: n => `${n} zone${n === 1 ? '' : 's'}`,
     offlineSyncNotice:
@@ -552,6 +625,31 @@ export const PLAN_DETAIL_COPY: Record<
     budgetOcrSoon: '近日提供',
     budgetSave: '保存',
     budgetCancel: 'キャンセル',
+    budgetSettlementTitle: '精算',
+    budgetSettlementPreview: '現在の経費に基づくプレビューです。確定前にも確認できます。',
+    budgetSettlementPreviewBadge: 'プレビュー',
+    budgetSettlementConfirmed: '確定済み',
+    budgetSettlementConfirmedAt: date =>
+      date ? `確定日時 ${date}` : '精算が確定しました',
+    budgetSettlementEmpty: '精算する内容はまだありません',
+    budgetSettlementNoTransfers: '送金が必要な内容はありません',
+    budgetSettlementTransfers: '送金一覧',
+    budgetSettlementBalances: 'メンバー別残高',
+    budgetSettlementPaid: '支払',
+    budgetSettlementShare: '負担',
+    budgetSettlementReceive: '受け取り',
+    budgetSettlementOwe: '支払い',
+    budgetSettlementEven: '精算済み',
+    budgetSettlementTransfer: (from, to) => `${from} → ${to}`,
+    budgetSettlementConfirm: '精算を確定',
+    budgetSettlementConfirmTitle: '精算を確定しますか？',
+    budgetSettlementConfirmMessage:
+      '確定すると送金一覧が保存され、以降は経費の追加・編集・削除ができなくなります。',
+    budgetSettlementConfirmAction: '確定',
+    budgetSettlementLocked: '精算が確定されたため経費を変更できません',
+    budgetSettlementLeaderOnly: '精算の確定はリーダーのみ可能です',
+    budgetSettlementLoading: '精算情報を読み込み中…',
+    budgetSettlementError: '精算情報を読み込めませんでした',
     dayDuration: m => `所要約 ${m}`,
     dayZoneCount: n => `訪問エリア ${n}箇所`,
     offlineSyncNotice:
@@ -689,6 +787,31 @@ export const PLAN_DETAIL_COPY: Record<
     budgetOcrSoon: '即将上线',
     budgetSave: '保存',
     budgetCancel: '取消',
+    budgetSettlementTitle: '结算',
+    budgetSettlementPreview: '基于当前费用的预览，确认前也可查看。',
+    budgetSettlementPreviewBadge: '预览',
+    budgetSettlementConfirmed: '已确认',
+    budgetSettlementConfirmedAt: date =>
+      date ? `确认时间 ${date}` : '结算已确认',
+    budgetSettlementEmpty: '暂无需要结算的内容',
+    budgetSettlementNoTransfers: '无需转账',
+    budgetSettlementTransfers: '转账列表',
+    budgetSettlementBalances: '成员余额',
+    budgetSettlementPaid: '已付',
+    budgetSettlementShare: '应摊',
+    budgetSettlementReceive: '应收',
+    budgetSettlementOwe: '应付',
+    budgetSettlementEven: '已结清',
+    budgetSettlementTransfer: (from, to) => `${from} → ${to}`,
+    budgetSettlementConfirm: '确认结算',
+    budgetSettlementConfirmTitle: '确认结算吗？',
+    budgetSettlementConfirmMessage:
+      '确认后将保存转账列表，之后无法再添加、修改或删除费用。',
+    budgetSettlementConfirmAction: '确认',
+    budgetSettlementLocked: '结算已确认，无法更改费用',
+    budgetSettlementLeaderOnly: '仅旅行房主可确认结算',
+    budgetSettlementLoading: '正在加载结算信息…',
+    budgetSettlementError: '无法加载结算信息',
     dayDuration: m => `预计 ${m}`,
     dayZoneCount: n => `访问 ${n} 个区域`,
     offlineSyncNotice:

@@ -139,7 +139,15 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     accessToken,
     enabled: isApiPlan && !offlineMode,
   });
-  useTravelExpensesSync({
+  const {
+    syncExpenses,
+    settlement,
+    summary,
+    settlementLoading,
+    settlementError,
+    confirming,
+    confirmSettlement,
+  } = useTravelExpensesSync({
     planId,
     travelId,
     accessToken,
@@ -181,6 +189,18 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     );
   }, [authUser?.userId, isApiPlan, plan]);
 
+  const settlementConfirmed = settlement?.confirmed === true;
+  const canConfirmSettlement = canInvite && !settlementConfirmed && !offlineMode;
+
+  const settlementMemberSummaries = useMemo(() => {
+    const summaries = summary?.currencySummaries ?? [];
+    if (summaries.length === 0) {
+      return [];
+    }
+    const krw = summaries.find(item => item.currency === 'KRW');
+    return (krw ?? summaries[0]).memberSummaries ?? [];
+  }, [summary]);
+
   const loadInviteLink = useCallback(async () => {
     if (!accessToken || !travelId) {
       return;
@@ -216,12 +236,21 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
         return;
       }
 
+      if (settlementConfirmed) {
+        alert({
+          title: copy.budgetAdd,
+          message: copy.budgetSettlementLocked,
+        });
+        return;
+      }
+
       try {
         const request = budgetEntryToCreateRequest(entry);
         const created = await createTravelExpense(accessToken, travelId, request);
         addBudgetEntry(
           expenseCreateResponseToBudgetEntry(created, planId, request.participantIds),
         );
+        await syncExpenses();
       } catch (error) {
         alert({
           title: copy.budgetAdd,
@@ -234,11 +263,60 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
       addBudgetEntry,
       alert,
       copy.budgetAdd,
+      copy.budgetSettlementLocked,
       isApiPlan,
       planId,
+      settlementConfirmed,
+      syncExpenses,
       travelId,
     ],
   );
+
+  const handleConfirmSettlement = useCallback(() => {
+    if (!canConfirmSettlement) {
+      alert({
+        title: copy.budgetSettlementConfirm,
+        message: copy.budgetSettlementLeaderOnly,
+      });
+      return;
+    }
+
+    alert({
+      title: copy.budgetSettlementConfirmTitle,
+      message: copy.budgetSettlementConfirmMessage,
+      buttons: [
+        { label: copy.budgetCancel, variant: 'secondary', onPress: () => {} },
+        {
+          label: copy.budgetSettlementConfirmAction,
+          variant: 'primary',
+          onPress: () => {
+            void (async () => {
+              try {
+                await confirmSettlement();
+              } catch (error) {
+                alert({
+                  title: copy.budgetSettlementConfirm,
+                  message:
+                    error instanceof Error ? error.message : copy.budgetSettlementError,
+                });
+              }
+            })();
+          },
+        },
+      ],
+    });
+  }, [
+    alert,
+    canConfirmSettlement,
+    confirmSettlement,
+    copy.budgetCancel,
+    copy.budgetSettlementConfirm,
+    copy.budgetSettlementConfirmAction,
+    copy.budgetSettlementConfirmMessage,
+    copy.budgetSettlementConfirmTitle,
+    copy.budgetSettlementError,
+    copy.budgetSettlementLeaderOnly,
+  ]);
 
   const closeInviteModal = useCallback(() => {
     setInviteModalOpen(false);
@@ -1005,8 +1083,21 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
               budgetTotal={budgetTotal}
               members={enrichedPlan.members}
               onAddExpense={
-                offlineMode ? undefined : () => setBudgetModalOpen(true)
+                offlineMode || settlementConfirmed
+                  ? undefined
+                  : () => setBudgetModalOpen(true)
               }
+              showSettlement={isApiPlan && !offlineMode}
+              settlement={settlement}
+              memberSummaries={settlementMemberSummaries}
+              settlementLoading={settlementLoading}
+              settlementError={settlementError}
+              canConfirmSettlement={canConfirmSettlement}
+              confirmingSettlement={confirming}
+              onConfirmSettlement={handleConfirmSettlement}
+              onRetrySettlement={() => {
+                void syncExpenses();
+              }}
             />
           ),
           records: (
