@@ -199,19 +199,16 @@ async function buildFestivalsResponse(ctx: HelpDeskContext): Promise<string> {
 async function buildLockersResponse(ctx: HelpDeskContext): Promise<string> {
   const { language } = ctx;
   const anchor = resolveAnchor(ctx);
-  const stations = await fetchSubwayLockerStations();
+  const stations = await fetchSubwayLockerStations({
+    latitude: anchor.lat,
+    longitude: anchor.lng,
+    radius: 20_000,
+  });
 
-  const ranked = stations
-    .map(s => {
-      const d =
-        Math.abs(s.location.lat - anchor.lat) + Math.abs(s.location.lng - anchor.lng);
-      return { station: s, score: d };
-    })
-    .sort((a, b) => a.score - b.score)
-    .slice(0, 4);
+  const ranked = stations.slice(0, 4);
 
   const lines = ranked
-    .map(({ station: s }) => {
+    .map(s => {
       const detail = s.locationDetail ? ` (${s.locationDetail})` : '';
       return `• ${s.line}호선 ${s.name}${detail} — ${s.lockers.total}칸`;
     })
