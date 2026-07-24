@@ -39,7 +39,8 @@ type PlanState = {
   optimizeDayRoute: (planId: string, dayNumber: number) => void;
   addItineraryDay: (planId: string, dayNumber: number, visitDate: string) => void;
   removeItineraryDay: (planId: string, dayNumber: number) => void;
-  addBudgetEntry: (entry: Omit<BudgetEntry, 'entryId'>) => void;
+  addBudgetEntry: (entry: Omit<BudgetEntry, 'entryId'> & { entryId?: string }) => void;
+  setBudgetEntries: (planId: string, entries: BudgetEntry[]) => void;
   getBudgetForPlan: (planId: string) => BudgetEntry[];
   completePlan: (planId: string) => void;
   importPlanFromTravelRecord: (
@@ -301,7 +302,10 @@ export const usePlanStore = create<PlanState>()(
           }),
         })),
       addBudgetEntry: entry => {
-        const full: BudgetEntry = { ...entry, entryId: createId('exp-') };
+        const full: BudgetEntry = {
+          ...entry,
+          entryId: entry.entryId ?? createId('exp-'),
+        };
         set(state => ({
           budgetByPlan: {
             ...state.budgetByPlan,
@@ -309,6 +313,13 @@ export const usePlanStore = create<PlanState>()(
           },
         }));
       },
+      setBudgetEntries: (planId, entries) =>
+        set(state => ({
+          budgetByPlan: {
+            ...state.budgetByPlan,
+            [planId]: entries,
+          },
+        })),
       getBudgetForPlan: planId => get().budgetByPlan[planId] ?? [],
       completePlan: planId =>
         set(state => ({

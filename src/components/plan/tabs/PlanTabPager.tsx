@@ -84,7 +84,7 @@ export function PlanTabPager({
         onScrollEndDrag={syncTabFromScroll}
         scrollEventThrottle={16}>
         {TAB_ORDER.map(tab =>
-          tab === 'schedule' || tab === 'budget' ? (
+          tab === 'schedule' ? (
             <View key={tab} style={{ width, flex: 1 }}>
               {pages[tab]}
             </View>

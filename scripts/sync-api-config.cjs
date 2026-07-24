@@ -103,6 +103,16 @@ export const TRAVEL_TEAM_ENDPOINTS = {
   travelInvite: (travelId: string) => \`/api/v1/travel/team/\${travelId}/invite\`,
 } as const;
 
+export const TRAVEL_EXPENSE_ENDPOINTS = {
+  expenses: (travelId: string) => \`/api/v1/travels/\${travelId}/expenses\`,
+  expenseById: (travelId: string, expenseId: string) =>
+    \`/api/v1/travels/\${travelId}/expenses/\${expenseId}\`,
+  summary: (travelId: string) => \`/api/v1/travels/\${travelId}/expenses/summary\`,
+  settlements: (travelId: string) => \`/api/v1/travels/\${travelId}/expenses/settlements\`,
+  confirmSettlement: (travelId: string) =>
+    \`/api/v1/travels/\${travelId}/expenses/settlements/confirm\`,
+} as const;
+
 export const TRAVEL_RECORD_ENDPOINTS = {
   /** 여행 기록 초안 생성 */
   createDraft: (travelId: string) => \`/api/v1/travels/\${travelId}/records\`,
