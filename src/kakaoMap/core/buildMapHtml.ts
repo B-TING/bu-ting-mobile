@@ -189,8 +189,13 @@ window.renderKakaoMapOverlays = function (overlays) {
 
       if (overlay.active && overlay.subtitle) {
         var lockerSubtitle = document.createElement('div');
+        var subtitleColor = overlay.color || '#0077B6';
         lockerSubtitle.style.cssText =
-          'margin-top:2px;max-width:128px;padding:1px 4px;border-radius:3px;background:rgba(0,119,182,0.12);color:#0077B6;font-size:8px;font-weight:600;text-align:center;line-height:1.2;';
+          'margin-top:2px;max-width:128px;padding:1px 4px;border-radius:3px;background:rgba(255,255,255,0.94);color:' +
+          subtitleColor +
+          ';border:1px solid ' +
+          subtitleColor +
+          ';font-size:8px;font-weight:700;text-align:center;line-height:1.2;';
         lockerSubtitle.textContent = overlay.subtitle;
         lockerWrap.appendChild(lockerSubtitle);
       }
