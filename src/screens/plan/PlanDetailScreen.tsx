@@ -59,6 +59,11 @@ import type { BudgetEntry, RouteItem, TravelLegMode } from '../../types/travelPl
 import { sortedRoutes } from '../../utils/plan/planItinerary';
 import { optimizeRouteOrder } from '../../utils/plan/routeOptimize';
 import {
+  buildMemberSummariesFromBudgetEntries,
+  buildTransfersFromMemberSummaries,
+  pickCurrencyMemberSummaries,
+} from '../../utils/plan/budgetSettlementPreview';
+import {
   candidateToRouteItem,
   type RebootPlaceCandidate,
 } from '../../utils/places/rebootPlaces';
@@ -141,6 +146,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
   });
   const {
     syncExpenses,
+    refreshSettlementPreview,
     settlement,
     summary,
     settlementLoading,
@@ -193,13 +199,41 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
   const canConfirmSettlement = canInvite && !settlementConfirmed && !offlineMode;
 
   const settlementMemberSummaries = useMemo(() => {
-    const summaries = summary?.currencySummaries ?? [];
-    if (summaries.length === 0) {
+    const fromApi = pickCurrencyMemberSummaries(summary?.currencySummaries);
+    if (fromApi.length > 0) {
+      return fromApi;
+    }
+    if (!plan || budgetEntries.length === 0) {
       return [];
     }
-    const krw = summaries.find(item => item.currency === 'KRW');
-    return (krw ?? summaries[0]).memberSummaries ?? [];
-  }, [summary]);
+    return buildMemberSummariesFromBudgetEntries(budgetEntries, plan.members);
+  }, [budgetEntries, plan, summary]);
+
+  const settlementForDisplay = useMemo(() => {
+    if (!settlement && settlementMemberSummaries.length === 0) {
+      return null;
+    }
+
+    const apiTransfers = settlement?.transfers ?? [];
+    if (apiTransfers.length > 0 || settlementConfirmed) {
+      return (
+        settlement ?? {
+          travelId: travelId ?? '',
+          confirmed: false,
+          transfers: [],
+        }
+      );
+    }
+
+    const localTransfers = buildTransfersFromMemberSummaries(settlementMemberSummaries);
+    return {
+      travelId: settlement?.travelId ?? travelId ?? '',
+      confirmed: settlement?.confirmed ?? false,
+      confirmedById: settlement?.confirmedById,
+      confirmedAt: settlement?.confirmedAt,
+      transfers: localTransfers,
+    };
+  }, [settlement, settlementConfirmed, settlementMemberSummaries, travelId]);
 
   const loadInviteLink = useCallback(async () => {
     if (!accessToken || !travelId) {
@@ -250,7 +284,9 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
         addBudgetEntry(
           expenseCreateResponseToBudgetEntry(created, planId, request.participantIds),
         );
-        await syncExpenses();
+        // 정산 미리보기를 먼저 맞추고, 전체 목록은 백그라운드로 재동기화
+        await refreshSettlementPreview();
+        void syncExpenses();
       } catch (error) {
         alert({
           title: copy.budgetAdd,
@@ -266,6 +302,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
       copy.budgetSettlementLocked,
       isApiPlan,
       planId,
+      refreshSettlementPreview,
       settlementConfirmed,
       syncExpenses,
       travelId,
@@ -1088,7 +1125,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
                   : () => setBudgetModalOpen(true)
               }
               showSettlement={isApiPlan && !offlineMode}
-              settlement={settlement}
+              settlement={settlementForDisplay}
               memberSummaries={settlementMemberSummaries}
               settlementLoading={settlementLoading}
               settlementError={settlementError}

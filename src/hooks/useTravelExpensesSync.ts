@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 
 import {
@@ -70,6 +70,76 @@ export function useTravelExpensesSync({
   const [settlementLoading, setSettlementLoading] = useState(false);
   const [settlementError, setSettlementError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
+  /** 오래된 in-flight 동기화가 최신 정산을 덮어쓰지 않도록 */
+  const syncGenerationRef = useRef(0);
+
+  const fetchSettlementPreview = useCallback(
+    async (token: string, id: string) => {
+      const [settlementData, summaryData] = await Promise.all([
+        fetchTravelSettlements(token, id).catch(error => {
+          logTravelPlanApi('expenses.settlement.sync.error', '정산 조회 실패', {
+            level: 'warn',
+            detail: error,
+          });
+          return null;
+        }),
+        fetchTravelExpenseSummary(token, id).catch(error => {
+          logTravelPlanApi('expenses.summary.sync.error', '가계부 요약 조회 실패', {
+            level: 'warn',
+            detail: error,
+          });
+          return null;
+        }),
+      ]);
+      return { settlementData, summaryData };
+    },
+    [],
+  );
+
+  /** 지출 추가/수정 직후 — 정산·요약만 빠르게 재조회 */
+  const refreshSettlementPreview = useCallback(async () => {
+    if (!enabled || !accessToken || !travelId || !planId) {
+      return;
+    }
+
+    const plan = usePlanStore.getState().plans.find(p => p.planId === planId);
+    if (!plan || !isPlanForCurrentApiServer(plan)) {
+      return;
+    }
+
+    const generation = ++syncGenerationRef.current;
+    setSettlementLoading(true);
+    setSettlementError(null);
+
+    try {
+      const { settlementData, summaryData } = await fetchSettlementPreview(
+        accessToken,
+        travelId,
+      );
+      if (generation !== syncGenerationRef.current) {
+        return;
+      }
+      if (settlementData) {
+        setSettlement(settlementData);
+      }
+      if (summaryData) {
+        setSummary(summaryData);
+      }
+    } catch (error) {
+      if (generation !== syncGenerationRef.current) {
+        return;
+      }
+      logTravelPlanApi('expenses.settlement.refresh.error', '정산 미리보기 갱신 실패', {
+        level: 'warn',
+        detail: error,
+      });
+      setSettlementError(error instanceof Error ? error.message : 'sync failed');
+    } finally {
+      if (generation === syncGenerationRef.current) {
+        setSettlementLoading(false);
+      }
+    }
+  }, [accessToken, enabled, fetchSettlementPreview, planId, travelId]);
 
   const syncExpenses = useCallback(async () => {
     if (!enabled || !accessToken || !travelId || !planId) {
@@ -81,29 +151,25 @@ export function useTravelExpensesSync({
       return;
     }
 
+    const generation = ++syncGenerationRef.current;
     setSettlementLoading(true);
     setSettlementError(null);
 
     try {
-      const [entries, settlementData, summaryData] = await Promise.all([
-        loadBudgetEntriesFromApi(accessToken, travelId, planId),
-        fetchTravelSettlements(accessToken, travelId).catch(error => {
-          logTravelPlanApi('expenses.settlement.sync.error', '정산 조회 실패', {
-            level: 'warn',
-            detail: error,
-          });
-          return null;
-        }),
-        fetchTravelExpenseSummary(accessToken, travelId).catch(error => {
-          logTravelPlanApi('expenses.summary.sync.error', '가계부 요약 조회 실패', {
-            level: 'warn',
-            detail: error,
-          });
-          return null;
-        }),
-      ]);
-
+      // 경비 목록을 먼저 맞춘 뒤 정산/요약을 조회해, 느린 상세 로딩 중 추가된 지출과 미리보기가 어긋나지 않게 함
+      const entries = await loadBudgetEntriesFromApi(accessToken, travelId, planId);
+      if (generation !== syncGenerationRef.current) {
+        return;
+      }
       setBudgetEntries(planId, entries);
+
+      const { settlementData, summaryData } = await fetchSettlementPreview(
+        accessToken,
+        travelId,
+      );
+      if (generation !== syncGenerationRef.current) {
+        return;
+      }
       if (settlementData) {
         setSettlement(settlementData);
       }
@@ -111,15 +177,20 @@ export function useTravelExpensesSync({
         setSummary(summaryData);
       }
     } catch (error) {
+      if (generation !== syncGenerationRef.current) {
+        return;
+      }
       logTravelPlanApi('expenses.sync.error', '여행 가계부 동기화 실패', {
         level: 'warn',
         detail: error,
       });
       setSettlementError(error instanceof Error ? error.message : 'sync failed');
     } finally {
-      setSettlementLoading(false);
+      if (generation === syncGenerationRef.current) {
+        setSettlementLoading(false);
+      }
     }
-  }, [accessToken, enabled, planId, setBudgetEntries, travelId]);
+  }, [accessToken, enabled, fetchSettlementPreview, planId, setBudgetEntries, travelId]);
 
   const confirmSettlement = useCallback(async (): Promise<TravelSettlementResponse | null> => {
     if (!enabled || !accessToken || !travelId) {
@@ -129,6 +200,7 @@ export function useTravelExpensesSync({
     setConfirming(true);
     try {
       const result = await confirmTravelSettlement(accessToken, travelId);
+      syncGenerationRef.current += 1;
       setSettlement(result);
       return result;
     } catch (error) {
@@ -150,6 +222,7 @@ export function useTravelExpensesSync({
 
   return {
     syncExpenses,
+    refreshSettlementPreview,
     settlement,
     summary,
     settlementLoading,

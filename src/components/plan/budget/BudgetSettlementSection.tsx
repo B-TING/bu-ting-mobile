@@ -120,6 +120,7 @@ export function BudgetSettlementSection({
   const hasBalances = memberSummaries.length > 0;
   const hasTransfers = transfers.length > 0;
   const empty = !loading && !error && !hasBalances && !hasTransfers;
+  const showInitialLoading = loading && !hasBalances && !hasTransfers && !settlement;
 
   return (
     <View className="mt-4 overflow-hidden rounded-2xl border border-brand-border bg-brand-surface">
@@ -132,28 +133,33 @@ export function BudgetSettlementSection({
               : copy.budgetSettlementPreview}
           </Text>
         </View>
-        <View
-          className={`rounded-full px-2.5 py-1 ${
-            confirmed ? 'bg-brand-selected' : 'bg-brand-background'
-          }`}>
-          <Text
-            className={`text-[10px] font-bold ${
-              confirmed ? 'text-brand-primary' : 'text-brand-muted'
+        <View className="flex-row items-center gap-2">
+          {loading && !showInitialLoading ? (
+            <ActivityIndicator color={ICON_COLOR_PRIMARY} size="small" />
+          ) : null}
+          <View
+            className={`rounded-full px-2.5 py-1 ${
+              confirmed ? 'bg-brand-selected' : 'bg-brand-background'
             }`}>
-            {confirmed ? copy.budgetSettlementConfirmed : copy.budgetSettlementPreviewBadge}
-          </Text>
+            <Text
+              className={`text-[10px] font-bold ${
+                confirmed ? 'text-brand-primary' : 'text-brand-muted'
+              }`}>
+              {confirmed ? copy.budgetSettlementConfirmed : copy.budgetSettlementPreviewBadge}
+            </Text>
+          </View>
         </View>
       </View>
 
       <View className="px-4 py-3">
-        {loading ? (
+        {showInitialLoading ? (
           <View className="items-center py-4">
             <ActivityIndicator color={ICON_COLOR_PRIMARY} />
             <Text className="mt-2 text-xs text-brand-muted">{copy.budgetSettlementLoading}</Text>
           </View>
         ) : null}
 
-        {!loading && error ? (
+        {!showInitialLoading && error && !hasBalances && !hasTransfers ? (
           <View className="items-center py-3">
             <Text className="text-center text-sm text-brand-muted">{copy.budgetSettlementError}</Text>
             {onRetry ? (
@@ -166,13 +172,13 @@ export function BudgetSettlementSection({
           </View>
         ) : null}
 
-        {!loading && !error && empty ? (
+        {!showInitialLoading && empty ? (
           <Text className="py-2 text-center text-sm text-brand-muted">
             {copy.budgetSettlementEmpty}
           </Text>
         ) : null}
 
-        {!loading && !error && hasBalances ? (
+        {!showInitialLoading && hasBalances ? (
           <View className="mb-3">
             <Text className="mb-1 text-[10px] font-bold uppercase text-brand-muted">
               {copy.budgetSettlementBalances}
@@ -183,7 +189,7 @@ export function BudgetSettlementSection({
           </View>
         ) : null}
 
-        {!loading && !error && hasTransfers ? (
+        {!showInitialLoading && hasTransfers ? (
           <View>
             <Text className="mb-1 text-[10px] font-bold uppercase text-brand-muted">
               {copy.budgetSettlementTransfers}
@@ -198,7 +204,7 @@ export function BudgetSettlementSection({
           </View>
         ) : null}
 
-        {!loading && !error && !hasTransfers && hasBalances ? (
+        {!showInitialLoading && !hasTransfers && hasBalances ? (
           <Text className="mt-1 text-center text-xs text-brand-muted">
             {copy.budgetSettlementNoTransfers}
           </Text>
@@ -216,9 +222,9 @@ export function BudgetSettlementSection({
         {!confirmed && canConfirm && onConfirm ? (
           <Pressable
             onPress={onConfirm}
-            disabled={confirming || empty}
+            disabled={confirming || empty || loading}
             className={`mt-3 items-center rounded-2xl bg-brand-primary py-3 active:opacity-90 ${
-              confirming || empty ? 'opacity-50' : ''
+              confirming || empty || loading ? 'opacity-50' : ''
             }`}>
             <View className="flex-row items-center gap-1.5">
               {confirming ? (

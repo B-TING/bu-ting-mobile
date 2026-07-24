@@ -217,10 +217,13 @@ export async function fetchTravelExpenseSummary(
     ...authOpts(accessToken),
     ...expenseLogHooks('GET', url, accessToken, { travelId }),
   });
-  if (!data?.travelId) {
-    throw new TravelServiceError('Expense summary response missing travelId');
-  }
-  return data;
+  return {
+    travelId: data?.travelId ?? travelId,
+    expenseCount: data?.expenseCount ?? 0,
+    currencySummaries: data?.currencySummaries ?? [],
+    from: data?.from,
+    to: data?.to,
+  };
 }
 
 export async function fetchTravelSettlements(
@@ -232,10 +235,13 @@ export async function fetchTravelSettlements(
     ...authOpts(accessToken),
     ...expenseLogHooks('GET', url, accessToken, { travelId }),
   });
-  if (!data?.travelId) {
-    throw new TravelServiceError('Settlement response missing travelId');
-  }
-  return data;
+  return {
+    travelId: data?.travelId ?? travelId,
+    confirmed: data?.confirmed ?? false,
+    confirmedById: data?.confirmedById,
+    confirmedAt: data?.confirmedAt,
+    transfers: data?.transfers ?? [],
+  };
 }
 
 export async function confirmTravelSettlement(
@@ -247,8 +253,11 @@ export async function confirmTravelSettlement(
     ...authOpts(accessToken),
     ...expenseLogHooks('POST', url, accessToken, { travelId }),
   });
-  if (!data?.travelId) {
-    throw new TravelServiceError('Confirm settlement response missing travelId');
-  }
-  return data;
+  return {
+    travelId: data?.travelId ?? travelId,
+    confirmed: data?.confirmed ?? true,
+    confirmedById: data?.confirmedById,
+    confirmedAt: data?.confirmedAt,
+    transfers: data?.transfers ?? [],
+  };
 }

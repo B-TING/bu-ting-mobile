@@ -247,4 +247,40 @@ describe('travelExpenseService', () => {
     expect(result.confirmed).toBe(true);
     expect(mockApiPost.mock.calls[0][0]).toContain('/settlements/confirm');
   });
+
+  it('accepts summary/settlement payloads without travelId', async () => {
+    mockApiGet
+      .mockResolvedValueOnce({
+        expenseCount: 3,
+        currencySummaries: [
+          {
+            currency: 'KRW',
+            totalAmount: 80000,
+            categorySummaries: [],
+            memberSummaries: [
+              {
+                memberId: 'u1',
+                nickname: '방장',
+                paidAmount: 80000,
+                shareAmount: 80000,
+                balance: 0,
+              },
+            ],
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        confirmed: false,
+        transfers: [],
+      });
+
+    const summary = await fetchTravelExpenseSummary(accessToken, travelId);
+    const settlement = await fetchTravelSettlements(accessToken, travelId);
+
+    expect(summary.travelId).toBe(travelId);
+    expect(summary.expenseCount).toBe(3);
+    expect(summary.currencySummaries[0].memberSummaries).toHaveLength(1);
+    expect(settlement.travelId).toBe(travelId);
+    expect(settlement.transfers).toEqual([]);
+  });
 });
