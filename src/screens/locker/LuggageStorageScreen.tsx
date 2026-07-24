@@ -9,18 +9,30 @@ import { BackButton } from '../../components/shared/buttons/BackButton';
 import { AppIcon } from '../../components/shared/icons/AppIcon';
 import { useAppLanguage, useCopy } from '../../i18n';
 import { ICON_COLOR_MUTED, ICON_COLOR_PRIMARY } from '../../constants/icons';
+import { useCurrentEventZone } from '../../hooks/useCurrentEventZone';
 import type { RootStackParamList } from '../../navigation/types';
 import { fetchSubwayLockerStations } from '../../services/locker/subwayLockerService';
-import { useAppStore, useLockerBookmarkStore } from '../../stores';
+import { useLockerBookmarkStore } from '../../stores';
+import {
+  STORAGE_SEARCH_RADIUS_DEFAULT_M,
+} from '../../types/storageApi';
 import type { SubwayLockerStation } from '../../types/subwayLocker';
 import { sortLockerStations } from '../../utils/locker/subwayLockerSort';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LuggageStorage'>;
 
+function formatDistanceMeters(meters: number): string {
+  if (meters < 1000) {
+    return `${meters}m`;
+  }
+  return `${(meters / 1000).toFixed(meters < 10_000 ? 1 : 0)}km`;
+}
+
 export function LuggageStorageScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const language = useAppLanguage();
   const copy = useCopy('luggageStorage');
+  const { location } = useCurrentEventZone();
 
   const bookmarkedStationIds = useLockerBookmarkStore(s => s.bookmarkedStationIds);
   const toggleBookmark = useLockerBookmarkStore(s => s.toggleBookmark);
@@ -33,8 +45,13 @@ export function LuggageStorageScreen({ navigation }: Props) {
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
 
-    fetchSubwayLockerStations()
+    fetchSubwayLockerStations({
+      latitude: location.lat,
+      longitude: location.lng,
+      radius: STORAGE_SEARCH_RADIUS_DEFAULT_M,
+    })
       .then(data => {
         if (!cancelled) {
           setStations(data);
@@ -49,7 +66,7 @@ export function LuggageStorageScreen({ navigation }: Props) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [location.lat, location.lng]);
 
   const sortedStations = useMemo(
     () => sortLockerStations(stations, bookmarkedStationIds),
@@ -156,6 +173,9 @@ export function LuggageStorageScreen({ navigation }: Props) {
                         <AppIcon name="luggage" size={12} color={ICON_COLOR_MUTED} />
                         <Text className="text-xs text-brand-muted">
                           {copy.lineLabel(station.line)} · {station.lockers.total}
+                          {station.distanceMeters != null
+                            ? ` · ${formatDistanceMeters(station.distanceMeters)}`
+                            : ''}
                         </Text>
                       </View>
                     </Pressable>

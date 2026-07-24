@@ -47,4 +47,6 @@ export type SubwayLockerStation = {
   fees: LockerFeeGroup[];
   costRaw: string;
   company: string;
+  /** API 주변 검색 시 기준점으로부터의 거리(m) */
+  distanceMeters?: number;
 };

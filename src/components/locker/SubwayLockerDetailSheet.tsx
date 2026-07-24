@@ -119,6 +119,8 @@ export function SubwayLockerDetailSheet({
               />
             ))}
           </View>
+        ) : station.costRaw ? (
+          <DetailRow label={copy.costLabel} value={station.costRaw} />
         ) : null}
       </ScrollView>
     </AppModal>
