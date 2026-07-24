@@ -3,19 +3,24 @@ import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-nati
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { LockerLineFilterBar } from '../../components/locker/LockerLineFilterBar';
+import type { LockerLineFilter } from '../../components/locker/LockerLineFilterBar';
 import { LockerMapView } from '../../components/locker/LockerMapView';
 import { SubwayLockerDetailSheet } from '../../components/locker/SubwayLockerDetailSheet';
 import { BackButton } from '../../components/shared/buttons/BackButton';
 import { AppIcon } from '../../components/shared/icons/AppIcon';
 import { useAppLanguage, useCopy } from '../../i18n';
 import { ICON_COLOR_MUTED, ICON_COLOR_PRIMARY } from '../../constants/icons';
+import {
+  getSubwayLineColor,
+  getSubwayLineTint,
+  hasKnownSubwayLine,
+} from '../../constants/locker/subwayLineColors';
 import { useCurrentEventZone } from '../../hooks/useCurrentEventZone';
 import type { RootStackParamList } from '../../navigation/types';
 import { fetchSubwayLockerStations } from '../../services/locker/subwayLockerService';
 import { useLockerBookmarkStore } from '../../stores';
-import {
-  STORAGE_SEARCH_RADIUS_DEFAULT_M,
-} from '../../types/storageApi';
+import { STORAGE_SEARCH_RADIUS_DEFAULT_M } from '../../types/storageApi';
 import type { SubwayLockerStation } from '../../types/subwayLocker';
 import { sortLockerStations } from '../../utils/locker/subwayLockerSort';
 
@@ -26,6 +31,19 @@ function formatDistanceMeters(meters: number): string {
     return `${meters}m`;
   }
   return `${(meters / 1000).toFixed(meters < 10_000 ? 1 : 0)}km`;
+}
+
+function matchesLineFilter(
+  station: SubwayLockerStation,
+  filter: LockerLineFilter,
+): boolean {
+  if (filter === 'all') {
+    return true;
+  }
+  if (filter === 'unknown') {
+    return !hasKnownSubwayLine(station.line);
+  }
+  return station.line === filter;
 }
 
 export function LuggageStorageScreen({ navigation }: Props) {
@@ -42,6 +60,7 @@ export function LuggageStorageScreen({ navigation }: Props) {
   const [loading, setLoading] = useState(true);
   const [selectedStation, setSelectedStation] = useState<SubwayLockerStation | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [lineFilter, setLineFilter] = useState<LockerLineFilter>('all');
 
   useEffect(() => {
     let cancelled = false;
@@ -68,14 +87,44 @@ export function LuggageStorageScreen({ navigation }: Props) {
     };
   }, [location.lat, location.lng]);
 
-  const sortedStations = useMemo(
-    () => sortLockerStations(stations, bookmarkedStationIds),
-    [stations, bookmarkedStationIds],
-  );
+  const availableLines = useMemo(() => {
+    const lines = new Set<number>();
+    let hasUnknown = false;
+    for (const station of stations) {
+      if (hasKnownSubwayLine(station.line)) {
+        lines.add(station.line);
+      } else {
+        hasUnknown = true;
+      }
+    }
+    return {
+      lines: [...lines].sort((a, b) => a - b),
+      hasUnknown,
+    };
+  }, [stations]);
+
+  const filteredStations = useMemo(() => {
+    const sorted = sortLockerStations(stations, bookmarkedStationIds);
+    return sorted.filter(station => matchesLineFilter(station, lineFilter));
+  }, [stations, bookmarkedStationIds, lineFilter]);
 
   const totalLockers = useMemo(
-    () => stations.reduce((sum, station) => sum + station.lockers.total, 0),
-    [stations],
+    () => filteredStations.reduce((sum, station) => sum + station.lockers.total, 0),
+    [filteredStations],
+  );
+
+  const handleLineFilterChange = useCallback(
+    (next: LockerLineFilter) => {
+      setLineFilter(next);
+      setSelectedStation(current => {
+        if (!current || matchesLineFilter(current, next)) {
+          return current;
+        }
+        setDetailOpen(false);
+        return null;
+      });
+    },
+    [],
   );
 
   const handleSelectStation = useCallback((station: SubwayLockerStation) => {
@@ -122,14 +171,14 @@ export function LuggageStorageScreen({ navigation }: Props) {
         <View className="min-h-0 flex-1">
           <View className="border-b border-brand-border bg-brand-surface px-4 py-2">
             <Text className="text-sm font-semibold text-brand-text">
-              {copy.summary(stations.length, totalLockers)}
+              {copy.summary(filteredStations.length, totalLockers)}
             </Text>
             <Text className="mt-0.5 text-[11px] text-brand-muted">{copy.dataHint}</Text>
           </View>
 
           <View className="min-h-0 flex-1">
             <LockerMapView
-              stations={sortedStations}
+              stations={filteredStations}
               selectedId={selectedStation?.id}
               bookmarkedIds={bookmarkedStationIds}
               onSelectStation={handleSelectStation}
@@ -142,15 +191,26 @@ export function LuggageStorageScreen({ navigation }: Props) {
           </View>
 
           {!detailOpen ? (
-            <View className="max-h-40 border-t border-brand-border bg-brand-surface">
-              <Text className="px-4 pt-3 text-xs text-brand-muted">{copy.selectStationHint}</Text>
+            <View className="border-t border-brand-border bg-brand-surface">
+              <LockerLineFilterBar
+                lines={availableLines.lines}
+                hasUnknown={availableLines.hasUnknown}
+                value={lineFilter}
+                onChange={handleLineFilterChange}
+                allLabel={copy.lineFilterAll}
+                unknownLabel={copy.lineUnknown}
+                lineLabel={copy.lineLabel}
+              />
+              <Text className="px-4 pt-2 text-xs text-brand-muted">{copy.selectStationHint}</Text>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12, gap: 8 }}>
-                {sortedStations.map(station => {
+                {filteredStations.map(station => {
                   const bookmarked = isBookmarked(station.id);
                   const selected = selectedStation?.id === station.id;
+                  const lineColor = getSubwayLineColor(station.line);
+                  const lineTint = getSubwayLineTint(station.line);
 
                   return (
                     <Pressable
@@ -169,10 +229,17 @@ export function LuggageStorageScreen({ navigation }: Props) {
                         ) : null}
                         <Text className="text-sm font-bold text-brand-text">{station.name}</Text>
                       </View>
-                      <View className="mt-0.5 flex-row items-center gap-1">
+                      <View className="mt-1 flex-row items-center gap-1.5">
+                        <View
+                          className="rounded-full px-2 py-0.5"
+                          style={{ backgroundColor: lineTint }}>
+                          <Text className="text-[10px] font-bold" style={{ color: lineColor }}>
+                            {copy.lineLabel(station.line)}
+                          </Text>
+                        </View>
                         <AppIcon name="luggage" size={12} color={ICON_COLOR_MUTED} />
                         <Text className="text-xs text-brand-muted">
-                          {copy.lineLabel(station.line)} · {station.lockers.total}
+                          {station.lockers.total}
                           {station.distanceMeters != null
                             ? ` · ${formatDistanceMeters(station.distanceMeters)}`
                             : ''}

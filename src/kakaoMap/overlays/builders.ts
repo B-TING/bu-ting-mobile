@@ -1,5 +1,6 @@
 import { getScheduleDayColor } from '../../constants/plan/scheduleDayColors';
 import type { SubwayLockerStation } from '../../types/subwayLocker';
+import { getSubwayLineColor } from '../../constants/locker/subwayLineColors';
 import type { RouteItem } from '../../types/travelPlan';
 import type { KakaoMapOverlay } from './types';
 import type {
@@ -155,7 +156,7 @@ export function kakaoOverlaysFromLockerStations(
   return stations.map(station => {
     const active = station.id === selectedId;
     const bookmarked = bookmarkSet.has(station.id);
-    const pinColor = bookmarked ? '#F59E0B' : '#4285F4';
+    const pinColor = getSubwayLineColor(station.line);
 
     return {
       kind: 'locker',
@@ -167,8 +168,7 @@ export function kakaoOverlaysFromLockerStations(
       color: pinColor,
       active,
       bookmarked,
-      subtitle:
-        active && lineLabel ? lineLabel(station.line) : undefined,
+      subtitle: active && lineLabel ? lineLabel(station.line || 0) : undefined,
     };
   });
 }

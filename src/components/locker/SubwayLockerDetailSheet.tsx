@@ -5,6 +5,10 @@ import type { SubwayLockerStation } from '../../types/subwayLocker';
 import {
   ICON_COLOR_STAR_EMPTY,
 } from '../../constants/icons';
+import {
+  getSubwayLineColor,
+  getSubwayLineTint,
+} from '../../constants/locker/subwayLineColors';
 import { AppIcon } from '../shared/icons/AppIcon';
 import { AppModal, AppModalActions } from '../shared/modals';
 import { LockerInventoryTable } from './LockerInventoryTable';
@@ -49,6 +53,9 @@ export function SubwayLockerDetailSheet({
     return null;
   }
 
+  const lineColor = getSubwayLineColor(station.line);
+  const lineTint = getSubwayLineTint(station.line);
+
   return (
     <AppModal
       visible={visible}
@@ -69,8 +76,8 @@ export function SubwayLockerDetailSheet({
         <View className="flex-row items-center justify-between gap-2">
           <View className="min-w-0 flex-1 flex-row items-center gap-2">
             <Text className="text-xl font-bold text-brand-text">{station.name}</Text>
-            <View className="rounded-full bg-brand-selected px-2.5 py-1">
-              <Text className="text-[10px] font-semibold text-brand-primary">
+            <View className="rounded-full px-2.5 py-1" style={{ backgroundColor: lineTint }}>
+              <Text className="text-[10px] font-semibold" style={{ color: lineColor }}>
                 {copy.lineLabel(station.line)}
               </Text>
             </View>
