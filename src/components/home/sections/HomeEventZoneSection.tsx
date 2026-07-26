@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { CompactBusanZoneMap } from '../../eventZone/CompactBusanZoneMap';
@@ -15,7 +14,6 @@ import { useEventZoneCarousel } from '../../../hooks/useEventZoneCarousel';
 import { useZoneChatRoomSummary } from '../../../hooks/useZoneChatRoomSummary';
 import { useZoneEventStore } from '../../../stores';
 import type { EventZoneId } from '../../../types/eventZone';
-import { isInsideBusanBounds } from '../../../utils/eventZone/zoneResolver';
 import { GUIDE_TARGET } from '../../guide/guideTypes';
 import { GuideTarget } from '../../guide/GuideTarget';
 
@@ -44,12 +42,9 @@ export function HomeEventZoneSection({
   const language = useAppLanguage();
   const copy = useCopy('homeEventZone');
   const zoneCopy = useCopy('eventZone');
-  const { zoneId: userZoneId, location, usedFallback } = useCurrentEventZone();
+  const { zoneId: userZoneId, usedFallback } = useCurrentEventZone();
 
-  const isOutsideBusan = useMemo(
-    () => !usedFallback && !isInsideBusanBounds(location),
-    [location, usedFallback],
-  );
+  const isOutsideBusan = userZoneId == null && !usedFallback;
 
   const { mapZoneId, chatZoneId, fadeAnim, carouselIndex, zoneCount, isCycling } =
     useEventZoneCarousel(isOutsideBusan, userZoneId);
@@ -82,6 +77,12 @@ export function HomeEventZoneSection({
           </Text>
         )}
       </View>
+
+      {isCycling ? (
+        <Text className="mb-2 text-xs font-semibold text-brand-muted">
+          {copy.outsideBusanHint}
+        </Text>
+      ) : null}
 
       <View className="relative w-full" style={{ height: WIDGET_BODY_HEIGHT }}>
         <View className="absolute inset-0 overflow-hidden">

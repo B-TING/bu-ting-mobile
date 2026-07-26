@@ -91,15 +91,17 @@ export function EventZoneScreen({ navigation }: Props) {
     );
   };
 
-  const currentZone = EVENT_ZONE_BY_ID[currentZoneId];
+  const currentZone = currentZoneId ? EVENT_ZONE_BY_ID[currentZoneId] : null;
   const selectedZone = selectedZoneId ? EVENT_ZONE_BY_ID[selectedZoneId] : null;
   const { memberCounts: liveMemberCounts } = useAllZoneChatMemberCounts();
-  const currentLiveMemberCount = liveMemberCounts[currentZoneId] ?? null;
+  const currentLiveMemberCount = currentZoneId
+    ? (liveMemberCounts[currentZoneId] ?? null)
+    : null;
   const selectedLiveMemberCount = selectedZoneId
     ? (liveMemberCounts[selectedZoneId] ?? null)
     : null;
   const currentZoneRoom = useMemo(
-    () => getChatRoomByZoneId(currentZoneId),
+    () => (currentZoneId ? getChatRoomByZoneId(currentZoneId) : undefined),
     [currentZoneId],
   );
   const selectedZoneRoom = useMemo(
@@ -149,8 +151,15 @@ export function EventZoneScreen({ navigation }: Props) {
                 room={currentZoneRoom}
                 language={language}
                 currentZoneLabel={copy.currentZoneLabel}
+                noZoneLabel={copy.noZoneLabel}
                 memberCountLabel={copy.chatMemberCount}
-                fallbackHint={usedFallback ? copy.locationFallbackHint : undefined}
+                fallbackHint={
+                  usedFallback
+                    ? copy.locationFallbackHint
+                    : currentZoneId == null
+                      ? copy.outsideBusanHint
+                      : undefined
+                }
                 liveMemberCount={currentLiveMemberCount}
               />
             ) : null}
