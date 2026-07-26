@@ -41,7 +41,7 @@
 	<key>NSMicrophoneUsageDescription</key>
 	<string>장소 방문 후기에 영상을 촬영하려면 마이크 접근이 필요합니다.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
+	<string>인근 시설·여행지 검색과 채팅 구역 설정을 위해 앱 사용 중 위치 정보가 필요합니다.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIRequiredDeviceCapabilities</key>
