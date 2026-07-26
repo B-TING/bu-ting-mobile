@@ -1,19 +1,29 @@
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import {
+  Alert,
+  Image,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 
 import { REVIEW_TAG_PRESETS } from '../../../constants/review/travelReview';
-import type { LucideIconName } from '../../../constants/icons';
-import { LUCIDE_ICONS } from '../../../constants/icons';
+import { ICON_COLOR_PRIMARY } from '../../../constants/icons';
 import type { CopyFor } from '../../../i18n';
 import type { AppLanguage } from '../../../types/user';
 import type { PlaceReview, ReviewMedia } from '../../../types/travelReview';
 import type { RouteItem } from '../../../types/travelPlan';
 import { createId } from '../../../utils/common/id';
+import { pickReviewMedia } from '../../../utils/media/pickMedia';
 import { StarRating } from '../../shared/rating/StarRating';
 import { AppIcon } from '../../shared/icons/AppIcon';
 import { AppModal, AppModalActions } from '../../shared/modals';
 
 type Copy = CopyFor<'travelReview'>;
+
+const MAX_MEDIA = 20;
 
 type PlaceReviewFormModalProps = {
   visible: boolean;
@@ -21,21 +31,25 @@ type PlaceReviewFormModalProps = {
   existing?: PlaceReview;
   copy: Copy;
   language: AppLanguage;
-  planId: string;
   onClose: () => void;
-  onSave: (payload: Omit<PlaceReview, 'reviewId' | 'createdAt' | 'updatedAt'> & {
-    reviewId?: string;
-  }) => void;
+  onSave: (
+    payload: Omit<PlaceReview, 'placeReviewId' | 'createdAt' | 'updatedAt'> & {
+      placeReviewId?: string;
+    },
+  ) => void | Promise<void>;
+  /** 기존 후기 삭제 (일정 장소는 유지) */
+  onDelete?: () => void | Promise<void>;
+  saving?: boolean;
 };
 
-const MOCK_PHOTO_ICONS: LucideIconName[] = ['camera', 'waves', 'utensils', 'flower2', 'building2'];
-const MOCK_VIDEO_ICON: LucideIconName = 'film';
-
-function mockMediaIcon(thumbnailUri?: string): LucideIconName {
-  if (thumbnailUri && thumbnailUri in LUCIDE_ICONS) {
-    return thumbnailUri as LucideIconName;
-  }
-  return 'paperclip';
+function isDisplayableImageUri(uri: string): boolean {
+  return (
+    uri.startsWith('http://') ||
+    uri.startsWith('https://') ||
+    uri.startsWith('file://') ||
+    uri.startsWith('content://') ||
+    uri.startsWith('ph://')
+  );
 }
 
 export function PlaceReviewFormModal({
@@ -44,17 +58,22 @@ export function PlaceReviewFormModal({
   existing,
   copy,
   language,
-  planId,
   onClose,
   onSave,
+  onDelete,
+  saving = false,
 }: PlaceReviewFormModalProps) {
   const [rating, setRating] = useState(5);
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
-  const [comment, setComment] = useState('');
+  const [content, setContent] = useState('');
   const [media, setMedia] = useState<ReviewMedia[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [picking, setPicking] = useState(false);
 
   const presets = REVIEW_TAG_PRESETS[language];
+  const canDelete = Boolean(existing?.placeReviewId && onDelete);
 
   useEffect(() => {
     if (!visible || !route) {
@@ -63,7 +82,7 @@ export function PlaceReviewFormModal({
     setRating(existing?.rating ?? 5);
     setTags(existing?.tags ?? []);
     setTagInput('');
-    setComment(existing?.comment ?? '');
+    setContent(existing?.content ?? '');
     setMedia(existing?.media ?? []);
   }, [visible, route, existing]);
 
@@ -84,65 +103,149 @@ export function PlaceReviewFormModal({
     setTags(prev => prev.filter(t => t !== tag));
   };
 
-  const addMockPhoto = () => {
-    const idx = media.filter(m => m.type === 'image').length;
-    setMedia(prev => [
-      ...prev,
-      {
-        mediaId: createId('med-'),
-        type: 'image',
-        uri: `local://photo-${Date.now()}`,
-        thumbnailUri: MOCK_PHOTO_ICONS[idx % MOCK_PHOTO_ICONS.length],
-      },
-    ]);
+  const busy = submitting || saving || deleting || picking;
+
+  const showPickError = (result: Awaited<ReturnType<typeof pickReviewMedia>>) => {
+    if (result.status === 'denied') {
+      Alert.alert(copy.mediaPermissionDenied);
+      return;
+    }
+    if (result.status === 'error') {
+      Alert.alert(result.message || copy.mediaPickFailed);
+    }
   };
 
-  const addMockVideo = () => {
-    setMedia(prev => [
-      ...prev,
-      {
-        mediaId: createId('med-'),
-        type: 'video',
-        uri: `local://video-${Date.now()}`,
-        thumbnailUri: MOCK_VIDEO_ICON,
-      },
-    ]);
+  const addMedia = async (mediaType: 'image' | 'video') => {
+    if (picking || busy) {
+      return;
+    }
+    if (media.length >= MAX_MEDIA) {
+      Alert.alert(copy.mediaLimitReached);
+      return;
+    }
+    setPicking(true);
+    try {
+      const result = await pickReviewMedia({
+        mediaType,
+        labels: {
+          title: mediaType === 'video' ? copy.addVideo : copy.addPhoto,
+          chooseFromLibrary: copy.chooseFromLibrary,
+          takePhoto: copy.takePhoto,
+          takeVideo: copy.takeVideo,
+          cancel: copy.cancel,
+          unsupportedVideoFormat: copy.unsupportedVideoFormat,
+          unsupportedImageFormat: copy.unsupportedImageFormat,
+          fileTooLarge: copy.fileTooLarge,
+        },
+      });
+      if (result.status !== 'ok') {
+        showPickError(result);
+        return;
+      }
+      setMedia(prev => {
+        if (prev.length >= MAX_MEDIA) {
+          return prev;
+        }
+        return [
+          ...prev,
+          {
+            mediaId: createId('med-'),
+            type: result.asset.type,
+            uri: result.asset.uri,
+            fileName: result.asset.fileName,
+            mimeType: result.asset.mimeType,
+          },
+        ];
+      });
+    } finally {
+      setPicking(false);
+    }
   };
 
   const removeMedia = (mediaId: string) => {
     setMedia(prev => prev.filter(m => m.mediaId !== mediaId));
   };
 
-  const handleSave = () => {
-    onSave({
-      reviewId: existing?.reviewId,
-      planId,
-      routeItemId: route.itemId,
-      placeId: route.placeId,
-      placeName: route.placeName,
-      rating,
-      tags,
-      comment: comment.trim(),
-      media,
-    });
-    onClose();
+  const handleSave = async () => {
+    if (submitting || saving || deleting || picking) {
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await onSave({
+        placeReviewId: existing?.placeReviewId,
+        planPlaceId: route.apiPlanPlaceId ?? null,
+        travelRecordPlaceId: existing?.travelRecordPlaceId ?? null,
+        placeName: route.placeName,
+        rating,
+        tags,
+        content: content.trim() || null,
+        media,
+      });
+      onClose();
+    } catch {
+      // 실패 알림은 부모 onSave 에서 처리. Unhandled rejection 방지.
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  const handleDelete = async () => {
+    if (!onDelete || submitting || saving || deleting) {
+      return;
+    }
+    setDeleting(true);
+    try {
+      await onDelete();
+      onClose();
+    } catch {
+      // 취소·실패 시 모달 유지 (실패 알림은 부모에서 처리)
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const footerActions = [
+    {
+      label: copy.cancel,
+      onPress: onClose,
+      variant: 'secondary' as const,
+      disabled: busy,
+    },
+    ...(canDelete
+      ? [
+          {
+            label: deleting
+              ? language === 'ko'
+                ? '삭제 중…'
+                : 'Deleting…'
+              : copy.deleteReview,
+            onPress: () => {
+              void handleDelete();
+            },
+            variant: 'danger' as const,
+            disabled: busy,
+          },
+        ]
+      : []),
+    {
+      label: copy.save,
+      onPress: () => {
+        void handleSave();
+      },
+      variant: 'primary' as const,
+      disabled: busy,
+    },
+  ];
 
   return (
     <AppModal
       visible={visible}
-      onClose={onClose}
-      title={copy.reviewTitle}
+      onClose={busy ? () => undefined : onClose}
+      title={existing ? copy.editReview : copy.reviewTitle}
       maxHeight="90%"
       keyboardAware
-      footer={
-        <AppModalActions
-          actions={[
-            { label: copy.cancel, onPress: onClose, variant: 'secondary' },
-            { label: copy.save, onPress: handleSave, variant: 'primary' },
-          ]}
-        />
-      }>
+      footer={<AppModalActions actions={footerActions} />}>
       <ScrollView
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 16 }}
         keyboardShouldPersistTaps="handled"
@@ -204,8 +307,8 @@ export function PlaceReviewFormModal({
 
         <Text className="mb-2 mt-2 text-xs font-bold text-brand-muted">{copy.commentLabel}</Text>
         <TextInput
-          value={comment}
-          onChangeText={setComment}
+          value={content}
+          onChangeText={setContent}
           placeholder={copy.commentPlaceholder}
           placeholderTextColor="#94A3B8"
           multiline
@@ -217,32 +320,63 @@ export function PlaceReviewFormModal({
         <Text className="mb-2 text-xs font-bold text-brand-muted">{copy.mediaLabel}</Text>
         <View className="mb-2 flex-row gap-2">
           <Pressable
-            onPress={addMockPhoto}
+            onPress={() => {
+              void addMedia('image');
+            }}
+            disabled={busy}
             className="flex-1 items-center rounded-xl border border-dashed border-brand-border bg-brand-surface py-3 active:opacity-80">
             <Text className="text-sm font-semibold text-brand-primary">{copy.addPhoto}</Text>
           </Pressable>
           <Pressable
-            onPress={addMockVideo}
+            onPress={() => {
+              void addMedia('video');
+            }}
+            disabled={busy}
             className="flex-1 items-center rounded-xl border border-dashed border-brand-border bg-brand-surface py-3 active:opacity-80">
             <Text className="text-sm font-semibold text-brand-primary">{copy.addVideo}</Text>
           </Pressable>
         </View>
         {media.length > 0 ? (
           <View className="mb-2 flex-row flex-wrap gap-2">
-            {media.map(item => (
-              <Pressable
-                key={item.mediaId}
-                onPress={() => removeMedia(item.mediaId)}
-                className="h-16 w-16 items-center justify-center rounded-xl bg-brand-selected">
-                <AppIcon name={mockMediaIcon(item.thumbnailUri)} size={24} />
-                <Text className="text-[8px] text-brand-muted">
-                  {item.type === 'video' ? 'VIDEO' : 'PHOTO'}
-                </Text>
-              </Pressable>
-            ))}
+            {media.map(item => {
+              const showImage =
+                item.type === 'image' && isDisplayableImageUri(item.uri);
+              return (
+                <Pressable
+                  key={item.mediaId}
+                  onPress={() => removeMedia(item.mediaId)}
+                  className="relative h-16 w-16 overflow-hidden rounded-xl bg-brand-selected">
+                  {showImage ? (
+                    <Image
+                      source={{ uri: item.uri }}
+                      style={{ width: '100%', height: '100%' }}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View className="h-full w-full items-center justify-center">
+                      <AppIcon
+                        name={item.type === 'video' ? 'film' : 'camera'}
+                        size={24}
+                        color={ICON_COLOR_PRIMARY}
+                      />
+                    </View>
+                  )}
+                  {item.type === 'video' ? (
+                    <View className="absolute bottom-0 left-0 right-0 bg-black/50 py-0.5">
+                      <Text className="text-center text-[8px] font-bold text-white">
+                        VIDEO
+                      </Text>
+                    </View>
+                  ) : null}
+                  <View className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5">
+                    <AppIcon name="x" size={10} color="#FFFFFF" />
+                  </View>
+                </Pressable>
+              );
+            })}
           </View>
         ) : null}
-        <Text className="mb-4 text-[10px] text-brand-muted">{copy.mediaMockHint}</Text>
+        <Text className="mb-4 text-[10px] text-brand-muted">{copy.mediaHint}</Text>
       </ScrollView>
     </AppModal>
   );

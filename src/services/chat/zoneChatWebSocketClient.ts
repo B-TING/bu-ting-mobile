@@ -2,7 +2,13 @@ import {
   ZONE_CHAT_WS_CONFIG,
   buildZoneChatWebSocketUrl,
 } from '../../constants/chat/zoneChatConfig';
-import type { ChatMessage, ChatSendPayload, ParsedChatRoomStatusPayload } from '../../types/chatApi';
+import type {
+  ChatMessage,
+  ChatMessageRaw,
+  ChatSendPayload,
+  ParsedChatRoomStatusPayload,
+} from '../../types/chatApi';
+import { normalizeChatMessage } from '../../types/chatApi';
 import { isChatStatusDestination, parseChatRoomStatusBody } from '../../types/chatApi';
 import type {
   ZoneChatConnectionStatus,
@@ -336,7 +342,8 @@ export class ZoneChatWebSocketClient {
     }
 
     try {
-      const message = JSON.parse(frame.body) as ChatMessage;
+      const raw = JSON.parse(frame.body) as ChatMessageRaw;
+      const message = normalizeChatMessage(raw);
       logZoneChat('stomp.message', 'Received chat message', {
         detail: { messageId: message.messageId, roomId: message.roomId },
       });

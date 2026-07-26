@@ -20,7 +20,11 @@ export {
   selectPlanById,
   usePlanStore,
 } from './usePlanStore';
-export { EMPTY_REVIEWS, EMPTY_SOCIAL, useTravelogueStore } from './useTravelogueStore';
+export {
+  EMPTY_REVIEWS,
+  useTravelRecordStore,
+} from './useTravelRecordStore';
+export { useTravelRecordBookmarkStore } from './useTravelRecordBookmarkStore';
 export { useLockerBookmarkStore } from './useLockerBookmarkStore';
 export { useZoneEventStore } from './useZoneEventStore';
 export {

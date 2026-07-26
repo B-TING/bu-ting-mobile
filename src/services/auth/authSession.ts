@@ -26,6 +26,7 @@ import { syncSessionActiveTravels } from '../travel/syncSessionActiveTravels';
 import { useAppStore } from '../../stores/useAppStore';
 
 import { usePlanStore } from '../../stores/usePlanStore';
+import { useTravelRecordBookmarkStore } from '../../stores/useTravelRecordBookmarkStore';
 
 import {
 
@@ -360,6 +361,7 @@ export async function logoutSession(): Promise<void> {
   useAuthStore.getState().clearSession();
 
   usePlanStore.getState().clearActivePlan();
+  useTravelRecordBookmarkStore.getState().reset();
 
 
 

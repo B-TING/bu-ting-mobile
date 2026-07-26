@@ -33,7 +33,7 @@ import { countScheduleZoneSegments } from '../../../utils/plan/scheduleZoneGroup
 import { resolveEventZoneForRoute } from '../../../utils/eventZone/zoneResolver';
 import { estimateTravelLeg } from '../../../utils/geo/geo';
 import { computeDayTotalMinutes, formatDurationMinutes } from '../../../utils/geo/tripDuration';
-import { getReviewForRoute } from '../../../utils/review/travelReview';
+import { getReviewForPlace } from '../../../utils/review/travelReview';
 
 type Copy = CopyFor<'planDetail'>;
 
@@ -386,7 +386,10 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
       const indexHint = indexSelected
         ? copy.reorderHandleHintSelected
         : copy.reorderHandleHint;
-      const review = getReviewForRoute(planReviews, r.itemId);
+      const review = getReviewForPlace(
+        planReviews,
+        r.apiPlanPlaceId ?? r.itemId,
+      );
       const zoneColor =
         EVENT_ZONE_BY_ID[resolveEventZoneForRoute(r)].baseColor;
 
@@ -440,7 +443,10 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
         language={language}
         copy={copy}
         layout="sheetHeader"
-        placeReview={getReviewForRoute(planReviews, focusedRoute.itemId)}
+        placeReview={getReviewForPlace(
+          planReviews,
+          focusedRoute.apiPlanPlaceId ?? focusedRoute.itemId,
+        )}
         onToggleVisited={() => {
           if (guardReadOnly()) {
             return;

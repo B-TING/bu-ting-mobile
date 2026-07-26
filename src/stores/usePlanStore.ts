@@ -7,10 +7,10 @@ import { enrichPlaceInfo } from '../constants/places/placeCatalog';
 import { isTourApiContentId, routeTypeToContentTypeId } from '../utils/places/routePlaceDetail';
 import type { PlanWizardAnswers } from '../types/planWizard';
 import type { BudgetEntry, RouteItem, TravelLegMode, TravelPlan } from '../types/travelPlan';
-import type { Travelogue } from '../types/travelReview';
+import type { TravelRecord } from '../types/travelReview';
 import { isPlanForCurrentApiServer } from '../utils/api/apiServerOrigin';
 import { createId } from '../utils/common/id';
-import { buildPlanFromTravelogue } from '../utils/review/travelReview';
+import { buildPlanFromTravelRecord } from '../utils/review/travelReview';
 import { optimizeRouteOrder } from '../utils/plan/routeOptimize';
 import { isServerBackedPlan } from '../utils/plan/serverBackedPlan';
 
@@ -43,8 +43,8 @@ type PlanState = {
   setBudgetEntries: (planId: string, entries: BudgetEntry[]) => void;
   getBudgetForPlan: (planId: string) => BudgetEntry[];
   completePlan: (planId: string) => void;
-  importPlanFromTravelogue: (
-    travelogue: Travelogue,
+  importPlanFromTravelRecord: (
+    travelRecord: TravelRecord,
     member: { userId: string; displayName: string },
   ) => TravelPlan | null;
   replacePlan: (plan: TravelPlan) => void;
@@ -329,9 +329,11 @@ export const usePlanStore = create<PlanState>()(
               : p,
           ),
         })),
-      importPlanFromTravelogue: (travelogue, member) => {
-        const linked = get().plans.find(p => p.planId === travelogue.planId) ?? null;
-        const plan = buildPlanFromTravelogue(travelogue, linked, member, createId);
+      importPlanFromTravelRecord: (travelRecord, member) => {
+        const linked = travelRecord.travelId
+          ? (get().plans.find(p => p.planId === travelRecord.travelId) ?? null)
+          : null;
+        const plan = buildPlanFromTravelRecord(travelRecord, linked, member, createId);
         if (!plan) {
           return null;
         }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import type { NavigationProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,17 +9,13 @@ import { HeroBanner } from '../components/home/banners/HeroBanner';
 import { EventsSectionMock } from '../components/home/sections/EventsSectionMock';
 import { HomeEventZoneSection } from '../components/home/sections/HomeEventZoneSection';
 import { QuickAccessRow } from '../components/home/sections/QuickAccessRow';
-import { TraveloguePreviewMock } from '../components/home/sections/TraveloguePreviewMock';
+import { TraveloguePreview } from '../components/home/sections/TraveloguePreview';
 import { HomeActionFabs, FAB_GAP, FAB_SIZE } from '../components/helpdesk/HomeActionFabs';
 import { GUIDE_TARGET } from '../components/guide/guideTypes';
 import { ROUTE_FAB_BOTTOM_OFFSET } from '../components/plan/fab/RouteOptimizeFab';
 import { getNavbarOverlayHeight } from '../components/shared/navigation/Navbar';
 import { useAppAlert } from '../components/shared/modals';
-import {
-  MOCK_SPECIAL_OFFER,
-  MOCK_TRAVELOGUE,
-  QUICK_ACCESS_ITEMS,
-} from '../constants/home/mainHome';
+import { QUICK_ACCESS_ITEMS } from '../constants/home/mainHome';
 import { festivalToHomeEvent } from '../constants/festival/festivalCalendar';
 import { layout } from '../constants/common/layout';
 import { useMainTabNavigation } from '../navigation/mainTabNavigation';
@@ -28,16 +24,27 @@ import type { RootStackParamList } from '../navigation/types';
 import { PLACE_CONTENT_TYPE } from '../types/placesApi';
 import { upcomingFestivalDateRangeYyyymmdd } from '../utils/places/festivalApiMapper';
 import { showTravelSurveyOnboardingPrompt } from '../services/setup/travelSurveyOnboardingPrompt';
-import { selectActivePlan, selectHomeFeaturedPlan, useAppStore, useFestivalStore, usePlanStore, useTravelogueStore } from '../stores';
+import { fetchTravelRecordFeed } from '../services/travel/travelRecordService';
+import { mapTravelRecordFeedItem } from '../types/travelRecordApi';
+import {
+  selectActivePlan,
+  selectHomeFeaturedPlan,
+  useAppStore,
+  useAuthStore,
+  useFestivalStore,
+  usePlanStore,
+} from '../stores';
+import { selectReusableAccessToken } from '../stores/useAuthStore';
 import { useSessionActiveTravelsSyncOnFocus } from '../hooks/useSessionActiveTravelsSync';
 import { usePlanOfflineSyncFeedback } from '../hooks/usePlanOfflineSyncFeedback';
 import { isServerBackedPlan } from '../utils/plan/serverBackedPlan';
-import { isTraveloguePublic } from '../utils/review/travelReview';
+import { isTravelRecordPublic } from '../utils/review/travelReview';
 import { getNearestUpcomingStop } from '../utils/plan/planSchedule';
 import { resolvePlanTravelStatus } from '../utils/plan/planTravelStatus';
 import { getChatRoomByZoneId } from '../constants/eventZone/eventZone';
 import { useAppLanguage, useCopy } from '../i18n';
 import type { EventZoneId } from '../types/eventZone';
+import type { TravelRecord } from '../types/travelReview';
 
 type Props = {
   navigation: NavigationProp<RootStackParamList>;
@@ -68,6 +75,7 @@ export function MainHomeScreen({
   const setPendingTravelSurveyPrompt = useAppStore(
     s => s.setPendingTravelSurveyPrompt,
   );
+  const accessToken = useAuthStore(selectReusableAccessToken);
   const activePlan = usePlanStore(selectActivePlan);
   const featuredPlan = usePlanStore(selectHomeFeaturedPlan);
   const featuredTravelStatus = useMemo(
@@ -85,11 +93,8 @@ export function MainHomeScreen({
     });
   useSessionActiveTravelsSyncOnFocus();
 
-  const publishedTravelogues = useTravelogueStore(s => s.publishedTravelogues);
-  const latestTravelogue = useMemo(
-    () => publishedTravelogues.find(isTraveloguePublic),
-    [publishedTravelogues],
-  );
+  const [latestTravelogue, setLatestTravelogue] = useState<TravelRecord | null>(null);
+  const [loadingTravelogue, setLoadingTravelogue] = useState(true);
   const homeFestivals = useFestivalStore(s => s.homeFestivals);
   const fetchHomeFestivals = useFestivalStore(s => s.fetchHomeFestivals);
   const homeEvents = useMemo(
@@ -102,6 +107,34 @@ export function MainHomeScreen({
       language === 'ko' ? '행사 정보를 불러오지 못했어요' : 'Could not load events',
     );
   }, [fetchHomeFestivals, language]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingTravelogue(true);
+    void fetchTravelRecordFeed({ size: 1, sort: 'LATEST' }, accessToken)
+      .then(page => {
+        if (cancelled) {
+          return;
+        }
+        const first = (page.items ?? [])
+          .map(mapTravelRecordFeedItem)
+          .find(isTravelRecordPublic);
+        setLatestTravelogue(first ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setLatestTravelogue(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoadingTravelogue(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [accessToken]);
 
   useEffect(() => {
     if (!pendingTravelSurveyPrompt) {
@@ -293,16 +326,15 @@ export function MainHomeScreen({
           onLayout={e => {
             travelogueOffsetY.current = e.nativeEvent.layout.y;
           }}>
-          <TraveloguePreviewMock
+          <TraveloguePreview
             trendingTitle={copy.trendingTitle}
-            travelogue={MOCK_TRAVELOGUE}
-            specialOffer={MOCK_SPECIAL_OFFER}
             language={language}
             latestTravelogue={latestTravelogue}
+            loading={loadingTravelogue}
             onTraveloguePress={() => {
               if (latestTravelogue) {
-                navigation.navigate('TravelogueDetail', {
-                  travelogueId: latestTravelogue.travelogueId,
+                navigation.navigate('TravelRecordDetail', {
+                  travelRecordId: latestTravelogue.travelRecordId,
                 });
               } else {
                 goToTab('feed');

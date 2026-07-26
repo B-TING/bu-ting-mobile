@@ -7,6 +7,7 @@ import {
   travelResponseToPlan,
   wizardAnswersToConstraints,
 } from './travelMapper';
+import { createTravelRecordDraft } from './travelRecordService';
 import { createTravel, createTravelPlan } from './travelService';
 
 export class ManualTravelPlanError extends Error {
@@ -26,7 +27,8 @@ export type CreateManualTravelPlanInput = {
 };
 
 /**
- * 위저드「직접 일정 만들기」— Travel + 일차별 Plan 생성 후 빈 일정 `TravelPlan` 반환.
+ * 위저드「직접 일정 만들기」— Travel + 일차별 Plan + 여행기 초안 생성 후 `TravelPlan` 반환.
+ * 여행기 초안은 API에만 생성하며 로컬 폴백을 두지 않는다.
  */
 export async function createManualTravelPlan(
   input: CreateManualTravelPlanInput,
@@ -49,8 +51,21 @@ export async function createManualTravelPlan(
     const dayPlans = [];
 
     for (const planBody of planRequests) {
-      const plan = await createTravelPlan(accessToken, travel.id, planBody);
+      const plan = await createTravelPlan(accessToken, travel.travelId, planBody);
       dayPlans.push(plan);
+    }
+
+    try {
+      await createTravelRecordDraft(accessToken, travel.travelId, {
+        title: travel.title ?? travelBody.title ?? null,
+      });
+    } catch (draftError) {
+      if (__DEV__) {
+        console.warn(
+          '[createManualTravelPlan] travel record draft failed (API only, no local fallback)',
+          draftError,
+        );
+      }
     }
 
     return travelResponseToPlan(travel, dayPlans, members, constraints);

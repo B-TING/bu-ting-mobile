@@ -1,101 +1,120 @@
-import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
 import type { NavigationProp } from '@react-navigation/native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { NicknameEditModal } from '../components/mypage/NicknameEditModal';
-import { PrimaryButton } from '../components/shared/buttons/PrimaryButton';
+import { AccountSettingsModal } from '../components/mypage/AccountSettingsModal';
+import {
+  MyTravelRecordGrid,
+  MyTravelRecordGridEmpty,
+} from '../components/mypage/MyTravelRecordGrid';
 import { AppIcon } from '../components/shared/icons/AppIcon';
 import { getNavbarOverlayHeight } from '../components/shared/navigation/Navbar';
 import { useAppAlert } from '../components/shared/modals';
 import { useAppLanguage, useCopy } from '../i18n';
-import { summarizeOnboardingPreferences } from '../constants/setup/onboarding';
 import { layout } from '../constants/common/layout';
-import { ICON_COLOR_WHITE } from '../constants/icons';
-import { selectOnboardingForUser, useAppStore, useAuthStore } from '../stores';
-import { selectAuthUser, selectIsAuthenticated, selectReusableAccessToken } from '../stores/useAuthStore';
+import {
+  ICON_COLOR_HEART,
+  ICON_COLOR_MUTED,
+  ICON_COLOR_PRIMARY,
+  ICON_COLOR_WHITE,
+  type LucideIconName,
+} from '../constants/icons';
+import {
+  useAppStore,
+  useAuthStore,
+  useTravelRecordBookmarkStore,
+} from '../stores';
+import {
+  selectAuthUser,
+  selectIsAuthenticated,
+  selectReusableAccessToken,
+} from '../stores/useAuthStore';
 import type { RootStackParamList } from '../navigation/types';
 import { logoutSession } from '../services/auth/authSession';
+import { countPlaceReviewsForMyTravelRecords } from '../services/travel/loadTravelRecordDetail';
+import {
+  fetchMyTravelRecords,
+  TravelRecordServiceError,
+} from '../services/travel/travelRecordService';
 import { fetchTravelSurveyProfile } from '../services/setup/travelSurveyService';
 import {
   createEmptyOnboardingProfile,
   hasAnsweredSurvey,
 } from '../services/setup/travelSurveyMapper';
 import { deleteMyAccount, updateMyProfile, UserServiceError } from '../services/user/userService';
+import { mapTravelRecordManageItem } from '../types/travelRecordApi';
+import type { TravelRecord } from '../types/travelReview';
+import { authorInitial } from '../utils/review/travelReview';
 import { cn } from '../utils/common/cn';
 
 type Props = {
   navigation: NavigationProp<RootStackParamList>;
 };
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function StatItem({ count, label }: { count: number; label: string }) {
   return (
-    <View className="mb-3">
-      <Text className="mb-1 text-xs font-semibold uppercase tracking-wide text-brand-muted">
-        {label}
-      </Text>
-      <Text className="text-base text-brand-text" selectable>
-        {value}
-      </Text>
+    <View className="mr-5 flex-row items-baseline">
+      <Text className="mr-1 text-base font-bold text-brand-text">{count}</Text>
+      <Text className="text-sm text-brand-muted">{label}</Text>
     </View>
   );
 }
 
-function NicknameRow({
+function SettingsRow({
+  icon,
   label,
-  value,
-  actionLabel,
-  onPressAction,
-}: {
-  label: string;
-  value: string;
-  actionLabel: string;
-  onPressAction: () => void;
-}) {
-  return (
-    <View className="mb-3">
-      <Text className="mb-1 text-xs font-semibold uppercase tracking-wide text-brand-muted">
-        {label}
-      </Text>
-      <View className="flex-row items-center">
-        <Text className="flex-1 text-base text-brand-text" selectable>
-          {value}
-        </Text>
-        <Pressable
-          onPress={onPressAction}
-          className="ml-2 rounded-lg px-2 py-1 active:opacity-70"
-          accessibilityRole="button">
-          <Text className="text-xs font-semibold text-brand-primary">{actionLabel}</Text>
-        </Pressable>
-      </View>
-    </View>
-  );
-}
-
-function SettingToggle({
-  label,
-  checked,
   onPress,
+  danger,
+  showChevron = true,
+  last,
 }: {
+  icon: LucideIconName;
   label: string;
-  checked: boolean;
   onPress: () => void;
+  danger?: boolean;
+  showChevron?: boolean;
+  last?: boolean;
 }) {
   return (
     <Pressable
       onPress={onPress}
-      className="mb-3 flex-row items-center active:opacity-80">
-      <View
+      className={cn(
+        'flex-row items-center px-4 py-3.5 active:opacity-80',
+        !last && 'border-b border-brand-border',
+      )}
+      accessibilityRole="button">
+      <AppIcon
+        name={icon}
+        size={20}
+        color={danger ? ICON_COLOR_HEART : ICON_COLOR_MUTED}
+      />
+      <Text
         className={cn(
-          'mr-3 h-5 w-5 items-center justify-center rounded border-2 border-brand-border',
-          checked && 'border-brand-primary bg-brand-primary',
+          'ml-3 flex-1 text-[15px] font-medium',
+          danger ? 'text-red-500' : 'text-brand-text',
         )}>
-        {checked ? <AppIcon name="check" size={12} color={ICON_COLOR_WHITE} strokeWidth={3} /> : null}
-      </View>
-      <Text className="text-sm text-brand-text">{label}</Text>
+        {label}
+      </Text>
+      {showChevron ? (
+        <AppIcon name="chevronRight" size={18} color={ICON_COLOR_MUTED} />
+      ) : null}
     </Pressable>
   );
+}
+
+function profileHandle(nickname: string): string {
+  const cleaned = nickname.trim().replace(/\s+/g, '').toLowerCase();
+  return cleaned ? `@${cleaned}` : '@user';
 }
 
 export function MyPageScreen({ navigation }: Props) {
@@ -104,16 +123,86 @@ export function MyPageScreen({ navigation }: Props) {
   const { alert } = useAppAlert();
   const language = useAppLanguage();
   const user = useAuthStore(selectAuthUser);
-  const onboarding = useAppStore(selectOnboardingForUser(user?.userId));
   const hideUserIdOnMyPage = useAppStore(s => s.hideUserIdOnMyPage);
   const setHideUserIdOnMyPage = useAppStore(s => s.setHideUserIdOnMyPage);
   const copy = useCopy('myPage');
   const isAuthenticated = useAuthStore(selectIsAuthenticated);
   const rememberMe = useAuthStore(s => s.rememberMe);
   const accessToken = useAuthStore(selectReusableAccessToken);
+
   const [nicknameModalOpen, setNicknameModalOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const [savingNickname, setSavingNickname] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [records, setRecords] = useState<TravelRecord[]>([]);
+  const [placeReviewCount, setPlaceReviewCount] = useState(0);
+  const [loadingRecords, setLoadingRecords] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [recordsTab, setRecordsTab] = useState<'mine' | 'saved'>('mine');
+
+  const bookmarkedRecords = useTravelRecordBookmarkStore(s => s.bookmarkedRecords);
+  const bookmarksLoading = useTravelRecordBookmarkStore(s => s.loading);
+  const hydrateBookmarks = useTravelRecordBookmarkStore(s => s.hydrate);
+
+  const nickname = user?.nickname || user?.email?.split('@')[0] || 'User';
+  const handle = profileHandle(nickname);
+
+  const loadMyRecords = useCallback(async () => {
+    if (!accessToken) {
+      setRecords([]);
+      setPlaceReviewCount(0);
+      return;
+    }
+    const list = await fetchMyTravelRecords(accessToken);
+    const mapped = list.map(item => mapTravelRecordManageItem(item, nickname));
+    setRecords(mapped);
+    const reviewCount = await countPlaceReviewsForMyTravelRecords(
+      accessToken,
+      list.map(item => item.travelRecordId),
+    );
+    setPlaceReviewCount(reviewCount);
+    await hydrateBookmarks(accessToken);
+  }, [accessToken, nickname, hydrateBookmarks]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingRecords(true);
+    void loadMyRecords()
+      .catch(error => {
+        if (__DEV__) {
+          const message =
+            error instanceof TravelRecordServiceError ? error.message : String(error);
+          console.warn('[MyPage] fetchMyTravelRecords failed:', message);
+        }
+        if (!cancelled) {
+          setRecords([]);
+          setPlaceReviewCount(0);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoadingRecords(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [loadMyRecords]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await loadMyRecords();
+    } catch (error) {
+      if (__DEV__) {
+        const message =
+          error instanceof TravelRecordServiceError ? error.message : String(error);
+        console.warn('[MyPage] refresh failed:', message);
+      }
+    } finally {
+      setRefreshing(false);
+    }
+  }, [loadMyRecords]);
 
   useFocusEffect(
     useCallback(() => {
@@ -131,7 +220,6 @@ export function MyPageScreen({ navigation }: Props) {
             useAppStore.getState().saveUserOnboarding(userId, profile);
             return;
           }
-          // GET 데이터 없음 → 로컬도 비움 (skippedAll 캐시 제거)
           useAppStore
             .getState()
             .saveUserOnboarding(userId, createEmptyOnboardingProfile(language, userId));
@@ -169,30 +257,30 @@ export function MyPageScreen({ navigation }: Props) {
     });
   };
 
-  const applyNicknameUpdate = (nickname: string) => {
+  const applyNicknameUpdate = (nextNickname: string) => {
     if (!user) {
       return;
     }
-    useAuthStore.getState().setUser({ ...user, nickname });
+    useAuthStore.getState().setUser({ ...user, nickname: nextNickname });
     useAppStore.getState().login({
       userId: user.userId,
-      displayName: nickname || user.email.split('@')[0] || 'User',
+      displayName: nextNickname || user.email.split('@')[0] || 'User',
     });
   };
 
-  const handleSaveNickname = async (nickname: string) => {
+  const handleSaveNickname = async (nextNickname: string) => {
     if (!accessToken) {
       alert({ title: copy.changeNicknameError });
       return;
     }
-    if (!nickname) {
+    if (!nextNickname) {
       alert({ title: copy.changeNicknameEmpty });
       return;
     }
 
     setSavingNickname(true);
     try {
-      const updated = await updateMyProfile(accessToken, { nickname });
+      const updated = await updateMyProfile(accessToken, { nickname: nextNickname });
       applyNicknameUpdate(updated.nickname);
       setNicknameModalOpen(false);
       alert({ title: copy.changeNicknameSuccess });
@@ -240,117 +328,243 @@ export function MyPageScreen({ navigation }: Props) {
   };
 
   const providerLabel = user ? copy.providers[user.provider] : '—';
-  const preferenceRows = summarizeOnboardingPreferences(onboarding, language, {
-    travelStyle: copy.preferenceFields.travelStyle,
-    schedulePace: copy.preferenceFields.schedulePace,
-    companions: copy.preferenceFields.companions,
-    luggage: copy.preferenceFields.luggage,
-    purposes: copy.preferenceFields.purposes,
-    busanFamiliarity: copy.preferenceFields.busanFamiliarity,
-    notSet: copy.preferenceFields.notSet,
-    skipped: copy.preferenceFields.skipped,
-  });
-  const preferencesMessage = preferenceRows ? null : copy.preferencesEmpty;
 
   return (
     <View className="flex-1 bg-brand-background" style={layout.screen}>
       <ScrollView
-        className="flex-1 px-5"
-        contentContainerStyle={{
-          paddingTop: 16,
-          paddingBottom: navbarClearance + 24,
-        }}
-        showsVerticalScrollIndicator={false}>
-        <Text className="mb-5 text-[28px] font-bold text-brand-text">{copy.title}</Text>
-
-        <View className="mb-5 rounded-2xl border border-brand-border bg-brand-surface p-5">
-          <Text className="mb-4 text-lg font-bold text-brand-text">{copy.profile}</Text>
-
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: navbarClearance + 24 }}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={ICON_COLOR_PRIMARY} />
+        }>
+        <View className="px-5 pt-5 pb-4">
           {isAuthenticated && user ? (
-            <>
-              <NicknameRow
-                label={copy.nickname}
-                value={user.nickname || '—'}
-                actionLabel={copy.changeNickname}
-                onPressAction={() => setNicknameModalOpen(true)}
-              />
-              <InfoRow label={copy.email} value={user.email || '—'} />
-              <InfoRow label={copy.provider} value={providerLabel} />
-              {!hideUserIdOnMyPage ? (
-                <InfoRow label={copy.userId} value={user.userId} />
-              ) : null}
-              <Pressable
-                onPress={handleDeleteAccount}
-                disabled={deletingAccount}
-                className={cn(
-                  'mt-2 self-start active:opacity-70',
-                  deletingAccount && 'opacity-50',
-                )}
-                accessibilityRole="button">
-                <Text className="text-sm font-semibold text-red-600">{copy.deleteAccount}</Text>
-              </Pressable>
-            </>
-          ) : (
-            <Text className="mb-4 text-base text-brand-muted">{copy.notLoggedIn}</Text>
-          )}
-        </View>
+            <View className="flex-row items-start">
+              <View className="mr-4">
+                <View className="h-[88px] w-[88px] items-center justify-center rounded-full bg-brand-primary">
+                  <Text className="text-3xl font-bold text-white">
+                    {authorInitial(nickname)}
+                  </Text>
+                </View>
+                <Pressable
+                  onPress={() => setNicknameModalOpen(true)}
+                  className="absolute -bottom-0.5 -right-0.5 h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-brand-primary active:opacity-80"
+                  accessibilityRole="button"
+                  accessibilityLabel={copy.editProfile}>
+                  <AppIcon name="camera" size={14} color={ICON_COLOR_WHITE} />
+                </Pressable>
+              </View>
 
-        <View className="mb-5 rounded-2xl border border-brand-border bg-brand-surface p-5">
-          <Text className="mb-4 text-lg font-bold text-brand-text">{copy.session}</Text>
-          <InfoRow
-            label={copy.rememberMe}
-            value={rememberMe ? copy.rememberMeOn : copy.rememberMeOff}
-          />
-          <SettingToggle
-            label={copy.hideUserId}
-            checked={hideUserIdOnMyPage}
-            onPress={() => setHideUserIdOnMyPage(!hideUserIdOnMyPage)}
-          />
-        </View>
-
-        <View className="mb-5 rounded-2xl border border-brand-border bg-brand-surface p-5">
-          <Text className="mb-1 text-lg font-bold text-brand-text">{copy.preferences}</Text>
-          <Text className="mb-4 text-sm leading-5 text-brand-muted">{copy.preferencesDesc}</Text>
-          {preferenceRows ? (
-            <View className="mb-4">
-              {preferenceRows.map(row => (
-                <InfoRow key={row.id} label={row.label} value={row.value} />
-              ))}
+              <View className="min-w-0 flex-1 pt-1">
+                <View className="flex-row items-center">
+                  <Text
+                    className="mr-1.5 shrink text-2xl font-bold text-brand-text"
+                    numberOfLines={1}>
+                    {nickname}
+                  </Text>
+                  <Pressable
+                    onPress={() => setNicknameModalOpen(true)}
+                    className="h-6 w-6 items-center justify-center active:opacity-70"
+                    hitSlop={6}
+                    accessibilityRole="button"
+                    accessibilityLabel={copy.changeNickname}>
+                    <AppIcon name="pencil" size={13} color={ICON_COLOR_MUTED} />
+                  </Pressable>
+                </View>
+                <Text className="mt-0.5 text-sm text-brand-muted" numberOfLines={1}>
+                  {handle}
+                </Text>
+                <View className="mt-3 flex-row flex-wrap items-center">
+                  <StatItem count={records.length} label={copy.travelogueStat} />
+                  <StatItem count={placeReviewCount} label={copy.visitStat} />
+                </View>
+              </View>
             </View>
           ) : (
-            <Text className="mb-4 text-base text-brand-muted">{preferencesMessage}</Text>
+            <View className="items-center py-8">
+              <View className="mb-4 h-20 w-20 items-center justify-center rounded-full bg-brand-selected">
+                <AppIcon name="user" size={36} color={ICON_COLOR_MUTED} />
+              </View>
+              <Text className="mb-4 text-base text-brand-muted">{copy.notLoggedIn}</Text>
+              <Pressable
+                onPress={goToLogin}
+                className="items-center rounded-xl border border-brand-primary bg-brand-primary px-8 py-2.5 active:opacity-80"
+                accessibilityRole="button">
+                <Text className="text-sm font-bold text-white">{copy.loginAgain}</Text>
+              </Pressable>
+            </View>
           )}
-          <PrimaryButton
-            label={copy.editPreferences}
-            onPress={() => navigation.navigate('Onboarding', { mode: 'edit' })}
-          />
         </View>
 
         {isAuthenticated ? (
-          <PrimaryButton label={copy.logout} onPress={handleLogout} />
-        ) : (
-          <PrimaryButton label={copy.loginAgain} onPress={goToLogin} />
-        )}
+          <View className="mb-6">
+            <View className="mb-3 flex-row px-5">
+              <Pressable
+                onPress={() => setRecordsTab('mine')}
+                className={cn(
+                  'mr-5 border-b-2 pb-2 active:opacity-80',
+                  recordsTab === 'mine' ? 'border-brand-text' : 'border-transparent',
+                )}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: recordsTab === 'mine' }}>
+                <Text
+                  className={cn(
+                    'text-base font-bold',
+                    recordsTab === 'mine' ? 'text-brand-text' : 'text-brand-muted',
+                  )}>
+                  {copy.myRecords}
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setRecordsTab('saved')}
+                className={cn(
+                  'border-b-2 pb-2 active:opacity-80',
+                  recordsTab === 'saved' ? 'border-brand-text' : 'border-transparent',
+                )}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: recordsTab === 'saved' }}>
+                <Text
+                  className={cn(
+                    'text-base font-bold',
+                    recordsTab === 'saved' ? 'text-brand-text' : 'text-brand-muted',
+                  )}>
+                  {copy.savedRecords}
+                </Text>
+              </Pressable>
+            </View>
+
+            {recordsTab === 'mine' ? (
+              loadingRecords && records.length === 0 ? (
+                <View className="items-center py-16">
+                  <ActivityIndicator color={ICON_COLOR_PRIMARY} />
+                </View>
+              ) : records.length === 0 ? (
+                <MyTravelRecordGridEmpty
+                  title={copy.recordsEmpty}
+                  subtitle={copy.recordsEmptySub}
+                />
+              ) : (
+                <MyTravelRecordGrid
+                  records={records}
+                  statusLabels={copy.statusLabels}
+                  onPressRecord={travelRecordId =>
+                    navigation.navigate('TravelRecordDetail', { travelRecordId })
+                  }
+                />
+              )
+            ) : bookmarksLoading && bookmarkedRecords.length === 0 ? (
+              <View className="items-center py-16">
+                <ActivityIndicator color={ICON_COLOR_PRIMARY} />
+              </View>
+            ) : bookmarkedRecords.length === 0 ? (
+              <MyTravelRecordGridEmpty
+                title={copy.savedRecordsEmpty}
+                subtitle={copy.savedRecordsEmptySub}
+              />
+            ) : (
+              <MyTravelRecordGrid
+                records={bookmarkedRecords}
+                statusLabels={copy.statusLabels}
+                onPressRecord={travelRecordId =>
+                  navigation.navigate('TravelRecordDetail', { travelRecordId })
+                }
+              />
+            )}
+          </View>
+        ) : null}
+
+        {isAuthenticated && user ? (
+          <View className="px-5">
+            <Text className="mb-3 text-base font-bold text-brand-text">{copy.settings}</Text>
+            <View className="overflow-hidden rounded-2xl border border-brand-border bg-brand-surface">
+              <SettingsRow
+                icon="pencil"
+                label={copy.editProfile}
+                onPress={() => setNicknameModalOpen(true)}
+              />
+              <SettingsRow
+                icon="sparkles"
+                label={copy.editPreferences}
+                onPress={() => navigation.navigate('Onboarding', { mode: 'edit' })}
+              />
+              <SettingsRow
+                icon="bell"
+                label={copy.notificationSettings}
+                onPress={() => alert({ title: copy.notificationUnavailable })}
+              />
+              <SettingsRow
+                icon="globe"
+                label={copy.languageSettings}
+                onPress={() => navigation.navigate('LanguageSelection')}
+              />
+              <SettingsRow
+                icon="settings"
+                label={copy.accountSettings}
+                onPress={() => setAccountOpen(true)}
+              />
+              <SettingsRow
+                icon="logOut"
+                label={copy.logout}
+                onPress={handleLogout}
+                danger
+                showChevron={false}
+                last
+              />
+            </View>
+          </View>
+        ) : null}
       </ScrollView>
 
       {user ? (
-        <NicknameEditModal
-          visible={nicknameModalOpen}
-          initialNickname={user.nickname}
-          saving={savingNickname}
-          copy={{
-            title: copy.changeNicknameTitle,
-            placeholder: copy.changeNicknamePlaceholder,
-            save: copy.changeNicknameSave,
-            cancel: copy.changeNicknameCancel,
-          }}
-          onClose={() => {
-            if (!savingNickname) {
-              setNicknameModalOpen(false);
-            }
-          }}
-          onSave={handleSaveNickname}
-        />
+        <>
+          <AccountSettingsModal
+            visible={accountOpen}
+            copy={{
+              title: copy.accountSettings,
+              nickname: copy.nickname,
+              email: copy.email,
+              provider: copy.provider,
+              userId: copy.userId,
+              rememberMe: copy.rememberMe,
+              rememberMeOn: copy.rememberMeOn,
+              rememberMeOff: copy.rememberMeOff,
+              hideUserId: copy.hideUserId,
+              deleteAccount: copy.deleteAccount,
+            }}
+            nickname={user.nickname || '—'}
+            email={user.email || '—'}
+            providerLabel={providerLabel}
+            userId={user.userId}
+            rememberMe={rememberMe}
+            hideUserId={hideUserIdOnMyPage}
+            deletingAccount={deletingAccount}
+            onClose={() => {
+              if (!deletingAccount) {
+                setAccountOpen(false);
+              }
+            }}
+            onToggleHideUserId={() => setHideUserIdOnMyPage(!hideUserIdOnMyPage)}
+            onDeleteAccount={handleDeleteAccount}
+          />
+          <NicknameEditModal
+            visible={nicknameModalOpen}
+            initialNickname={user.nickname}
+            saving={savingNickname}
+            copy={{
+              title: copy.changeNicknameTitle,
+              placeholder: copy.changeNicknamePlaceholder,
+              save: copy.changeNicknameSave,
+              cancel: copy.changeNicknameCancel,
+            }}
+            onClose={() => {
+              if (!savingNickname) {
+                setNicknameModalOpen(false);
+              }
+            }}
+            onSave={handleSaveNickname}
+          />
+        </>
       ) : null}
     </View>
   );

@@ -117,6 +117,10 @@ export const STORAGE_ENDPOINTS = {
   nearby: '/api/v1/storage-locations',
 } as const;
 
+export const FILE_ENDPOINTS = {
+  files: '/api/v1/files',
+} as const;
+
 export const TRAVEL_RECORD_ENDPOINTS = {
   /** 여행 기록 초안 생성 */
   createDraft: (travelId: string) => \`/api/v1/travels/\${travelId}/records\`,
