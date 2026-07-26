@@ -16,9 +16,9 @@ import {
 } from '../../constants/places/placeSearch';
 import { ICON_COLOR_PRIMARY } from '../../constants/icons';
 import { useAppLanguage, useCopy } from '../../i18n';
-import { useCurrentEventZone } from '../../hooks/useCurrentEventZone';
+import { usePlaceMapUserLocation } from '../../hooks/usePlaceMapUserLocation';
 import type { RootStackParamList } from '../../navigation/types';
-import { useAppStore, usePlaceBookmarkStore, usePlaceDetailCacheStore, usePlaceSearchStore } from '../../stores';
+import { usePlaceBookmarkStore, usePlaceDetailCacheStore, usePlaceSearchStore } from '../../stores';
 import type { EventZoneCoordinate } from '../../types/eventZone';
 import type { BusanPlace } from '../../types/placeSearch';
 import { PLACE_MAP_SEARCH_TYPES } from '../../types/placesApi';
@@ -74,7 +74,7 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
   const selectedContentHandledRef = useRef<string | null>(null);
 
   const isFestivalMode = isFestivalPlaceSearch(contentTypeId);
-  const { location } = useCurrentEventZone();
+  const { location, status: locationStatus } = usePlaceMapUserLocation();
 
   const cacheEntry = usePlaceSearchStore(s => s.cacheByType[contentTypeId]);
   const loading = usePlaceSearchStore(s => s.isLoading(contentTypeId));
@@ -123,6 +123,10 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
   }, [getCacheEntry]);
 
   useEffect(() => {
+    if (locationStatus === 'loading') {
+      return;
+    }
+
     if (isFestivalMode) {
       if (applyCachedCenters(contentTypeId)) {
         return;
@@ -142,7 +146,7 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
       setMapCenter(location);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- searchCenter는 의도적으로 제외
-  }, [contentTypeId, location, applyCachedCenters, isFestivalMode]);
+  }, [contentTypeId, location, locationStatus, applyCachedCenters, isFestivalMode]);
 
   useEffect(() => {
     if (isFestivalMode) {
