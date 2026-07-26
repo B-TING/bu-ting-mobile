@@ -11,3 +11,11 @@ export {
   useAppAlert,
   showAppAlert,
 } from './AppAlertProvider';
+export {
+  FeatureUnavailableAlert,
+  type FeatureUnavailableAlertProps,
+} from './FeatureUnavailableAlert';
+export {
+  FeatureUnavailableAlertProvider,
+  useFeatureUnavailableAlert,
+} from './FeatureUnavailableAlertProvider';
