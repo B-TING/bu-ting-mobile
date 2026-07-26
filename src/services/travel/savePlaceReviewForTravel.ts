@@ -2,6 +2,8 @@ import { useTravelRecordStore } from '../../stores/useTravelRecordStore';
 import type { RouteItem, TravelPlan } from '../../types/travelPlan';
 import type { PlaceReviewResponse } from '../../types/travelRecordApi';
 import type { PlaceReview, ReviewMedia } from '../../types/travelReview';
+import { toStoredMediaUrl } from '../../utils/media/pickMedia';
+import { ApiClientError } from '../api/apiClient';
 import { uploadFile } from '../files/fileUploadService';
 import {
   createPlaceReview,
@@ -53,8 +55,28 @@ function mediaUrlsFromRemote(media: ReviewMedia[] | undefined): string[] | undef
   if (!media?.length) {
     return undefined;
   }
-  const urls = media.map(m => m.uri).filter(isRemoteUri);
+  const urls = media
+    .map(m => m.uri)
+    .filter(isRemoteUri)
+    .map(toStoredMediaUrl)
+    .filter(uri => uri.length > 0 && uri.length <= 1000);
   return urls.length > 0 ? urls : undefined;
+}
+
+function isNotFoundError(error: unknown): boolean {
+  if (error instanceof ApiClientError && error.status === 404) {
+    return true;
+  }
+  const message = error instanceof Error ? error.message : String(error);
+  return /not found/i.test(message);
+}
+
+function isConflictError(error: unknown): boolean {
+  if (error instanceof ApiClientError && (error.status === 400 || error.status === 409)) {
+    return /이미|duplicate|already|exist/i.test(error.message);
+  }
+  const message = error instanceof Error ? error.message : String(error);
+  return /이미|duplicate|already|exist/i.test(message);
 }
 
 /** 로컬 파일만 S3 업로드 후 원격 URL 로 교체 */
@@ -73,12 +95,25 @@ async function uploadLocalMedia(
     }
     const mimeType =
       item.mimeType ?? (item.type === 'video' ? 'video/mp4' : 'image/jpeg');
+    // Android 갤러리 MIME 이 video/* 등으로 올 수 있어 서버 허용 값으로 맞춤
+    const uploadMime =
+      item.type === 'video'
+        ? mimeType === 'video/quicktime'
+          ? 'video/quicktime'
+          : 'video/mp4'
+        : mimeType === 'image/png'
+          ? 'image/png'
+          : mimeType === 'image/webp'
+            ? 'image/webp'
+            : 'image/jpeg';
     const fileName =
       item.fileName ??
-      (item.type === 'video' ? `review-${Date.now()}.mp4` : `review-${Date.now()}.jpg`);
+      (item.type === 'video'
+        ? `review-${Date.now()}.${uploadMime === 'video/quicktime' ? 'mov' : 'mp4'}`
+        : `review-${Date.now()}.jpg`);
     const uploaded = await uploadFile(accessToken, {
       uri: item.uri,
-      type: mimeType,
+      type: uploadMime,
       name: fileName,
     });
     resolved.push({
@@ -158,19 +193,36 @@ export async function savePlaceReviewForTravel(
 
     let dto: PlaceReviewResponse;
     if (isServerReviewId(payload.placeReviewId)) {
-      dto = await updatePlaceReview(accessToken, travelId, planPlaceId, body);
+      try {
+        dto = await updatePlaceReview(accessToken, travelId, planPlaceId, body);
+      } catch (updateError) {
+        // 로컬/다른 서버에서 가져온 stale ID → 새로 생성
+        if (!isNotFoundError(updateError)) {
+          throw updateError;
+        }
+        if (__DEV__) {
+          console.warn(
+            '[savePlaceReviewForTravel] update 404, creating instead',
+            updateError,
+          );
+        }
+        dto = await createPlaceReview(accessToken, travelId, planPlaceId, body);
+      }
     } else {
       try {
         dto = await createPlaceReview(accessToken, travelId, planPlaceId, body);
       } catch (createError) {
         // 이미 있으면 보통 중복 → PATCH로 갱신
-        dto = await updatePlaceReview(accessToken, travelId, planPlaceId, body);
+        if (!isConflictError(createError)) {
+          throw createError;
+        }
         if (__DEV__) {
           console.warn(
-            '[savePlaceReviewForTravel] create failed, updated instead',
+            '[savePlaceReviewForTravel] create conflict, updated instead',
             createError,
           );
         }
+        dto = await updatePlaceReview(accessToken, travelId, planPlaceId, body);
       }
     }
 

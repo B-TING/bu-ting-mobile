@@ -111,7 +111,7 @@ export function PlaceReviewFormModal({
       return;
     }
     if (result.status === 'error') {
-      Alert.alert(copy.mediaPickFailed);
+      Alert.alert(result.message || copy.mediaPickFailed);
     }
   };
 
@@ -133,6 +133,9 @@ export function PlaceReviewFormModal({
           takePhoto: copy.takePhoto,
           takeVideo: copy.takeVideo,
           cancel: copy.cancel,
+          unsupportedVideoFormat: copy.unsupportedVideoFormat,
+          unsupportedImageFormat: copy.unsupportedImageFormat,
+          fileTooLarge: copy.fileTooLarge,
         },
       });
       if (result.status !== 'ok') {
@@ -180,6 +183,8 @@ export function PlaceReviewFormModal({
         media,
       });
       onClose();
+    } catch {
+      // 실패 알림은 부모 onSave 에서 처리. Unhandled rejection 방지.
     } finally {
       setSubmitting(false);
     }

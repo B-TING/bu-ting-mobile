@@ -1058,11 +1058,21 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
             media: payload.media,
           },
         });
+      } catch (error) {
+        alert({
+          title:
+            error instanceof PlaceReviewSyncError
+              ? error.message
+              : error instanceof Error
+                ? error.message
+                : '후기 저장에 실패했습니다.',
+        });
+        throw error;
       } finally {
         setSavingReview(false);
       }
     },
-    [accessToken, plan, reviewFormRoute, displayName],
+    [accessToken, plan, reviewFormRoute, displayName, alert],
   );
 
   const handleDeletePlaceReview = useCallback(() => {

@@ -35,6 +35,9 @@ export const TRAVEL_REVIEW_COPY: Record<
     mediaPickFailed: string;
     mediaUploadFailed: string;
     mediaLimitReached: string;
+    unsupportedVideoFormat: string;
+    unsupportedImageFormat: string;
+    fileTooLarge: string;
     save: string;
     cancel: string;
     recordsTitle: string;
@@ -152,11 +155,14 @@ export const TRAVEL_REVIEW_COPY: Record<
     chooseFromLibrary: '갤러리에서 선택',
     takePhoto: '카메라로 촬영',
     takeVideo: '영상 촬영',
-    mediaHint: '탭하면 첨부 파일을 제거할 수 있어요. 저장 시 서버에 업로드됩니다.',
+    mediaHint: '탭하면 첨부 파일을 제거할 수 있어요. 영상은 MP4/MOV, 사진은 JPEG/PNG/WebP (최대 50MB).',
     mediaPermissionDenied: '사진·카메라 권한이 필요합니다. 설정에서 허용해 주세요.',
     mediaPickFailed: '미디어를 가져오지 못했어요. 다시 시도해 주세요.',
     mediaUploadFailed: '미디어 업로드 또는 후기 저장에 실패했어요.',
     mediaLimitReached: '미디어는 최대 20개까지 첨부할 수 있어요.',
+    unsupportedVideoFormat: '영상은 MP4 또는 MOV 형식만 업로드할 수 있어요.',
+    unsupportedImageFormat: '사진은 JPEG, PNG, WebP 형식만 업로드할 수 있어요.',
+    fileTooLarge: '파일은 최대 50MB까지 첨부할 수 있어요.',
     save: '저장',
     cancel: '취소',
     recordsTitle: '여행 후기',
@@ -281,6 +287,9 @@ export const TRAVEL_REVIEW_COPY: Record<
     mediaPickFailed: 'Could not pick media. Please try again.',
     mediaUploadFailed: 'Could not upload media or save the review.',
     mediaLimitReached: 'You can attach up to 20 media files.',
+    unsupportedVideoFormat: 'Only MP4 or MOV videos are supported.',
+    unsupportedImageFormat: 'Only JPEG, PNG, or WebP images are supported.',
+    fileTooLarge: 'Files must be 50MB or smaller.',
     save: 'Save',
     cancel: 'Cancel',
     recordsTitle: 'Trip reviews',
@@ -405,6 +414,9 @@ export const TRAVEL_REVIEW_COPY: Record<
     mediaPickFailed: 'メディアを取得できませんでした。もう一度お試しください。',
     mediaUploadFailed: 'メディアのアップロードまたはレビュー保存に失敗しました。',
     mediaLimitReached: 'メディアは最大20件まで添付できます。',
+    unsupportedVideoFormat: '動画は MP4 または MOV 形式のみアップロードできます。',
+    unsupportedImageFormat: '写真は JPEG、PNG、WebP 形式のみアップロードできます。',
+    fileTooLarge: 'ファイルは最大50MBまで添付できます。',
     save: '保存',
     cancel: 'キャンセル',
     recordsTitle: '旅行レビュー',
@@ -528,6 +540,9 @@ export const TRAVEL_REVIEW_COPY: Record<
     mediaPickFailed: '无法选择媒体，请重试。',
     mediaUploadFailed: '媒体上传或评价保存失败。',
     mediaLimitReached: '最多可附加 20 个媒体文件。',
+    unsupportedVideoFormat: '视频仅支持 MP4 或 MOV 格式。',
+    unsupportedImageFormat: '照片仅支持 JPEG、PNG、WebP 格式。',
+    fileTooLarge: '文件大小不能超过 50MB。',
     save: '保存',
     cancel: '取消',
     recordsTitle: '旅行点评',
