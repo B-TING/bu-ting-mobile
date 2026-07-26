@@ -12,6 +12,10 @@ export type ReviewMedia = {
   type: ReviewMediaType;
   uri: string;
   thumbnailUri?: string;
+  /** S3 object key from upload response (optional; used for delete) */
+  fileKey?: string;
+  mimeType?: string;
+  fileName?: string;
 };
 
 /** OpenAPI `PlaceReviewResponse` (+ client display fields) */

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -125,17 +125,39 @@ function PlaceReviewBlock({
       ) : null}
       {(review.media ?? []).length > 0 ? (
         <View className="mt-2 flex-row flex-wrap gap-2">
-          {(review.media ?? []).map(item => (
-            <View
-              key={item.mediaId}
-              className="h-12 w-12 items-center justify-center rounded-xl bg-brand-selected">
-              {item.thumbnailUri ? (
-                <Text className="text-lg">{item.thumbnailUri}</Text>
-              ) : (
-                <AppIcon name="paperclip" size={18} color={ICON_COLOR_MUTED} />
-              )}
-            </View>
-          ))}
+          {(review.media ?? []).map(item => {
+            const isRemoteImage =
+              item.type === 'image' &&
+              (item.uri.startsWith('http://') || item.uri.startsWith('https://'));
+            return (
+              <View
+                key={item.mediaId}
+                className="relative h-14 w-14 overflow-hidden rounded-xl bg-brand-selected">
+                {isRemoteImage ? (
+                  <Image
+                    source={{ uri: item.uri }}
+                    style={{ width: '100%', height: '100%' }}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View className="h-full w-full items-center justify-center">
+                    <AppIcon
+                      name={item.type === 'video' ? 'film' : 'paperclip'}
+                      size={18}
+                      color={ICON_COLOR_MUTED}
+                    />
+                  </View>
+                )}
+                {item.type === 'video' ? (
+                  <View className="absolute bottom-0 left-0 right-0 bg-black/50 py-0.5">
+                    <Text className="text-center text-[8px] font-bold text-white">
+                      VIDEO
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+            );
+          })}
         </View>
       ) : null}
     </View>

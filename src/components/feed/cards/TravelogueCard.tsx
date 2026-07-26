@@ -1,4 +1,4 @@
-import { Pressable, Text, View } from 'react-native';
+import { Image, Pressable, Text, View } from 'react-native';
 
 import { ICON_COLOR_PRIMARY } from '../../../constants/icons';
 import type { TravelRecord } from '../../../types/travelReview';
@@ -19,6 +19,7 @@ export function TravelogueCard({ travelRecord, onPress }: TravelogueCardProps) {
   const icon = travelRecordThumbnailIcon(travelRecord);
   const rating = travelRecordOverallRating(travelRecord);
   const destinationLabel = travelRecordDestinationLabel(travelRecord);
+  const coverUri = travelRecord.coverImageUrl;
   const date = travelRecord.publishedAt
     ? new Date(travelRecord.publishedAt).toLocaleDateString()
     : '';
@@ -27,8 +28,18 @@ export function TravelogueCard({ travelRecord, onPress }: TravelogueCardProps) {
     <Pressable
       onPress={onPress}
       className="mb-3 flex-row overflow-hidden rounded-2xl border border-brand-border bg-brand-surface p-3 active:opacity-90">
-      <View className="mr-3 h-20 w-20 items-center justify-center rounded-xl bg-brand-selected">
-        <AppIcon name={icon} size={32} color={ICON_COLOR_PRIMARY} />
+      <View className="mr-3 h-20 w-20 overflow-hidden rounded-xl bg-brand-selected">
+        {coverUri ? (
+          <Image
+            source={{ uri: coverUri }}
+            style={{ width: '100%', height: '100%' }}
+            resizeMode="cover"
+          />
+        ) : (
+          <View className="h-full w-full items-center justify-center">
+            <AppIcon name={icon} size={32} color={ICON_COLOR_PRIMARY} />
+          </View>
+        )}
       </View>
       <View className="flex-1 justify-center">
         <Text className="mb-1 text-[10px] font-bold tracking-wide text-brand-primary">

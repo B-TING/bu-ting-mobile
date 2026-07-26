@@ -2,6 +2,7 @@ import { useTravelRecordStore } from '../../stores/useTravelRecordStore';
 import type { RouteItem, TravelPlan } from '../../types/travelPlan';
 import type { PlaceReviewResponse } from '../../types/travelRecordApi';
 import type { PlaceReview, ReviewMedia } from '../../types/travelReview';
+import { uploadFile } from '../files/fileUploadService';
 import {
   createPlaceReview,
   updatePlaceReview,
@@ -44,14 +45,51 @@ function isServerReviewId(placeReviewId?: string): boolean {
   );
 }
 
-function mediaUrlsFromLocal(media: ReviewMedia[] | undefined): string[] | undefined {
+function isRemoteUri(uri: string): boolean {
+  return uri.startsWith('http://') || uri.startsWith('https://');
+}
+
+function mediaUrlsFromRemote(media: ReviewMedia[] | undefined): string[] | undefined {
   if (!media?.length) {
     return undefined;
   }
-  const urls = media
-    .map(m => m.uri)
-    .filter(uri => uri.startsWith('http://') || uri.startsWith('https://'));
+  const urls = media.map(m => m.uri).filter(isRemoteUri);
   return urls.length > 0 ? urls : undefined;
+}
+
+/** 로컬 파일만 S3 업로드 후 원격 URL 로 교체 */
+async function uploadLocalMedia(
+  accessToken: string,
+  media: ReviewMedia[] | undefined,
+): Promise<ReviewMedia[]> {
+  if (!media?.length) {
+    return [];
+  }
+  const resolved: ReviewMedia[] = [];
+  for (const item of media) {
+    if (isRemoteUri(item.uri)) {
+      resolved.push(item);
+      continue;
+    }
+    const mimeType =
+      item.mimeType ?? (item.type === 'video' ? 'video/mp4' : 'image/jpeg');
+    const fileName =
+      item.fileName ??
+      (item.type === 'video' ? `review-${Date.now()}.mp4` : `review-${Date.now()}.jpg`);
+    const uploaded = await uploadFile(accessToken, {
+      uri: item.uri,
+      type: mimeType,
+      name: fileName,
+    });
+    resolved.push({
+      ...item,
+      uri: uploaded.url,
+      fileKey: uploaded.fileKey,
+      mimeType: uploaded.contentType || mimeType,
+      fileName: uploaded.originalFileName || fileName,
+    });
+  }
+  return resolved;
 }
 
 function mapApiReviewToPlaceReview(
@@ -108,15 +146,16 @@ export async function savePlaceReviewForTravel(
     );
   }
 
-  const body = {
-    rating: payload.rating,
-    content: payload.content,
-    tags: payload.tags,
-    stayMinutes: payload.stayMinutes ?? undefined,
-    mediaUrls: mediaUrlsFromLocal(payload.media),
-  };
-
   try {
+    const uploadedMedia = await uploadLocalMedia(accessToken, payload.media);
+    const body = {
+      rating: payload.rating,
+      content: payload.content,
+      tags: payload.tags,
+      stayMinutes: payload.stayMinutes ?? undefined,
+      mediaUrls: mediaUrlsFromRemote(uploadedMedia),
+    };
+
     let dto: PlaceReviewResponse;
     if (isServerReviewId(payload.placeReviewId)) {
       dto = await updatePlaceReview(accessToken, travelId, planPlaceId, body);
@@ -139,7 +178,7 @@ export async function savePlaceReviewForTravel(
       dto,
       route.placeName,
       planPlaceId,
-      payload.media ?? [],
+      uploadedMedia,
     );
 
     return store.upsertPlaceReview(travelId, {

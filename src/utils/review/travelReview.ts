@@ -281,6 +281,13 @@ export function collectTravelRecordImages(travelRecord: TravelRecord): ReviewMed
       }
     });
   });
+  if (images.length === 0 && travelRecord.coverImageUrl) {
+    images.push({
+      mediaId: `cover-${travelRecord.travelRecordId}`,
+      type: 'image',
+      uri: travelRecord.coverImageUrl,
+    });
+  }
   return images;
 }
 

@@ -27,6 +27,14 @@ export const TRAVEL_REVIEW_COPY: Record<
     mediaLabel: string;
     addPhoto: string;
     addVideo: string;
+    chooseFromLibrary: string;
+    takePhoto: string;
+    takeVideo: string;
+    mediaHint: string;
+    mediaPermissionDenied: string;
+    mediaPickFailed: string;
+    mediaUploadFailed: string;
+    mediaLimitReached: string;
     save: string;
     cancel: string;
     recordsTitle: string;
@@ -69,7 +77,6 @@ export const TRAVEL_REVIEW_COPY: Record<
     placeReviewsSection: string;
     stars: (n: number) => string;
     visitFirst: string;
-    mediaMockHint: string;
     publishedSuccess: string;
     completeTrip: string;
     completeTripConfirmTitle: string;
@@ -142,6 +149,14 @@ export const TRAVEL_REVIEW_COPY: Record<
     mediaLabel: '사진 / 영상',
     addPhoto: '사진 추가',
     addVideo: '영상 추가',
+    chooseFromLibrary: '갤러리에서 선택',
+    takePhoto: '카메라로 촬영',
+    takeVideo: '영상 촬영',
+    mediaHint: '탭하면 첨부 파일을 제거할 수 있어요. 저장 시 서버에 업로드됩니다.',
+    mediaPermissionDenied: '사진·카메라 권한이 필요합니다. 설정에서 허용해 주세요.',
+    mediaPickFailed: '미디어를 가져오지 못했어요. 다시 시도해 주세요.',
+    mediaUploadFailed: '미디어 업로드 또는 후기 저장에 실패했어요.',
+    mediaLimitReached: '미디어는 최대 20개까지 첨부할 수 있어요.',
     save: '저장',
     cancel: '취소',
     recordsTitle: '여행 후기',
@@ -184,7 +199,6 @@ export const TRAVEL_REVIEW_COPY: Record<
     placeReviewsSection: '장소별 후기',
     stars: n => `${n}점`,
     visitFirst: '방문 체크 후 후기를 남길 수 있어요',
-    mediaMockHint: '실제 업로드는 API 연동 후 제공됩니다',
     publishedSuccess: '여행기가 게시됐어요!',
     completeTrip: '여행 완료 처리',
     completeTripConfirmTitle: '여행 완료 처리',
@@ -259,6 +273,14 @@ export const TRAVEL_REVIEW_COPY: Record<
     mediaLabel: 'Photos / videos',
     addPhoto: 'Add photo',
     addVideo: 'Add video',
+    chooseFromLibrary: 'Choose from library',
+    takePhoto: 'Take photo',
+    takeVideo: 'Record video',
+    mediaHint: 'Tap an attachment to remove it. Files upload when you save.',
+    mediaPermissionDenied: 'Photo and camera access is required. Please enable it in Settings.',
+    mediaPickFailed: 'Could not pick media. Please try again.',
+    mediaUploadFailed: 'Could not upload media or save the review.',
+    mediaLimitReached: 'You can attach up to 20 media files.',
     save: 'Save',
     cancel: 'Cancel',
     recordsTitle: 'Trip reviews',
@@ -301,7 +323,6 @@ export const TRAVEL_REVIEW_COPY: Record<
     placeReviewsSection: 'Place reviews',
     stars: n => `${n} stars`,
     visitFirst: 'Mark visited before writing a review',
-    mediaMockHint: 'Real uploads will arrive with API integration',
     publishedSuccess: 'Travelogue published!',
     completeTrip: 'Mark trip complete',
     completeTripConfirmTitle: 'Mark trip complete',
@@ -376,6 +397,14 @@ export const TRAVEL_REVIEW_COPY: Record<
     mediaLabel: '写真 / 動画',
     addPhoto: '写真を追加',
     addVideo: '動画を追加',
+    chooseFromLibrary: 'ライブラリから選択',
+    takePhoto: 'カメラで撮影',
+    takeVideo: '動画を撮影',
+    mediaHint: 'タップで添付を削除できます。保存時にサーバーへアップロードされます。',
+    mediaPermissionDenied: '写真・カメラの権限が必要です。設定で許可してください。',
+    mediaPickFailed: 'メディアを取得できませんでした。もう一度お試しください。',
+    mediaUploadFailed: 'メディアのアップロードまたはレビュー保存に失敗しました。',
+    mediaLimitReached: 'メディアは最大20件まで添付できます。',
     save: '保存',
     cancel: 'キャンセル',
     recordsTitle: '旅行レビュー',
@@ -418,7 +447,6 @@ export const TRAVEL_REVIEW_COPY: Record<
     placeReviewsSection: 'スポット別レビュー',
     stars: n => `${n}点`,
     visitFirst: '訪問チェック後にレビューを書けます',
-    mediaMockHint: '実際のアップロードはAPI連携後に提供されます',
     publishedSuccess: '旅行記を公開しました！',
     completeTrip: '旅行完了にする',
     completeTripConfirmTitle: '旅行完了',
@@ -492,6 +520,14 @@ export const TRAVEL_REVIEW_COPY: Record<
     mediaLabel: '照片 / 视频',
     addPhoto: '添加照片',
     addVideo: '添加视频',
+    chooseFromLibrary: '从相册选择',
+    takePhoto: '拍照',
+    takeVideo: '拍摄视频',
+    mediaHint: '点按附件可移除。保存时会上传到服务器。',
+    mediaPermissionDenied: '需要照片和相机权限，请在设置中允许。',
+    mediaPickFailed: '无法选择媒体，请重试。',
+    mediaUploadFailed: '媒体上传或评价保存失败。',
+    mediaLimitReached: '最多可附加 20 个媒体文件。',
     save: '保存',
     cancel: '取消',
     recordsTitle: '旅行点评',
@@ -534,7 +570,6 @@ export const TRAVEL_REVIEW_COPY: Record<
     placeReviewsSection: '各地点评',
     stars: n => `${n}分`,
     visitFirst: '标记到访后可写点评',
-    mediaMockHint: '实际上传将在 API 接入后提供',
     publishedSuccess: '游记已发布！',
     completeTrip: '标记行程完成',
     completeTripConfirmTitle: '标记行程完成',
