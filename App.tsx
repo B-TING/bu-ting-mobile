@@ -6,6 +6,7 @@ import { AppErrorBoundary } from './src/components/shared/layout/AppErrorBoundar
 import {
   AppAlertProvider,
   FeatureUnavailableAlertProvider,
+  LocationConsentProvider,
 } from './src/components/shared/modals';
 import { layout } from './src/constants/common/layout';
 import { RootNavigator } from './src/navigation/RootNavigator';
@@ -27,8 +28,10 @@ function App() {
         <AppErrorBoundary>
           <AppAlertProvider>
             <FeatureUnavailableAlertProvider>
-              <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-              <RootNavigator />
+              <LocationConsentProvider>
+                <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+                <RootNavigator />
+              </LocationConsentProvider>
             </FeatureUnavailableAlertProvider>
           </AppAlertProvider>
         </AppErrorBoundary>

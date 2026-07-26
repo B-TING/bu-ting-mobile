@@ -19,3 +19,12 @@ export {
   FeatureUnavailableAlertProvider,
   useFeatureUnavailableAlert,
 } from './FeatureUnavailableAlertProvider';
+export {
+  LocationConsentDisclosure,
+  type LocationConsentDisclosureProps,
+} from './LocationConsentDisclosure';
+export {
+  LocationConsentProvider,
+  useLocationConsent,
+  type LocationConsentResult,
+} from './LocationConsentProvider';

@@ -41,3 +41,4 @@ export {
 } from './usePlaceSearchStore';
 export { useFestivalStore } from './useFestivalStore';
 export { usePlaceDetailCacheStore } from './usePlaceDetailCacheStore';
+export { useLocationConsentStore } from './useLocationConsentStore';
