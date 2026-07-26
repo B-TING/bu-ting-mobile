@@ -29,20 +29,24 @@ export async function requestFineLocationPermission(): Promise<LocationPermissio
 
 /** 앱 사용 중(foreground) 현재 좌표. 실패 시 null. */
 export function getCurrentCoordinates(): Promise<EventZoneCoordinate | null> {
-  return new Promise(resolve => {
-    Geolocation.getCurrentPosition(
-      position => {
-        resolve({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        });
-      },
-      () => resolve(null),
-      {
-        enableHighAccuracy: true,
-        timeout: 12_000,
-        maximumAge: 60_000,
-      },
-    );
-  });
+  const readOnce = (enableHighAccuracy: boolean) =>
+    new Promise<EventZoneCoordinate | null>(resolve => {
+      Geolocation.getCurrentPosition(
+        position => {
+          resolve({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        () => resolve(null),
+        {
+          enableHighAccuracy,
+          timeout: enableHighAccuracy ? 12_000 : 8_000,
+          // 구역 판별은 캐시된(옛) 부산 좌표로 오인되면 안 됨
+          maximumAge: 0,
+        },
+      );
+    });
+
+  return readOnce(true).then(coords => coords ?? readOnce(false));
 }

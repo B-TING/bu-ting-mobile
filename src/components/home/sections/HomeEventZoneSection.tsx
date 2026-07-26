@@ -42,12 +42,13 @@ export function HomeEventZoneSection({
   const language = useAppLanguage();
   const copy = useCopy('homeEventZone');
   const zoneCopy = useCopy('eventZone');
-  const { zoneId: userZoneId, usedFallback } = useCurrentEventZone();
+  const { zoneId: userZoneId, usedFallback, status } = useCurrentEventZone();
 
-  const isOutsideBusan = userZoneId == null && !usedFallback;
+  /** 부산 밖이거나 위치를 모를 때 → 미소속, 구역 미리보기 캐러셀 */
+  const isUnaffiliated = userZoneId == null;
 
   const { mapZoneId, chatZoneId, fadeAnim, carouselIndex, zoneCount, isCycling } =
-    useEventZoneCarousel(isOutsideBusan, userZoneId);
+    useEventZoneCarousel(isUnaffiliated, userZoneId);
 
   const zone = EVENT_ZONE_BY_ID[chatZoneId];
   const room = getChatRoomByZoneId(chatZoneId);
@@ -60,7 +61,9 @@ export function HomeEventZoneSection({
     <GuideTarget id={GUIDE_TARGET.homeEventZone} className="mb-6">
       <View className="mb-3 flex-row items-center justify-between">
         <Text className="text-base font-bold text-brand-text">{copy.sectionTitle}</Text>
-        {isCycling ? (
+        {status === 'loading' ? (
+          <Text className="text-xs font-semibold text-brand-muted">…</Text>
+        ) : isCycling ? (
           <View className="flex-row items-center gap-1">
             {Array.from({ length: zoneCount }).map((_, index) => (
               <View
@@ -78,9 +81,9 @@ export function HomeEventZoneSection({
         )}
       </View>
 
-      {isCycling ? (
+      {isCycling && status !== 'loading' ? (
         <Text className="mb-2 text-xs font-semibold text-brand-muted">
-          {copy.outsideBusanHint}
+          {usedFallback ? zoneCopy.locationFallbackHint : copy.outsideBusanHint}
         </Text>
       ) : null}
 

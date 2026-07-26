@@ -15,30 +15,42 @@ import {
 export type CurrentEventZoneStatus = 'loading' | 'ready' | 'fallback';
 
 export type CurrentEventZoneState = {
-  /** 부산 안이면 구역 ID, 부산 밖·미소속이면 null */
+  /** 부산 안이면 구역 ID. 부산 밖·위치 미확인이면 null(채팅 미소속). */
   zoneId: EventZoneId | null;
+  /** 지도 카메라 등용. 폴백 시 부산역. */
   location: EventZoneCoordinate;
-  /** GPS/권한을 쓰지 못하고 부산역 기본값으로 표시 중 */
+  /** GPS/권한을 쓰지 못함 (채팅 소속으로 부산에 있다고 치지 않음) */
   usedFallback: boolean;
   status: CurrentEventZoneStatus;
 };
 
+function applyFallback(
+  setLocation: (v: EventZoneCoordinate) => void,
+  setZoneId: (v: EventZoneId | null) => void,
+  setUsedFallback: (v: boolean) => void,
+  setStatus: (v: CurrentEventZoneStatus) => void,
+) {
+  // 지도 폴백용 좌표만 부산역. 채팅 구역 소속은 부여하지 않음.
+  setLocation(DEFAULT_USER_LOCATION_BUSAN);
+  setZoneId(null);
+  setUsedFallback(true);
+  setStatus('fallback');
+}
+
 /**
  * 채팅 구역·홈 위젯용 현재 위치/구역.
  * - 동의·권한·GPS 성공 + 부산 안 → 해당 구역
- * - 부산 밖 → zoneId null (아무 구역에도 속하지 않음)
- * - 거절/실패 → 부산역 좌표 + 폴백 구역(표시용) + usedFallback
+ * - 부산 밖 → zoneId null (미소속)
+ * - 거절/실패 → zoneId null + usedFallback (부산에 있다고 표시하지 않음)
  */
 export function useCurrentEventZone(): CurrentEventZoneState {
   const { ensureLocationConsent } = useLocationConsent();
   const [location, setLocation] = useState<EventZoneCoordinate>(
     DEFAULT_USER_LOCATION_BUSAN,
   );
-  const [usedFallback, setUsedFallback] = useState(true);
+  const [usedFallback, setUsedFallback] = useState(false);
   const [status, setStatus] = useState<CurrentEventZoneStatus>('loading');
-  const [zoneId, setZoneId] = useState<EventZoneId | null>(
-    resolveEventZoneFromCoordinate(DEFAULT_USER_LOCATION_BUSAN),
-  );
+  const [zoneId, setZoneId] = useState<EventZoneId | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -50,10 +62,7 @@ export function useCurrentEventZone(): CurrentEventZoneState {
       }
 
       if (consent !== 'accepted') {
-        setLocation(DEFAULT_USER_LOCATION_BUSAN);
-        setZoneId(resolveEventZoneFromCoordinate(DEFAULT_USER_LOCATION_BUSAN));
-        setUsedFallback(true);
-        setStatus('fallback');
+        applyFallback(setLocation, setZoneId, setUsedFallback, setStatus);
         return;
       }
 
@@ -63,10 +72,7 @@ export function useCurrentEventZone(): CurrentEventZoneState {
       }
 
       if (permission !== 'granted') {
-        setLocation(DEFAULT_USER_LOCATION_BUSAN);
-        setZoneId(resolveEventZoneFromCoordinate(DEFAULT_USER_LOCATION_BUSAN));
-        setUsedFallback(true);
-        setStatus('fallback');
+        applyFallback(setLocation, setZoneId, setUsedFallback, setStatus);
         return;
       }
 
@@ -76,10 +82,7 @@ export function useCurrentEventZone(): CurrentEventZoneState {
       }
 
       if (!coords) {
-        setLocation(DEFAULT_USER_LOCATION_BUSAN);
-        setZoneId(resolveEventZoneFromCoordinate(DEFAULT_USER_LOCATION_BUSAN));
-        setUsedFallback(true);
-        setStatus('fallback');
+        applyFallback(setLocation, setZoneId, setUsedFallback, setStatus);
         return;
       }
 
@@ -98,10 +101,7 @@ export function useCurrentEventZone(): CurrentEventZoneState {
       if (cancelled) {
         return;
       }
-      setLocation(DEFAULT_USER_LOCATION_BUSAN);
-      setZoneId(resolveEventZoneFromCoordinate(DEFAULT_USER_LOCATION_BUSAN));
-      setUsedFallback(true);
-      setStatus('fallback');
+      applyFallback(setLocation, setZoneId, setUsedFallback, setStatus);
     });
 
     return () => {
