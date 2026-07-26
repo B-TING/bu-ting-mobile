@@ -152,6 +152,90 @@ npm run android
 | `npm run android:avd` | 지정 AVD로 실행 |
 | `npm run ios` | iOS 빌드 & 실행 |
 
+### Android 릴리스 (Play Store)
+
+Play Console 업로드용 **AAB**를 만듭니다. 현재 알파 기준은 아래와 같습니다.
+
+| 항목 | 값 |
+|------|-----|
+| `versionName` | `1.0.0-alpha` (`android/app/build.gradle`) |
+| `versionCode` | `1` (스토어에 올릴 때마다 **증가** 필요) |
+| `compileSdk` / `targetSdk` | **36** (Android 16) |
+| `minSdk` | 24 |
+| 산출물 | `android/app/build/outputs/bundle/release/app-release.aab` |
+
+#### 1. 릴리스 서명 준비
+
+```bash
+# Windows
+copy android\gradle.properties.example android\gradle.properties
+
+# macOS / Linux
+cp android/gradle.properties.example android/gradle.properties
+```
+
+1. 릴리스 키스토어를 `android/app/`에 둡니다 (예: `buting.keystore`).  
+   `*.keystore`는 gitignore 대상입니다 (`debug.keystore` 제외).
+2. `android/gradle.properties`에 서명 값을 채웁니다.
+
+```properties
+MYAPP_RELEASE_STORE_FILE=buting.keystore
+MYAPP_RELEASE_KEY_ALIAS=your-key-alias
+MYAPP_RELEASE_STORE_PASSWORD=
+MYAPP_RELEASE_KEY_PASSWORD=
+```
+
+> `gradle.properties`와 키스토어는 **커밋하지 않습니다.**
+
+JDK는 **17**을 권장합니다. `org.gradle.java.home`을 로컬 JDK 경로에 맞게 수정하세요.
+
+#### 2. 사전 동기화
+
+릴리스 빌드 전에 `.env` 기준 네이티브/설정 파일을 맞춥니다.
+
+```bash
+npm run api:sync
+npm run oauth:sync
+npm run kakao:sync
+```
+
+Google 로그인은 **release**용 `GOOGLE_OAUTH_ANDROID_CLIENT_ID_FOR_RELEASE`가 패키지·서명 SHA-1과 맞는지 확인하세요.
+
+#### 3. AAB 빌드
+
+```bash
+cd android
+./gradlew bundleRelease
+# Windows
+gradlew.bat bundleRelease
+```
+
+성공 시:
+
+```
+android/app/build/outputs/bundle/release/app-release.aab
+```
+
+APK가 필요하면:
+
+```bash
+./gradlew assembleRelease
+# 출력: android/app/build/outputs/apk/release/app-release.apk
+```
+
+#### 4. 버전 올릴 때
+
+다음 스토어 업로드 전 `android/app/build.gradle`의 `defaultConfig`를 수정합니다.
+
+```gradle
+versionCode 2          // 이전보다 반드시 큰 정수
+versionName "1.0.0-alpha.2"  // 표시용 문자열
+```
+
+`package.json`의 `"version"`도 맞춰 두면 관리하기 쉽습니다.
+
+---
+
 ### 설정 동기화
 
 | 명령 | 설명 |
@@ -206,6 +290,8 @@ npm run android
 - `src/constants/auth/oauthConfig.ts`
 - `src/kakaoMap/config.ts`
 - `android/app/src/main/AndroidManifest.xml`, `ios/.../Info.plist` (OAuth sync 결과)
+- `android/gradle.properties` (로컬 JVM·릴리스 서명)
+- `android/app/*.keystore` (`debug.keystore` 제외)
 
 ---
 
