@@ -3,11 +3,7 @@ import { useEffect, useState } from 'react';
 import { useLocationConsent } from '../components/shared/modals';
 import { DEFAULT_USER_LOCATION_BUSAN } from '../constants/eventZone/eventZone';
 import type { EventZoneCoordinate } from '../types/eventZone';
-import { isInsideBusanBounds } from '../utils/eventZone/zoneResolver';
-import {
-  getCurrentCoordinates,
-  requestFineLocationPermission,
-} from '../utils/location/deviceLocation';
+import { resolveBusanSearchLocation } from '../utils/location/resolveBusanSearchLocation';
 
 export type PlaceMapLocationStatus = 'loading' | 'ready' | 'fallback';
 
@@ -26,48 +22,54 @@ export function usePlaceMapUserLocation() {
   useEffect(() => {
     let cancelled = false;
 
-    void (async () => {
-      const consent = await ensureLocationConsent();
+    resolveBusanSearchLocation(ensureLocationConsent).then(result => {
       if (cancelled) {
         return;
       }
-
-      if (consent !== 'accepted') {
-        setLocation(DEFAULT_USER_LOCATION_BUSAN);
-        setStatus('fallback');
-        return;
-      }
-
-      const permission = await requestFineLocationPermission();
-      if (cancelled) {
-        return;
-      }
-
-      if (permission !== 'granted') {
-        setLocation(DEFAULT_USER_LOCATION_BUSAN);
-        setStatus('fallback');
-        return;
-      }
-
-      const coords = await getCurrentCoordinates();
-      if (cancelled) {
-        return;
-      }
-
-      if (!coords || !isInsideBusanBounds(coords)) {
-        setLocation(DEFAULT_USER_LOCATION_BUSAN);
-        setStatus('fallback');
-        return;
-      }
-
-      setLocation(coords);
-      setStatus('ready');
-    })();
+      setLocation(result.location);
+      setStatus(result.status);
+    });
 
     return () => {
       cancelled = true;
     };
   }, [ensureLocationConsent]);
+
+  return { location, status };
+}
+
+/**
+ * enabled일 때만 GPS/동의로 부산 검색 중심을 구한다.
+ * (일정에 당일 장소가 없을 때 여행지 추가 초깃값용)
+ */
+export function useBusanSearchLocationWhen(enabled: boolean) {
+  const { ensureLocationConsent } = useLocationConsent();
+  const [location, setLocation] = useState<EventZoneCoordinate | null>(null);
+  const [status, setStatus] = useState<PlaceMapLocationStatus | 'idle'>('idle');
+
+  useEffect(() => {
+    if (!enabled) {
+      setLocation(null);
+      setStatus('idle');
+      return;
+    }
+
+    let cancelled = false;
+    setStatus('loading');
+    setLocation(null);
+
+    resolveBusanSearchLocation(ensureLocationConsent).then(result => {
+      if (cancelled) {
+        return;
+      }
+      setLocation(result.location);
+      setStatus(result.status);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [enabled, ensureLocationConsent]);
 
   return { location, status };
 }
