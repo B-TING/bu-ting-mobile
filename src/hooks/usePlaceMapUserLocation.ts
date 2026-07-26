@@ -12,7 +12,7 @@ import {
 export type PlaceMapLocationStatus = 'loading' | 'ready' | 'fallback';
 
 /**
- * 장소 지도 검색용 초기 중심점.
+ * 장소 지도 검색·인근 시설(짐 보관소)용 초기 중심점.
  * - 동의·권한·GPS 성공 + 부산 안 → 현재 위치
  * - 그 외(거절/실패/부산 외) → 부산역 기본 좌표
  */
