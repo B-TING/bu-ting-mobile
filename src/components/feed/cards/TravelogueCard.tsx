@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Image, Pressable, Text, View } from 'react-native';
 
 import { ICON_COLOR_PRIMARY } from '../../../constants/icons';
@@ -20,6 +21,7 @@ export function TravelogueCard({ travelRecord, onPress }: TravelogueCardProps) {
   const rating = travelRecordOverallRating(travelRecord);
   const destinationLabel = travelRecordDestinationLabel(travelRecord);
   const coverUri = travelRecord.coverImageUrl;
+  const [coverFailed, setCoverFailed] = useState(false);
   const date = travelRecord.publishedAt
     ? new Date(travelRecord.publishedAt).toLocaleDateString()
     : '';
@@ -29,11 +31,12 @@ export function TravelogueCard({ travelRecord, onPress }: TravelogueCardProps) {
       onPress={onPress}
       className="mb-3 flex-row overflow-hidden rounded-2xl border border-brand-border bg-brand-surface p-3 active:opacity-90">
       <View className="mr-3 h-20 w-20 overflow-hidden rounded-xl bg-brand-selected">
-        {coverUri ? (
+        {coverUri && !coverFailed ? (
           <Image
             source={{ uri: coverUri }}
             style={{ width: '100%', height: '100%' }}
             resizeMode="cover"
+            onError={() => setCoverFailed(true)}
           />
         ) : (
           <View className="h-full w-full items-center justify-center">

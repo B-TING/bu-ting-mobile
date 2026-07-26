@@ -273,22 +273,27 @@ export function travelRecordDestinationLabel(travelRecord: TravelRecord): string
 }
 
 export function collectTravelRecordImages(travelRecord: TravelRecord): ReviewMedia[] {
-  const images: ReviewMedia[] = [];
+  return collectTravelRecordMedia(travelRecord).filter(m => m.type === 'image');
+}
+
+/** 피드/상세 캐러셀용 — 이미지 + 영상 */
+export function collectTravelRecordMedia(travelRecord: TravelRecord): ReviewMedia[] {
+  const mediaItems: ReviewMedia[] = [];
   travelRecord.placeReviews.forEach(review => {
     (review.media ?? []).forEach(media => {
-      if (media.type === 'image') {
-        images.push(media);
+      if (media.type === 'image' || media.type === 'video') {
+        mediaItems.push(media);
       }
     });
   });
-  if (images.length === 0 && travelRecord.coverImageUrl) {
-    images.push({
+  if (mediaItems.length === 0 && travelRecord.coverImageUrl) {
+    mediaItems.push({
       mediaId: `cover-${travelRecord.travelRecordId}`,
       type: 'image',
       uri: travelRecord.coverImageUrl,
     });
   }
-  return images;
+  return mediaItems;
 }
 
 /** @deprecated Use collectTravelRecordImages */

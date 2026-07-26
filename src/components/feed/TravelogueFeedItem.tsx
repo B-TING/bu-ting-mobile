@@ -9,7 +9,7 @@ import type {
 import type { AppLanguage } from '../../types/user';
 import {
   authorInitial,
-  collectTravelRecordImages,
+  collectTravelRecordMedia,
   travelRecordDestinationLabel,
   travelRecordOverallRating,
 } from '../../utils/review/travelReview';
@@ -60,7 +60,7 @@ export function TravelogueFeedItem({
   onDeleteComment,
   variant = 'feed',
 }: TravelogueFeedItemProps) {
-  const images = collectTravelRecordImages(travelRecord);
+  const images = collectTravelRecordMedia(travelRecord);
   const rating = travelRecordOverallRating(travelRecord);
   const destinationLabel = travelRecordDestinationLabel(travelRecord);
   const publishedDate = travelRecord.publishedAt

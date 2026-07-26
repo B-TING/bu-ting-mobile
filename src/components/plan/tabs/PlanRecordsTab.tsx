@@ -29,6 +29,7 @@ import { selectReusableAccessToken } from '../../../stores/useAuthStore';
 import type { AppLanguage } from '../../../types/user';
 import type { RouteItem, TravelPlan } from '../../../types/travelPlan';
 import type { PlaceReview, TravelRecord, TravelRecordStatus } from '../../../types/travelReview';
+import { toStoredMediaUrl } from '../../../utils/media/pickMedia';
 import {
   collectPlanRoutes,
   getReviewForPlace,
@@ -250,7 +251,9 @@ export function PlanRecordsTab({
     setPublishing(true);
     try {
       const firstImage = reviews.flatMap(r => r.media ?? []).find(m => m.type === 'image');
-      const coverImageUrl = firstImage?.uri ?? null;
+      const coverImageUrl = firstImage?.uri
+        ? toStoredMediaUrl(firstImage.uri)
+        : null;
       const editingExisting =
         composeMode === 'edit' &&
         publishedTravelRecord &&

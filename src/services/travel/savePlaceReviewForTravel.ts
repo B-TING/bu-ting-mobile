@@ -7,6 +7,7 @@ import { ApiClientError } from '../api/apiClient';
 import { uploadFile } from '../files/fileUploadService';
 import {
   createPlaceReview,
+  deletePlaceReview,
   updatePlaceReview,
 } from './travelRecordService';
 
@@ -51,16 +52,14 @@ function isRemoteUri(uri: string): boolean {
   return uri.startsWith('http://') || uri.startsWith('https://');
 }
 
-function mediaUrlsFromRemote(media: ReviewMedia[] | undefined): string[] | undefined {
-  if (!media?.length) {
-    return undefined;
-  }
-  const urls = media
-    .map(m => m.uri)
-    .filter(isRemoteUri)
-    .map(toStoredMediaUrl)
-    .filter(uri => uri.length > 0 && uri.length <= 1000);
-  return urls.length > 0 ? urls : undefined;
+function toMediaUrlList(media: ReviewMedia[] | undefined): string[] {
+  return (media ?? [])
+    .map(m => (isRemoteUri(m.uri) ? toStoredMediaUrl(m.uri) : null))
+    .filter((uri): uri is string => Boolean(uri && uri.length > 0 && uri.length <= 1000));
+}
+
+function mediaSignature(urls: string[]): string {
+  return [...urls].sort().join('\n');
 }
 
 function isNotFoundError(error: unknown): boolean {
@@ -79,6 +78,10 @@ function isConflictError(error: unknown): boolean {
   return /이미|duplicate|already|exist/i.test(message);
 }
 
+function isServerError(error: unknown): boolean {
+  return error instanceof ApiClientError && typeof error.status === 'number' && error.status >= 500;
+}
+
 /** 로컬 파일만 S3 업로드 후 원격 URL 로 교체 */
 async function uploadLocalMedia(
   accessToken: string,
@@ -90,12 +93,14 @@ async function uploadLocalMedia(
   const resolved: ReviewMedia[] = [];
   for (const item of media) {
     if (isRemoteUri(item.uri)) {
-      resolved.push(item);
+      resolved.push({
+        ...item,
+        uri: toStoredMediaUrl(item.uri),
+      });
       continue;
     }
     const mimeType =
       item.mimeType ?? (item.type === 'video' ? 'video/mp4' : 'image/jpeg');
-    // Android 갤러리 MIME 이 video/* 등으로 올 수 있어 서버 허용 값으로 맞춤
     const uploadMime =
       item.type === 'video'
         ? mimeType === 'video/quicktime'
@@ -118,9 +123,9 @@ async function uploadLocalMedia(
     });
     resolved.push({
       ...item,
-      uri: uploaded.url,
+      uri: toStoredMediaUrl(uploaded.url),
       fileKey: uploaded.fileKey,
-      mimeType: uploaded.contentType || mimeType,
+      mimeType: uploaded.contentType || uploadMime,
       fileName: uploaded.originalFileName || fileName,
     });
   }
@@ -159,7 +164,7 @@ function mapApiReviewToPlaceReview(
 
 /**
  * 일정 장소(PlanPlace) 후기 저장.
- * 여행기 초안 없이 `travelId` + `planPlaceId`로 바로 작성/수정한다.
+ * 미디어 교체가 포함된 수정은 서버 PATCH 500 이슈를 피하기 위해 삭제 후 재생성한다.
  */
 export async function savePlaceReviewForTravel(
   input: SavePlaceReviewInput,
@@ -182,47 +187,116 @@ export async function savePlaceReviewForTravel(
   }
 
   try {
-    const uploadedMedia = await uploadLocalMedia(accessToken, payload.media);
-    const body = {
+    let uploadedMedia: ReviewMedia[];
+    try {
+      uploadedMedia = await uploadLocalMedia(accessToken, payload.media);
+    } catch (uploadError) {
+      const message =
+        uploadError instanceof Error
+          ? uploadError.message
+          : '미디어 업로드에 실패했습니다.';
+      throw new PlaceReviewSyncError(message, { cause: uploadError });
+    }
+
+    const updating = isServerReviewId(payload.placeReviewId);
+    const nextMediaUrls = toMediaUrlList(uploadedMedia);
+
+    const existing = store.getReviewsForTravel(travelId).find(
+      r =>
+        r.placeReviewId === payload.placeReviewId ||
+        r.planPlaceId === planPlaceId,
+    );
+    const prevMediaUrls = toMediaUrlList(existing?.media);
+    const mediaChanged =
+      mediaSignature(prevMediaUrls) !== mediaSignature(nextMediaUrls);
+
+    const baseFields = {
       rating: payload.rating,
       content: payload.content,
       tags: payload.tags,
       stayMinutes: payload.stayMinutes ?? undefined,
-      mediaUrls: mediaUrlsFromRemote(uploadedMedia),
     };
 
+    if (__DEV__) {
+      console.log('[savePlaceReviewForTravel]', {
+        mode: updating ? 'update' : 'create',
+        travelId,
+        planPlaceId,
+        mediaChanged,
+        mediaCount: uploadedMedia.length,
+        nextMediaUrls,
+      });
+    }
+
     let dto: PlaceReviewResponse;
-    if (isServerReviewId(payload.placeReviewId)) {
+
+    if (updating && mediaChanged) {
+      // 백엔드 PlaceReview PATCH + mediaUrls 교체가 500을 내는 경우가 있어
+      // 미디어가 바뀐 수정은 삭제 후 재생성으로 처리한다.
       try {
-        dto = await updatePlaceReview(accessToken, travelId, planPlaceId, body);
+        await deletePlaceReview(accessToken, travelId, planPlaceId);
+      } catch (deleteError) {
+        if (!isNotFoundError(deleteError)) {
+          throw deleteError;
+        }
+      }
+      try {
+        dto = await createPlaceReview(accessToken, travelId, planPlaceId, {
+          ...baseFields,
+          mediaUrls: nextMediaUrls.length > 0 ? nextMediaUrls : undefined,
+        });
+      } catch (createError) {
+        if (isConflictError(createError)) {
+          // 삭제가 반영되기 전 레이스 → PATCH (미디어 없이 본문만) 후 한 번 더 삭제/생성
+          await updatePlaceReview(accessToken, travelId, planPlaceId, baseFields);
+          await deletePlaceReview(accessToken, travelId, planPlaceId);
+          dto = await createPlaceReview(accessToken, travelId, planPlaceId, {
+            ...baseFields,
+            mediaUrls: nextMediaUrls.length > 0 ? nextMediaUrls : undefined,
+          });
+        } else {
+          throw createError;
+        }
+      }
+    } else if (updating) {
+      try {
+        // 미디어 미변경: mediaUrls 생략 → 서버가 기존 미디어 유지
+        dto = await updatePlaceReview(accessToken, travelId, planPlaceId, baseFields);
       } catch (updateError) {
-        // 로컬/다른 서버에서 가져온 stale ID → 새로 생성
         if (!isNotFoundError(updateError)) {
           throw updateError;
         }
-        if (__DEV__) {
-          console.warn(
-            '[savePlaceReviewForTravel] update 404, creating instead',
-            updateError,
-          );
-        }
-        dto = await createPlaceReview(accessToken, travelId, planPlaceId, body);
+        dto = await createPlaceReview(accessToken, travelId, planPlaceId, {
+          ...baseFields,
+          mediaUrls: nextMediaUrls.length > 0 ? nextMediaUrls : undefined,
+        });
       }
     } else {
       try {
-        dto = await createPlaceReview(accessToken, travelId, planPlaceId, body);
+        dto = await createPlaceReview(accessToken, travelId, planPlaceId, {
+          ...baseFields,
+          mediaUrls: nextMediaUrls.length > 0 ? nextMediaUrls : undefined,
+        });
       } catch (createError) {
-        // 이미 있으면 보통 중복 → PATCH로 갱신
         if (!isConflictError(createError)) {
           throw createError;
         }
-        if (__DEV__) {
-          console.warn(
-            '[savePlaceReviewForTravel] create conflict, updated instead',
-            createError,
-          );
+        if (mediaChanged || nextMediaUrls.length > 0) {
+          // 이미 후기가 있는데 미디어까지 넣으려다 충돌 → 삭제 후 생성
+          try {
+            await deletePlaceReview(accessToken, travelId, planPlaceId);
+          } catch (deleteError) {
+            if (!isNotFoundError(deleteError)) {
+              throw deleteError;
+            }
+          }
+          dto = await createPlaceReview(accessToken, travelId, planPlaceId, {
+            ...baseFields,
+            mediaUrls: nextMediaUrls.length > 0 ? nextMediaUrls : undefined,
+          });
+        } else {
+          dto = await updatePlaceReview(accessToken, travelId, planPlaceId, baseFields);
         }
-        dto = await updatePlaceReview(accessToken, travelId, planPlaceId, body);
       }
     }
 
@@ -249,6 +323,9 @@ export async function savePlaceReviewForTravel(
     }
     const message =
       error instanceof Error ? error.message : '후기 저장에 실패했습니다.';
+    if (__DEV__ && isServerError(error)) {
+      console.warn('[savePlaceReviewForTravel] server error', error);
+    }
     throw new PlaceReviewSyncError(message, { cause: error });
   }
 }

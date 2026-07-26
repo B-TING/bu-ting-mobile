@@ -45,7 +45,7 @@ import type { AppLanguage } from '../../types/user';
 import { resolveEventZoneForRoute } from '../../utils/eventZone/zoneResolver';
 import {
   authorInitial,
-  collectTravelRecordImages,
+  collectTravelRecordMedia,
   getReviewForTravelRecordPlace,
   snapshotToRouteItems,
   travelRecordDestinationLabel,
@@ -320,7 +320,7 @@ function TravelRecordDetailBody({
     [mapRoutes],
   );
 
-  const feedImages = useMemo(() => collectTravelRecordImages(travelRecord), [travelRecord]);
+  const feedImages = useMemo(() => collectTravelRecordMedia(travelRecord), [travelRecord]);
   const rating = travelRecordOverallRating(travelRecord);
   const destinationLabel = travelRecordDestinationLabel(travelRecord);
 
