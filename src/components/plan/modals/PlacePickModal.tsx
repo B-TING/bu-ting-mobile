@@ -223,7 +223,14 @@ export function PlacePickModal({
           </View>
         ) : null}
 
-        {listPlaces.length === 0 && !apiLoading ? (
+        {useTourApiNearby && !anchor && !query.trim() ? (
+          <View className="mb-4 items-center py-4">
+            <ActivityIndicator color="#0077B6" />
+            <Text className="mt-2 text-xs text-brand-muted">{searchCopy.loading}</Text>
+          </View>
+        ) : null}
+
+        {listPlaces.length === 0 && !apiLoading && !(useTourApiNearby && !anchor) ? (
           <Text className="mb-6 text-center text-sm text-brand-muted">{copy.searchEmpty}</Text>
         ) : (
           listPlaces.map(place => {

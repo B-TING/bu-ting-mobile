@@ -412,6 +412,8 @@ export const EVENT_ZONE_COPY: Record<
     selectZoneHint: string;
     planningBadge: string;
     locationFallbackHint: string;
+    noZoneLabel: string;
+    outsideBusanHint: string;
     enterChat: string;
     emptyChatRooms: string;
     selectZoneTitle: string;
@@ -435,7 +437,9 @@ export const EVENT_ZONE_COPY: Record<
     chatMemberCount: n => `${n}명 참여`,
     selectZoneHint: '지도에서 구역을 선택해 주세요',
     planningBadge: '기획 중',
-    locationFallbackHint: '현재 위치 기준 (GPS 연동 예정)',
+    locationFallbackHint: '위치를 확인할 수 없어 기본 구역을 표시해요',
+    noZoneLabel: '소속 구역 없음',
+    outsideBusanHint: '부산 외 지역이라 채팅 구역에 속하지 않아요',
     enterChat: '입장하기',
     emptyChatRooms: '이 구역에 열린 채팅방이 없어요',
     selectZoneTitle: '구역 선택하기',
@@ -458,7 +462,9 @@ export const EVENT_ZONE_COPY: Record<
     chatMemberCount: n => `${n} joined`,
     selectZoneHint: 'Select a zone on the map',
     planningBadge: 'In planning',
-    locationFallbackHint: 'Based on current location (GPS coming soon)',
+    locationFallbackHint: 'Showing a default zone — location unavailable',
+    noZoneLabel: 'Not in a zone',
+    outsideBusanHint: 'Outside Busan — you are not in a chat zone',
     enterChat: 'Join',
     emptyChatRooms: 'No open chat rooms in this zone',
     selectZoneTitle: 'Select zone',
@@ -482,6 +488,8 @@ export const EVENT_ZONE_COPY: Record<
     selectZoneHint: '地図でエリアを選択してください',
     planningBadge: '企画中',
     locationFallbackHint: '現在地基準（GPS連携予定）',
+    noZoneLabel: '所属エリアなし',
+    outsideBusanHint: '釜山外のためチャットゾーンに所属していません',
     enterChat: '入室',
     emptyChatRooms: 'このエリアに開いているチャットはありません',
     selectZoneTitle: 'エリアを選択',
@@ -505,6 +513,8 @@ export const EVENT_ZONE_COPY: Record<
     selectZoneHint: '请在地图上选择区域',
     planningBadge: '策划中',
     locationFallbackHint: '基于当前位置（GPS 接入待定）',
+    noZoneLabel: '未加入区域',
+    outsideBusanHint: '不在釜山，不属于任何聊天区域',
     enterChat: '进入',
     emptyChatRooms: '该区域暂无开放的聊天室',
     selectZoneTitle: '选择区域',

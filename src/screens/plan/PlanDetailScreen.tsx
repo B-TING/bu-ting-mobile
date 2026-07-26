@@ -24,6 +24,7 @@ import { PlaceReviewFormModal } from '../../components/review/modals/PlaceReview
 import { type PlanDetailTab } from '../../constants/plan/planDetail';
 import { useAppLanguage, useCopy } from '../../i18n';
 import { useAppAlert } from '../../components/shared/modals';
+import { useBusanSearchLocationWhen } from '../../hooks/usePlaceMapUserLocation';
 import { usePlanRoutePlaceDetails } from '../../hooks/usePlanRoutePlaceDetails';
 import { useTravelExpensesSync } from '../../hooks/useTravelExpensesSync';
 import { useTravelMembersSync } from '../../hooks/useTravelMembersSync';
@@ -490,8 +491,12 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
       ? (scheduleRoutes.find(r => r.itemId === scheduleModal.itemId) ?? null)
       : null;
   const lastScheduleRoute = scheduleRoutes[scheduleRoutes.length - 1];
+  /** 당일 마지막 장소가 있으면 그 기준, 없으면 GPS(부산 외·실패 시 부산역) */
+  const needGpsAddAnchor =
+    !offlineMode && scheduleModal.kind === 'add' && !lastScheduleRoute?.location;
+  const { location: gpsAddAnchor } = useBusanSearchLocationWhen(needGpsAddAnchor);
   const addPlaceAnchor =
-    lastScheduleRoute?.location ?? enrichedPlan?.constraints.initialAnchor;
+    lastScheduleRoute?.location ?? gpsAddAnchor ?? undefined;
 
   const closeScheduleModal = useCallback(() => {
     setScheduleModal({ kind: 'none' });

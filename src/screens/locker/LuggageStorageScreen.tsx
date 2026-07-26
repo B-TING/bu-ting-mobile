@@ -16,7 +16,7 @@ import {
   getSubwayLineTint,
   hasKnownSubwayLine,
 } from '../../constants/locker/subwayLineColors';
-import { useCurrentEventZone } from '../../hooks/useCurrentEventZone';
+import { usePlaceMapUserLocation } from '../../hooks/usePlaceMapUserLocation';
 import type { RootStackParamList } from '../../navigation/types';
 import { fetchSubwayLockerStations } from '../../services/locker/subwayLockerService';
 import { useLockerBookmarkStore } from '../../stores';
@@ -50,7 +50,7 @@ export function LuggageStorageScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const language = useAppLanguage();
   const copy = useCopy('luggageStorage');
-  const { location } = useCurrentEventZone();
+  const { location, status: locationStatus } = usePlaceMapUserLocation();
 
   const bookmarkedStationIds = useLockerBookmarkStore(s => s.bookmarkedStationIds);
   const toggleBookmark = useLockerBookmarkStore(s => s.toggleBookmark);
@@ -63,6 +63,11 @@ export function LuggageStorageScreen({ navigation }: Props) {
   const [lineFilter, setLineFilter] = useState<LockerLineFilter>('all');
 
   useEffect(() => {
+    if (locationStatus === 'loading') {
+      setLoading(true);
+      return;
+    }
+
     let cancelled = false;
     setLoading(true);
 
@@ -85,7 +90,7 @@ export function LuggageStorageScreen({ navigation }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [location.lat, location.lng]);
+  }, [location.lat, location.lng, locationStatus]);
 
   const availableLines = useMemo(() => {
     const lines = new Set<number>();
