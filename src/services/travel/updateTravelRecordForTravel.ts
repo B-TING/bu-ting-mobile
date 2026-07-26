@@ -49,7 +49,6 @@ export async function updateTravelRecordForTravel(
   }
 
   try {
-    const placeReviews = useTravelRecordStore.getState().getReviewsForTravel(travelId);
     let dto = await updateMyTravelRecord(accessToken, travelRecordId, {
       title,
       content: content || null,
