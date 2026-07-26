@@ -452,5 +452,5 @@ export const emptyWizardAnswers = (): PlanWizardAnswers => ({
   accommodationPlaceId: null,
   accommodationName: null,
   accommodationAreaIds: [],
-  generationMode: 'auto',
+  generationMode: 'manual',
 });

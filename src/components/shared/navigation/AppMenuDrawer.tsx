@@ -15,11 +15,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { APP_MENU_ITEMS } from '../../../constants/common/appMenu';
 import {
+  ALPHA_FEATURE_LABELS,
+  isAlphaFeatureBlocked,
+} from '../../../constants/common/alphaFeatureBlocks';
+import {
   ICON_COLOR_MUTED,
   ICON_COLOR_PRIMARY,
   ICON_COLOR_WHITE,
 } from '../../../constants/icons';
-import { APP_MODAL } from '../modals';
+import { APP_MODAL, useFeatureUnavailableAlert } from '../modals';
 import type { AppLanguage } from '../../../types/user';
 import type { RootStackParamList } from '../../../navigation/types';
 import { selectAuthUser, useAuthStore } from '../../../stores';
@@ -78,6 +82,7 @@ export function AppMenuDrawer({
   const backdropOpacity = useRef(new Animated.Value(0)).current;
 
   const displayName = user?.nickname?.trim() || (language === 'ko' ? '게스트' : 'Guest');
+  const { showUnavailable } = useFeatureUnavailableAlert();
   const handle = useMemo(() => {
     if (!user) {
       return '@guest';
@@ -139,6 +144,17 @@ export function AppMenuDrawer({
   };
 
   const handlePress = (item: (typeof APP_MENU_ITEMS)[number]) => {
+    if (item.id === 'feed' && isAlphaFeatureBlocked('feed')) {
+      dismiss();
+      showUnavailable(ALPHA_FEATURE_LABELS.feed);
+      return;
+    }
+    if (item.id === 'ai' && isAlphaFeatureBlocked('helpdesk')) {
+      dismiss();
+      showUnavailable(ALPHA_FEATURE_LABELS.helpdesk);
+      return;
+    }
+
     dismiss();
     const { target } = item;
     if (target.kind === 'screen') {

@@ -27,6 +27,11 @@ import type { RootStackParamList } from '../../navigation/types';
 import { useAppLanguage, useCopy } from '../../i18n';
 import { useZoneEventStore } from '../../stores';
 import type { EventZoneId } from '../../types/eventZone';
+import {
+  ALPHA_FEATURE_LABELS,
+  isAlphaFeatureBlocked,
+} from '../../constants/common/alphaFeatureBlocks';
+import { useFeatureUnavailableAlert } from '../../components/shared/modals';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EventZone'>;
 
@@ -37,16 +42,19 @@ export function EventZoneScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const language = useAppLanguage();
   const copy = useCopy('eventZone');
+  const { showUnavailable } = useFeatureUnavailableAlert();
   const { zoneId: currentZoneId, usedFallback } = useCurrentEventZone();
   const [selectedZoneId, setSelectedZoneId] = useState<EventZoneId | null>(null);
   const isExpanded = selectedZoneId != null;
 
   const activeEventsByZone = useZoneEventStore(s => s.activeEventsByZone);
   const triggerEvent = useZoneEventStore(s => s.triggerEvent);
-  const eventZoneIds = useMemo(
-    () => Object.keys(activeEventsByZone) as EventZoneId[],
-    [activeEventsByZone],
-  );
+  const eventZoneIds = useMemo(() => {
+    if (isAlphaFeatureBlocked('zoneEvent')) {
+      return [] as EventZoneId[];
+    }
+    return Object.keys(activeEventsByZone) as EventZoneId[];
+  }, [activeEventsByZone]);
   const chatRooms = useMemo(() => allZoneChatRooms(), []);
 
   const [toastText, setToastText] = useState<string | null>(null);
@@ -81,6 +89,10 @@ export function EventZoneScreen({ navigation }: Props) {
   }, []);
 
   const handleTriggerEvent = () => {
+    if (isAlphaFeatureBlocked('zoneEvent')) {
+      showUnavailable(ALPHA_FEATURE_LABELS.zoneEvent);
+      return;
+    }
     const event = buildRandomMockZoneEvent();
     triggerEvent(event);
     showToast(
@@ -211,7 +223,13 @@ export function EventZoneScreen({ navigation }: Props) {
                 closeLabel={copy.closePanel}
                 currentZoneLabel={copy.currentZoneLabel}
                 isCurrentZone={selectedZoneId === currentZoneId}
-                activeEvent={selectedZoneId ? activeEventsByZone[selectedZoneId] : undefined}
+                activeEvent={
+                  isAlphaFeatureBlocked('zoneEvent')
+                    ? undefined
+                    : selectedZoneId
+                      ? activeEventsByZone[selectedZoneId]
+                      : undefined
+                }
                 eventEndsInLabel={copy.eventEndsIn}
                 eventEndedLabel={copy.eventEnded}
                 surpriseMissionBadge={copy.surpriseMissionBadge}
@@ -235,7 +253,9 @@ export function EventZoneScreen({ navigation }: Props) {
           title={copy.chatRoomsTitle}
           memberCountLabel={copy.chatMemberCount}
           joinLabel={copy.enterChat}
-          activeEventsByZone={activeEventsByZone}
+          activeEventsByZone={
+            isAlphaFeatureBlocked('zoneEvent') ? {} : activeEventsByZone
+          }
           bottomInset={insets.bottom}
           liveMemberCounts={liveMemberCounts}
           onRoomPress={zoneId => setSelectedZoneId(zoneId)}

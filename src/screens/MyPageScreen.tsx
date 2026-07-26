@@ -19,7 +19,11 @@ import {
 } from '../components/mypage/MyTravelRecordGrid';
 import { AppIcon } from '../components/shared/icons/AppIcon';
 import { getNavbarOverlayHeight } from '../components/shared/navigation/Navbar';
-import { useAppAlert } from '../components/shared/modals';
+import { useAppAlert, useFeatureUnavailableAlert } from '../components/shared/modals';
+import {
+  ALPHA_FEATURE_LABELS,
+  isAlphaFeatureBlocked,
+} from '../constants/common/alphaFeatureBlocks';
 import { useAppLanguage, useCopy } from '../i18n';
 import { layout } from '../constants/common/layout';
 import {
@@ -121,6 +125,7 @@ export function MyPageScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const navbarClearance = getNavbarOverlayHeight(insets.bottom);
   const { alert } = useAppAlert();
+  const { showUnavailable } = useFeatureUnavailableAlert();
   const language = useAppLanguage();
   const user = useAuthStore(selectAuthUser);
   const hideUserIdOnMyPage = useAppStore(s => s.hideUserIdOnMyPage);
@@ -448,9 +453,13 @@ export function MyPageScreen({ navigation }: Props) {
                 <MyTravelRecordGrid
                   records={records}
                   statusLabels={copy.statusLabels}
-                  onPressRecord={travelRecordId =>
-                    navigation.navigate('TravelRecordDetail', { travelRecordId })
-                  }
+                  onPressRecord={travelRecordId => {
+                    if (isAlphaFeatureBlocked('travelogue')) {
+                      showUnavailable(ALPHA_FEATURE_LABELS.travelogue);
+                      return;
+                    }
+                    navigation.navigate('TravelRecordDetail', { travelRecordId });
+                  }}
                 />
               )
             ) : bookmarksLoading && bookmarkedRecords.length === 0 ? (
@@ -466,9 +475,13 @@ export function MyPageScreen({ navigation }: Props) {
               <MyTravelRecordGrid
                 records={bookmarkedRecords}
                 statusLabels={copy.statusLabels}
-                onPressRecord={travelRecordId =>
-                  navigation.navigate('TravelRecordDetail', { travelRecordId })
-                }
+                onPressRecord={travelRecordId => {
+                  if (isAlphaFeatureBlocked('travelogue')) {
+                    showUnavailable(ALPHA_FEATURE_LABELS.travelogue);
+                    return;
+                  }
+                  navigation.navigate('TravelRecordDetail', { travelRecordId });
+                }}
               />
             )}
           </View>

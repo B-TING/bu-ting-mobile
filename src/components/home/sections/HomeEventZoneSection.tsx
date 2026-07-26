@@ -14,6 +14,7 @@ import { useEventZoneCarousel } from '../../../hooks/useEventZoneCarousel';
 import { useZoneChatRoomSummary } from '../../../hooks/useZoneChatRoomSummary';
 import { useZoneEventStore } from '../../../stores';
 import type { EventZoneId } from '../../../types/eventZone';
+import { isAlphaFeatureBlocked } from '../../../constants/common/alphaFeatureBlocks';
 import { GUIDE_TARGET } from '../../guide/guideTypes';
 import { GuideTarget } from '../../guide/GuideTarget';
 
@@ -55,7 +56,8 @@ export function HomeEventZoneSection({
   const { memberCount: liveMemberCount } = useZoneChatRoomSummary(chatZoneId);
   const landmarks = zone.landmarks.slice(0, 3);
 
-  const activeEvent = useZoneEventStore(s => s.activeEventsByZone[chatZoneId]);
+  const activeEventRaw = useZoneEventStore(s => s.activeEventsByZone[chatZoneId]);
+  const activeEvent = isAlphaFeatureBlocked('zoneEvent') ? undefined : activeEventRaw;
 
   return (
     <GuideTarget id={GUIDE_TARGET.homeEventZone} className="mb-6">

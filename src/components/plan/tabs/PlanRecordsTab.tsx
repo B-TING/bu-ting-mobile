@@ -5,7 +5,11 @@ import { PlaceReviewCard } from '../../review/cards/PlaceReviewCard';
 import { PlaceReviewFormModal } from '../../review/modals/PlaceReviewFormModal';
 import { TravelogueComposeModal } from '../../review/modals/TravelogueComposeModal';
 import { AppIcon } from '../../shared/icons/AppIcon';
-import { useAppAlert } from '../../shared/modals';
+import { useAppAlert, useFeatureUnavailableAlert } from '../../shared/modals';
+import {
+  ALPHA_FEATURE_LABELS,
+  isAlphaFeatureBlocked,
+} from '../../../constants/common/alphaFeatureBlocks';
 import { ICON_COLOR_PRIMARY } from '../../../constants/icons';
 import { useCopy } from '../../../i18n';
 import { deletePlaceReviewForTravel } from '../../../services/travel/deletePlaceReviewForTravel';
@@ -68,6 +72,7 @@ export function PlanRecordsTab({
   onViewTravelRecord,
 }: PlanRecordsTabProps) {
   const { alert } = useAppAlert();
+  const { showUnavailable } = useFeatureUnavailableAlert();
   const copy = useCopy('travelReview');
   const accessToken = useAuthStore(selectReusableAccessToken);
   const travelId = plan.apiTravelId ?? plan.planId;
@@ -135,11 +140,19 @@ export function PlanRecordsTab({
   }, [copy, plan.itinerary, language]);
 
   const openCreateCompose = () => {
+    if (isAlphaFeatureBlocked('travelogue')) {
+      showUnavailable(ALPHA_FEATURE_LABELS.travelogue);
+      return;
+    }
     setComposeMode('create');
     setComposeOpen(true);
   };
 
   const openEditCompose = () => {
+    if (isAlphaFeatureBlocked('travelogue')) {
+      showUnavailable(ALPHA_FEATURE_LABELS.travelogue);
+      return;
+    }
     setComposeMode('edit');
     setComposeOpen(true);
   };

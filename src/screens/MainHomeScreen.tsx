@@ -14,8 +14,12 @@ import { HomeActionFabs, FAB_GAP, FAB_SIZE } from '../components/helpdesk/HomeAc
 import { GUIDE_TARGET } from '../components/guide/guideTypes';
 import { ROUTE_FAB_BOTTOM_OFFSET } from '../components/plan/fab/RouteOptimizeFab';
 import { getNavbarOverlayHeight } from '../components/shared/navigation/Navbar';
-import { useAppAlert } from '../components/shared/modals';
+import { useAppAlert, useFeatureUnavailableAlert } from '../components/shared/modals';
 import { QUICK_ACCESS_ITEMS } from '../constants/home/mainHome';
+import {
+  ALPHA_FEATURE_LABELS,
+  isAlphaFeatureBlocked,
+} from '../constants/common/alphaFeatureBlocks';
 import { festivalToHomeEvent } from '../constants/festival/festivalCalendar';
 import { layout } from '../constants/common/layout';
 import { useMainTabNavigation } from '../navigation/mainTabNavigation';
@@ -65,6 +69,7 @@ export function MainHomeScreen({
   const insets = useSafeAreaInsets();
   const { goToTab } = useMainTabNavigation();
   const { alert } = useAppAlert();
+  const { showUnavailable } = useFeatureUnavailableAlert();
   const scrollRef = useRef<ScrollView>(null);
   const travelogueOffsetY = useRef(0);
   const language = useAppLanguage();
@@ -193,6 +198,10 @@ export function MainHomeScreen({
   };
 
   const goToReboot = () => {
+    if (isAlphaFeatureBlocked('reboot')) {
+      showUnavailable(ALPHA_FEATURE_LABELS.reboot);
+      return;
+    }
     if (!activePlan) {
       return;
     }
@@ -204,6 +213,10 @@ export function MainHomeScreen({
   };
 
   const goToHelpDesk = () => {
+    if (isAlphaFeatureBlocked('helpdesk')) {
+      showUnavailable(ALPHA_FEATURE_LABELS.helpdesk);
+      return;
+    }
     navigation.navigate('HelpDeskChat');
   };
 
@@ -332,6 +345,10 @@ export function MainHomeScreen({
             latestTravelogue={latestTravelogue}
             loading={loadingTravelogue}
             onTraveloguePress={() => {
+              if (isAlphaFeatureBlocked('travelogue') || isAlphaFeatureBlocked('feed')) {
+                showUnavailable(ALPHA_FEATURE_LABELS.travelogue);
+                return;
+              }
               if (latestTravelogue) {
                 navigation.navigate('TravelRecordDetail', {
                   travelRecordId: latestTravelogue.travelRecordId,
@@ -340,7 +357,13 @@ export function MainHomeScreen({
                 goToTab('feed');
               }
             }}
-            onFeedPress={() => goToTab('feed')}
+            onFeedPress={() => {
+              if (isAlphaFeatureBlocked('feed')) {
+                showUnavailable(ALPHA_FEATURE_LABELS.feed);
+                return;
+              }
+              goToTab('feed');
+            }}
           />
         </View>
       </ScrollView>

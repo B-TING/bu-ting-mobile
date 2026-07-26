@@ -23,7 +23,11 @@ import { PlanTabPager } from '../../components/plan/tabs/PlanTabPager';
 import { PlaceReviewFormModal } from '../../components/review/modals/PlaceReviewFormModal';
 import { type PlanDetailTab } from '../../constants/plan/planDetail';
 import { useAppLanguage, useCopy } from '../../i18n';
-import { useAppAlert } from '../../components/shared/modals';
+import { useAppAlert, useFeatureUnavailableAlert } from '../../components/shared/modals';
+import {
+  ALPHA_FEATURE_LABELS,
+  isAlphaFeatureBlocked,
+} from '../../constants/common/alphaFeatureBlocks';
 import { useBusanSearchLocationWhen } from '../../hooks/usePlaceMapUserLocation';
 import { usePlanRoutePlaceDetails } from '../../hooks/usePlanRoutePlaceDetails';
 import { useTravelExpensesSync } from '../../hooks/useTravelExpensesSync';
@@ -231,6 +235,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
 
   const reviewCopy = useCopy('travelReview');
   const { alert } = useAppAlert();
+  const { showUnavailable } = useFeatureUnavailableAlert();
 
   const [tab, setTab] = useState<PlanDetailTab>(route.params?.tab ?? 'overview');
   const [selectedDay, setSelectedDay] = useState(1);
@@ -314,13 +319,24 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
   }, [accessToken, copy.inviteLinkError, travelId]);
 
   const handleInvite = useCallback(() => {
+    if (isAlphaFeatureBlocked('invite')) {
+      showUnavailable(ALPHA_FEATURE_LABELS.invite);
+      return;
+    }
     if (!canInvite) {
       alert({ title: copy.inviteMembers, message: copy.inviteLeaderOnly });
       return;
     }
     setInviteModalOpen(true);
     void loadInviteLink();
-  }, [alert, canInvite, copy.inviteLeaderOnly, copy.inviteMembers, loadInviteLink]);
+  }, [
+    alert,
+    canInvite,
+    copy.inviteLeaderOnly,
+    copy.inviteMembers,
+    loadInviteLink,
+    showUnavailable,
+  ]);
 
   const handleSaveBudgetEntry = useCallback(
     async (entry: BudgetEntryDraft) => {
@@ -1159,15 +1175,21 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     }
 
     openRebootPendingRef.current = false;
-    setTab('schedule');
     navigation.setParams({ openReboot: undefined });
+
+    if (isAlphaFeatureBlocked('reboot')) {
+      showUnavailable(ALPHA_FEATURE_LABELS.reboot);
+      return;
+    }
+
+    setTab('schedule');
 
     const timer = setTimeout(() => {
       scheduleRef.current?.handleRebootFabPress();
     }, 400);
 
     return () => clearTimeout(timer);
-  }, [enrichedPlan, navigation, offlineMode]);
+  }, [enrichedPlan, navigation, offlineMode, showUnavailable]);
 
   useEffect(() => {
     if (scheduleModal.kind === 'pick' && !pickRoute) {
@@ -1384,13 +1406,26 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
                 }
                 onEndTrip={offlineMode ? undefined : requestCompletePlan}
                 onViewFeed={
-                  offlineMode ? undefined : () => navigateToMainTab(navigation, 'feed')
+                  offlineMode
+                    ? undefined
+                    : () => {
+                        if (isAlphaFeatureBlocked('feed')) {
+                          showUnavailable(ALPHA_FEATURE_LABELS.feed);
+                          return;
+                        }
+                        navigateToMainTab(navigation, 'feed');
+                      }
                 }
                 onViewTravelRecord={
                   offlineMode
                     ? undefined
-                    : travelRecordId =>
-                        navigation.navigate('TravelRecordDetail', { travelRecordId })
+                    : travelRecordId => {
+                        if (isAlphaFeatureBlocked('travelogue')) {
+                          showUnavailable(ALPHA_FEATURE_LABELS.travelogue);
+                          return;
+                        }
+                        navigation.navigate('TravelRecordDetail', { travelRecordId });
+                      }
                 }
               />
             ),
