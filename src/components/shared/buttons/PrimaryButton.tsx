@@ -1,6 +1,6 @@
 import { Pressable, Text } from 'react-native';
 
-import { cn } from '../../../utils/cn';
+import { cn } from '../../../utils/common/cn';
 
 type PrimaryButtonProps = {
   label: string;
@@ -18,15 +18,15 @@ export function PrimaryButton({
       onPress={onPress}
       disabled={disabled}
       className={cn(
-        'items-center rounded-2xl py-4',
-        disabled ? 'bg-brand-border' : 'bg-brand-primary active:opacity-90',
+        'items-center rounded-full py-4',
+        disabled ? 'bg-[#E8EEF5]' : 'bg-brand-primary active:opacity-90',
       )}
       accessibilityRole="button"
       accessibilityState={{ disabled }}>
       <Text
         className={cn(
           'text-[17px] font-bold',
-          disabled ? 'text-slate-400' : 'text-white',
+          disabled ? 'text-[#94A3B8]' : 'text-white',
         )}>
         {label}
       </Text>

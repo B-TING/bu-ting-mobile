@@ -2,12 +2,13 @@ import { Text, View } from 'react-native';
 
 import {
   festivalStatusLabel,
+  festivalTagLabel,
   getFestivalStatus,
   type BusanFestival,
   type FestivalStatus,
-} from '../../constants/festivalCalendar';
+} from '../../constants/festival/festivalCalendar';
 import type { AppLanguage } from '../../types/user';
-import { cn } from '../../utils/cn';
+import { cn } from '../../utils/common/cn';
 
 type FestivalTagBadgesProps = {
   festival: BusanFestival;
@@ -35,7 +36,9 @@ export function FestivalTagBadges({ festival, language, className }: FestivalTag
           'rounded-md px-2 py-0.5',
           festival.tag === 'FESTIVAL' ? 'bg-brand-primary' : 'bg-orange-500',
         )}>
-        <Text className="text-[10px] font-bold text-white">{festival.tag}</Text>
+        <Text className="text-[10px] font-bold text-white">
+          {festivalTagLabel(festival.tag, language)}
+        </Text>
       </View>
       {status !== 'ongoing' ? (
         <View className={cn('rounded-md px-2 py-0.5', statusBadgeClass(status))}>

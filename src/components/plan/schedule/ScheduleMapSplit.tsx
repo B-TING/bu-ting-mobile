@@ -1,30 +1,45 @@
-import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   LayoutChangeEvent,
   PanResponder,
+  Pressable,
   ScrollView,
+  StyleSheet,
   Text,
   View,
 } from 'react-native';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import {
+  ICON_COLOR_MUTED,
+  ICON_COLOR_PRIMARY,
+} from '../../../constants/icons';
+import { AppIcon } from '../../shared/icons/AppIcon';
 import { routeFabScrollPadding } from '../fab/RouteOptimizeFab';
-import { NaverMapPlaceholder } from '../map/NaverMapPlaceholder';
-import type { RouteItem } from '../../../types/travelPlan';
+import { ScheduleMapView } from '../../../kakaoMap';
+import { APP_MODAL } from '../../shared/modals/appModalStyles';
+import type { DailyItinerary } from '../../../types/travelPlan';
 
 const DEFAULT_SCHEDULE_RATIO = 0.38;
+const DETAIL_SCHEDULE_RATIO = 0.58;
 const MAX_SCHEDULE_RATIO = 1.0;
 const MIN_MAP_HEIGHT = 0;
 const SNAP_CLOSE_THRESHOLD = 72;
 const HANDLE_HEIGHT = 32;
 
 type ScheduleMapSplitProps = {
-  routes: RouteItem[];
+  itinerary: DailyItinerary[];
+  selectedDayNumber: number;
+  highlightItemId?: string | null;
   mapTitle: string;
   mapSubtitle: string;
   dragLabel: string;
   mapClosedHint: string;
+  detailContent?: ReactNode;
+  detailCloseLabel?: string;
+  onDetailClose?: () => void;
+  scrollBottomInset?: number;
   children: ReactNode;
 };
 
@@ -57,18 +72,26 @@ function snapScheduleHeight(height: number, containerHeight: number): number {
 }
 
 export function ScheduleMapSplit({
-  routes,
+  itinerary,
+  selectedDayNumber,
+  highlightItemId,
   mapTitle,
   mapSubtitle,
   dragLabel,
   mapClosedHint,
+  detailContent,
+  detailCloseLabel,
+  onDetailClose,
+  scrollBottomInset,
   children,
 }: ScheduleMapSplitProps) {
   const insets = useSafeAreaInsets();
+  const listBottomPadding = routeFabScrollPadding(scrollBottomInset ?? insets.bottom);
   const [scheduleHeight, setScheduleHeight] = useState(0);
   const scheduleHeightRef = useRef(0);
   const dragStartHeightRef = useRef(0);
   const containerHeightRef = useRef(0);
+  const detailActive = detailContent != null;
 
   const applyScheduleHeight = useCallback((height: number) => {
     const max = Math.min(
@@ -79,6 +102,19 @@ export function ScheduleMapSplit({
     scheduleHeightRef.current = clamped;
     setScheduleHeight(clamped);
   }, []);
+
+  const expandForDetail = useCallback(() => {
+    if (containerHeightRef.current <= 0) {
+      return;
+    }
+    const target = Math.min(
+      Math.round(containerHeightRef.current * DETAIL_SCHEDULE_RATIO),
+      Math.round(containerHeightRef.current * MAX_SCHEDULE_RATIO) -
+        HANDLE_HEIGHT -
+        MIN_MAP_HEIGHT,
+    );
+    applyScheduleHeight(target);
+  }, [applyScheduleHeight]);
 
   const handleContainerLayout = useCallback(
     (event: LayoutChangeEvent) => {
@@ -93,6 +129,12 @@ export function ScheduleMapSplit({
     },
     [applyScheduleHeight],
   );
+
+  useEffect(() => {
+    if (detailActive) {
+      expandForDetail();
+    }
+  }, [detailActive, expandForDetail]);
 
   const panResponder = useMemo(
     () =>
@@ -119,11 +161,12 @@ export function ScheduleMapSplit({
   return (
     <View className="flex-1" onLayout={handleContainerLayout}>
       <View className="min-h-0 flex-1 overflow-hidden bg-[#E8F4E8]">
-        <NaverMapPlaceholder
-          title={mapTitle}
-          subtitle={mapSubtitle}
-          routes={routes}
-          size="fill"
+        <ScheduleMapView
+          itinerary={itinerary}
+          selectedDayNumber={selectedDayNumber}
+          highlightItemId={highlightItemId}
+          mapTitle={mapTitle}
+          mapSubtitle={mapSubtitle}
         />
       </View>
 
@@ -141,16 +184,82 @@ export function ScheduleMapSplit({
       </View>
 
       {scheduleOpen ? (
-        <View style={{ height: scheduleHeight }} className="min-h-0 bg-brand-background">
+        <View style={{ height: scheduleHeight }} className="relative min-h-0 bg-brand-background">
           <ScrollView
             className="flex-1 px-4"
-            contentContainerStyle={{ paddingBottom: routeFabScrollPadding(insets.bottom) }}
+            contentContainerStyle={{ paddingBottom: listBottomPadding }}
             showsVerticalScrollIndicator={false}
-            nestedScrollEnabled>
+            nestedScrollEnabled
+            pointerEvents={detailActive ? 'none' : 'auto'}
+            style={detailActive ? styles.hiddenList : undefined}>
             {children}
           </ScrollView>
+
+          {detailActive ? (
+            <View className="absolute inset-0 bg-brand-background">
+              {onDetailClose && detailCloseLabel ? (
+                <Pressable
+                  onPress={onDetailClose}
+                  accessibilityRole="button"
+                  accessibilityLabel={detailCloseLabel}
+                  style={styles.detailCloseBtn}
+                  hitSlop={8}>
+                  <AppIcon name="x" size={16} color={ICON_COLOR_PRIMARY} strokeWidth={2.5} />
+                </Pressable>
+              ) : null}
+              <ScrollView
+                className="flex-1"
+                contentContainerStyle={{ paddingBottom: listBottomPadding }}
+                showsVerticalScrollIndicator={false}
+                nestedScrollEnabled>
+                {detailContent}
+              </ScrollView>
+            </View>
+          ) : null}
         </View>
       ) : null}
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  hiddenList: {
+    opacity: 0,
+  },
+  detailCloseBtn: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    zIndex: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 4,
+  },
+  detailSheet: {
+    borderTopLeftRadius: APP_MODAL.sheetRadius,
+    borderTopRightRadius: APP_MODAL.sheetRadius,
+    overflow: 'hidden',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  detailHandle: {
+    alignSelf: 'center',
+    width: APP_MODAL.handleWidth,
+    height: APP_MODAL.handleHeight,
+    borderRadius: APP_MODAL.handleHeight / 2,
+    backgroundColor: APP_MODAL.handleColor,
+    marginTop: 10,
+    marginBottom: 4,
+  },
+});

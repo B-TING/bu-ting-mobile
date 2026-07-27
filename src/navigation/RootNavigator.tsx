@@ -4,13 +4,16 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { BrandIcon } from '../components/shared/brand/BrandIcon';
-import { layout } from '../constants/layout';
+import { layout } from '../constants/common/layout';
+import { useSetupPhase } from '../hooks/useSetupPhase';
 import { FestivalCalendarScreen } from '../screens/festival/FestivalCalendarScreen';
 import { FestivalDetailScreen } from '../screens/festival/FestivalDetailScreen';
+import { PlaceMapSearchScreen } from '../screens/places/PlaceMapSearchScreen';
+import { HelpDeskChatScreen } from '../screens/helpdesk/HelpDeskChatScreen';
+import { EventZoneScreen } from '../screens/eventZone/EventZoneScreen';
+import { EventZoneChatScreen } from '../screens/eventZone/EventZoneChatScreen';
 import { LuggageStorageScreen } from '../screens/locker/LuggageStorageScreen';
 import { TravelogueDetailScreen } from '../screens/feed/TravelogueDetailScreen';
-import { TravelogueFeedScreen } from '../screens/feed/TravelogueFeedScreen';
-import { MainHomeScreen } from '../screens/MainHomeScreen';
 import { MenuPlaceholderScreen } from '../screens/MenuPlaceholderScreen';
 import { PlanCandidatesScreen } from '../screens/plan/PlanCandidatesScreen';
 import { PlanDetailScreen } from '../screens/plan/PlanDetailScreen';
@@ -18,12 +21,13 @@ import { PlanWizardScreen } from '../screens/plan/PlanWizardScreen';
 import { LanguageSelectionScreen } from '../screens/setup/LanguageSelectionScreen';
 import { LoginScreen } from '../screens/setup/LoginScreen';
 import { OnboardingScreen } from '../screens/setup/OnboardingScreen';
+import { MainTabNavigator } from './MainTabNavigator';
+import { initI18n } from '../i18n';
+import { bootstrapAuth } from '../services/auth/authSession';
 import {
   hydrateAppStore,
-  selectActivePlan,
-  selectSetupPhase,
   useAppStore,
-  usePlanStore,
+  useAuthStore,
 } from '../stores';
 import type { SetupPhase } from './types';
 import type { RootStackParamList } from './types';
@@ -39,9 +43,9 @@ const INITIAL_ROUTES: Record<Exclude<SetupPhase, 'main'>, keyof RootStackParamLi
 const HYDRATE_TIMEOUT_MS = 5000;
 
 export function RootNavigator() {
-  const hasHydrated = useAppStore(state => state._hasHydrated);
-  const phase = useAppStore(selectSetupPhase);
-  const activePlan = usePlanStore(selectActivePlan);
+  const hasAppHydrated = useAppStore(state => state._hasHydrated);
+  const hasAuthHydrated = useAuthStore(state => state._hasHydrated);
+  const phase = useSetupPhase();
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -52,15 +56,21 @@ export function RootNavigator() {
         console.warn('[Bu-Ting] Storage hydrate timeout — continuing anyway');
         useAppStore.getState().setHasHydrated(true);
       }
+      if (!cancelled && !useAuthStore.getState()._hasHydrated) {
+        useAuthStore.getState().setHasHydrated(true);
+      }
     }, HYDRATE_TIMEOUT_MS);
 
-    hydrateAppStore()
+    Promise.all([hydrateAppStore(), bootstrapAuth()])
       .catch(error => {
-        console.warn('[Bu-Ting] hydrate failed', error);
+        console.warn('[Bu-Ting] startup hydrate failed', error);
         useAppStore.getState().setHasHydrated(true);
+        useAuthStore.getState().setHasHydrated(true);
       })
       .finally(() => {
         if (!cancelled) {
+          const language = useAppStore.getState().language ?? 'ko';
+          initI18n(language);
           setReady(true);
         }
       });
@@ -71,7 +81,7 @@ export function RootNavigator() {
     };
   }, []);
 
-  if (!ready || !hasHydrated) {
+  if (!ready || !hasAppHydrated || !hasAuthHydrated) {
     return (
       <View style={[layout.screen, styles.loading]}>
         <BrandIcon size={72} />
@@ -81,7 +91,7 @@ export function RootNavigator() {
   }
 
   const initialRoute =
-    phase === 'main' ? (activePlan ? 'PlanDetail' : 'PlanWizard') : INITIAL_ROUTES[phase];
+    phase === 'main' ? 'MainTabs' : INITIAL_ROUTES[phase];
 
   return (
     <NavigationContainer>
@@ -94,16 +104,19 @@ export function RootNavigator() {
         />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-        <Stack.Screen name="MainHome" component={MainHomeScreen} />
+        <Stack.Screen name="MainTabs" component={MainTabNavigator} />
         <Stack.Screen name="MenuPlaceholder" component={MenuPlaceholderScreen} />
         <Stack.Screen name="PlanWizard" component={PlanWizardScreen} />
         <Stack.Screen name="PlanCandidates" component={PlanCandidatesScreen} />
         <Stack.Screen name="PlanDetail" component={PlanDetailScreen} />
-        <Stack.Screen name="TravelogueFeed" component={TravelogueFeedScreen} />
-        <Stack.Screen name="TravelogueDetail" component={TravelogueDetailScreen} />
+        <Stack.Screen name="TravelRecordDetail" component={TravelogueDetailScreen} />
         <Stack.Screen name="FestivalCalendar" component={FestivalCalendarScreen} />
         <Stack.Screen name="FestivalDetail" component={FestivalDetailScreen} />
         <Stack.Screen name="LuggageStorage" component={LuggageStorageScreen} />
+        <Stack.Screen name="PlaceMapSearch" component={PlaceMapSearchScreen} />
+        <Stack.Screen name="HelpDeskChat" component={HelpDeskChatScreen} />
+        <Stack.Screen name="EventZone" component={EventZoneScreen} />
+        <Stack.Screen name="EventZoneChat" component={EventZoneChatScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -1,28 +1,26 @@
-import { useState } from 'react';
-import {
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
-} from 'react-native';
+import { useMemo } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { NaverMapPlaceholder } from '../map/NaverMapPlaceholder';
+import { useCopy } from '../../../i18n';
+import { useCachedRoutePlaceDetail } from '../../../hooks/useCachedRoutePlaceDetail';
+import { shouldFetchRoutePlaceDetail } from '../../../utils/places/routePlaceDetail';
 import type { PlaceReview } from '../../../types/travelReview';
 import type { RouteItem } from '../../../types/travelPlan';
+import type { AppLanguage } from '../../../types/user';
+import { RouteMapView } from '../../../kakaoMap';
+import { routeItemToBusanPlaceFallback } from '../../../utils/places/placeModelBridge';
+import { PlaceDetailPanel } from '../../places/PlaceDetailPanel';
 import { StarRating } from '../../shared/rating/StarRating';
+import { AppModal, AppModalActions } from '../../shared/modals';
 
-/** 하단 시트 최대 높이 (화면 대비) */
-const SHEET_HEIGHT_RATIO = 0.52;
-/** 지도 확대 시 상단 지도 영역 */
-const MAP_AREA_RATIO = 0.5;
+const MAP_AREA_RATIO = 0.34;
+const MAP_AREA_MAX = 280;
 
 type PlaceDetailModalProps = {
   visible: boolean;
   route: RouteItem | null;
+  language: AppLanguage;
   copy: {
     markVisited: string;
     visited: string;
@@ -35,6 +33,17 @@ type PlaceDetailModalProps = {
     writeReview?: string;
     editReview?: string;
     visitFirstReview?: string;
+    detailLoading: string;
+    notFound: string;
+    addressLabel: string;
+    phoneLabel: string;
+    hoursLabel: string;
+    openNow: string;
+    closedNow: string;
+    reviewsTitle: string;
+    reviewsSource: string;
+    openInGoogleMaps: string;
+    placeRatingSummary: (rating: number, count: number) => string;
   };
   placeReview?: PlaceReview;
   onClose: () => void;
@@ -45,6 +54,7 @@ type PlaceDetailModalProps = {
 export function PlaceDetailModal({
   visible,
   route,
+  language,
   copy,
   placeReview,
   onClose,
@@ -53,200 +63,203 @@ export function PlaceDetailModal({
 }: PlaceDetailModalProps) {
   const insets = useSafeAreaInsets();
   const { height: screenHeight } = useWindowDimensions();
-  const [mapExpanded, setMapExpanded] = useState(false);
+  const searchCopy = useCopy('placeSearch');
 
-  const sheetMaxHeight = Math.round(screenHeight * SHEET_HEIGHT_RATIO);
-  const mapAreaHeight = Math.round(screenHeight * MAP_AREA_RATIO);
+  const mapAreaHeight = Math.min(Math.round(screenHeight * MAP_AREA_RATIO), MAP_AREA_MAX);
 
-  if (!route) {
+  const showPlaceSearchDetail = route != null && shouldFetchRoutePlaceDetail(route.type);
+  const { detail, loading: loadingDetail } = useCachedRoutePlaceDetail(
+    route,
+    visible && showPlaceSearchDetail,
+  );
+
+  const busanPlace = useMemo(
+    () => (route ? routeItemToBusanPlaceFallback(route) : null),
+    [route],
+  );
+
+  if (!route || !busanPlace) {
     return null;
   }
+
   const info = route.placeInfo;
 
-  const handleClose = () => {
-    setMapExpanded(false);
-    onClose();
-  };
+  const scheduleActions = (
+    <View className="px-5">
+      <View className="mt-3 flex-row flex-wrap gap-2">
+        <Pressable
+          onPress={onToggleVisited}
+          className="rounded-full bg-brand-selected px-3 py-2 active:opacity-80">
+          <Text className="text-sm font-semibold text-brand-primary">
+            {route.isVisited ? copy.visited : copy.markVisited}
+          </Text>
+        </Pressable>
+        {onWriteReview && copy.writeReview ? (
+          <Pressable
+            onPress={route.isVisited ? onWriteReview : undefined}
+            disabled={!route.isVisited}
+            className={`rounded-full px-3 py-2 ${
+              route.isVisited ? 'bg-brand-primary active:opacity-80' : 'bg-brand-border opacity-60'
+            }`}>
+            <Text
+              className={`text-sm font-semibold ${
+                route.isVisited ? 'text-white' : 'text-brand-muted'
+              }`}>
+              {placeReview ? (copy.editReview ?? copy.writeReview) : copy.writeReview}
+            </Text>
+          </Pressable>
+        ) : null}
+      </View>
+
+      {placeReview ? (
+        <View className="mt-4 rounded-2xl border border-brand-border bg-brand-surface p-4">
+          <Text className="mb-2 text-xs font-bold text-brand-muted">
+            {language === 'ko' ? '내 후기' : 'My review'}
+          </Text>
+          <StarRating value={placeReview.rating} readonly size="sm" />
+          {placeReview.content ? (
+            <Text className="mt-2 text-sm text-brand-text">{placeReview.content}</Text>
+          ) : null}
+        </View>
+      ) : route.isVisited && copy.visitFirstReview && onWriteReview ? (
+        <Text className="mt-2 text-xs text-brand-muted">{copy.visitFirstReview}</Text>
+      ) : null}
+    </View>
+  );
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
-      <View style={styles.overlay}>
-        <Pressable style={styles.backdrop} onPress={handleClose} accessibilityLabel="Close" />
+    <AppModal
+      visible={visible}
+      onClose={onClose}
+      showHandle={false}
+      backdropDismiss
+      maxHeight={screenHeight}
+      closeAccessibilityLabel={copy.close}
+      contentStyle={[
+        styles.sheet,
+        {
+          height: screenHeight,
+          paddingTop: insets.top,
+          paddingBottom: Math.max(insets.bottom, 12),
+        },
+      ]}>
+      <View style={styles.body}>
+        <View style={[styles.mapArea, { height: mapAreaHeight }]}>
+          <RouteMapView
+            title={copy.mapPlaceholder}
+            subtitle={copy.mapPlaceholderSub}
+            routes={[route]}
+            highlightItemId={route.itemId}
+            size="fill"
+            showFooter={false}
+          />
+          <Pressable
+            onPress={onClose}
+            accessibilityRole="button"
+            accessibilityLabel={copy.close}
+            style={styles.mapCloseBtn}>
+            <Text style={styles.mapCloseText}>{copy.close}</Text>
+          </Pressable>
+        </View>
 
-        {mapExpanded && (
-          <View
-            style={[
-              styles.mapLayer,
-              { height: mapAreaHeight, paddingTop: insets.top },
-            ]}>
-            <NaverMapPlaceholder
-              title={copy.mapPlaceholder}
-              subtitle={copy.mapPlaceholderSub}
-              routes={[route]}
-              highlightItemId={route.itemId}
-              size="fullscreen"
+        <ScrollView
+          style={styles.detailScroll}
+          contentContainerStyle={styles.detailContent}
+          showsVerticalScrollIndicator={false}>
+          {showPlaceSearchDetail ? (
+            <PlaceDetailPanel
+              place={busanPlace}
+              detail={detail}
+              language={language}
+              copy={searchCopy}
+              loading={loadingDetail}
+              footerExtra={scheduleActions}
             />
-            <Pressable
-              onPress={() => setMapExpanded(false)}
-              style={[styles.mapCloseBtn, { top: insets.top + 8 }]}>
-              <Text style={styles.mapCloseText}>{copy.close}</Text>
-            </Pressable>
-          </View>
-        )}
-
-        <View
-          style={[
-            styles.sheet,
-            {
-              maxHeight: sheetMaxHeight,
-              paddingBottom: Math.max(insets.bottom, 16),
-            },
-          ]}>
-          <View style={styles.handle} />
-          <ScrollView
-            style={styles.sheetScroll}
-            contentContainerStyle={styles.sheetScrollContent}
-            showsVerticalScrollIndicator={false}
-            bounces={false}>
-            <Text className="mb-1 text-xl font-bold text-brand-text">{route.placeName}</Text>
-            {info && (
-              <Text className="mb-3 text-sm text-brand-muted">
-                ★ {info.rating ?? '—'} ({info.reviewCount?.toLocaleString() ?? 0}) ·{' '}
-                {info.category}
-              </Text>
-            )}
-
-            {!mapExpanded && (
-              <NaverMapPlaceholder
-                title={copy.mapPlaceholder}
-                subtitle={copy.mapPlaceholderSub}
-                routes={[route]}
-                highlightItemId={route.itemId}
-                onPress={() => setMapExpanded(true)}
-                tapHint={copy.mapTapHint}
-              />
-            )}
-
-            <View className="mt-4 flex-row flex-wrap gap-2">
-              <Pressable
-                onPress={onToggleVisited}
-                className="rounded-full bg-brand-selected px-3 py-2 active:opacity-80">
-                <Text className="text-sm font-semibold text-brand-primary">
-                  {route.isVisited ? copy.visited : copy.markVisited}
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={() => setMapExpanded(true)}
-                className="rounded-full bg-brand-border px-3 py-2 active:opacity-80">
-                <Text className="text-sm font-semibold text-brand-text">
-                  {copy.directions}
-                </Text>
-              </Pressable>
-              {onWriteReview && copy.writeReview ? (
-                <Pressable
-                  onPress={route.isVisited ? onWriteReview : undefined}
-                  disabled={!route.isVisited}
-                  className={`rounded-full px-3 py-2 ${
-                    route.isVisited ? 'bg-brand-primary active:opacity-80' : 'bg-brand-border opacity-60'
-                  }`}>
-                  <Text
-                    className={`text-sm font-semibold ${
-                      route.isVisited ? 'text-white' : 'text-brand-muted'
-                    }`}>
-                    {placeReview ? copy.editReview ?? copy.writeReview : copy.writeReview}
-                  </Text>
-                </Pressable>
-              ) : null}
-            </View>
-
-            {placeReview ? (
+          ) : info ? (
+            <View className="px-5">
+              <Text className="text-xl font-bold text-brand-text">{route.placeName}</Text>
+              {scheduleActions}
               <View className="mt-4 rounded-2xl border border-brand-border bg-brand-surface p-4">
-                <StarRating value={placeReview.rating} readonly size="sm" />
-                {placeReview.comment ? (
-                  <Text className="mt-2 text-sm text-brand-text">{placeReview.comment}</Text>
-                ) : null}
-              </View>
-            ) : route.isVisited && copy.visitFirstReview && onWriteReview ? (
-              <Text className="mt-2 text-xs text-brand-muted">{copy.visitFirstReview}</Text>
-            ) : null}
-
-            {info && (
-              <View className="mt-4 rounded-2xl border border-brand-border bg-brand-surface p-4">
-                <Text className="mb-2 text-sm leading-5 text-brand-text">
-                  {info.description}
-                </Text>
+                <Text className="mb-2 text-sm leading-5 text-brand-text">{info.description}</Text>
                 {info.dwellMinutes ? (
-                  <Text className="mb-1 text-xs text-brand-muted">
-                    {copy.dwell(info.dwellMinutes)}
-                  </Text>
+                  <Text className="mb-1 text-xs text-brand-muted">{copy.dwell(info.dwellMinutes)}</Text>
                 ) : null}
                 <Text className="text-xs text-brand-muted">{info.hours}</Text>
                 <Text className="mt-1 text-xs text-brand-muted">{info.address}</Text>
               </View>
-            )}
-          </ScrollView>
-          <Pressable
-            onPress={handleClose}
-            className="mx-5 mt-2 items-center rounded-2xl bg-brand-primary py-3 active:opacity-90">
-            <Text className="text-[15px] font-bold text-white">{copy.close}</Text>
-          </Pressable>
+            </View>
+          ) : (
+            scheduleActions
+          )}
+        </ScrollView>
+
+        <View style={styles.footer}>
+          <AppModalActions actions={[{ label: copy.close, onPress: onClose, variant: 'primary' }]} />
         </View>
       </View>
-    </Modal>
+    </AppModal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
+  sheet: {
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+  },
+  body: {
     flex: 1,
-    justifyContent: 'flex-end',
   },
-  backdrop: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-  },
-  mapLayer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 1,
+  mapArea: {
+    width: '100%',
+    overflow: 'hidden',
+    backgroundColor: '#E8F0F8',
   },
   mapCloseBtn: {
     position: 'absolute',
-    right: 16,
+    top: 10,
+    right: 12,
     zIndex: 2,
     borderRadius: 20,
     backgroundColor: 'rgba(255,255,255,0.95)',
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    // paddingVertical: 7,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 3,
+    elevation: 3,
   },
   mapCloseText: {
     fontSize: 13,
     fontWeight: '700',
     color: '#0077B6',
   },
-  sheet: {
-    zIndex: 2,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    backgroundColor: '#F8FAFC',
+  detailScroll: {
+    flex: 1,
+    marginTop: -14,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: '#CBD5E1',
     overflow: 'hidden',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 6,
   },
-  handle: {
-    alignSelf: 'center',
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#E2E8F0',
-    marginTop: 10,
-    marginBottom: 8,
+  detailContent: {
+    paddingTop: 22,
+    paddingBottom: 16,
   },
-  sheetScroll: {
-    flexGrow: 0,
-  },
-  sheetScrollContent: {
+  footer: {
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 20,
-    paddingBottom: 8,
+    paddingTop: 12,
   },
 });

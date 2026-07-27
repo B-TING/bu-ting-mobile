@@ -33,10 +33,33 @@ local.properties
 .cxx/
 *.keystore
 !debug.keystore
+android/gradle.properties
 .kotlin/
+ios/BUTingMobile/Info.plist
+android/app/src/main/AndroidManifest.xml
 
-# Local env (ngrok token 등)
-.env.local
+# Local env — API keys, ngrok token 등 (커밋 금지)
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Kakao Map — npm run kakao:sync 로 .env → 생성
+src/kakaoMap/config.ts
+
+# Legacy Kakao Map config (config.ts 로 이전됨, 미사용)
+src/constants/map/kakaoMapConfig.ts
+
+# API — npm run api:sync 로 .env → 생성
+src/constants/api/apiBaseUrl.ts
+src/constants/chat/zoneChatWsEnv.ts
+
+# OAuth — npm run oauth:sync 로 .env → 생성
+src/constants/auth/oauthConfig.ts
+android/app/src/main/res/values/oauth_strings.xml
+
+# OAuth 클라이언트 ID·redirect URI 등 로컬 설정 (apiConfig.ts.example 참고)
+src/constants/api/apiConfig.ts
 
 # node.js
 #
@@ -76,3 +99,13 @@ yarn-error.log
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# 지도 파일 (저작권 문제 확인 후 추가)
+assets/map/busan.svg
+assets/map/busan-sigungu.geojson
+
+# 채팅 로컬 통합 테스트 스크립트
+scripts/test-zone*.cjs
+
+# API Swagger
+openapi3.yaml

@@ -1,17 +1,11 @@
-import { useMemo, useState } from 'react';
-import {
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, ScrollView, Text, TextInput, View } from 'react-native';
 
-import { catalogThumbnail } from '../../../constants/placeCatalog';
+import { buildPlaceListMetaLine } from '../../../constants/places/placeSearch';
+import { useCopy } from '../../../i18n';
+import { usePlaceSearchStore } from '../../../stores';
 import { TransportModePicker } from '../schedule/TransportModePicker';
+import type { BusanPlace } from '../../../types/placeSearch';
 import type { AppLanguage } from '../../../types/user';
 import type { TravelLegMode } from '../../../types/travelPlan';
 import {
@@ -20,8 +14,14 @@ import {
   listBrowseRebootPlaces,
   searchRebootPlaces,
   type RebootPlaceCandidate,
-} from '../../../utils/rebootPlaces';
-import { cn } from '../../../utils/cn';
+} from '../../../utils/places/rebootPlaces';
+import {
+  PLAN_PICK_CONTENT_TYPE,
+  busanPlaceToRebootCandidate,
+} from '../../../utils/places/placeModelBridge';
+import { haversineKm } from '../../../utils/geo/geo';
+import { AppModal, AppModalPrimaryFooter } from '../../shared/modals';
+import { PlaceSearchListItem } from '../../places/PlaceSearchListItem';
 
 export type PlacePickModalCopy = {
   title: string;
@@ -46,9 +46,33 @@ type PlacePickModalProps = {
   excludePlaceIds: string[];
   showTransportMode?: boolean;
   defaultLegMode?: TravelLegMode;
+  /** true면 관광지 검색과 동일한 location + detail API */
+  useTourApiNearby?: boolean;
   onClose: () => void;
   onSelect: (candidate: RebootPlaceCandidate, legMode?: TravelLegMode) => void;
 };
+
+function rebootCandidateToBusanPlace(candidate: RebootPlaceCandidate): BusanPlace {
+  return {
+    id: candidate.placeId,
+    contentId: candidate.placeId,
+    contentTypeId: PLAN_PICK_CONTENT_TYPE,
+    name: candidate.placeName,
+    address: candidate.address ?? '',
+    location: candidate.location,
+    rating: 0,
+    userRatingsTotal: 0,
+    imageUrl: candidate.imageUrl,
+  };
+}
+
+function filterPlacesByQuery(places: BusanPlace[], query: string): BusanPlace[] {
+  const q = query.trim().toLowerCase();
+  if (!q) {
+    return places;
+  }
+  return places.filter(place => place.name.toLowerCase().includes(q));
+}
 
 export function PlacePickModal({
   visible,
@@ -58,31 +82,69 @@ export function PlacePickModal({
   excludePlaceIds,
   showTransportMode = false,
   defaultLegMode = 'walk',
+  useTourApiNearby = false,
   onClose,
   onSelect,
 }: PlacePickModalProps) {
-  const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [legMode, setLegMode] = useState<TravelLegMode>(defaultLegMode);
 
-  const nearby = useMemo(() => {
+  const searchCopy = useCopy('placeSearch');
+  const cacheEntry = usePlaceSearchStore(s => s.cacheByType[PLAN_PICK_CONTENT_TYPE]);
+  const apiLoading = usePlaceSearchStore(s => s.isLoading(PLAN_PICK_CONTENT_TYPE));
+  const searchByLocation = usePlaceSearchStore(s => s.searchByLocation);
+  const hasCacheForCenter = usePlaceSearchStore(s => s.hasCacheForCenter);
+
+  useEffect(() => {
+    if (!visible || !useTourApiNearby || !anchor) {
+      return;
+    }
+
+    if (hasCacheForCenter(PLAN_PICK_CONTENT_TYPE, anchor)) {
+      return;
+    }
+
+    void searchByLocation({
+      contentTypeId: PLAN_PICK_CONTENT_TYPE,
+      searchCenter: anchor,
+      mapCenter: anchor,
+      emptyErrorFallback: copy.searchEmpty,
+    });
+  }, [visible, useTourApiNearby, anchor, hasCacheForCenter, searchByLocation, copy.searchEmpty]);
+
+  const apiPlaces = useMemo(() => {
+    if (!useTourApiNearby || !anchor) {
+      return [];
+    }
+    const exclude = new Set(excludePlaceIds);
+    const places = (cacheEntry?.places ?? []).filter(place => !exclude.has(place.contentId));
+    return filterPlacesByQuery(places, query).sort((a, b) => {
+      const da = haversineKm(anchor.lat, anchor.lng, a.location.lat, a.location.lng);
+      const db = haversineKm(anchor.lat, anchor.lng, b.location.lat, b.location.lng);
+      return da - db;
+    });
+  }, [useTourApiNearby, anchor, cacheEntry?.places, excludePlaceIds, query]);
+
+  const localCandidates = useMemo(() => {
+    if (useTourApiNearby && anchor) {
+      return [];
+    }
+    if (query.trim()) {
+      return searchRebootPlaces(query, { excludePlaceIds, language });
+    }
     if (anchor) {
       return findNearbyRebootCandidates(anchor, { excludePlaceIds, language });
     }
     return listBrowseRebootPlaces({ excludePlaceIds, language });
-  }, [anchor, excludePlaceIds, language]);
+  }, [useTourApiNearby, anchor, query, excludePlaceIds, language]);
 
-  const searchResults = useMemo(
-    () =>
-      searchRebootPlaces(query, {
-        excludePlaceIds,
-        language,
-      }),
-    [query, excludePlaceIds, language],
+  const localPlaces = useMemo(
+    () => localCandidates.map(rebootCandidateToBusanPlace),
+    [localCandidates],
   );
 
-  const list = query.trim() ? searchResults : nearby;
+  const listPlaces = useTourApiNearby && anchor ? apiPlaces : localPlaces;
 
   const handleClose = () => {
     setQuery('');
@@ -92,141 +154,115 @@ export function PlacePickModal({
   };
 
   const handleApply = () => {
-    const pick = list.find(c => c.placeId === selectedId);
-    if (pick) {
-      onSelect(pick, showTransportMode ? legMode : undefined);
-      setQuery('');
-      setSelectedId(null);
-      setLegMode(defaultLegMode);
+    const pick = listPlaces.find(place => place.contentId === selectedId);
+    if (!pick) {
+      return;
     }
+    const candidate = busanPlaceToRebootCandidate(pick, anchor);
+    onSelect(candidate, showTransportMode ? legMode : undefined);
+    setQuery('');
+    setSelectedId(null);
+    setLegMode(defaultLegMode);
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
-      <View style={styles.overlay}>
-        <Pressable style={styles.backdrop} onPress={handleClose} />
-        <View
-          style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}
-          className="rounded-t-3xl bg-brand-background">
-          <View className="my-2 h-1 w-10 self-center rounded-full bg-brand-border" />
-          <ScrollView
-            className="max-h-[72%] px-5"
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-            nestedScrollEnabled>
-            <Text className="mb-1 text-xl font-bold text-brand-text">{copy.title}</Text>
-            {copy.subtitle ? (
-              <Text className="mb-4 text-sm text-brand-muted">{copy.subtitle}</Text>
-            ) : null}
-
-            {showTransportMode && copy.transportModeTitle && copy.legWalk ? (
-              <View className="mb-4">
-                <TransportModePicker
-                  title={copy.transportModeTitle}
-                  value={legMode}
-                  onChange={setLegMode}
-                  labels={{
-                    walk: copy.legWalk!,
-                    drive: copy.legDrive!,
-                    transit: copy.legTransit!,
-                  }}
-                />
-              </View>
-            ) : null}
-
-            <Text className="mb-2 text-sm font-bold text-brand-text">
-              {query.trim() ? copy.searchPlaceholder : copy.nearbyTitle}
-            </Text>
-            <TextInput
-              className="mb-4 rounded-2xl border-2 border-brand-border bg-brand-surface px-4 py-3 text-base text-brand-text"
-              value={query}
-              onChangeText={text => {
-                setQuery(text);
-                setSelectedId(null);
+    <AppModal
+      visible={visible}
+      onClose={handleClose}
+      title={copy.title}
+      subtitle={copy.subtitle}
+      maxHeight="88%"
+      keyboardAware
+      footer={
+        <AppModalPrimaryFooter
+          confirmLabel={copy.applyLabel}
+          onConfirm={handleApply}
+          confirmDisabled={!selectedId}
+          cancelLabel={copy.cancelLabel}
+          onCancel={handleClose}
+        />
+      }>
+      <ScrollView
+        className="max-h-[72%] px-5"
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        nestedScrollEnabled>
+        {showTransportMode && copy.transportModeTitle && copy.legWalk ? (
+          <View className="mb-4">
+            <TransportModePicker
+              title={copy.transportModeTitle}
+              value={legMode}
+              onChange={setLegMode}
+              labels={{
+                walk: copy.legWalk!,
+                drive: copy.legDrive!,
+                transit: copy.legTransit!,
               }}
-              placeholder={copy.searchPlaceholder}
-              autoCapitalize="none"
             />
-
-            {list.length === 0 ? (
-              <Text className="mb-6 text-center text-sm text-brand-muted">
-                {copy.searchEmpty}
-              </Text>
-            ) : (
-              list.map(candidate => {
-                const selected = selectedId === candidate.placeId;
-                const thumb = catalogThumbnail(candidate.placeId);
-                const dist =
-                  candidate.distanceKm > 0
-                    ? copy.distance(formatDistanceKm(candidate.distanceKm, language))
-                    : null;
-                return (
-                  <Pressable
-                    key={candidate.placeId}
-                    onPress={() => setSelectedId(candidate.placeId)}
-                    className={cn(
-                      'mb-2 flex-row items-center rounded-2xl border p-3 active:opacity-90',
-                      selected
-                        ? 'border-brand-primary bg-brand-selected'
-                        : 'border-brand-border bg-brand-surface',
-                    )}>
-                    <View
-                      className="mr-3 h-12 w-12 rounded-xl"
-                      style={{ backgroundColor: thumb }}
-                    />
-                    <View className="flex-1">
-                      <Text className="text-base font-bold text-brand-text">
-                        {candidate.placeName}
-                      </Text>
-                      {dist && (
-                        <Text className="mt-0.5 text-xs text-brand-muted">{dist}</Text>
-                      )}
-                    </View>
-                    {selected && (
-                      <Text className="text-lg font-bold text-brand-primary">✓</Text>
-                    )}
-                  </Pressable>
-                );
-              })
-            )}
-          </ScrollView>
-
-          <View className="px-5 pt-2">
-            <Pressable
-              onPress={handleApply}
-              disabled={!selectedId}
-              className={cn(
-                'mb-2 items-center rounded-2xl py-3.5 active:opacity-90',
-                selectedId ? 'bg-brand-primary' : 'bg-brand-border',
-              )}>
-              <Text
-                className={cn(
-                  'text-[15px] font-bold',
-                  selectedId ? 'text-white' : 'text-brand-muted',
-                )}>
-                {copy.applyLabel}
-              </Text>
-            </Pressable>
-            <Pressable onPress={handleClose} className="items-center py-2 active:opacity-80">
-              <Text className="text-sm font-semibold text-brand-muted">{copy.cancelLabel}</Text>
-            </Pressable>
           </View>
-        </View>
-      </View>
-    </Modal>
+        ) : null}
+
+        <Text className="mb-2 text-sm font-bold text-brand-text">
+          {query.trim() ? copy.searchPlaceholder : copy.nearbyTitle}
+        </Text>
+        <TextInput
+          className="mb-4 rounded-2xl border-2 border-brand-border bg-brand-surface px-4 py-3 text-base text-brand-text"
+          value={query}
+          onChangeText={text => {
+            setQuery(text);
+            setSelectedId(null);
+          }}
+          placeholder={copy.searchPlaceholder}
+          autoCapitalize="none"
+        />
+
+        {apiLoading && useTourApiNearby && !query.trim() ? (
+          <View className="mb-4 items-center py-4">
+            <ActivityIndicator color="#0077B6" />
+            <Text className="mt-2 text-xs text-brand-muted">{searchCopy.loading}</Text>
+          </View>
+        ) : null}
+
+        {useTourApiNearby && !anchor && !query.trim() ? (
+          <View className="mb-4 items-center py-4">
+            <ActivityIndicator color="#0077B6" />
+            <Text className="mt-2 text-xs text-brand-muted">{searchCopy.loading}</Text>
+          </View>
+        ) : null}
+
+        {listPlaces.length === 0 && !apiLoading && !(useTourApiNearby && !anchor) ? (
+          <Text className="mb-6 text-center text-sm text-brand-muted">{copy.searchEmpty}</Text>
+        ) : (
+          listPlaces.map(place => {
+            const selected = selectedId === place.contentId;
+            const dist =
+              anchor && useTourApiNearby
+                ? copy.distance(
+                    formatDistanceKm(
+                      haversineKm(
+                        anchor.lat,
+                        anchor.lng,
+                        place.location.lat,
+                        place.location.lng,
+                      ),
+                      language,
+                    ),
+                  )
+                : undefined;
+            const meta = buildPlaceListMetaLine(place, searchCopy, dist);
+
+            return (
+              <PlaceSearchListItem
+                key={place.contentId}
+                place={place}
+                selected={selected}
+                meta={meta}
+                onPress={() => setSelectedId(place.contentId)}
+              />
+            );
+          })
+        )}
+      </ScrollView>
+    </AppModal>
   );
 }
-
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-  },
-  sheet: {
-    maxHeight: '88%',
-  },
-});

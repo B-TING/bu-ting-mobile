@@ -10,6 +10,9 @@ export type RebootPhase = 'idle' | 'choose';
 type ScheduleRouteSlotProps = {
   route: RouteItem;
   displayIndex: number;
+  dayColor?: string;
+  dayColorLight?: string;
+  zoneColor?: string;
   phase: RebootPhase;
   copy: {
     markVisited: string;
@@ -20,6 +23,8 @@ type ScheduleRouteSlotProps = {
     rebootCancel: string;
     recordReview?: string;
     quickRatingHint?: string;
+    scheduleDetailLoading?: string;
+    placeRatingSummary?: (rating: number, count: number) => string;
     transportModeTitle?: string;
     legWalk: string;
     legDrive: string;
@@ -32,6 +37,7 @@ type ScheduleRouteSlotProps = {
   onPress: () => void;
   onEdit: () => void;
   indexSelected: boolean;
+  isFocused?: boolean;
   indexHint: string;
   onIndexPress: () => void;
   onToggleVisited: () => void;
@@ -46,11 +52,15 @@ const DURATION_IN = 260;
 export function ScheduleRouteSlot({
   route,
   displayIndex,
+  dayColor,
+  dayColorLight,
+  zoneColor,
   phase,
   copy,
   onPress,
   onEdit,
   indexSelected,
+  isFocused,
   indexHint,
   onIndexPress,
   onToggleVisited,
@@ -143,9 +153,13 @@ export function ScheduleRouteSlot({
           <RouteItemCard
             route={route}
             displayIndex={displayIndex}
+            dayColor={dayColor}
+            dayColorLight={dayColorLight}
+            zoneColor={zoneColor}
             onPress={onPress}
             onEditPress={onEdit}
             indexSelected={indexSelected}
+            isFocused={isFocused}
             indexHint={indexHint}
             onIndexPress={onIndexPress}
             onToggleVisited={onToggleVisited}
@@ -153,6 +167,8 @@ export function ScheduleRouteSlot({
             editLabel={copy.editRoute}
             recordReviewLabel={copy.recordReview}
             quickRatingHint={copy.quickRatingHint}
+            detailLoadingLabel={copy.scheduleDetailLoading}
+            ratingSummary={copy.placeRatingSummary}
             reviewRating={reviewRating}
             onWriteReview={onWriteReview}
             onQuickRating={onQuickRating}

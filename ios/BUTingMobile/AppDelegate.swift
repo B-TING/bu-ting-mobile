@@ -2,6 +2,7 @@ import UIKit
 import React
 import React_RCTAppDelegate
 import ReactAppDependencyProvider
+import NaverThirdPartyLogin
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -29,6 +30,27 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
       launchOptions: launchOptions
     )
 
+    return true
+  }
+
+  func application(
+    _ app: UIApplication,
+    open url: URL,
+    options: [UIApplication.OpenURLOptionsKey: Any] = [:]
+  ) -> Bool {
+    if url.scheme == "butingnaverlogin" {
+      return NaverThirdPartyLoginConnection.getSharedInstance().application(
+        app,
+        open: url,
+        options: options
+      )
+    }
+
+    NotificationCenter.default.post(
+      name: Notification.Name("RCTOpenURLNotification"),
+      object: nil,
+      userInfo: ["url": url.absoluteString]
+    )
     return true
   }
 }

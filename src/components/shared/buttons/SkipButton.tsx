@@ -1,6 +1,6 @@
 import { Pressable, Text } from 'react-native';
 
-import { cn } from '../../../utils/cn';
+import { cn } from '../../../utils/common/cn';
 
 type SkipButtonProps = {
   label: string;
@@ -25,13 +25,13 @@ export function SkipButton({
       )}
       accessibilityRole="button"
       accessibilityLabel={label}>
-      <Text
-        className={cn(
-          'text-[15px] font-bold',
-          variant === 'primary' ? 'text-brand-skip-text' : 'text-brand-primary underline',
-        )}>
-        {label}
-      </Text>
+          <Text
+            className={cn(
+              'text-[15px] font-medium',
+              variant === 'primary' ? 'text-brand-skip-text' : 'text-brand-muted',
+            )}>
+            {label}
+          </Text>
     </Pressable>
   );
 }

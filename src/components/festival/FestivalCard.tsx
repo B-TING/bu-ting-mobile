@@ -7,8 +7,10 @@ import {
   festivalSummary,
   festivalTitle,
   type BusanFestival,
-} from '../../constants/festivalCalendar';
+} from '../../constants/festival/festivalCalendar';
 import type { AppLanguage } from '../../types/user';
+import { ICON_COLOR_WHITE } from '../../constants/icons';
+import { AppIcon } from '../shared/icons/AppIcon';
 import { FestivalTagBadges } from './FestivalTagBadges';
 
 type FestivalCardProps = {
@@ -46,7 +48,9 @@ export function FestivalCard({ festival, language, onPress }: FestivalCardProps)
       accessibilityRole="button">
       {imageFailed ? (
         <View style={[styles.card, { backgroundColor: festival.imageColor }]}>
-          <Text className="absolute right-4 top-4 text-4xl opacity-40">{festival.imageEmoji}</Text>
+          <View className="absolute right-4 top-4 opacity-40">
+            <AppIcon name={festival.imageIcon} size={40} color={ICON_COLOR_WHITE} />
+          </View>
           {content}
         </View>
       ) : (

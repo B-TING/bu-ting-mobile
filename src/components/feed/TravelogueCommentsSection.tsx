@@ -1,23 +1,33 @@
 import { Pressable, Text, View } from 'react-native';
 
-import type { TRAVEL_REVIEW_COPY } from '../../constants/travelReview';
-import type { TravelogueComment } from '../../types/travelReview';
-import { authorInitial } from '../../utils/travelReview';
+import type { CopyFor } from '../../i18n';
+import type { TravelRecordComment } from '../../types/travelReview';
+import { authorInitial } from '../../utils/review/travelReview';
 
-type Copy = (typeof TRAVEL_REVIEW_COPY)['ko'];
+type Copy = CopyFor<'travelReview'>;
 
 type TravelogueCommentsSectionProps = {
   copy: Copy;
-  comments: TravelogueComment[];
+  comments: TravelRecordComment[];
+  currentUserId?: string;
   currentUserName: string;
   language?: 'ko' | 'en' | 'ja' | 'zh';
   previewLimit?: number;
   onViewAllPress?: () => void;
   onOpenComposer?: () => void;
+  onEditComment?: (comment: TravelRecordComment) => void;
+  onDeleteComment?: (comment: TravelRecordComment) => void;
 };
 
 function formatCommentDate(iso: string, language: 'ko' | 'en' | 'ja' | 'zh'): string {
+  if (!iso?.trim()) {
+    return '';
+  }
   const date = new Date(iso);
+  const ms = date.getTime();
+  if (Number.isNaN(ms) || ms < 24 * 60 * 60 * 1000) {
+    return '';
+  }
   return date.toLocaleDateString(language === 'ko' ? 'ko-KR' : 'en-US', {
     month: 'short',
     day: 'numeric',
@@ -27,11 +37,14 @@ function formatCommentDate(iso: string, language: 'ko' | 'en' | 'ja' | 'zh'): st
 export function TravelogueCommentsSection({
   copy,
   comments,
+  currentUserId,
   currentUserName,
   language = 'ko',
   previewLimit,
   onViewAllPress,
   onOpenComposer,
+  onEditComment,
+  onDeleteComment,
 }: TravelogueCommentsSectionProps) {
   const visibleComments = previewLimit ? comments.slice(-previewLimit) : comments;
   const hiddenCount = previewLimit ? Math.max(comments.length - previewLimit, 0) : 0;
@@ -49,24 +62,54 @@ export function TravelogueCommentsSection({
       {visibleComments.length === 0 ? (
         <Text className="mb-3 text-sm text-brand-muted">{copy.feedCommentsEmpty}</Text>
       ) : (
-        visibleComments.map(comment => (
-          <View key={comment.commentId} className="mb-3 flex-row gap-2">
-            <View className="h-8 w-8 items-center justify-center rounded-full bg-brand-selected">
-              <Text className="text-xs font-bold text-brand-primary">
-                {authorInitial(comment.authorName)}
-              </Text>
+        visibleComments.map(comment => {
+          const isMine =
+            Boolean(currentUserId) &&
+            comment.authorId === currentUserId &&
+            !comment.commentId.startsWith('temp-cmt-');
+          const dateLabel = formatCommentDate(comment.createdAt, language);
+
+          return (
+            <View key={comment.commentId} className="mb-3 flex-row gap-2">
+              <View className="h-8 w-8 items-center justify-center rounded-full bg-brand-selected">
+                <Text className="text-xs font-bold text-brand-primary">
+                  {authorInitial(comment.authorNickname)}
+                </Text>
+              </View>
+              <View className="min-w-0 flex-1">
+                <Text className="text-sm leading-5 text-brand-text">
+                  <Text className="font-bold">{comment.authorNickname}</Text>{' '}
+                  {comment.content}
+                </Text>
+                <View className="mt-0.5 flex-row flex-wrap items-center gap-x-3 gap-y-1">
+                  {dateLabel ? (
+                    <Text className="text-[10px] text-brand-muted">{dateLabel}</Text>
+                  ) : null}
+                  {isMine && onEditComment ? (
+                    <Pressable
+                      onPress={() => onEditComment(comment)}
+                      hitSlop={8}
+                      className="active:opacity-70">
+                      <Text className="text-[10px] font-semibold text-brand-muted">
+                        {copy.feedEditComment}
+                      </Text>
+                    </Pressable>
+                  ) : null}
+                  {isMine && onDeleteComment ? (
+                    <Pressable
+                      onPress={() => onDeleteComment(comment)}
+                      hitSlop={8}
+                      className="active:opacity-70">
+                      <Text className="text-[10px] font-semibold text-brand-muted">
+                        {copy.feedDeleteComment}
+                      </Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              </View>
             </View>
-            <View className="min-w-0 flex-1">
-              <Text className="text-sm leading-5 text-brand-text">
-                <Text className="font-bold">{comment.authorName}</Text>{' '}
-                {comment.text}
-              </Text>
-              <Text className="mt-0.5 text-[10px] text-brand-muted">
-                {formatCommentDate(comment.createdAt, language)}
-              </Text>
-            </View>
-          </View>
-        ))
+          );
+        })
       )}
 
       {onOpenComposer ? (

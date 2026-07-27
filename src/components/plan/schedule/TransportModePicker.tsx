@@ -1,5 +1,11 @@
 import { Pressable, Text, View } from 'react-native';
 
+import {
+  ICON_COLOR_MUTED,
+  ICON_COLOR_PRIMARY,
+  TRANSPORT_MODE_ICONS,
+} from '../../../constants/icons';
+import { AppIcon } from '../../shared/icons/AppIcon';
 import type { TravelLegMode } from '../../../types/travelPlan';
 
 type TransportModePickerProps = {
@@ -9,11 +15,7 @@ type TransportModePickerProps = {
   title?: string;
 };
 
-const MODES: { id: TravelLegMode; icon: string }[] = [
-  { id: 'walk', icon: '🚶' },
-  { id: 'transit', icon: '🚌' },
-  { id: 'drive', icon: '🚗' },
-];
+const MODES: TravelLegMode[] = ['walk', 'transit', 'drive'];
 
 export function TransportModePicker({
   value,
@@ -37,7 +39,7 @@ export function TransportModePicker({
         <Text className="mb-2 text-sm font-semibold text-brand-muted">{title}</Text>
       ) : null}
       <View className="flex-row gap-2">
-        {MODES.map(({ id, icon }) => {
+        {MODES.map(id => {
           const selected = value === id;
           return (
             <Pressable
@@ -48,7 +50,11 @@ export function TransportModePicker({
                   ? 'border-brand-primary bg-brand-selected'
                   : 'border-brand-border bg-brand-surface'
               }`}>
-              <Text className="text-lg">{icon}</Text>
+              <AppIcon
+                name={TRANSPORT_MODE_ICONS[id]}
+                size={22}
+                color={selected ? ICON_COLOR_PRIMARY : ICON_COLOR_MUTED}
+              />
               <Text
                 className={`mt-0.5 text-[11px] font-semibold ${
                   selected ? 'text-brand-primary' : 'text-brand-muted'

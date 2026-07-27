@@ -1,16 +1,44 @@
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { useState } from 'react';
+import { ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import type { MockEvent } from '../../../constants/mainHome';
-import { cn } from '../../../utils/cn';
+import { festivalTagLabel } from '../../../constants/festival/festivalCalendar';
+import type { MockEvent } from '../../../constants/home/mainHome';
+import { ICON_COLOR_WHITE } from '../../../constants/icons';
+import type { AppLanguage } from '../../../types/user';
+import { cn } from '../../../utils/common/cn';
+import { AppIcon } from '../../shared/icons/AppIcon';
 
 type EventsSectionMockProps = {
   title: string;
   viewAllLabel: string;
   events: MockEvent[];
-  language?: 'ko' | 'en' | 'ja' | 'zh';
+  language?: AppLanguage;
   onViewAllPress?: () => void;
   onEventPress?: (id: string) => void;
 };
+
+function pickLocalizedEventField(
+  event: MockEvent,
+  field: 'title' | 'location' | 'date',
+  language: AppLanguage,
+): string {
+  if (field === 'title') {
+    if (language === 'ja') return event.titleJa;
+    if (language === 'zh') return event.titleZh;
+    if (language === 'en') return event.titleEn;
+    return event.titleKo;
+  }
+  if (field === 'location') {
+    if (language === 'ja') return event.locationJa;
+    if (language === 'zh') return event.locationZh;
+    if (language === 'en') return event.locationEn;
+    return event.locationKo;
+  }
+  if (language === 'ja') return event.dateJa;
+  if (language === 'zh') return event.dateZh;
+  if (language === 'en') return event.dateEn;
+  return event.dateKo;
+}
 
 function EventCard({
   event,
@@ -18,41 +46,74 @@ function EventCard({
   onPress,
 }: {
   event: MockEvent;
-  language: 'ko' | 'en' | 'ja' | 'zh';
+  language: AppLanguage;
   onPress?: () => void;
 }) {
-  const title = language === 'ko' ? event.titleKo : event.titleEn;
-  const location = language === 'ko' ? event.locationKo : event.locationEn;
-  const date = language === 'ko' ? event.dateKo : event.dateEn;
+  const [imageFailed, setImageFailed] = useState(false);
+  const title = pickLocalizedEventField(event, 'title', language);
+  const location = pickLocalizedEventField(event, 'location', language);
+  const date = pickLocalizedEventField(event, 'date', language);
+  const hasImage = Boolean(event.imageUri) && !imageFailed;
+
+  const overlay = (
+    <View style={styles.imageOverlay}>
+      <View
+        className={cn(
+          'self-start rounded-md px-2 py-0.5',
+          event.tag === 'FESTIVAL' ? 'bg-brand-primary' : 'bg-orange-500',
+        )}>
+        <Text className="text-[10px] font-bold text-white">
+          {festivalTagLabel(event.tag, language)}
+        </Text>
+      </View>
+      <Text className="mt-2 text-sm font-bold text-white" numberOfLines={2}>
+        {title}
+      </Text>
+      <Text className="mt-1 text-xs font-medium text-white/90">
+        {location} • {date}
+      </Text>
+    </View>
+  );
 
   return (
     <Pressable
       onPress={onPress}
-      className="mr-3 w-[260px] overflow-hidden rounded-2xl border border-brand-border bg-brand-surface active:opacity-90"
+      className="mr-3 w-[260px] overflow-hidden rounded-2xl active:opacity-90"
       accessibilityRole="button">
-      <View
-        className="h-32 items-center justify-center"
-        style={{ backgroundColor: event.imageColor }}>
-        <Text className="text-4xl">{event.imageEmoji}</Text>
-      </View>
-      <View className="p-3">
-        <View
-          className={cn(
-            'mb-2 self-start rounded-md px-2 py-0.5',
-            event.tag === 'FESTIVAL' ? 'bg-brand-primary' : 'bg-orange-500',
-          )}>
-          <Text className="text-[10px] font-bold text-white">{event.tag}</Text>
+      {hasImage ? (
+        <ImageBackground
+          source={{ uri: event.imageUri }}
+          style={styles.card}
+          imageStyle={styles.imageFill}
+          resizeMode="cover"
+          onError={() => setImageFailed(true)}>
+          {overlay}
+        </ImageBackground>
+      ) : (
+        <View style={[styles.card, { backgroundColor: event.imageColor }]}>
+          <View className="absolute inset-0 items-center justify-center opacity-40">
+            <AppIcon name={event.imageIcon} size={48} color={ICON_COLOR_WHITE} />
+          </View>
+          {overlay}
         </View>
-        <Text className="text-sm font-bold text-brand-text" numberOfLines={2}>
-          {title}
-        </Text>
-        <Text className="mt-1 text-xs text-brand-muted">
-          {location} • {date}
-        </Text>
-      </View>
+      )}
     </Pressable>
   );
 }
+
+const styles = StyleSheet.create({
+  card: {
+    height: 180,
+    justifyContent: 'flex-end',
+  },
+  imageFill: {
+    borderRadius: 16,
+  },
+  imageOverlay: {
+    padding: 12,
+    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+  },
+});
 
 export function EventsSectionMock({
   title,
@@ -83,11 +144,6 @@ export function EventsSectionMock({
           />
         ))}
       </ScrollView>
-      <Text className="mt-2 text-[10px] text-brand-muted">
-        {language === 'ko'
-          ? '축제 API 연동 전 목업 데이터입니다.'
-          : 'Mock data until festival API is connected.'}
-      </Text>
     </View>
   );
 }

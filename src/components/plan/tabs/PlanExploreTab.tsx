@@ -1,11 +1,11 @@
 import { Text, View } from 'react-native';
 
-import { NaverMapPlaceholder } from '../map/NaverMapPlaceholder';
-import type { PLAN_DETAIL_COPY } from '../../../constants/planDetail';
+import { RouteMapView } from '../../../kakaoMap';
+import type { CopyFor } from '../../../i18n';
 import type { AppLanguage } from '../../../types/user';
 import type { RouteItem } from '../../../types/travelPlan';
 
-type Copy = (typeof PLAN_DETAIL_COPY)[AppLanguage];
+type Copy = CopyFor<'planDetail'>;
 
 type PlanExploreTabProps = {
   copy: Copy;
@@ -16,7 +16,7 @@ type PlanExploreTabProps = {
 export function PlanExploreTab({ copy, language, allRoutes }: PlanExploreTabProps) {
   return (
     <View className="px-4 pb-8">
-      <NaverMapPlaceholder
+      <RouteMapView
         title={copy.mapPlaceholder}
         subtitle={copy.mapPlaceholderSub}
         routes={allRoutes}

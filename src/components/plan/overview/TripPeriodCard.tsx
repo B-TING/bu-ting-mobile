@@ -1,8 +1,8 @@
 import { Text, View } from 'react-native';
 
-import { dayCountBetween } from '../../../constants/planWizard';
+import { dayCountBetween } from '../../../constants/plan/planWizard';
 import type { AppLanguage } from '../../../types/user';
-import { formatWeekdayDate } from '../../../utils/geo';
+import { formatWeekdayDate } from '../../../utils/geo/geo';
 
 type TripPeriodCardProps = {
   startDate: string;
@@ -10,6 +10,7 @@ type TripPeriodCardProps = {
   language: AppLanguage;
   periodLabel: string;
   nightsLabel: (n: number) => string;
+  compact?: boolean;
 };
 
 function parseDateParts(iso: string) {
@@ -27,11 +28,69 @@ export function TripPeriodCard({
   language,
   periodLabel,
   nightsLabel,
+  compact = false,
 }: TripPeriodCardProps) {
   const dayCount = dayCountBetween(startDate, endDate);
   const nights = Math.max(0, dayCount - 1);
   const start = parseDateParts(startDate);
   const end = parseDateParts(endDate);
+
+  const tripLengthLabel =
+    language === 'ko'
+      ? `${dayCount}일`
+      : language === 'ja'
+        ? `${dayCount}日`
+        : language === 'zh'
+          ? `${dayCount}天`
+          : `${dayCount}d`;
+
+  if (compact) {
+    return (
+      <View className="mb-3 overflow-hidden rounded-xl border border-brand-border bg-brand-surface">
+        <View className="flex-row items-center justify-between bg-brand-primary px-3 py-2">
+          <Text className="text-[10px] font-semibold uppercase tracking-wide text-white/80">
+            {periodLabel}
+          </Text>
+          <Text className="text-xs font-bold text-white">
+            {tripLengthLabel}
+            {nights > 0 ? ` · ${nightsLabel(nights)}` : ''}
+          </Text>
+        </View>
+
+        <View className="flex-row items-center px-3 py-2.5">
+          <View className="flex-1">
+            <Text className="text-base font-bold text-brand-primary">
+              {start.month}/{start.day}
+            </Text>
+            <Text className="text-[10px] text-brand-muted" numberOfLines={1}>
+              {formatWeekdayDate(startDate, language)}
+            </Text>
+          </View>
+
+          <Text className="mx-2 text-sm text-brand-muted">→</Text>
+
+          <View className="flex-1 items-end">
+            <Text className="text-base font-bold text-brand-primary">
+              {end.month}/{end.day}
+            </Text>
+            <Text className="text-[10px] text-brand-muted" numberOfLines={1}>
+              {formatWeekdayDate(endDate, language)}
+            </Text>
+          </View>
+        </View>
+
+        <View className="flex-row justify-center gap-1 border-t border-brand-border px-3 py-1.5">
+          {Array.from({ length: dayCount }, (_, i) => (
+            <View
+              key={i}
+              className="h-1 flex-1 max-w-6 rounded-full"
+              style={{ backgroundColor: i === 0 ? '#0077B6' : '#90E0EF' }}
+            />
+          ))}
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View className="mb-5 overflow-hidden rounded-2xl border border-brand-border bg-brand-surface">

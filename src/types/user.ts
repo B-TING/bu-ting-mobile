@@ -35,6 +35,8 @@ export type OnboardingProfile = OnboardingAnswers & {
   language: AppLanguage;
   /** AI 에이전트 프롬프트에 주입할 유저 컨텍스트 */
   aiPromptContext: string;
+  /** 로컬 저장 시 연결된 계정 ID. 회원가입 전이면 null */
+  ownerUserId?: string | null;
 };
 
 export type AuthState = {

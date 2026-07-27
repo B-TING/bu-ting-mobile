@@ -1,0 +1,311 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  FlatList,
+  KeyboardAvoidingView,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  Platform,
+  Pressable,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { ZoneChatMessageBubble } from '../../components/eventZone/ZoneChatMessageBubble';
+import { BackButton } from '../../components/shared/buttons/BackButton';
+import {
+  chatRoomTitle,
+  chatRoomTopic,
+  getChatRoomById,
+} from '../../constants/eventZone/eventZone';
+import { useAppLanguage, useCopy } from '../../i18n';
+import { isZoneChatWebSocketEnabled, ZONE_CHAT_WS_CONFIG } from '../../constants/chat/zoneChatConfig';
+import { useZoneChatWebSocket } from '../../hooks/useZoneChatWebSocket';
+import { zoneChatConnectionStatusLabel } from '../../utils/chat/zoneChatConnectionStatus';
+import type { RootStackParamList } from '../../navigation/types';
+import { selectReusableAccessToken, useAuthStore } from '../../stores/useAuthStore';
+
+type Props = NativeStackScreenProps<RootStackParamList, 'EventZoneChat'>;
+
+const LOAD_MORE_SCROLL_THRESHOLD = 72;
+const STICK_TO_BOTTOM_THRESHOLD = 96;
+const INITIAL_RENDER_BATCH = 40;
+
+export function EventZoneChatScreen({ navigation, route }: Props) {
+  const insets = useSafeAreaInsets();
+  const language = useAppLanguage();
+  const copy = useCopy('zoneChat');
+  const room = getChatRoomById(route.params.roomId);
+  const wsEnabled = isZoneChatWebSocketEnabled();
+  const accessToken = useAuthStore(selectReusableAccessToken);
+  const needsLogin = wsEnabled && !accessToken;
+
+  const {
+    messages,
+    sendMessage,
+    enabled: chatEnabled,
+    status: wsStatus,
+    isRealtime,
+    isLoadingHistory,
+    isLoadingMoreHistory,
+    historyLoaded,
+    hasMoreHistory,
+    loadMoreHistory,
+    memberCount,
+  } = useZoneChatWebSocket({
+    roomId: route.params.roomId,
+    zoneId: room?.zoneId,
+    guestDisplayNickname: language === 'ko' ? '나' : 'Me',
+    wsEnabled: wsEnabled && !needsLogin,
+  });
+
+  const [input, setInput] = useState('');
+  const listRef = useRef<FlatList<(typeof messages)[number]>>(null);
+  const lastMessageIdRef = useRef<string | null>(null);
+  const loadMoreArmedRef = useRef(true);
+  const stickToBottomRef = useRef(true);
+  const canLoadMoreRef = useRef(false);
+  const initialScrollDoneRef = useRef(false);
+
+  useEffect(() => {
+    lastMessageIdRef.current = null;
+    loadMoreArmedRef.current = true;
+    stickToBottomRef.current = true;
+    canLoadMoreRef.current = false;
+    initialScrollDoneRef.current = false;
+  }, [route.params.roomId]);
+
+  useEffect(() => {
+    if (!historyLoaded) {
+      canLoadMoreRef.current = false;
+      return undefined;
+    }
+
+    const timer = setTimeout(() => {
+      canLoadMoreRef.current = true;
+    }, ZONE_CHAT_WS_CONFIG.memberCountSyncDelayMs);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [historyLoaded, route.params.roomId]);
+
+  const scrollToLatest = useCallback((animated = false) => {
+    const list = listRef.current;
+    if (!list || messages.length === 0) {
+      return;
+    }
+    list.scrollToEnd({ animated });
+  }, [messages.length]);
+
+  useEffect(() => {
+    if (!historyLoaded || messages.length === 0) {
+      return;
+    }
+
+    if (!initialScrollDoneRef.current) {
+      requestAnimationFrame(() => {
+        scrollToLatest(false);
+        initialScrollDoneRef.current = true;
+      });
+      return;
+    }
+
+    const lastMessageId = messages[messages.length - 1]?.id ?? null;
+    if (!lastMessageId) {
+      return;
+    }
+
+    const previousLastId = lastMessageIdRef.current;
+    lastMessageIdRef.current = lastMessageId;
+
+    if (previousLastId !== lastMessageId && stickToBottomRef.current) {
+      scrollToLatest(true);
+    }
+  }, [historyLoaded, messages, scrollToLatest]);
+
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+      const distanceFromBottom =
+        contentSize.height - layoutMeasurement.height - contentOffset.y;
+      stickToBottomRef.current = distanceFromBottom < STICK_TO_BOTTOM_THRESHOLD;
+
+      if (contentOffset.y > LOAD_MORE_SCROLL_THRESHOLD) {
+        loadMoreArmedRef.current = true;
+        return;
+      }
+
+      if (
+        canLoadMoreRef.current &&
+        loadMoreArmedRef.current &&
+        hasMoreHistory &&
+        !isLoadingMoreHistory
+      ) {
+        loadMoreArmedRef.current = false;
+        loadMoreHistory();
+      }
+    },
+    [hasMoreHistory, isLoadingMoreHistory, loadMoreHistory],
+  );
+
+  const sendMessageFromInput = useCallback(() => {
+    const trimmed = input.trim();
+    if (!trimmed) {
+      return;
+    }
+
+    stickToBottomRef.current = true;
+    sendMessage(trimmed);
+    setInput('');
+    scrollToLatest(true);
+  }, [input, scrollToLatest, sendMessage]);
+
+  const statusHint = chatEnabled
+    ? zoneChatConnectionStatusLabel(wsStatus, language, { needsLogin })
+    : needsLogin
+      ? zoneChatConnectionStatusLabel(wsStatus, language, { needsLogin: true })
+      : copy.localOnlyHint;
+
+  if (!room) {
+    return (
+      <View
+        className="flex-1 items-center justify-center bg-brand-background px-6"
+        style={{ paddingTop: insets.top }}>
+        <Text className="text-center text-brand-text">
+          {language === 'ko' ? '채팅방을 찾을 수 없어요' : 'Chat room not found'}
+        </Text>
+        <Pressable onPress={() => navigation.goBack()} className="mt-4">
+          <Text className="font-semibold text-brand-primary">
+            {language === 'ko' ? '돌아가기' : 'Go back'}
+          </Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  return (
+    <View
+      className="flex-1 bg-brand-background"
+      style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
+      <View className="border-b border-brand-border bg-brand-surface px-4 py-3">
+        <View className="flex-row items-center">
+          <BackButton
+            accessibilityLabel={language === 'ko' ? '뒤로' : 'Back'}
+            onPress={() => navigation.goBack()}
+          />
+          <View className="ml-3 flex-1">
+            <Text className="text-base font-bold text-brand-text">
+              {chatRoomTitle(room, language)}
+            </Text>
+            <Text className="text-xs text-brand-muted">{chatRoomTopic(room, language)}</Text>
+            <Text className="mt-0.5 text-[11px] text-brand-muted">
+              {memberCount != null
+                ? copy.memberCount(memberCount)
+                : accessToken
+                  ? language === 'ko'
+                    ? '참여자 확인 중…'
+                    : 'Loading members…'
+                  : copy.memberCount(room.memberCount)}
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}>
+        {isLoadingHistory ? (
+          <View className="flex-1 items-center justify-center px-4">
+            <Text className="text-center text-sm text-brand-muted">
+              {language === 'ko' ? '이전 메시지 불러오는 중…' : 'Loading chat history…'}
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            ref={listRef}
+            data={messages}
+            keyExtractor={item => item.id}
+            className="flex-1 px-4 pt-4"
+            contentContainerClassName="grow pb-4"
+            initialNumToRender={Math.min(messages.length || INITIAL_RENDER_BATCH, INITIAL_RENDER_BATCH)}
+            maxToRenderPerBatch={INITIAL_RENDER_BATCH}
+            windowSize={11}
+            removeClippedSubviews={false}
+            maintainVisibleContentPosition={
+              hasMoreHistory
+                ? {
+                    minIndexForVisible: 0,
+                    autoscrollToTopThreshold: 80,
+                  }
+                : undefined
+            }
+            onContentSizeChange={() => {
+              if (!initialScrollDoneRef.current && messages.length > 0) {
+                scrollToLatest(false);
+                initialScrollDoneRef.current = true;
+                return;
+              }
+              if (stickToBottomRef.current) {
+                scrollToLatest(false);
+              }
+            }}
+            ListEmptyComponent={
+              <View className="flex-1 items-center justify-center py-12">
+                <Text className="text-center text-sm text-brand-muted">{copy.emptyMessages}</Text>
+              </View>
+            }
+            ListHeaderComponent={
+              isLoadingMoreHistory ? (
+                <Text className="py-2 text-center text-sm text-brand-muted">
+                  {language === 'ko' ? '이전 메시지 불러오는 중…' : 'Loading older messages…'}
+                </Text>
+              ) : null
+            }
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
+            renderItem={({ item }) => (
+              <ZoneChatMessageBubble
+                authorNickname={item.authorNickname}
+                text={item.text}
+                sentAt={item.sentAt}
+                language={language}
+                isMine={item.isMine}
+              />
+            )}
+          />
+        )}
+
+        <View className="border-t border-brand-border bg-brand-surface px-4 py-3">
+          {statusHint ? (
+            <Text
+              className={`mb-2 text-[11px] ${isRealtime ? 'text-emerald-700' : 'text-amber-700'}`}>
+              {statusHint}
+            </Text>
+          ) : null}
+          <View className="flex-row items-end gap-2">
+            <TextInput
+              value={input}
+              onChangeText={setInput}
+              placeholder={copy.inputPlaceholder}
+              placeholderTextColor="#94A3B8"
+              multiline
+              className="max-h-28 flex-1 rounded-2xl border border-brand-border bg-brand-background px-4 py-3 text-[15px] text-brand-text"
+              onSubmitEditing={sendMessageFromInput}
+              returnKeyType="send"
+            />
+            <Pressable
+              accessibilityRole="button"
+              onPress={sendMessageFromInput}
+              className="rounded-2xl bg-brand-primary px-4 py-3 active:opacity-80">
+              <Text className="font-semibold text-white">{copy.send}</Text>
+            </Pressable>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </View>
+  );
+}

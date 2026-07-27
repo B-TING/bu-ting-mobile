@@ -1,82 +1,348 @@
-import { Pressable, Text, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Animated, Pressable, Text, View } from 'react-native';
 
+import { ICON_COLOR_WHITE } from '../../../constants/icons';
+import { AppIcon } from '../../shared/icons/AppIcon';
+
+import { BudgetDateChips } from '../budget/BudgetDateChips';
+import { BudgetCategoryBadge } from '../budget/BudgetCategoryBadge';
+import { BudgetSettlementSection } from '../budget/BudgetSettlementSection';
+import { BudgetSummarySection } from '../budget/BudgetSummarySection';
 import {
   budgetCategoryDisplay,
   memberNickname,
   splitSummary,
 } from '../modals/BudgetEntryModal';
-import type { PLAN_DETAIL_COPY } from '../../../constants/planDetail';
+import type { CopyFor } from '../../../i18n';
 import type { AppLanguage } from '../../../types/user';
+import type {
+  TravelExpenseMemberSummary,
+  TravelSettlementResponse,
+} from '../../../types/travelApi';
 import type { BudgetEntry, PlanMember } from '../../../types/travelPlan';
+import {
+  buildBudgetDateTabs,
+  sumBudgetByCategory,
+} from '../../../utils/plan/budgetTotals';
 
-type Copy = (typeof PLAN_DETAIL_COPY)[AppLanguage];
+type Copy = CopyFor<'planDetail'>;
 
 type PlanBudgetTabProps = {
   copy: Copy;
+  language: AppLanguage;
+  tripDates: string[];
   budgetEntries: BudgetEntry[];
   budgetTotal: number;
   members: PlanMember[];
-  onAddExpense: () => void;
+  onAddExpense?: () => void;
+  scrollBottomInset?: number;
+  settlement?: TravelSettlementResponse | null;
+  memberSummaries?: TravelExpenseMemberSummary[];
+  settlementLoading?: boolean;
+  settlementError?: string | null;
+  canConfirmSettlement?: boolean;
+  confirmingSettlement?: boolean;
+  onConfirmSettlement?: () => void;
+  onRetrySettlement?: () => void;
+  showSettlement?: boolean;
 };
+
+const ROW = 'flex-row items-center px-4 py-3.5';
+const DETAIL_ANIM_MS = 200;
+
+function ExpenseDetailPanel({
+  expanded,
+  children,
+}: {
+  expanded: boolean;
+  children: ReactNode;
+}) {
+  const opacity = useRef(new Animated.Value(expanded ? 1 : 0)).current;
+  const translateY = useRef(new Animated.Value(expanded ? 0 : -6)).current;
+  const [mounted, setMounted] = useState(expanded);
+
+  useEffect(() => {
+    if (expanded) {
+      setMounted(true);
+      opacity.setValue(0);
+      translateY.setValue(-6);
+      Animated.parallel([
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: DETAIL_ANIM_MS,
+          useNativeDriver: true,
+        }),
+        Animated.timing(translateY, {
+          toValue: 0,
+          duration: DETAIL_ANIM_MS,
+          useNativeDriver: true,
+        }),
+      ]).start();
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: DETAIL_ANIM_MS - 40,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: -6,
+        duration: DETAIL_ANIM_MS - 40,
+        useNativeDriver: true,
+      }),
+    ]).start(({ finished }) => {
+      if (finished) {
+        setMounted(false);
+      }
+    });
+  }, [expanded, mounted, opacity, translateY]);
+
+  if (!mounted) {
+    return null;
+  }
+
+  return (
+    <Animated.View
+      style={{ opacity, transform: [{ translateY }] }}
+      className="overflow-hidden border-t border-brand-border/50 bg-brand-background">
+      {children}
+    </Animated.View>
+  );
+}
+
+function formatExpenseDate(date: string): string {
+  return date.length >= 10 ? date.slice(5) : date;
+}
+
+function ExpenseTableHeader({ copy }: { copy: Copy }) {
+  return (
+    <View className={`${ROW} border-b border-brand-border bg-brand-background`}>
+      <Text className="min-w-0 flex-1 text-center text-xs font-bold text-brand-text">
+        {copy.budgetColCategory}
+      </Text>
+      <Text className="min-w-0 flex-1 text-center text-xs font-bold text-brand-text">
+        {copy.budgetAmount}
+      </Text>
+      <Text className="min-w-0 flex-1 text-center text-xs font-bold text-brand-text">
+        {copy.budgetDate}
+      </Text>
+    </View>
+  );
+}
+
+function ExpenseTableRow({
+  entry,
+  members,
+  copy,
+  expanded,
+  onToggle,
+}: {
+  entry: BudgetEntry;
+  members: PlanMember[];
+  copy: Copy;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  const category = entry.category ?? 'other';
+  const splitIds = entry.splitWithUserIds?.length
+    ? entry.splitWithUserIds
+    : [entry.paidByUserId];
+  const entryForSplit = { ...entry, category, splitWithUserIds: splitIds };
+
+  return (
+    <View className="border-b border-brand-border/70 last:border-b-0">
+      <Pressable
+        onPress={onToggle}
+        className={`${ROW} active:opacity-90 ${expanded ? 'bg-brand-selected/30' : 'bg-brand-surface'}`}
+        accessibilityRole="button"
+        accessibilityState={{ expanded }}>
+        <View className="min-w-0 flex-1 items-center">
+          <BudgetCategoryBadge
+            label={budgetCategoryDisplay(category, copy)}
+            category={category}
+          />
+        </View>
+        <Text className="min-w-0 flex-1 text-center text-sm font-bold text-brand-text">
+          ₩{entry.amount.toLocaleString()}
+        </Text>
+        <View className="min-w-0 flex-1 flex-row items-center justify-center">
+          <Text className="text-sm text-brand-muted">{formatExpenseDate(entry.date)}</Text>
+          <Text className="ml-1 text-[10px] text-brand-muted">{expanded ? '▲' : '▼'}</Text>
+        </View>
+      </Pressable>
+
+      <ExpenseDetailPanel expanded={expanded}>
+        <View className="gap-2 px-4 py-3">
+          <View>
+            <Text className="text-[10px] font-bold uppercase text-brand-muted">
+              {copy.budgetItem}
+            </Text>
+            <Text className="mt-0.5 text-sm font-semibold text-brand-text">{entry.label}</Text>
+            {entry.memo ? (
+              <Text className="mt-0.5 text-xs text-brand-muted">{entry.memo}</Text>
+            ) : null}
+          </View>
+
+          <View>
+            <Text className="text-[10px] font-bold uppercase text-brand-muted">
+              {copy.budgetPayer}
+            </Text>
+            <Text className="mt-0.5 text-sm text-brand-text">
+              {memberNickname(members, entry.paidByUserId)}
+            </Text>
+          </View>
+
+          <View>
+            <Text className="text-[10px] font-bold uppercase text-brand-muted">
+              {copy.budgetSplit}
+            </Text>
+            <Text className="mt-0.5 text-sm text-brand-text">
+              {splitSummary(entryForSplit, members, copy)}
+            </Text>
+          </View>
+        </View>
+      </ExpenseDetailPanel>
+    </View>
+  );
+}
 
 export function PlanBudgetTab({
   copy,
+  language,
+  tripDates,
   budgetEntries,
   budgetTotal,
   members,
   onAddExpense,
+  scrollBottomInset = 0,
+  settlement = null,
+  memberSummaries = [],
+  settlementLoading = false,
+  settlementError = null,
+  canConfirmSettlement = false,
+  confirmingSettlement = false,
+  onConfirmSettlement,
+  onRetrySettlement,
+  showSettlement = false,
 }: PlanBudgetTabProps) {
+  const [expandedEntryId, setExpandedEntryId] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const listBottomPadding = 24 + scrollBottomInset;
+
+  const categoryTotals = useMemo(
+    () => sumBudgetByCategory(budgetEntries),
+    [budgetEntries],
+  );
+
+  const dateTabs = useMemo(
+    () => buildBudgetDateTabs(tripDates, budgetEntries),
+    [tripDates, budgetEntries],
+  );
+
+  useEffect(() => {
+    if (dateTabs.length === 0) {
+      setSelectedDate(null);
+      return;
+    }
+    if (!selectedDate || !dateTabs.includes(selectedDate)) {
+      setSelectedDate(dateTabs[0]);
+    }
+  }, [dateTabs, selectedDate]);
+
+  const selectedEntries = useMemo(() => {
+    if (!selectedDate) {
+      return [];
+    }
+    return budgetEntries.filter(entry => entry.date === selectedDate);
+  }, [budgetEntries, selectedDate]);
+
+  const toggleEntry = (entryId: string) => {
+    setExpandedEntryId(prev => (prev === entryId ? null : entryId));
+  };
+
   return (
-    <View className="px-4 pb-8">
-      <Text className="mb-1 text-lg font-bold text-brand-text">{copy.budgetTotal}</Text>
-      <Text className="mb-4 text-2xl font-bold text-brand-primary">
-        ₩{budgetTotal.toLocaleString()}
-      </Text>
-      {budgetEntries.length === 0 ? (
-        <Text className="mb-4 text-sm text-brand-muted">{copy.budgetEmpty}</Text>
-      ) : (
-        budgetEntries.map(e => {
-          const category = e.category ?? 'other';
-          const splitIds = e.splitWithUserIds?.length
-            ? e.splitWithUserIds
-            : [e.paidByUserId];
-          const entryForDisplay = { ...e, category, splitWithUserIds: splitIds };
-          return (
-            <View
-              key={e.entryId}
-              className="mb-2 rounded-xl border border-brand-border bg-brand-surface px-4 py-3">
-              <View className="flex-row items-start justify-between">
-                <View className="min-w-0 flex-1 pr-3">
-                  <Text className="font-semibold text-brand-text">{e.label}</Text>
-                  <Text className="mt-0.5 text-xs text-brand-primary">
-                    {budgetCategoryDisplay(category, copy)}
-                  </Text>
-                </View>
-                <Text className="font-bold text-brand-text">₩{e.amount.toLocaleString()}</Text>
-              </View>
-              <View className="mt-2 flex-row flex-wrap gap-x-3 gap-y-1">
-                <Text className="text-[11px] text-brand-muted">
-                  {copy.budgetPayer}: {memberNickname(members, e.paidByUserId)}
-                </Text>
-                <Text className="text-[11px] text-brand-muted">
-                  {copy.budgetSplit}: {splitSummary(entryForDisplay, members, copy)}
-                </Text>
-                <Text className="text-[11px] text-brand-muted">
-                  {copy.budgetDate}: {e.date}
-                </Text>
-              </View>
-              {e.memo ? (
-                <Text className="mt-1 text-xs text-brand-muted">{e.memo}</Text>
+    <View className="bg-brand-background">
+      <View className="border-b border-brand-border px-4 py-2">
+        <BudgetSummarySection
+          copy={copy}
+          budgetTotal={budgetTotal}
+          expenseCount={budgetEntries.length}
+          totals={categoryTotals}
+          onAddExpense={onAddExpense}
+        />
+      </View>
+
+      <View className="mt-2 px-4 pt-1.5" style={{ paddingBottom: listBottomPadding }}>
+        <View className="gap-1">
+          <Text className="mb-2 text-sm font-bold text-brand-text">{copy.budgetExpenseList}</Text>
+
+          {dateTabs.length > 0 && selectedDate ? (
+            <BudgetDateChips
+              dates={dateTabs}
+              tripDates={tripDates}
+              selectedDate={selectedDate}
+              onSelect={setSelectedDate}
+              language={language}
+            />
+          ) : null}
+        </View>
+
+        <View className="mt-3">
+          {dateTabs.length === 0 ? (
+            <View className="py-6">
+              <Text className="text-center text-sm text-brand-muted">{copy.budgetEmpty}</Text>
+              {onAddExpense ? (
+                <Pressable
+                  onPress={onAddExpense}
+                  className="mt-4 items-center rounded-2xl bg-brand-primary py-3 active:opacity-90">
+                  <View className="flex-row items-center gap-1.5">
+                    <AppIcon name="plus" size={14} color={ICON_COLOR_WHITE} strokeWidth={2.5} />
+                    <Text className="font-bold text-white">{copy.budgetAdd}</Text>
+                  </View>
+                </Pressable>
               ) : null}
             </View>
-          );
-        })
-      )}
-      <Pressable
-        onPress={onAddExpense}
-        className="mt-2 items-center rounded-2xl bg-brand-primary py-3 active:opacity-90">
-        <Text className="font-bold text-white">{copy.budgetAdd}</Text>
-      </Pressable>
+          ) : selectedEntries.length === 0 ? (
+            <View className="py-6">
+              <Text className="text-center text-sm text-brand-muted">{copy.budgetDayEmpty}</Text>
+            </View>
+          ) : (
+            <View className="overflow-hidden rounded-2xl border border-brand-border bg-brand-surface">
+              <ExpenseTableHeader copy={copy} />
+              {selectedEntries.map(entry => (
+                <ExpenseTableRow
+                  key={entry.entryId}
+                  entry={entry}
+                  members={members}
+                  copy={copy}
+                  expanded={expandedEntryId === entry.entryId}
+                  onToggle={() => toggleEntry(entry.entryId)}
+                />
+              ))}
+            </View>
+          )}
+
+          {showSettlement ? (
+            <BudgetSettlementSection
+              copy={copy}
+              settlement={settlement}
+              memberSummaries={memberSummaries}
+              loading={settlementLoading}
+              error={settlementError}
+              canConfirm={canConfirmSettlement}
+              confirming={confirmingSettlement}
+              onConfirm={onConfirmSettlement}
+              onRetry={onRetrySettlement}
+            />
+          ) : null}
+        </View>
+      </View>
     </View>
   );
 }

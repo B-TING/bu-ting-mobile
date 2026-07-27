@@ -1,110 +1,272 @@
-import { useMemo, useState } from 'react';
-import { FlatList, Text, View } from 'react-native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useCallback, useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  Text,
+  View,
+} from 'react-native';
+import type { NavigationProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { TravelogueFeedItem } from '../../components/feed/TravelogueFeedItem';
 import { ImportPlanModal } from '../../components/feed/modals/ImportPlanModal';
 import { TravelogueCommentModal } from '../../components/feed/modals/TravelogueCommentModal';
-import { useTravelogueSocialActions } from '../../components/feed/useTravelogueSocialActions';
+import {
+  TravelogueSocialError,
+  useTravelogueSocialActions,
+} from '../../components/feed/useTravelogueSocialActions';
 import { BackButton } from '../../components/shared/buttons/BackButton';
-import { TRAVEL_REVIEW_COPY } from '../../constants/travelReview';
+import { AppIcon } from '../../components/shared/icons/AppIcon';
+import { useAppAlert } from '../../components/shared/modals';
+import { getNavbarOverlayHeight } from '../../components/shared/navigation/Navbar';
+import { useAppLanguage, useCopy } from '../../i18n';
+import { ICON_COLOR_MUTED, ICON_COLOR_PRIMARY } from '../../constants/icons';
 import type { RootStackParamList } from '../../navigation/types';
-import { useAppStore, useTravelogueStore } from '../../stores';
-import type { Travelogue } from '../../types/travelReview';
+import { fetchTravelRecordFeed } from '../../services/travel/travelRecordService';
+import { mapTravelRecordFeedItem } from '../../types/travelRecordApi';
+import { useAuthStore } from '../../stores';
+import { selectReusableAccessToken } from '../../stores/useAuthStore';
+import type { TravelRecord, TravelRecordComment } from '../../types/travelReview';
 import type { AppLanguage } from '../../types/user';
-import { isTraveloguePublic } from '../../utils/travelReview';
+import { isTravelRecordPublic } from '../../utils/review/travelReview';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'TravelogueFeed'>;
+type Props = {
+  navigation: NavigationProp<RootStackParamList>;
+  embeddedInMainTabs?: boolean;
+};
 
 type FeedRowProps = {
-  travelogue: Travelogue;
+  travelRecord: TravelRecord;
   language: AppLanguage;
-  navigation: Props['navigation'];
-  onOpenComposer: (travelogue: Travelogue) => void;
+  navigation: NavigationProp<RootStackParamList>;
+  onPatchRecord: (travelRecordId: string, patch: Partial<TravelRecord>) => void;
 };
 
 function TravelogueFeedRow({
-  travelogue,
+  travelRecord,
   language,
   navigation,
-  onOpenComposer,
+  onPatchRecord,
 }: FeedRowProps) {
-  const copy = TRAVEL_REVIEW_COPY[language];
+  const { alert } = useAppAlert();
+  const copy = useCopy('travelReview');
+  const [commentOpen, setCommentOpen] = useState(false);
+  const [editingComment, setEditingComment] = useState<TravelRecordComment | null>(
+    null,
+  );
   const {
     social,
     userId,
     userName,
-    handleToggleHelpful,
+    commenting,
+    handleToggleLike,
+    handleToggleBookmark,
+    bookmarkedByMe,
+    handleAddComment,
+    handleUpdateComment,
+    handleDeleteComment,
     handleImportPlan,
-    importPlanModalProps,
-  } = useTravelogueSocialActions(travelogue, copy, navigation);
+    importModalProps,
+  } = useTravelogueSocialActions(travelRecord, copy, navigation, {
+    onTravelRecordPatch: patch => {
+      onPatchRecord(travelRecord.travelRecordId, patch);
+    },
+  });
+
+  const onToggleBookmark = () => {
+    void handleToggleBookmark().catch(error => {
+      alert({
+        title:
+          error instanceof TravelogueSocialError
+            ? error.message
+            : copy.socialBookmarkFailed,
+      });
+    });
+  };
+
+  const onToggleLike = () => {
+    void handleToggleLike().catch(error => {
+      alert({
+        title:
+          error instanceof TravelogueSocialError
+            ? error.message
+            : copy.socialLikeFailed,
+      });
+    });
+  };
+
+  const onSubmitComment = async (text: string) => {
+    try {
+      if (editingComment) {
+        await handleUpdateComment(editingComment.commentId, text);
+      } else {
+        await handleAddComment(text);
+      }
+    } catch (error) {
+      alert({
+        title:
+          error instanceof TravelogueSocialError
+            ? error.message
+            : editingComment
+              ? copy.socialCommentUpdateFailed
+              : copy.socialCommentFailed,
+      });
+      throw error;
+    }
+  };
+
+  const onDeleteComment = (comment: TravelRecordComment) => {
+    alert({
+      title: copy.feedDeleteCommentConfirmTitle,
+      message: copy.feedDeleteCommentConfirmMessage,
+      buttons: [
+        { label: copy.cancel, variant: 'secondary', onPress: () => undefined },
+        {
+          label: copy.feedDeleteComment,
+          variant: 'danger',
+          onPress: () => {
+            void handleDeleteComment(comment.commentId).catch(error => {
+              alert({
+                title:
+                  error instanceof TravelogueSocialError
+                    ? error.message
+                    : copy.socialCommentDeleteFailed,
+              });
+            });
+          },
+        },
+      ],
+    });
+  };
+
+  const closeCommentModal = () => {
+    setCommentOpen(false);
+    setEditingComment(null);
+  };
 
   return (
     <>
       <TravelogueFeedItem
-        travelogue={travelogue}
+        travelRecord={travelRecord}
         copy={copy}
         language={language}
         social={social}
         userId={userId}
         userName={userName}
         onPressDetail={() =>
-          navigation.navigate('TravelogueDetail', {
-            travelogueId: travelogue.travelogueId,
+          navigation.navigate('TravelRecordDetail', {
+            travelRecordId: travelRecord.travelRecordId,
           })
         }
-        onToggleHelpful={handleToggleHelpful}
+        onToggleLike={onToggleLike}
+        onToggleBookmark={onToggleBookmark}
+        bookmarkedByMe={bookmarkedByMe}
         onImportPlan={handleImportPlan}
-        onOpenComposer={() => onOpenComposer(travelogue)}
+        onOpenComposer={() => {
+          setEditingComment(null);
+          setCommentOpen(true);
+        }}
+        onEditComment={comment => {
+          setEditingComment(comment);
+          setCommentOpen(true);
+        }}
+        onDeleteComment={onDeleteComment}
       />
-      <ImportPlanModal {...importPlanModalProps} />
+      <ImportPlanModal {...importModalProps} />
+      <TravelogueCommentModal
+        visible={commentOpen}
+        copy={copy}
+        userName={userName}
+        subtitle={travelRecord.title ?? undefined}
+        mode={editingComment ? 'edit' : 'create'}
+        initialContent={editingComment?.content ?? ''}
+        submitting={commenting}
+        onClose={closeCommentModal}
+        onSubmit={onSubmitComment}
+      />
     </>
   );
 }
 
-export function TravelogueFeedScreen({ navigation }: Props) {
+export function TravelogueFeedScreen({ navigation, embeddedInMainTabs = false }: Props) {
   const insets = useSafeAreaInsets();
-  const language = useAppStore(s => s.language) ?? 'ko';
-  const auth = useAppStore(s => s.auth);
-  const copy = TRAVEL_REVIEW_COPY[language];
-  const publishedTravelogues = useTravelogueStore(s => s.publishedTravelogues);
-  const addComment = useTravelogueStore(s => s.addComment);
-  const travelogues = useMemo(
-    () => publishedTravelogues.filter(isTraveloguePublic),
-    [publishedTravelogues],
-  );
+  const language = useAppLanguage();
+  const accessToken = useAuthStore(selectReusableAccessToken);
+  const copy = useCopy('travelReview');
 
-  const [commentTarget, setCommentTarget] = useState<Travelogue | null>(null);
+  const [travelRecords, setTravelRecords] = useState<TravelRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const userId = auth.userId ?? 'local-user';
-  const userName = auth.displayName ?? (language === 'ko' ? '여행자' : 'Traveler');
+  const bottomPadding = embeddedInMainTabs
+    ? getNavbarOverlayHeight(insets.bottom) + 16
+    : insets.bottom + 16;
 
-  const handleSubmitComment = (text: string) => {
-    if (!commentTarget) {
-      return;
+  const loadFeed = useCallback(async () => {
+    const page = await fetchTravelRecordFeed(
+      { size: 20, sort: 'LATEST' },
+      accessToken,
+    );
+    const mapped = (page.items ?? [])
+      .map(mapTravelRecordFeedItem)
+      .filter(isTravelRecordPublic);
+    setTravelRecords(mapped);
+  }, [accessToken]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    void loadFeed()
+      .catch(error => {
+        if (__DEV__) {
+          console.warn('[TravelogueFeed] fetch failed', error);
+        }
+        if (!cancelled) {
+          setTravelRecords([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [loadFeed]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await loadFeed();
+    } finally {
+      setRefreshing(false);
     }
-    addComment(commentTarget.travelogueId, {
-      authorId: userId,
-      authorName: userName,
-      text,
-    });
-  };
+  }, [loadFeed]);
 
   return (
-    <View className="flex-1 bg-brand-background" style={{ paddingTop: insets.top }}>
+    <View className="flex-1 bg-brand-background">
       <View className="flex-row items-center border-b border-brand-border bg-brand-surface px-4 py-3">
-        <BackButton
-          accessibilityLabel={language === 'ko' ? '뒤로' : 'Back'}
-          onPress={() => navigation.goBack()}
-        />
+        {!embeddedInMainTabs ? (
+          <BackButton
+            accessibilityLabel={language === 'ko' ? '뒤로' : 'Back'}
+            onPress={() => navigation.goBack()}
+          />
+        ) : null}
         <Text className="flex-1 text-lg font-bold text-brand-text">{copy.feedTitle}</Text>
       </View>
 
-      {travelogues.length === 0 ? (
-        <View className="flex-1 items-center justify-center px-6">
+      {loading && travelRecords.length === 0 ? (
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator color={ICON_COLOR_PRIMARY} />
+        </View>
+      ) : travelRecords.length === 0 ? (
+        <View
+          className="flex-1 items-center justify-center px-6"
+          style={{ paddingBottom: bottomPadding }}>
           <View className="items-center rounded-2xl border-2 border-dashed border-brand-border bg-brand-surface px-6 py-12">
-            <Text className="text-4xl">📝</Text>
+            <AppIcon name="fileText" size={40} color={ICON_COLOR_MUTED} />
             <Text className="mt-3 text-base font-semibold text-brand-text">
               {copy.feedEmpty}
             </Text>
@@ -115,30 +277,34 @@ export function TravelogueFeedScreen({ navigation }: Props) {
         </View>
       ) : (
         <FlatList
-          data={travelogues}
-          keyExtractor={item => item.travelogueId}
+          data={travelRecords}
+          keyExtractor={item => item.travelRecordId}
           renderItem={({ item }) => (
             <TravelogueFeedRow
-              travelogue={item}
+              travelRecord={item}
               language={language}
               navigation={navigation}
-              onOpenComposer={setCommentTarget}
+              onPatchRecord={(id, patch) => {
+                setTravelRecords(prev =>
+                  prev.map(r => (r.travelRecordId === id ? { ...r, ...patch } : r)),
+                );
+              }}
             />
           )}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
+          contentContainerStyle={{ paddingBottom: bottomPadding }}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => {
+                void onRefresh();
+              }}
+              tintColor={ICON_COLOR_PRIMARY}
+            />
+          }
         />
       )}
-
-      <TravelogueCommentModal
-        visible={commentTarget != null}
-        copy={copy}
-        userName={userName}
-        subtitle={commentTarget?.title}
-        onClose={() => setCommentTarget(null)}
-        onSubmit={handleSubmitComment}
-      />
     </View>
   );
 }

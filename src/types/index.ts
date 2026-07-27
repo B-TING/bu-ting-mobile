@@ -7,6 +7,13 @@ export type Place = {
 };
 
 export type {
+  ApiEnvelope,
+  AuthUser,
+  OAuthLoginRequest,
+  OAuthLoginResponse,
+  OAuthProvider,
+} from './auth';
+export type {
   AppLanguage,
   AuthState,
   OnboardingProfile,
@@ -32,7 +39,31 @@ export type {
   PlaceReview,
   ReviewMedia,
   ReviewMediaType,
-  Travelogue,
-  TravelogueDaySnapshot,
-  TravelogueRouteSnapshot,
+  TravelRecord,
+  TravelRecordComment,
+  TravelRecordDay,
+  TravelRecordPlace,
+  TravelRecordSocial,
+  TravelRecordStatus,
 } from './travelReview';
+export type {
+  TravelRecordCreateRequest,
+  TravelRecordFeedPageResponse,
+  TravelRecordFeedResponse,
+  TravelRecordManageResponse,
+  TravelRecordResponse,
+  TravelRecordUpdateRequest,
+} from './travelRecordApi';
+export {
+  mapTravelRecordFeedItem,
+  mapTravelRecordManageItem,
+  mapTravelRecordResponse,
+} from './travelRecordApi';
+export type {
+  PlaceDetailVO,
+  PlaceListItemVO,
+  PlaceReviewVO,
+  PlaceKind,
+  AccommodationPlaceDetail,
+  AttractionPlaceDetail,
+} from './googlePlaces';

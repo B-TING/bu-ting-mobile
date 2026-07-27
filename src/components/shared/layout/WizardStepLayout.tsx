@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { layout } from '../../../constants/layout';
+import { layout } from '../../../constants/common/layout';
 
 type WizardStepLayoutProps = {
   stepIndex: number;
@@ -12,6 +12,7 @@ type WizardStepLayoutProps = {
   subtitle: string;
   backLabel?: string;
   onBack?: () => void;
+  omitTopSafeArea?: boolean;
   children: ReactNode;
   footer: ReactNode;
 };
@@ -24,6 +25,7 @@ export function WizardStepLayout({
   subtitle,
   backLabel,
   onBack,
+  omitTopSafeArea = false,
   children,
   footer,
 }: WizardStepLayoutProps) {
@@ -33,7 +35,7 @@ export function WizardStepLayout({
   return (
     <View
       className="flex-1 bg-brand-background px-6"
-      style={[layout.screenPad24, { paddingTop: insets.top + 8 }]}>
+      style={[layout.screenPad24, { paddingTop: omitTopSafeArea ? 8 : insets.top + 8 }]}>
       <View className="mb-3 flex-row items-center justify-between">
         {onBack && backLabel ? (
           <Pressable onPress={onBack} hitSlop={8} className="active:opacity-80">

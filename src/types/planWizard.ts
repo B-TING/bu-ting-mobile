@@ -9,7 +9,7 @@ export type CompanionGroupType =
 
 export type AccommodationMode = 'booked' | 'area_only';
 
-export type PlanGenerationMode = 'auto' | 'candidates';
+export type PlanGenerationMode = 'auto' | 'candidates' | 'manual';
 
 export type PlanWizardAnswers = {
   startDate: string;

@@ -1,6 +1,6 @@
 import { Image, type ImageStyle, type StyleProp } from 'react-native';
 
-import { BRAND_ICON } from '../../../constants/brandAssets';
+import { BRAND_ICON } from '../../../constants/common/brandAssets';
 
 type BrandIconProps = {
   size?: number;

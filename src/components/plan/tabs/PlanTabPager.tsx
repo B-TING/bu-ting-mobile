@@ -7,7 +7,7 @@ import {
   View,
 } from 'react-native';
 
-import { PLAN_DETAIL_TABS, type PlanDetailTab } from '../../../constants/planDetail';
+import { PLAN_DETAIL_TABS, type PlanDetailTab } from '../../../constants/plan/planDetail';
 import type { AppLanguage } from '../../../types/user';
 import { PlanTabBar } from './PlanTabBar';
 
@@ -18,6 +18,8 @@ type PlanTabPagerProps = {
   onChange: (tab: PlanDetailTab) => void;
   language: AppLanguage;
   horizontalScrollEnabled?: boolean;
+  /** Navbar 등 absolute 오버레이 위로 스크롤 콘텐츠를 올리기 위한 하단 여백 */
+  scrollBottomInset?: number;
   pages: Record<PlanDetailTab, ReactNode>;
 };
 
@@ -26,12 +28,14 @@ export function PlanTabPager({
   onChange,
   language,
   horizontalScrollEnabled = true,
+  scrollBottomInset = 0,
   pages,
 }: PlanTabPagerProps) {
   const width = Dimensions.get('window').width;
   const scrollRef = useRef<ScrollView>(null);
   /** 탭 버튼·위젯 등 코드로 페이지를 맞출 때 — 스와이프 동기화 이벤트 무시 */
   const syncingFromStateRef = useRef(false);
+  const pageBottomPadding = 24 + scrollBottomInset;
 
   useEffect(() => {
     const index = TAB_ORDER.indexOf(active);
@@ -88,7 +92,7 @@ export function PlanTabPager({
             <ScrollView
               key={tab}
               style={{ width }}
-              contentContainerStyle={{ paddingBottom: 24 }}
+              contentContainerStyle={{ paddingBottom: pageBottomPadding }}
               showsVerticalScrollIndicator={false}
               nestedScrollEnabled>
               {pages[tab]}

@@ -1,19 +1,23 @@
 import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   ScrollView,
   Text,
   TextInput,
   View,
 } from 'react-native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { WizardStepLayout } from '../../components/shared/layout/WizardStepLayout';
 import { OptionCard } from '../../components/shared/cards/OptionCard';
 import { PrimaryButton } from '../../components/shared/buttons/PrimaryButton';
+import { AppIcon } from '../../components/shared/icons/AppIcon';
+import { ICON_COLOR_WHITE } from '../../constants/icons';
 import {
   TRAVEL_CONSTRAINT_OPTIONS,
+  TRAVEL_CONSTRAINT_NONE_ID,
   TRAVEL_STYLE_OPTIONS,
   ACCOMMODATION_AREAS,
   ACCOMMODATION_SEARCH,
@@ -22,16 +26,26 @@ import {
   COMPANION_TYPE_OPTIONS,
   dayCountBetween,
   isValidIsoDate,
-  PLAN_WIZARD_COPY,
   PLAN_WIZARD_STEP_COUNT,
   PLAN_WIZARD_STEPS,
-} from '../../constants/planWizard';
+} from '../../constants/plan/planWizard';
+import { useAppLanguage, useCopy } from '../../i18n';
+import { useFeatureUnavailableAlert } from '../../components/shared/modals';
+import {
+  ALPHA_FEATURE_LABELS,
+  isAlphaFeatureBlocked,
+} from '../../constants/common/alphaFeatureBlocks';
 import type { RootStackParamList } from '../../navigation/types';
-import { requestAutoPlan, requestPlanCandidates } from '../../services/planAiService';
-import { useAppStore, usePlanStore, emptyWizardAnswers } from '../../stores';
+import { navigateToMainTab } from '../../navigation/navigateToMainTab';
+import { requestAutoPlan, requestPlanCandidates } from '../../services/plan/planAiService';
+import { createManualTravelPlan } from '../../services/travel/createManualTravelPlan';
+import { selectOnboardingForUser, useAppStore, useAuthStore, usePlanStore, emptyWizardAnswers } from '../../stores';
+import { selectAuthUser, selectReusableAccessToken } from '../../stores/useAuthStore';
 import type { CompanionGroupType } from '../../types/planWizard';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'PlanWizard'>;
+type Props = {
+  navigation: NativeStackNavigationProp<RootStackParamList>;
+};
 
 function defaultDates() {
   const start = new Date();
@@ -45,13 +59,15 @@ function defaultDates() {
 }
 
 export function PlanWizardScreen({ navigation }: Props) {
-  const language = useAppStore(s => s.language) ?? 'ko';
-  const onboarding = useAppStore(s => s.onboarding);
+  const language = useAppLanguage();
+  const copy = useCopy('planWizard');
+  const { showUnavailable } = useFeatureUnavailableAlert();
+  const user = useAuthStore(selectAuthUser);
+  const accessToken = useAuthStore(selectReusableAccessToken);
+  const onboarding = useAppStore(selectOnboardingForUser(user?.userId));
   const addPlan = usePlanStore(s => s.addPlan);
   const confirmPlan = usePlanStore(s => s.confirmPlan);
   const setPlanCandidates = usePlanStore(s => s.setPlanCandidates);
-
-  const copy = PLAN_WIZARD_COPY[language];
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState(() => ({
     ...emptyWizardAnswers(),
@@ -140,6 +156,12 @@ export function PlanWizardScreen({ navigation }: Props) {
   };
 
   const isConstraintSelected = (id: string): boolean => {
+    if (answers.otherConstraintIds.includes(TRAVEL_CONSTRAINT_NONE_ID)) {
+      return id === TRAVEL_CONSTRAINT_NONE_ID;
+    }
+    if (id === TRAVEL_CONSTRAINT_NONE_ID) {
+      return false;
+    }
     if (id === 'heavy_luggage') {
       return answers.hasHeavyBaggage;
     }
@@ -154,41 +176,96 @@ export function PlanWizardScreen({ navigation }: Props) {
 
   const toggleConstraint = (id: string) => {
     setAnswers(prev => {
+      if (id === TRAVEL_CONSTRAINT_NONE_ID) {
+        const isNone = prev.otherConstraintIds.includes(TRAVEL_CONSTRAINT_NONE_ID);
+        if (isNone) {
+          return { ...prev, otherConstraintIds: [] };
+        }
+        return {
+          ...prev,
+          hasHeavyBaggage: false,
+          hasPets: false,
+          otherConstraintIds: [TRAVEL_CONSTRAINT_NONE_ID],
+        };
+      }
+
+      const clearedNone = {
+        ...prev,
+        otherConstraintIds: prev.otherConstraintIds.filter(x => x !== TRAVEL_CONSTRAINT_NONE_ID),
+      };
+
       if (id === 'heavy_luggage') {
-        return { ...prev, hasHeavyBaggage: true };
+        return { ...clearedNone, hasHeavyBaggage: true };
       }
       if (id === 'light_luggage') {
-        return { ...prev, hasHeavyBaggage: false };
+        return { ...clearedNone, hasHeavyBaggage: false };
       }
       if (id === 'pets') {
-        return { ...prev, hasPets: !prev.hasPets };
+        return { ...clearedNone, hasPets: !prev.hasPets };
       }
-      const exists = prev.otherConstraintIds.includes(id);
+      const exists = clearedNone.otherConstraintIds.includes(id);
       return {
-        ...prev,
+        ...clearedNone,
         otherConstraintIds: exists
-          ? prev.otherConstraintIds.filter(x => x !== id)
-          : [...prev.otherConstraintIds, id],
+          ? clearedNone.otherConstraintIds.filter(x => x !== id)
+          : [...clearedNone.otherConstraintIds, id],
       };
     });
   };
 
   const finish = async () => {
+    if (
+      isAlphaFeatureBlocked('planAi') &&
+      answers.generationMode !== 'manual'
+    ) {
+      showUnavailable(ALPHA_FEATURE_LABELS.planAi);
+      return;
+    }
+
     setLoading(true);
     try {
+      if (answers.generationMode === 'manual') {
+        if (!accessToken) {
+          Alert.alert(copy.createManualError);
+          return;
+        }
+        const plan = await createManualTravelPlan({
+          accessToken,
+          answers,
+          members: [
+            {
+              userId: user?.userId ?? 'local-user',
+              nickname: user?.nickname ?? 'Traveler',
+              role: 'LEADER',
+            },
+          ],
+        });
+        addPlan(plan);
+        confirmPlan(plan.planId);
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'MainTabs', params: { tab: 'route' } }],
+        });
+        return;
+      }
+
       if (answers.generationMode === 'auto') {
         const plan = await requestAutoPlan(answers, onboarding);
         addPlan(plan);
         confirmPlan(plan.planId);
         navigation.reset({
           index: 0,
-          routes: [{ name: 'PlanDetail', params: { planId: plan.planId } }],
+          routes: [{ name: 'MainTabs', params: { tab: 'route' } }],
         });
       } else {
         const candidates = await requestPlanCandidates(answers, onboarding);
         setPlanCandidates(candidates);
         navigation.replace('PlanCandidates');
       }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : copy.createManualError;
+      Alert.alert(copy.createManualError, message);
     } finally {
       setLoading(false);
     }
@@ -208,7 +285,7 @@ export function PlanWizardScreen({ navigation }: Props) {
     } else if (navigation.canGoBack()) {
       navigation.goBack();
     } else {
-      navigation.navigate('MainHome');
+      navigateToMainTab(navigation, 'home');
     }
   };
 
@@ -254,7 +331,7 @@ export function PlanWizardScreen({ navigation }: Props) {
                     companionCount: Math.max(1, p.companionCount - 1),
                   }))
                 }>
-                <Text className="text-2xl font-bold text-white">−</Text>
+                <AppIcon name="minus" size={24} color={ICON_COLOR_WHITE} strokeWidth={2.5} />
               </Pressable>
               <Pressable
                 className="h-14 w-14 items-center justify-center rounded-full bg-brand-primary active:opacity-90"
@@ -264,7 +341,7 @@ export function PlanWizardScreen({ navigation }: Props) {
                     companionCount: Math.min(20, p.companionCount + 1),
                   }))
                 }>
-                <Text className="text-2xl font-bold text-white">+</Text>
+                <AppIcon name="plus" size={24} color={ICON_COLOR_WHITE} strokeWidth={2.5} />
               </Pressable>
             </View>
           </View>
@@ -412,7 +489,13 @@ export function PlanWizardScreen({ navigation }: Props) {
             <OptionCard
               label={copy.modeAuto}
               selected={answers.generationMode === 'auto'}
-              onPress={() => setAnswers(p => ({ ...p, generationMode: 'auto' }))}
+              onPress={() => {
+                if (isAlphaFeatureBlocked('planAi')) {
+                  showUnavailable(ALPHA_FEATURE_LABELS.planAi);
+                  return;
+                }
+                setAnswers(p => ({ ...p, generationMode: 'auto' }));
+              }}
             />
             <Text className="-mt-1 mb-3 ml-1 text-xs text-brand-muted">
               {copy.modeAutoSub}
@@ -420,10 +503,24 @@ export function PlanWizardScreen({ navigation }: Props) {
             <OptionCard
               label={copy.modeCandidates}
               selected={answers.generationMode === 'candidates'}
-              onPress={() => setAnswers(p => ({ ...p, generationMode: 'candidates' }))}
+              onPress={() => {
+                if (isAlphaFeatureBlocked('planAi')) {
+                  showUnavailable(ALPHA_FEATURE_LABELS.planAi);
+                  return;
+                }
+                setAnswers(p => ({ ...p, generationMode: 'candidates' }));
+              }}
             />
             <Text className="-mt-1 mb-3 ml-1 text-xs text-brand-muted">
               {copy.modeCandidatesSub}
+            </Text>
+            <OptionCard
+              label={copy.modeManual}
+              selected={answers.generationMode === 'manual'}
+              onPress={() => setAnswers(p => ({ ...p, generationMode: 'manual' }))}
+            />
+            <Text className="-mt-1 mb-3 ml-1 text-xs text-brand-muted">
+              {copy.modeManualSub}
             </Text>
           </>
         );
@@ -436,7 +533,9 @@ export function PlanWizardScreen({ navigation }: Props) {
     return (
       <View className="flex-1 items-center justify-center bg-brand-background px-6">
         <ActivityIndicator size="large" color="#0077B6" />
-        <Text className="mt-4 text-base text-brand-muted">{copy.generating}</Text>
+        <Text className="mt-4 text-base text-brand-muted">
+          {answers.generationMode === 'manual' ? copy.creatingManual : copy.generating}
+        </Text>
       </View>
     );
   }
