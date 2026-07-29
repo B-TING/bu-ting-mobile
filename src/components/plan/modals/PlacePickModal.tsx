@@ -110,8 +110,17 @@ export function PlacePickModal({
       searchCenter: anchor,
       mapCenter: anchor,
       emptyErrorFallback: copy.searchEmpty,
+      refreshTooSoonMessage: searchCopy.searchRefreshTooSoon,
     });
-  }, [visible, useTourApiNearby, anchor, hasCacheForCenter, searchByLocation, copy.searchEmpty]);
+  }, [
+    visible,
+    useTourApiNearby,
+    anchor,
+    hasCacheForCenter,
+    searchByLocation,
+    copy.searchEmpty,
+    searchCopy.searchRefreshTooSoon,
+  ]);
 
   const apiPlaces = useMemo(() => {
     if (!useTourApiNearby || !anchor) {
