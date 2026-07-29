@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 
 import { PLACE_SEARCH_RADIUS_M, PLACE_SEARCH_REFRESH_COOLDOWN_MS } from '../constants/places/placeSearch';
+import { ApiClientError } from '../services/api/apiClient';
 import {
   fetchPlaceDetailsForList,
   searchFestivals,
@@ -14,6 +15,30 @@ import { enrichBusanPlaceFromDetail } from '../utils/places/placesApiMapper';
 import { mapFestivalToBusanPlace } from '../utils/places/festivalApiMapper';
 import { logPlacesApiError } from '../utils/places/placesApiLogger';
 import { usePlaceDetailCacheStore } from './usePlaceDetailCacheStore';
+
+/** 검색 완료 후 UI에서 토스트 등을 분기하기 위한 결과 */
+export type PlaceSearchOutcome = 'success' | 'empty' | 'cooldown' | 'error' | 'stale';
+
+/** 서버 400 + null 바디/메시지 → 검색 결과 없음으로 취급 */
+export function isPlaceSearchNoResultsError(error: unknown): boolean {
+  if (!(error instanceof ApiClientError) || error.status !== 400) {
+    return false;
+  }
+  const body = error.responseBody;
+  if (body == null) {
+    return true;
+  }
+  if (typeof body === 'object') {
+    const message = 'message' in body ? (body as { message: unknown }).message : undefined;
+    if (message == null) {
+      return true;
+    }
+    if (typeof message === 'string' && /400\s*\(\s*null\s*\)/i.test(message)) {
+      return true;
+    }
+  }
+  return /400\s*\(\s*null\s*\)/i.test(error.message);
+}
 
 export type PlaceSearchCacheEntry = {
   places: BusanPlace[];
@@ -55,8 +80,8 @@ type PlaceSearchState = {
   ) => boolean;
   hasCacheForFestivalRange: (eventStartDate: string, eventEndDate: string) => boolean;
   updateMapCenter: (contentTypeId: PlaceContentTypeId, mapCenter: EventZoneCoordinate) => void;
-  searchByLocation: (params: SearchByLocationParams) => Promise<void>;
-  searchFestivalsByDateRange: (params: SearchFestivalsParams) => Promise<void>;
+  searchByLocation: (params: SearchByLocationParams) => Promise<PlaceSearchOutcome>;
+  searchFestivalsByDateRange: (params: SearchFestivalsParams) => Promise<PlaceSearchOutcome>;
   clearTypeCache: (contentTypeId: PlaceContentTypeId) => void;
   clearCache: () => void;
 };
@@ -121,15 +146,9 @@ export const usePlaceSearchStore = create<PlaceSearchState>()((set, get) => ({
     if (!entry) {
       return false;
     }
-    if (searchCenterKey(entry.searchCenter) !== searchCenterKey(searchCenter)) {
-      return false;
-    }
-    // 결과 없이 에러만 남은 캐시: 쿨다운 중에만 "검색 완료"로 취급 (자동 재시도 방지).
-    // 쿨다운이 끝나면 false → 화면 재진입/탭 선택 시 정상 검색 가능.
-    if (entry.error != null && entry.places.length === 0) {
-      return cooldownRemainingMs(get().lastSearchRequestedAtByType[contentTypeId]) > 0;
-    }
-    return true;
+    // 같은 중심이면 성공/실패 모두 캐시로 취급 — 지도만 움직여도 자동 재검색하지 않음.
+    // 재검색은 「이곳에서 검색하기」(clearTypeCache + searchCenter 갱신)로만.
+    return searchCenterKey(entry.searchCenter) === searchCenterKey(searchCenter);
   },
 
   hasCacheForFestivalRange: (eventStartDate, eventEndDate) => {
@@ -137,18 +156,10 @@ export const usePlaceSearchStore = create<PlaceSearchState>()((set, get) => ({
     if (!entry?.festivalDateRange) {
       return false;
     }
-    if (
-      entry.festivalDateRange.eventStartDate !== eventStartDate ||
-      entry.festivalDateRange.eventEndDate !== eventEndDate
-    ) {
-      return false;
-    }
-    if (entry.error != null && entry.places.length === 0) {
-      return (
-        cooldownRemainingMs(get().lastSearchRequestedAtByType[PLACE_CONTENT_TYPE.festival]) > 0
-      );
-    }
-    return true;
+    return (
+      entry.festivalDateRange.eventStartDate === eventStartDate &&
+      entry.festivalDateRange.eventEndDate === eventEndDate
+    );
   },
 
   clearTypeCache: contentTypeId => {
@@ -190,7 +201,7 @@ export const usePlaceSearchStore = create<PlaceSearchState>()((set, get) => ({
           resolvedMapCenter,
         ),
       );
-      return;
+      return 'cooldown';
     }
 
     const requestId = (get().requestIdByType[contentTypeId] ?? 0) + 1;
@@ -214,13 +225,13 @@ export const usePlaceSearchStore = create<PlaceSearchState>()((set, get) => ({
       });
 
       if (get().requestIdByType[contentTypeId] !== requestId) {
-        return;
+        return 'stale';
       }
 
       const detailsById = await fetchPlaceDetailsForList(data);
 
       if (get().requestIdByType[contentTypeId] !== requestId) {
-        return;
+        return 'stale';
       }
 
       usePlaceDetailCacheStore.getState().mergeDetails(detailsById);
@@ -242,18 +253,36 @@ export const usePlaceSearchStore = create<PlaceSearchState>()((set, get) => ({
         },
         loadingByType: { ...state.loadingByType, [contentTypeId]: false },
       }));
+      return 'success';
     } catch (fetchError) {
       if (get().requestIdByType[contentTypeId] !== requestId) {
-        return;
+        return 'stale';
       }
-
-      const message =
-        fetchError instanceof Error ? fetchError.message : emptyErrorFallback;
 
       logPlacesApiError('GET', '(location-search)', fetchError, {
         contentTypeId,
         searchCenter,
       });
+
+      if (isPlaceSearchNoResultsError(fetchError)) {
+        set(state => ({
+          cacheByType: {
+            ...state.cacheByType,
+            [contentTypeId]: {
+              places: [],
+              placeDetailsById: {},
+              searchCenter,
+              mapCenter: resolvedMapCenter,
+              error: null,
+            },
+          },
+          loadingByType: { ...state.loadingByType, [contentTypeId]: false },
+        }));
+        return 'empty';
+      }
+
+      const message =
+        fetchError instanceof Error ? fetchError.message : emptyErrorFallback;
 
       const previous = get().cacheByType[contentTypeId];
       set(state => ({
@@ -269,6 +298,7 @@ export const usePlaceSearchStore = create<PlaceSearchState>()((set, get) => ({
         },
         loadingByType: { ...state.loadingByType, [contentTypeId]: false },
       }));
+      return 'error';
     }
   },
 
@@ -291,7 +321,7 @@ export const usePlaceSearchStore = create<PlaceSearchState>()((set, get) => ({
           { eventStartDate, eventEndDate },
         ),
       );
-      return;
+      return 'cooldown';
     }
 
     const requestId = (get().requestIdByType[contentTypeId] ?? 0) + 1;
@@ -314,7 +344,7 @@ export const usePlaceSearchStore = create<PlaceSearchState>()((set, get) => ({
       });
 
       if (get().requestIdByType[contentTypeId] !== requestId) {
-        return;
+        return 'stale';
       }
 
       const data = result.festivals.map(mapFestivalToBusanPlace);
@@ -322,7 +352,7 @@ export const usePlaceSearchStore = create<PlaceSearchState>()((set, get) => ({
       const detailsById = await fetchPlaceDetailsForList(data);
 
       if (get().requestIdByType[contentTypeId] !== requestId) {
-        return;
+        return 'stale';
       }
 
       usePlaceDetailCacheStore.getState().mergeDetails(detailsById);
@@ -345,18 +375,37 @@ export const usePlaceSearchStore = create<PlaceSearchState>()((set, get) => ({
         },
         loadingByType: { ...state.loadingByType, [contentTypeId]: false },
       }));
+      return 'success';
     } catch (fetchError) {
       if (get().requestIdByType[contentTypeId] !== requestId) {
-        return;
+        return 'stale';
       }
-
-      const message =
-        fetchError instanceof Error ? fetchError.message : emptyErrorFallback;
 
       logPlacesApiError('GET', '(festivals-search)', fetchError, {
         eventStartDate,
         eventEndDate,
       });
+
+      if (isPlaceSearchNoResultsError(fetchError)) {
+        set(state => ({
+          cacheByType: {
+            ...state.cacheByType,
+            [contentTypeId]: {
+              places: [],
+              placeDetailsById: {},
+              searchCenter: mapCenter,
+              mapCenter,
+              error: null,
+              festivalDateRange: { eventStartDate, eventEndDate },
+            },
+          },
+          loadingByType: { ...state.loadingByType, [contentTypeId]: false },
+        }));
+        return 'empty';
+      }
+
+      const message =
+        fetchError instanceof Error ? fetchError.message : emptyErrorFallback;
 
       const previous = get().cacheByType[contentTypeId];
       set(state => ({
@@ -373,6 +422,7 @@ export const usePlaceSearchStore = create<PlaceSearchState>()((set, get) => ({
         },
         loadingByType: { ...state.loadingByType, [contentTypeId]: false },
       }));
+      return 'error';
     }
   },
 

@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PlaceDetailSheet } from '../../components/places/PlaceDetailSheet';
 import { PlaceMapView } from '../../components/places/PlaceMapView';
+import { TransientBottomToast } from '../../components/shared/feedback/TransientBottomToast';
 import { BackButton } from '../../components/shared/buttons/BackButton';
 import { AppIcon } from '../../components/shared/icons/AppIcon';
 import {
@@ -18,6 +19,7 @@ import {
 import { ICON_COLOR_PRIMARY } from '../../constants/icons';
 import { useAppLanguage, useCopy } from '../../i18n';
 import { usePlaceMapUserLocation } from '../../hooks/usePlaceMapUserLocation';
+import { useTransientBottomToast } from '../../hooks/useTransientBottomToast';
 import type { RootStackParamList } from '../../navigation/types';
 import { usePlaceBookmarkStore, usePlaceDetailCacheStore, usePlaceSearchStore } from '../../stores';
 import type { EventZoneCoordinate } from '../../types/eventZone';
@@ -62,6 +64,7 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
   const language = useAppLanguage();
   const copy = useCopy('placeSearch');
   const radiusKm = PLACE_SEARCH_RADIUS_M / 1000;
+  const { text: toastText, opacity: toastOpacity, showToast } = useTransientBottomToast();
 
   const initialType = defaultPlaceContentTypeId(route.params?.contentTypeId);
   const [contentTypeId, setContentTypeId] = useState<PlaceContentTypeId>(initialType);
@@ -142,10 +145,6 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
     if (!cached) {
       return false;
     }
-    // 오류만 있고 결과가 없으면 재진입·탭 선택 시 다시 검색하도록 캐시 무시
-    if (cached.error != null && cached.places.length === 0) {
-      return false;
-    }
     setSearchCenter(cached.searchCenter);
     setMapCenter(cached.mapCenter);
     if (cached.festivalDateRange) {
@@ -187,6 +186,10 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
         mapCenter,
         emptyErrorFallback: copy.festivalEmptySub,
         refreshTooSoonMessage: copy.searchRefreshTooSoon,
+      }).then(outcome => {
+        if (outcome === 'empty') {
+          showToast(copy.searchNoResults);
+        }
       });
       return;
     }
@@ -207,6 +210,10 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
       mapCenter: mapCenter ?? searchCenter,
       emptyErrorFallback: copy.emptySub,
       refreshTooSoonMessage: copy.searchRefreshTooSoon,
+    }).then(outcome => {
+      if (outcome === 'empty') {
+        showToast(copy.searchNoResults);
+      }
     });
   }, [
     isFestivalMode,
@@ -218,8 +225,10 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
     hasCacheForFestivalRange,
     searchByLocation,
     searchFestivalsByDateRange,
+    showToast,
     copy.emptySub,
     copy.festivalEmptySub,
+    copy.searchNoResults,
     copy.searchRefreshTooSoon,
   ]);
 
@@ -504,6 +513,12 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
         }
         onToggleBookmark={handleToggleBookmark}
         onClose={handleCloseDetail}
+      />
+
+      <TransientBottomToast
+        text={toastText}
+        opacity={toastOpacity}
+        bottom={Math.max(insets.bottom, 12) + 24}
       />
     </View>
   );
