@@ -12,6 +12,7 @@ import {
   isFestivalPlaceSearch,
   PLACE_SEARCH_CENTER_THRESHOLD_M,
   PLACE_SEARCH_RADIUS_M,
+  PLACE_SEARCH_REFRESH_COOLDOWN_MS,
   buildPlaceListMetaLine,
 } from '../../constants/places/placeSearch';
 import { ICON_COLOR_PRIMARY } from '../../constants/icons';
@@ -74,7 +75,7 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
   const selectedContentHandledRef = useRef<string | null>(null);
 
   const isFestivalMode = isFestivalPlaceSearch(contentTypeId);
-  const { location, status: locationStatus } = usePlaceMapUserLocation();
+  const { location } = usePlaceMapUserLocation();
 
   const cacheEntry = usePlaceSearchStore(s => s.cacheByType[contentTypeId]);
   const loading = usePlaceSearchStore(s => s.isLoading(contentTypeId));
@@ -84,6 +85,30 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
   const searchFestivalsByDateRange = usePlaceSearchStore(s => s.searchFestivalsByDateRange);
   const updateMapCenterInCache = usePlaceSearchStore(s => s.updateMapCenter);
   const getCacheEntry = usePlaceSearchStore(s => s.getEntry);
+  const lastSearchRequestedAt = usePlaceSearchStore(
+    s => s.lastSearchRequestedAtByType[contentTypeId] ?? null,
+  );
+
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  const searchCooldownRemainingMs = Math.max(
+    0,
+    lastSearchRequestedAt == null
+      ? 0
+      : PLACE_SEARCH_REFRESH_COOLDOWN_MS - (nowMs - lastSearchRequestedAt),
+  );
+  const searchCooldownSeconds = Math.max(1, Math.ceil(searchCooldownRemainingMs / 1000));
+  const isSearchCooldownActive = searchCooldownRemainingMs > 0;
+
+  useEffect(() => {
+    if (!isSearchCooldownActive) {
+      return;
+    }
+    setNowMs(Date.now());
+    const timer = setInterval(() => {
+      setNowMs(Date.now());
+    }, 250);
+    return () => clearInterval(timer);
+  }, [isSearchCooldownActive, lastSearchRequestedAt]);
 
   const bookmarkedIds = usePlaceBookmarkStore(s => s.getBookmarkedIdsForType(contentTypeId));
   const togglePlaceBookmark = usePlaceBookmarkStore(s => s.togglePlaceBookmark);
@@ -102,6 +127,9 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
       setFestivalDateRange(resolveFestivalDateRange(route.params));
     }
     selectedContentHandledRef.current = null;
+    // Quick로 카테고리를 바꿔 다시 들어오면 이전 검색 중심이 남지 않게 함
+    setSearchCenter(null);
+    setMapCenter(null);
   }, [
     route.params?.contentTypeId,
     route.params?.festivalEventStartDate,
@@ -114,6 +142,10 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
     if (!cached) {
       return false;
     }
+    // 오류만 있고 결과가 없으면 재진입·탭 선택 시 다시 검색하도록 캐시 무시
+    if (cached.error != null && cached.places.length === 0) {
+      return false;
+    }
     setSearchCenter(cached.searchCenter);
     setMapCenter(cached.mapCenter);
     if (cached.festivalDateRange) {
@@ -122,31 +154,15 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
     return true;
   }, [getCacheEntry]);
 
+  // Quick 진입: GPS/동의 완료를 기다리지 않음.
+  // usePlaceMapUserLocation 초기값이 부산역이라 status=loading 이어도 바로 검색 가능.
   useEffect(() => {
-    if (locationStatus === 'loading') {
-      return;
-    }
-
-    if (isFestivalMode) {
-      if (applyCachedCenters(contentTypeId)) {
-        return;
-      }
-      if (!mapCenter && location) {
-        setSearchCenter(location);
-        setMapCenter(location);
-      }
-      return;
-    }
-
     if (applyCachedCenters(contentTypeId)) {
       return;
     }
-    if (!searchCenter && location) {
-      setSearchCenter(location);
-      setMapCenter(location);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- searchCenter는 의도적으로 제외
-  }, [contentTypeId, location, locationStatus, applyCachedCenters, isFestivalMode]);
+    setSearchCenter(prev => prev ?? location);
+    setMapCenter(prev => prev ?? location);
+  }, [contentTypeId, location, applyCachedCenters]);
 
   useEffect(() => {
     if (isFestivalMode) {
@@ -170,6 +186,7 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
         eventEndDate: festivalDateRange.eventEndDate,
         mapCenter,
         emptyErrorFallback: copy.festivalEmptySub,
+        refreshTooSoonMessage: copy.searchRefreshTooSoon,
       });
       return;
     }
@@ -189,6 +206,7 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
       searchCenter,
       mapCenter: mapCenter ?? searchCenter,
       emptyErrorFallback: copy.emptySub,
+      refreshTooSoonMessage: copy.searchRefreshTooSoon,
     });
   }, [
     isFestivalMode,
@@ -202,6 +220,7 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
     searchFestivalsByDateRange,
     copy.emptySub,
     copy.festivalEmptySub,
+    copy.searchRefreshTooSoon,
   ]);
 
   useEffect(() => {
@@ -275,12 +294,16 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
     [contentTypeId, updateMapCenterInCache],
   );
 
+  const clearTypeCache = usePlaceSearchStore(s => s.clearTypeCache);
+
   const handleSearchHere = useCallback(() => {
-    if (!mapCenter) {
+    if (!mapCenter || isSearchCooldownActive) {
       return;
     }
-    setSearchCenter(mapCenter);
-  }, [mapCenter]);
+    // 같은 중심이라도 사용자가 명시적으로 누르면 다시 검색
+    clearTypeCache(contentTypeId);
+    setSearchCenter({ lat: mapCenter.lat, lng: mapCenter.lng });
+  }, [clearTypeCache, contentTypeId, isSearchCooldownActive, mapCenter]);
 
   const handleChangeContentType = useCallback(
     (typeId: PlaceContentTypeId) => {
@@ -303,8 +326,9 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
 
       const center = mapCenter ?? searchCenter ?? location;
       if (center) {
-        setSearchCenter(center);
-        setMapCenter(center);
+        // 탭 전환 시 항상 새 중심으로 검색 effect가 돌도록 참조 갱신
+        setSearchCenter({ lat: center.lat, lng: center.lng });
+        setMapCenter({ lat: center.lat, lng: center.lng });
       }
     },
     [contentTypeId, mapCenter, searchCenter, location, applyCachedCenters],
@@ -356,6 +380,11 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
         <Text className="mt-2 text-sm font-semibold text-brand-text">{summaryText}</Text>
         <Text className="mt-0.5 text-[11px] text-brand-muted">{copy.dataHint}</Text>
         {error ? <Text className="mt-1 text-xs text-red-500">{error}</Text> : null}
+        {isSearchCooldownActive ? (
+          <Text className="mt-1 text-xs text-brand-muted">
+            {copy.searchCooldown(searchCooldownSeconds)}
+          </Text>
+        ) : null}
       </View>
 
       <View className="relative min-h-0 flex-1">
@@ -377,10 +406,21 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
           <View className="absolute left-0 right-0 top-3 z-20 items-center px-4">
             <Pressable
               onPress={handleSearchHere}
+              disabled={isSearchCooldownActive}
               accessibilityRole="button"
-              accessibilityLabel={copy.searchHere}
-              className="rounded-full bg-brand-primary px-4 py-2.5 shadow-md active:opacity-90">
-              <Text className="text-sm font-bold text-white">{copy.searchHere}</Text>
+              accessibilityLabel={
+                isSearchCooldownActive
+                  ? copy.searchCooldown(searchCooldownSeconds)
+                  : copy.searchHere
+              }
+              className={`rounded-full px-4 py-2.5 shadow-md ${
+                isSearchCooldownActive ? 'bg-brand-muted' : 'bg-brand-primary active:opacity-90'
+              }`}>
+              <Text className="text-sm font-bold text-white">
+                {isSearchCooldownActive
+                  ? copy.searchCooldown(searchCooldownSeconds)
+                  : copy.searchHere}
+              </Text>
             </Pressable>
           </View>
         ) : null}
