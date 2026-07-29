@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 
 import { PLACE_SEARCH_RADIUS_M, PLACE_SEARCH_REFRESH_COOLDOWN_MS } from '../constants/places/placeSearch';
-import { ApiClientError } from '../services/api/apiClient';
 import {
   fetchPlaceDetailsForList,
   searchFestivals,
@@ -19,25 +18,28 @@ import { usePlaceDetailCacheStore } from './usePlaceDetailCacheStore';
 /** 검색 완료 후 UI에서 토스트 등을 분기하기 위한 결과 */
 export type PlaceSearchOutcome = 'success' | 'empty' | 'cooldown' | 'error' | 'stale';
 
-/** 서버 400 + null 바디/메시지 → 검색 결과 없음으로 취급 */
-export function isPlaceSearchNoResultsError(error: unknown): boolean {
-  if (!(error instanceof ApiClientError) || error.status !== 400) {
-    return false;
+const NO_RESULTS_MESSAGE_RE = /400\s*\(\s*null\s*\)|Places request failed\s*\(\s*400\s*\)|Festivals request failed\s*\(\s*400\s*\)|검색\s*결과.*400/i;
+
+/** UI에 남은 400/empty 응답 메시지 — 빨간 에러 대신 토스트로 처리 */
+export function isPlaceSearchNoResultsMessage(message: string): boolean {
+  return NO_RESULTS_MESSAGE_RE.test(message);
+}
+
+function readErrorStatus(error: unknown): number | undefined {
+  if (!error || typeof error !== 'object' || !('status' in error)) {
+    return undefined;
   }
-  const body = error.responseBody;
-  if (body == null) {
+  const status = Number((error as { status: unknown }).status);
+  return Number.isFinite(status) ? status : undefined;
+}
+
+/** HTTP 400(결과 없음) → 검색 결과 없음으로 취급 */
+export function isPlaceSearchNoResultsError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : '';
+  if (message && isPlaceSearchNoResultsMessage(message)) {
     return true;
   }
-  if (typeof body === 'object') {
-    const message = 'message' in body ? (body as { message: unknown }).message : undefined;
-    if (message == null) {
-      return true;
-    }
-    if (typeof message === 'string' && /400\s*\(\s*null\s*\)/i.test(message)) {
-      return true;
-    }
-  }
-  return /400\s*\(\s*null\s*\)/i.test(error.message);
+  return readErrorStatus(error) === 400;
 }
 
 export type PlaceSearchCacheEntry = {

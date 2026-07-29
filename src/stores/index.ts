@@ -35,9 +35,12 @@ export {
 } from './useZoneChatMemberStore';
 export { usePlaceBookmarkStore } from './usePlaceBookmarkStore';
 export {
+  isPlaceSearchNoResultsError,
+  isPlaceSearchNoResultsMessage,
   searchCenterKey,
   usePlaceSearchStore,
   type PlaceSearchCacheEntry,
+  type PlaceSearchOutcome,
 } from './usePlaceSearchStore';
 export { useFestivalStore } from './useFestivalStore';
 export { usePlaceDetailCacheStore } from './usePlaceDetailCacheStore';

@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  ToastAndroid,
+  View,
+} from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -22,6 +30,7 @@ import { usePlaceMapUserLocation } from '../../hooks/usePlaceMapUserLocation';
 import { useTransientBottomToast } from '../../hooks/useTransientBottomToast';
 import type { RootStackParamList } from '../../navigation/types';
 import { usePlaceBookmarkStore, usePlaceDetailCacheStore, usePlaceSearchStore } from '../../stores';
+import { isPlaceSearchNoResultsMessage } from '../../stores';
 import type { EventZoneCoordinate } from '../../types/eventZone';
 import type { BusanPlace } from '../../types/placeSearch';
 import { PLACE_MAP_SEARCH_TYPES } from '../../types/placesApi';
@@ -57,6 +66,15 @@ function resolveFestivalDateRange(
     return upcomingFestivalDateRangeYyyymmdd();
   }
   return currentMonthDateRangeYyyymmdd();
+}
+
+function notifyNoSearchResults(message: string, showToast: (text: string) => void) {
+  // 지도 WebView가 RN absolute 뷰를 가리므로 Android는 시스템 토스트 사용
+  if (Platform.OS === 'android') {
+    ToastAndroid.show(message, ToastAndroid.SHORT);
+    return;
+  }
+  showToast(message);
 }
 
 export function PlaceMapSearchScreen({ navigation, route }: Props) {
@@ -120,7 +138,26 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
   const places = useMemo(() => cacheEntry?.places ?? [], [cacheEntry]);
   const placeDetailsById = cacheEntry?.placeDetailsById ?? {};
   const globalPlaceDetails = usePlaceDetailCacheStore(s => s.detailsByPlaceId);
-  const error = cacheEntry?.error ?? null;
+  const rawError = cacheEntry?.error ?? null;
+  const isNoResultsError = rawError != null && isPlaceSearchNoResultsMessage(rawError);
+  const error = isNoResultsError ? null : rawError;
+
+  useEffect(() => {
+    if (!isNoResultsError || !rawError) {
+      return;
+    }
+    notifyNoSearchResults(copy.searchNoResults, showToast);
+    const entry = usePlaceSearchStore.getState().getEntry(contentTypeId);
+    if (!entry?.error) {
+      return;
+    }
+    usePlaceSearchStore.setState(state => ({
+      cacheByType: {
+        ...state.cacheByType,
+        [contentTypeId]: { ...entry, error: null },
+      },
+    }));
+  }, [isNoResultsError, rawError, contentTypeId, showToast, copy.searchNoResults]);
 
   useEffect(() => {
     if (route.params?.contentTypeId) {
@@ -188,7 +225,7 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
         refreshTooSoonMessage: copy.searchRefreshTooSoon,
       }).then(outcome => {
         if (outcome === 'empty') {
-          showToast(copy.searchNoResults);
+          notifyNoSearchResults(copy.searchNoResults, showToast);
         }
       });
       return;
@@ -212,7 +249,7 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
       refreshTooSoonMessage: copy.searchRefreshTooSoon,
     }).then(outcome => {
       if (outcome === 'empty') {
-        showToast(copy.searchNoResults);
+        notifyNoSearchResults(copy.searchNoResults, showToast);
       }
     });
   }, [
@@ -518,7 +555,7 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
       <TransientBottomToast
         text={toastText}
         opacity={toastOpacity}
-        bottom={Math.max(insets.bottom, 12) + 24}
+        bottom={Math.max(insets.bottom, 12) + 96}
       />
     </View>
   );
