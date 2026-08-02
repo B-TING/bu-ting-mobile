@@ -75,13 +75,16 @@ export function mediaFromApiUrls(
   mediaUrls?: string[],
 ): ReviewMedia[] {
   return (
-    mediaUrls?.map((uri, index) => ({
-      mediaId: `api-media-${placeReviewId}-${index}`,
-      type: (uri.match(/\.(mp4|mov|webm)(\?|$)/i) ? 'video' : 'image') as
-        | 'image'
-        | 'video',
-      uri,
-      fileKey: extractFileKeyFromUri(uri) ?? undefined,
-    })) ?? []
+    mediaUrls?.map((uri, index) => {
+      const looksVideo =
+        /\.(mp4|mov|webm|m4v)(\?|$)/i.test(uri) ||
+        /\/uploads\/videos\//i.test(uri);
+      return {
+        mediaId: `api-media-${placeReviewId}-${index}`,
+        type: (looksVideo ? 'video' : 'image') as 'image' | 'video',
+        uri,
+        fileKey: extractFileKeyFromUri(uri) ?? undefined,
+      };
+    }) ?? []
   );
 }

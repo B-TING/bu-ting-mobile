@@ -8,7 +8,7 @@ import {
   View,
 } from 'react-native';
 
-import { ICON_COLOR_PRIMARY, ICON_COLOR_WHITE } from '../../constants/icons';
+import { ICON_COLOR_PRIMARY } from '../../constants/icons';
 import type { ReviewMedia, TravelRecord } from '../../types/travelReview';
 import {
   collectTravelRecordMedia,
@@ -17,6 +17,7 @@ import {
 } from '../../utils/review/travelReview';
 import { AppIcon } from '../shared/icons/AppIcon';
 import { ResolvedRemoteImage } from '../shared/media/ResolvedRemoteImage';
+import { ReviewVideoSlide } from '../shared/media/ReviewVideoViews';
 
 type TravelogueImageCarouselProps = {
   travelRecord: TravelRecord;
@@ -44,19 +45,6 @@ function Placeholder({
         {travelRecord.title ?? ''}
       </Text>
       <Text className="mt-1 text-xs text-brand-muted">{destinationLabel}</Text>
-    </View>
-  );
-}
-
-function VideoSlide({ width, height }: { width: number; height: number }) {
-  return (
-    <View
-      style={{ width, height }}
-      className="items-center justify-center bg-brand-selected">
-      <View className="h-16 w-16 items-center justify-center rounded-full bg-black/50">
-        <AppIcon name="film" size={32} color={ICON_COLOR_WHITE} />
-      </View>
-      <Text className="mt-3 text-sm font-bold text-brand-text">VIDEO</Text>
     </View>
   );
 }
@@ -98,12 +86,36 @@ export function TravelogueImageCarousel({
             );
             setActiveIndex(index);
           }}>
-          {visibleMedia.map(item => (
+          {visibleMedia.map((item, index) => (
             <View
               key={item.mediaId}
               style={{ width: imageWidth, height: imageHeight }}>
               {item.type === 'video' ? (
-                <VideoSlide width={imageWidth} height={imageHeight} />
+                <ReviewVideoSlide
+                  uri={item.uri}
+                  fileKey={item.fileKey}
+                  width={imageWidth}
+                  height={imageHeight}
+                  active={index === activeIndex}
+                  onError={() => {
+                    setFailedIds(prev => ({ ...prev, [item.mediaId]: true }));
+                  }}
+                />
+              ) : onPress ? (
+                <Pressable
+                  onPress={onPress}
+                  accessibilityRole="button"
+                  style={{ width: imageWidth, height: imageHeight }}>
+                  <ResolvedRemoteImage
+                    uri={item.uri}
+                    fileKey={item.fileKey}
+                    style={styles.image}
+                    resizeMode="cover"
+                    onError={() => {
+                      setFailedIds(prev => ({ ...prev, [item.mediaId]: true }));
+                    }}
+                  />
+                </Pressable>
               ) : (
                 <ResolvedRemoteImage
                   uri={item.uri}
@@ -127,14 +139,6 @@ export function TravelogueImageCarousel({
         ) : null}
       </>
     );
-
-  if (onPress) {
-    return (
-      <Pressable onPress={onPress} accessibilityRole="button">
-        {content}
-      </Pressable>
-    );
-  }
 
   return content;
 }

@@ -25,6 +25,7 @@ import { TravelogueComposeModal } from '../../components/review/modals/Travelogu
 import { BackButton } from '../../components/shared/buttons/BackButton';
 import { AppIcon } from '../../components/shared/icons/AppIcon';
 import { ResolvedRemoteImage } from '../../components/shared/media/ResolvedRemoteImage';
+import { ReviewVideoThumb } from '../../components/shared/media/ReviewVideoViews';
 import { useAppAlert } from '../../components/shared/modals';
 import { StarRating } from '../../components/shared/rating/StarRating';
 import { EVENT_ZONE_BY_ID } from '../../constants/eventZone/eventZone';
@@ -137,6 +138,16 @@ function PlaceReviewBlock({
             const isRemoteImage =
               item.type === 'image' &&
               (item.uri.startsWith('http://') || item.uri.startsWith('https://'));
+            if (item.type === 'video') {
+              return (
+                <ReviewVideoThumb
+                  key={item.mediaId}
+                  uri={item.uri}
+                  fileKey={item.fileKey}
+                  size={56}
+                />
+              );
+            }
             return (
               <View
                 key={item.mediaId}
@@ -150,20 +161,9 @@ function PlaceReviewBlock({
                   />
                 ) : (
                   <View className="h-full w-full items-center justify-center">
-                    <AppIcon
-                      name={item.type === 'video' ? 'film' : 'paperclip'}
-                      size={18}
-                      color={ICON_COLOR_MUTED}
-                    />
+                    <AppIcon name="paperclip" size={18} color={ICON_COLOR_MUTED} />
                   </View>
                 )}
-                {item.type === 'video' ? (
-                  <View className="absolute bottom-0 left-0 right-0 bg-black/50 py-0.5">
-                    <Text className="text-center text-[8px] font-bold text-white">
-                      VIDEO
-                    </Text>
-                  </View>
-                ) : null}
               </View>
             );
           })}
