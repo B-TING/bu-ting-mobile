@@ -19,6 +19,7 @@ import { createId } from '../../../utils/common/id';
 import { pickReviewMedia } from '../../../utils/media/pickMedia';
 import { StarRating } from '../../shared/rating/StarRating';
 import { AppIcon } from '../../shared/icons/AppIcon';
+import { ResolvedRemoteImage } from '../../shared/media/ResolvedRemoteImage';
 import { AppModal, AppModalActions } from '../../shared/modals';
 
 type Copy = CopyFor<'travelReview'>;
@@ -347,11 +348,21 @@ export function PlaceReviewFormModal({
                   onPress={() => removeMedia(item.mediaId)}
                   className="relative h-16 w-16 overflow-hidden rounded-xl bg-brand-selected">
                   {showImage ? (
-                    <Image
-                      source={{ uri: item.uri }}
-                      style={{ width: '100%', height: '100%' }}
-                      resizeMode="cover"
-                    />
+                    item.uri.startsWith('http://') ||
+                    item.uri.startsWith('https://') ? (
+                      <ResolvedRemoteImage
+                        uri={item.uri}
+                        fileKey={item.fileKey}
+                        style={{ width: '100%', height: '100%' }}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <Image
+                        source={{ uri: item.uri }}
+                        style={{ width: '100%', height: '100%' }}
+                        resizeMode="cover"
+                      />
+                    )
                   ) : (
                     <View className="h-full w-full items-center justify-center">
                       <AppIcon

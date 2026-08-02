@@ -33,7 +33,7 @@ export type PlaceReview = {
   updatedAt: string;
   /** Client-only: place label for local UI */
   placeName: string;
-  /** Client display; server `mediaUrls`는 저장 시 선택적으로 전달 */
+  /** Client display; 저장 시에는 `mediaFileKeys`로 서버에 전달 */
   media: ReviewMedia[];
 };
 

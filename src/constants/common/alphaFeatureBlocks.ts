@@ -4,8 +4,8 @@
  */
 export const ALPHA_FEATURE_BLOCKS = {
   /** 여행기·피드 (미디어 업로드 미완) */
-  feed: true,
-  travelogue: true,
+  feed: false,
+  travelogue: false,
   /** 팀원(일행) 초대 */
   invite: true,
   /** 구역 이벤트 (구역 채팅방은 유지) */

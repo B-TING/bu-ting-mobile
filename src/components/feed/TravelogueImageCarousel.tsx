@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
 import {
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -17,6 +16,7 @@ import {
   travelRecordThumbnailIcon,
 } from '../../utils/review/travelReview';
 import { AppIcon } from '../shared/icons/AppIcon';
+import { ResolvedRemoteImage } from '../shared/media/ResolvedRemoteImage';
 
 type TravelogueImageCarouselProps = {
   travelRecord: TravelRecord;
@@ -105,8 +105,9 @@ export function TravelogueImageCarousel({
               {item.type === 'video' ? (
                 <VideoSlide width={imageWidth} height={imageHeight} />
               ) : (
-                <Image
-                  source={{ uri: item.uri }}
+                <ResolvedRemoteImage
+                  uri={item.uri}
+                  fileKey={item.fileKey}
                   style={styles.image}
                   resizeMode="cover"
                   onError={() => {

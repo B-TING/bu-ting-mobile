@@ -2,7 +2,7 @@ import { useTravelRecordStore } from '../../stores/useTravelRecordStore';
 import type { RouteItem, TravelPlan } from '../../types/travelPlan';
 import type { PlaceReviewResponse } from '../../types/travelRecordApi';
 import type { PlaceReview, ReviewMedia } from '../../types/travelReview';
-import { toStoredMediaUrl } from '../../utils/media/pickMedia';
+import { extractFileKeyFromUri } from '../../utils/media/fileKey';
 import { ApiClientError } from '../api/apiClient';
 import { uploadFile } from '../files/fileUploadService';
 import {
@@ -52,14 +52,24 @@ function isRemoteUri(uri: string): boolean {
   return uri.startsWith('http://') || uri.startsWith('https://');
 }
 
-function toMediaUrlList(media: ReviewMedia[] | undefined): string[] {
-  return (media ?? [])
-    .map(m => (isRemoteUri(m.uri) ? toStoredMediaUrl(m.uri) : null))
-    .filter((uri): uri is string => Boolean(uri && uri.length > 0 && uri.length <= 1000));
+function fileKeyFromMedia(media: ReviewMedia): string | null {
+  if (media.fileKey?.trim()) {
+    return media.fileKey.trim();
+  }
+  if (isRemoteUri(media.uri)) {
+    return extractFileKeyFromUri(media.uri);
+  }
+  return null;
 }
 
-function mediaSignature(urls: string[]): string {
-  return [...urls].sort().join('\n');
+function toMediaFileKeyList(media: ReviewMedia[] | undefined): string[] {
+  return (media ?? [])
+    .map(fileKeyFromMedia)
+    .filter((key): key is string => Boolean(key && key.length > 0));
+}
+
+function mediaSignature(keys: string[]): string {
+  return [...keys].sort().join('\n');
 }
 
 function isNotFoundError(error: unknown): boolean {
@@ -95,7 +105,7 @@ async function uploadLocalMedia(
     if (isRemoteUri(item.uri)) {
       resolved.push({
         ...item,
-        uri: toStoredMediaUrl(item.uri),
+        fileKey: item.fileKey ?? extractFileKeyFromUri(item.uri) ?? undefined,
       });
       continue;
     }
@@ -121,9 +131,10 @@ async function uploadLocalMedia(
       type: uploadMime,
       name: fileName,
     });
+    // 표시용으로는 Presigned URL 유지 (서명 제거 시 Image 403)
     resolved.push({
       ...item,
-      uri: toStoredMediaUrl(uploaded.url),
+      uri: uploaded.url,
       fileKey: uploaded.fileKey,
       mimeType: uploaded.contentType || uploadMime,
       fileName: uploaded.originalFileName || fileName,
@@ -145,6 +156,7 @@ function mapApiReviewToPlaceReview(
         | 'image'
         | 'video',
       uri,
+      fileKey: extractFileKeyFromUri(uri) ?? undefined,
     })) ?? [];
 
   return {
@@ -199,16 +211,16 @@ export async function savePlaceReviewForTravel(
     }
 
     const updating = isServerReviewId(payload.placeReviewId);
-    const nextMediaUrls = toMediaUrlList(uploadedMedia);
+    const nextMediaFileKeys = toMediaFileKeyList(uploadedMedia);
 
     const existing = store.getReviewsForTravel(travelId).find(
       r =>
         r.placeReviewId === payload.placeReviewId ||
         r.planPlaceId === planPlaceId,
     );
-    const prevMediaUrls = toMediaUrlList(existing?.media);
+    const prevMediaFileKeys = toMediaFileKeyList(existing?.media);
     const mediaChanged =
-      mediaSignature(prevMediaUrls) !== mediaSignature(nextMediaUrls);
+      mediaSignature(prevMediaFileKeys) !== mediaSignature(nextMediaFileKeys);
 
     const baseFields = {
       rating: payload.rating,
@@ -217,6 +229,9 @@ export async function savePlaceReviewForTravel(
       stayMinutes: payload.stayMinutes ?? undefined,
     };
 
+    const mediaFileKeysPayload =
+      nextMediaFileKeys.length > 0 ? nextMediaFileKeys : undefined;
+
     if (__DEV__) {
       console.log('[savePlaceReviewForTravel]', {
         mode: updating ? 'update' : 'create',
@@ -224,14 +239,14 @@ export async function savePlaceReviewForTravel(
         planPlaceId,
         mediaChanged,
         mediaCount: uploadedMedia.length,
-        nextMediaUrls,
+        nextMediaFileKeys,
       });
     }
 
     let dto: PlaceReviewResponse;
 
     if (updating && mediaChanged) {
-      // 백엔드 PlaceReview PATCH + mediaUrls 교체가 500을 내는 경우가 있어
+      // 백엔드 PlaceReview PATCH + 미디어 교체가 500을 내는 경우가 있어
       // 미디어가 바뀐 수정은 삭제 후 재생성으로 처리한다.
       try {
         await deletePlaceReview(accessToken, travelId, planPlaceId);
@@ -243,7 +258,7 @@ export async function savePlaceReviewForTravel(
       try {
         dto = await createPlaceReview(accessToken, travelId, planPlaceId, {
           ...baseFields,
-          mediaUrls: nextMediaUrls.length > 0 ? nextMediaUrls : undefined,
+          mediaFileKeys: mediaFileKeysPayload,
         });
       } catch (createError) {
         if (isConflictError(createError)) {
@@ -252,7 +267,7 @@ export async function savePlaceReviewForTravel(
           await deletePlaceReview(accessToken, travelId, planPlaceId);
           dto = await createPlaceReview(accessToken, travelId, planPlaceId, {
             ...baseFields,
-            mediaUrls: nextMediaUrls.length > 0 ? nextMediaUrls : undefined,
+            mediaFileKeys: mediaFileKeysPayload,
           });
         } else {
           throw createError;
@@ -260,7 +275,7 @@ export async function savePlaceReviewForTravel(
       }
     } else if (updating) {
       try {
-        // 미디어 미변경: mediaUrls 생략 → 서버가 기존 미디어 유지
+        // 미디어 미변경: mediaFileKeys 생략 → 서버가 기존 미디어 유지
         dto = await updatePlaceReview(accessToken, travelId, planPlaceId, baseFields);
       } catch (updateError) {
         if (!isNotFoundError(updateError)) {
@@ -268,20 +283,20 @@ export async function savePlaceReviewForTravel(
         }
         dto = await createPlaceReview(accessToken, travelId, planPlaceId, {
           ...baseFields,
-          mediaUrls: nextMediaUrls.length > 0 ? nextMediaUrls : undefined,
+          mediaFileKeys: mediaFileKeysPayload,
         });
       }
     } else {
       try {
         dto = await createPlaceReview(accessToken, travelId, planPlaceId, {
           ...baseFields,
-          mediaUrls: nextMediaUrls.length > 0 ? nextMediaUrls : undefined,
+          mediaFileKeys: mediaFileKeysPayload,
         });
       } catch (createError) {
         if (!isConflictError(createError)) {
           throw createError;
         }
-        if (mediaChanged || nextMediaUrls.length > 0) {
+        if (mediaChanged || nextMediaFileKeys.length > 0) {
           // 이미 후기가 있는데 미디어까지 넣으려다 충돌 → 삭제 후 생성
           try {
             await deletePlaceReview(accessToken, travelId, planPlaceId);
@@ -292,7 +307,7 @@ export async function savePlaceReviewForTravel(
           }
           dto = await createPlaceReview(accessToken, travelId, planPlaceId, {
             ...baseFields,
-            mediaUrls: nextMediaUrls.length > 0 ? nextMediaUrls : undefined,
+            mediaFileKeys: mediaFileKeysPayload,
           });
         } else {
           dto = await updatePlaceReview(accessToken, travelId, planPlaceId, baseFields);

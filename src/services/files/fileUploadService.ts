@@ -79,6 +79,58 @@ export async function uploadFile(
   return data;
 }
 
+/**
+ * `GET /api/v1/files?fileKey=` — 표시용 Presigned GET URL 재발급.
+ * Authorization 없으면 서버가 거부할 수 있다.
+ */
+export async function fetchFileAccessUrl(
+  accessToken: string | null | undefined,
+  fileKey: string,
+): Promise<FileUploadResponse> {
+  const url = filesUrl(fileKey);
+  let res: Response;
+  let parsedBody: unknown = null;
+
+  try {
+    const headers: Record<string, string> = { Accept: 'application/json' };
+    if (accessToken?.trim()) {
+      headers.Authorization = `Bearer ${accessToken.trim()}`;
+    }
+    res = await fetch(url, { method: 'GET', headers });
+    if (res.status !== 204) {
+      parsedBody = await res.json().catch(() => null);
+    }
+  } catch (cause) {
+    throw new ApiClientError('File access URL: network error', { url, cause });
+  }
+
+  if (!res.ok) {
+    throw new ApiClientError(
+      parseApiErrorMessage(res, parsedBody, 'File access URL failed'),
+      {
+        status: res.status,
+        url,
+        responseBody: parsedBody,
+      },
+    );
+  }
+
+  const data =
+    unwrapApiData<FileUploadResponse>(
+      parsedBody as ApiEnvelope<FileUploadResponse> | FileUploadResponse,
+    ) ?? (parsedBody as FileUploadResponse | null);
+
+  if (!data?.url) {
+    throw new ApiClientError('File access URL failed: empty response', {
+      status: res.status,
+      url,
+      responseBody: parsedBody,
+    });
+  }
+
+  return data;
+}
+
 /** `DELETE /api/v1/files?fileKey=` */
 export async function deleteFile(
   accessToken: string,

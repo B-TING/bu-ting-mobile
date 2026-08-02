@@ -1,9 +1,10 @@
-import { Image, Pressable, Text, useWindowDimensions, View } from 'react-native';
+import { Pressable, Text, useWindowDimensions, View } from 'react-native';
 
 import { ICON_COLOR_MUTED, ICON_COLOR_PRIMARY, ICON_COLOR_WHITE } from '../../constants/icons';
 import type { TravelRecord, TravelRecordStatus } from '../../types/travelReview';
 import { travelRecordThumbnailIcon } from '../../utils/review/travelReview';
 import { AppIcon } from '../shared/icons/AppIcon';
+import { ResolvedRemoteImage } from '../shared/media/ResolvedRemoteImage';
 
 const H_PAD = 20;
 const GAP = 8;
@@ -48,7 +49,11 @@ export function MyTravelRecordGrid({
             className="overflow-hidden bg-brand-selected active:opacity-85"
             accessibilityRole="button">
             {cover && !cover.startsWith('local://') ? (
-              <Image source={{ uri: cover }} className="h-full w-full" resizeMode="cover" />
+              <ResolvedRemoteImage
+                uri={cover}
+                style={{ width: '100%', height: '100%' }}
+                resizeMode="cover"
+              />
             ) : (
               <View className="h-full w-full items-center justify-center bg-brand-selected">
                 <AppIcon name={icon} size={28} color={ICON_COLOR_PRIMARY} />
