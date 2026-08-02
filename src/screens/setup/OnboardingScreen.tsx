@@ -1,12 +1,12 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { BackHandler, ScrollView, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { PrimaryButton } from '../../components/shared/buttons/PrimaryButton';
 import { BrandLogo } from '../../components/shared/brand/BrandLogo';
-import { FeatureHighlightCard } from '../../components/shared/cards/FeatureHighlightCard';
 import { OptionCard } from '../../components/shared/cards/OptionCard';
+import { OnboardingFeatureGuide } from '../../components/setup/OnboardingFeatureGuide';
 import { OnboardingStepLayout } from '../../components/shared/layout/OnboardingStepLayout';
 import { OnboardingThankYouView } from '../../components/shared/layout/OnboardingThankYouView';
 import { useAppAlert } from '../../components/shared/modals';
@@ -363,102 +363,135 @@ export function OnboardingScreen({ navigation, route }: Props) {
     });
   };
 
+  const renderOptionGrid = (cards: ReactNode[]) => (
+    <View className="flex-row flex-wrap justify-between">{cards}</View>
+  );
+
   const renderOptions = () => {
     if (stepConfig.kind !== 'question') {
       return null;
     }
     switch (stepConfig.id) {
       case 'travelStyle':
-        return TRAVEL_STYLE_OPTIONS.map(opt => (
-          <OptionCard
-            key={opt.value}
-            label={opt.label[language]}
-            selected={answers.travelStyle === opt.value}
-            onPress={() =>
-              setAnswers(prev =>
-                withAnsweredQuestion(prev, QUESTION_ORDER.indexOf('travelStyle'), {
-                  travelStyle: opt.value,
-                }),
-              )
-            }
-          />
-        ));
+        return renderOptionGrid(
+          TRAVEL_STYLE_OPTIONS.map(opt => (
+            <OptionCard
+              key={opt.value}
+              grid
+              emoji={opt.emoji}
+              label={opt.label[language]}
+              description={opt.description?.[language]}
+              selected={answers.travelStyle === opt.value}
+              onPress={() =>
+                setAnswers(prev =>
+                  withAnsweredQuestion(prev, QUESTION_ORDER.indexOf('travelStyle'), {
+                    travelStyle: opt.value,
+                  }),
+                )
+              }
+            />
+          )),
+        );
       case 'schedulePace':
-        return SCHEDULE_PACE_OPTIONS.map(opt => (
-          <OptionCard
-            key={opt.value}
-            label={opt.label[language]}
-            selected={answers.schedulePace === opt.value}
-            onPress={() =>
-              setAnswers(prev =>
-                withAnsweredQuestion(prev, QUESTION_ORDER.indexOf('schedulePace'), {
-                  schedulePace: opt.value as SchedulePace,
-                }),
-              )
-            }
-          />
-        ));
+        return renderOptionGrid(
+          SCHEDULE_PACE_OPTIONS.map(opt => (
+            <OptionCard
+              key={opt.value}
+              grid
+              emoji={opt.emoji}
+              label={opt.label[language]}
+              description={opt.description?.[language]}
+              selected={answers.schedulePace === opt.value}
+              onPress={() =>
+                setAnswers(prev =>
+                  withAnsweredQuestion(prev, QUESTION_ORDER.indexOf('schedulePace'), {
+                    schedulePace: opt.value as SchedulePace,
+                  }),
+                )
+              }
+            />
+          )),
+        );
       case 'companions':
-        return COMPANION_OPTIONS.map(opt => (
-          <OptionCard
-            key={opt.value}
-            label={opt.label[language]}
-            selected={answers.companions === opt.value}
-            onPress={() =>
-              setAnswers(prev =>
-                withAnsweredQuestion(prev, QUESTION_ORDER.indexOf('companions'), {
-                  companions: opt.value,
-                }),
-              )
-            }
-          />
-        ));
+        return renderOptionGrid(
+          COMPANION_OPTIONS.map(opt => (
+            <OptionCard
+              key={opt.value}
+              grid
+              emoji={opt.emoji}
+              label={opt.label[language]}
+              description={opt.description?.[language]}
+              selected={answers.companions === opt.value}
+              onPress={() =>
+                setAnswers(prev =>
+                  withAnsweredQuestion(prev, QUESTION_ORDER.indexOf('companions'), {
+                    companions: opt.value,
+                  }),
+                )
+              }
+            />
+          )),
+        );
       case 'luggage':
-        return LUGGAGE_OPTIONS.map(opt => (
-          <OptionCard
-            key={opt.value}
-            label={opt.label[language]}
-            selected={answers.luggage === opt.value}
-            onPress={() =>
-              setAnswers(prev =>
-                withAnsweredQuestion(prev, QUESTION_ORDER.indexOf('luggage'), {
-                  luggage: opt.value,
-                }),
-              )
-            }
-          />
-        ));
+        return renderOptionGrid(
+          LUGGAGE_OPTIONS.map(opt => (
+            <OptionCard
+              key={opt.value}
+              grid
+              emoji={opt.emoji}
+              label={opt.label[language]}
+              description={opt.description?.[language]}
+              selected={answers.luggage === opt.value}
+              onPress={() =>
+                setAnswers(prev =>
+                  withAnsweredQuestion(prev, QUESTION_ORDER.indexOf('luggage'), {
+                    luggage: opt.value,
+                  }),
+                )
+              }
+            />
+          )),
+        );
       case 'purposes':
         return (
           <ScrollView showsVerticalScrollIndicator={false}>
-            {PURPOSE_OPTIONS.map(opt => (
-              <OptionCard
-                key={opt.value}
-                label={opt.label[language]}
-                selected={answers.purposes.includes(opt.value)}
-                compact
-                onPress={() => togglePurpose(opt.value)}
-              />
-            ))}
+            <View className="flex-row flex-wrap justify-between">
+              {PURPOSE_OPTIONS.map(opt => (
+                <OptionCard
+                  key={opt.value}
+                  grid
+                  emoji={opt.emoji}
+                  label={opt.label[language]}
+                  description={opt.description?.[language]}
+                  selected={answers.purposes.includes(opt.value)}
+                  onPress={() => togglePurpose(opt.value)}
+                />
+              ))}
+            </View>
           </ScrollView>
         );
       case 'busanFamiliarity':
-        return FAMILIARITY_OPTIONS.map(opt => (
-          <OptionCard
-            key={opt.value}
-            label={opt.label[language]}
-            selected={answers.busanFamiliarity === opt.value}
-            onPress={() =>
-              setAnswers(prev =>
-                withAnsweredQuestion(
-                  prev,
-                  QUESTION_ORDER.indexOf('busanFamiliarity'),
-                  { busanFamiliarity: opt.value as BusanFamiliarity },
-                ),
-              )
-            }
-          />
-        ));
+        return renderOptionGrid(
+          FAMILIARITY_OPTIONS.map(opt => (
+            <OptionCard
+              key={opt.value}
+              grid
+              emoji={opt.emoji}
+              label={opt.label[language]}
+              description={opt.description?.[language]}
+              selected={answers.busanFamiliarity === opt.value}
+              onPress={() =>
+                setAnswers(prev =>
+                  withAnsweredQuestion(
+                    prev,
+                    QUESTION_ORDER.indexOf('busanFamiliarity'),
+                    { busanFamiliarity: opt.value as BusanFamiliarity },
+                  ),
+                )
+              }
+            />
+          )),
+        );
       default:
         return null;
     }
@@ -468,25 +501,6 @@ export function OnboardingScreen({ navigation, route }: Props) {
     stepConfig.kind === 'feature'
       ? getFeatureStepContent(stepConfig.forQuestion, answers)
       : null;
-
-  const renderFeatureHighlights = () => {
-    if (!featureContent) {
-      return null;
-    }
-    return (
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {featureContent.features.map(feature => (
-          <FeatureHighlightCard
-            key={feature.title.en}
-            icon={feature.icon}
-            title={feature.title[language]}
-            description={feature.description[language]}
-            emphasized={feature.emphasized}
-          />
-        ))}
-      </ScrollView>
-    );
-  };
 
   const title = useMemo(() => {
     if (stepConfig.kind === 'welcome') {
@@ -534,6 +548,22 @@ export function OnboardingScreen({ navigation, route }: Props) {
     );
   }
 
+  if (isFeatureStep && featureContent) {
+    return (
+      <OnboardingFeatureGuide
+        features={featureContent.features}
+        language={language}
+        nextLabel={footerLabel}
+        skipLabel={copy.skip}
+        onNext={goNext}
+        onSkip={onSkipStep}
+        onBack={goPrevious}
+        backLabel={copy.back}
+        navigation={navigation}
+      />
+    );
+  }
+
   return (
     <OnboardingStepLayout
       stepIndex={step}
@@ -564,8 +594,6 @@ export function OnboardingScreen({ navigation, route }: Props) {
                 : 'You can skip anytime to get started faster.'}
             </Text>
           </View>
-        ) : isFeatureStep ? (
-          renderFeatureHighlights()
         ) : (
           renderOptions()
         )}

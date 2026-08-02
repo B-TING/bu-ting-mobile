@@ -146,6 +146,7 @@ export const ONBOARDING_STEP_COUNT = ONBOARDING_FLOW.length;
 export const ONBOARDING_COMPLETE_DELAY_MS = 2400;
 
 export type FeatureHighlight = {
+  id: string;
   icon: LucideIconName;
   title: Record<AppLanguage, string>;
   description: Record<AppLanguage, string>;
@@ -267,16 +268,31 @@ const featureCopy = {
   festivals: {
     icon: 'partyPopper',
     title: {
-      ko: '축제·이벤트',
-      en: 'Festivals & events',
-      ja: '祭り・イベント',
-      zh: '节庆活动',
+      ko: '축제 캘린더',
+      en: 'Festival calendar',
+      ja: '祭りカレンダー',
+      zh: '节庆日历',
     },
     description: {
-      ko: '방문 시기에 맞는 축제와 문화 행사를 리스트업해 드려요.',
-      en: 'See festivals and cultural events that fit your visit dates.',
-      ja: '訪問時期に合う祭りや文化イベントを一覧表示します。',
-      zh: '列出与您行程日期匹配的节庆与文化活动的清单。',
+      ko: '방문 시기에 맞는 부산 축제·문화 행사를 캘린더에서 모아 볼 수 있어요.',
+      en: 'Browse Busan festivals and cultural events that fit your visit dates.',
+      ja: '訪問時期に合う釜山の祭り・文化イベントをカレンダーで確認できます。',
+      zh: '在日历中查看与您行程日期匹配的釜山节庆与文化活动。',
+    },
+  },
+  eventZone: {
+    icon: 'map',
+    title: {
+      ko: '이벤트 존',
+      en: 'Event Zone',
+      ja: 'イベントゾーン',
+      zh: '活动区域',
+    },
+    description: {
+      ko: '구역별 현장 분위기와 채팅으로 같은 지역의 여행자와 소통할 수 있어요.',
+      en: 'Check each zone’s vibe and chat with travelers in the same area.',
+      ja: 'エリアごとの雰囲気を確認し、同じ地域の旅行者とチャットできます。',
+      zh: '查看各区域现场氛围，并与同区旅客聊天互动。',
     },
   },
   sceneryList: {
@@ -332,10 +348,12 @@ export function getFeatureStepContent(
   answers: OnboardingAnswers,
 ): FeatureStepContent {
   const emphasize = (key: keyof typeof featureCopy): FeatureHighlight => ({
+    id: key,
     ...featureCopy[key],
     emphasized: true,
   });
   const plain = (key: keyof typeof featureCopy): FeatureHighlight => ({
+    id: key,
     ...featureCopy[key],
   });
 
@@ -454,13 +472,17 @@ export function getFeatureStepContent(
         purposes.includes('culture') ||
         purposes.includes('nightlife')
       ) {
-        features.push(emphasize('festivals'));
+        features.push(emphasize('festivals'), emphasize('eventZone'));
       }
       if (purposes.includes('scenery')) {
         features.push(emphasize('sceneryList'));
       }
       if (features.length === 0) {
-        features.push(emphasize('restaurants'), plain('festivals'));
+        features.push(
+          emphasize('restaurants'),
+          plain('festivals'),
+          plain('eventZone'),
+        );
       }
       return {
         title: {
@@ -470,10 +492,10 @@ export function getFeatureStepContent(
           zh: '契合您目的的功能',
         },
         subtitle: {
-          ko: '선택하신 관심사에 맞춰 맛집·축제·명소를 추천해 드려요',
-          en: 'We tailor restaurants, events, and sights to what you picked',
-          ja: '選んだ関心に合わせて飲食店・イベント・名所をおすすめします',
-          zh: '根据您选择的兴趣推荐餐厅、活动与景点',
+          ko: '선택하신 관심사에 맞춰 맛집·축제 캘린더·이벤트 존·명소를 안내해요',
+          en: 'We tailor restaurants, festival calendar, Event Zone, and sights to what you picked',
+          ja: '選んだ関心に合わせて飲食店・祭りカレンダー・イベントゾーン・名所をご案内します',
+          zh: '根据您选择的兴趣推荐餐厅、节庆日历、活动区域与景点',
         },
         features,
       };
@@ -510,25 +532,41 @@ export function getFeatureStepContent(
 type Option<T extends string> = {
   value: T;
   label: Record<AppLanguage, string>;
+  description?: Record<AppLanguage, string>;
+  emoji?: string;
 };
 
 export const TRAVEL_STYLE_OPTIONS: Option<TravelStyle>[] = [
   {
     value: 'planned',
+    emoji: '📋',
     label: {
       ko: '계획적인 편',
       en: 'I plan ahead',
       ja: '計画的',
       zh: '喜欢提前规划',
     },
+    description: {
+      ko: '일정·동선을 미리 짜요',
+      en: 'Plan routes ahead',
+      ja: 'あらかじめ計画する',
+      zh: '提前安排行程',
+    },
   },
   {
     value: 'spontaneous',
+    emoji: '🎲',
     label: {
       ko: '즉흥적인 편',
       en: 'I go with the flow',
       ja: 'その場の気分で',
       zh: '随性而行',
+    },
+    description: {
+      ko: '현장에서 결정을 내려요',
+      en: 'Decide on the spot',
+      ja: '現地で決める',
+      zh: '到现场再决定',
     },
   },
 ];
@@ -536,20 +574,34 @@ export const TRAVEL_STYLE_OPTIONS: Option<TravelStyle>[] = [
 export const SCHEDULE_PACE_OPTIONS: Option<SchedulePace>[] = [
   {
     value: 'relaxed',
+    emoji: '🐢',
     label: {
       ko: '여유롭게',
       en: 'Relaxed pace',
       ja: 'ゆったり',
       zh: '宽松悠闲',
     },
+    description: {
+      ko: '2~3곳/일',
+      en: '2–3 spots/day',
+      ja: '1日2〜3か所',
+      zh: '每天2–3处',
+    },
   },
   {
     value: 'packed',
+    emoji: '⚡',
     label: {
       ko: '빡빡하게',
       en: 'Packed schedule',
       ja: 'ぎゅうぎゅう',
       zh: '紧凑满满',
+    },
+    description: {
+      ko: '많은 곳을 돌아다녀요',
+      en: 'See more each day',
+      ja: 'たくさん巡る',
+      zh: '每天多逛几处',
     },
   },
 ];
@@ -557,20 +609,34 @@ export const SCHEDULE_PACE_OPTIONS: Option<SchedulePace>[] = [
 export const COMPANION_OPTIONS: Option<CompanionType>[] = [
   {
     value: 'solo',
+    emoji: '🙋',
     label: {
       ko: '혼자 여행',
       en: 'Solo',
       ja: 'ひとり旅',
       zh: '独自旅行',
     },
+    description: {
+      ko: '솔로 여행',
+      en: 'Just me',
+      ja: 'ソロ',
+      zh: '一个人',
+    },
   },
   {
     value: 'group',
+    emoji: '👥',
     label: {
       ko: '함께 여행',
       en: 'With others',
       ja: '誰かと一緒',
       zh: '与他人同行',
+    },
+    description: {
+      ko: '동행과 함께',
+      en: 'Travel companions',
+      ja: '同行者と',
+      zh: '结伴同行',
     },
   },
 ];
@@ -578,20 +644,34 @@ export const COMPANION_OPTIONS: Option<CompanionType>[] = [
 export const LUGGAGE_OPTIONS: Option<LuggageLevel>[] = [
   {
     value: 'light',
+    emoji: '🎒',
     label: {
       ko: '가볍게',
       en: 'Travel light',
       ja: '少なめ',
       zh: '轻装',
     },
+    description: {
+      ko: '백팩·소형 가방',
+      en: 'Backpack / small bag',
+      ja: 'リュックなど',
+      zh: '背包或小包',
+    },
   },
   {
     value: 'heavy',
+    emoji: '🧳',
     label: {
       ko: '많이 챙김',
       en: 'Pack a lot',
       ja: '多めに持つ',
       zh: '行李较多',
+    },
+    description: {
+      ko: '캐리어',
+      en: 'Suitcase',
+      ja: 'キャリーケース',
+      zh: '行李箱',
     },
   },
 ];
@@ -599,47 +679,103 @@ export const LUGGAGE_OPTIONS: Option<LuggageLevel>[] = [
 export const PURPOSE_OPTIONS: Option<VisitPurpose>[] = [
   {
     value: 'food',
+    emoji: '🍜',
     label: { ko: '음식', en: 'Food', ja: 'グルメ', zh: '美食' },
+    description: {
+      ko: '현지 맛집',
+      en: 'Local eats',
+      ja: '地元グルメ',
+      zh: '当地美食',
+    },
   },
   {
     value: 'scenery',
+    emoji: '📸',
     label: { ko: '풍경', en: 'Scenery', ja: '景色', zh: '风景' },
+    description: {
+      ko: '포토스팟',
+      en: 'Photo spots',
+      ja: 'フォトスポット',
+      zh: '打卡景点',
+    },
   },
   {
     value: 'culture',
+    emoji: '🎭',
     label: { ko: '문화체험', en: 'Culture', ja: '文化体験', zh: '文化体验' },
+    description: {
+      ko: '유적·박물관',
+      en: 'Heritage & museums',
+      ja: '遺跡・博物館',
+      zh: '古迹与博物馆',
+    },
   },
   {
     value: 'shopping',
+    emoji: '🛍️',
     label: { ko: '쇼핑', en: 'Shopping', ja: 'ショッピング', zh: '购物' },
+    description: {
+      ko: '시장·편집숍',
+      en: 'Markets & shops',
+      ja: '市場・セレクトショップ',
+      zh: '市场与买手店',
+    },
   },
   {
     value: 'nightlife',
+    emoji: '🌃',
     label: { ko: '나이트라이프', en: 'Nightlife', ja: 'ナイトライフ', zh: '夜生活' },
+    description: {
+      ko: '야경·밤 문화',
+      en: 'Night scenes',
+      ja: '夜のスポット',
+      zh: '夜景与夜生活',
+    },
   },
   {
     value: 'relaxation',
+    emoji: '😌',
     label: { ko: '휴식', en: 'Relaxation', ja: 'リラックス', zh: '休闲' },
+    description: {
+      ko: '여유로운 쉼',
+      en: 'Slow & restful',
+      ja: 'のんびり',
+      zh: '轻松休息',
+    },
   },
 ];
 
 export const FAMILIARITY_OPTIONS: Option<BusanFamiliarity>[] = [
   {
     value: 'novice',
+    emoji: '🗺️',
     label: {
       ko: '잘 모른다',
       en: "Don't know well",
       ja: 'あまり知らない',
       zh: '不太了解',
     },
+    description: {
+      ko: '처음이거나 낯선 편',
+      en: 'New or unfamiliar',
+      ja: '初めて・あまり知らない',
+      zh: '初次或不太熟',
+    },
   },
   {
     value: 'familiar',
+    emoji: '📍',
     label: {
       ko: '아는 편이다',
       en: 'Know it fairly well',
       ja: 'だいたい知っている',
       zh: '比较了解',
+    },
+    description: {
+      ko: '부산이 익숙해요',
+      en: 'Already familiar',
+      ja: 'ある程度知っている',
+      zh: '已经比较熟',
     },
   },
 ];
@@ -784,11 +920,19 @@ export const SETUP_COPY: Record<
   {
     languageTitle: string;
     languageSubtitle: string;
+    languageSlogan: string;
     continue: string;
     welcomeTitle: string;
     welcomeSubtitle: string;
     loginTitle: string;
     loginSubtitle: string;
+    loginSlogan: string;
+    loginOr: string;
+    loginTermsPrefix: string;
+    loginTermsOfService: string;
+    loginTermsMiddle: string;
+    loginPrivacyPolicy: string;
+    loginTermsSuffix: string;
     offlineMode: string;
     offlineModeHint: string;
     offlineModeEmpty: string;
@@ -814,14 +958,22 @@ export const SETUP_COPY: Record<
   }
 > = {
   ko: {
-    languageTitle: '언어를 선택해 주세요',
-    languageSubtitle: '앱 안내와 관광 정보 언어에 사용됩니다',
-    continue: '계속',
+    languageTitle: '언어를 선택하세요',
+    languageSubtitle: 'Select · 言語を選択 · 请选择语言',
+    languageSlogan: '부팅 — 부산 AI 여행 동반자',
+    continue: '계속하기',
     welcomeTitle: '환영합니다!',
     welcomeSubtitle: '부팅과 함께 나만의 부산 여행을 준비해 보세요. 몇 가지 질문으로 맞춤 안내를 도와드릴게요.',
     loginTitle: '로그인',
-    loginSubtitle: '일정 동기화와 Route Feed를 위해 로그인하세요',
-    offlineMode: '오프라인 모드',
+    loginSubtitle: 'AI 일정 동기화 · Route Feed 공유를 위해 로그인하세요',
+    loginSlogan: '부산 여행의 새로운 시작',
+    loginOr: '또는',
+    loginTermsPrefix: '계속하면 ',
+    loginTermsOfService: '이용약관',
+    loginTermsMiddle: ' 및 ',
+    loginPrivacyPolicy: '개인정보처리방침',
+    loginTermsSuffix: '에 동의합니다',
+    offlineMode: '오프라인으로 일정 보기',
     offlineModeHint: '저장된 최근 일정만 열람합니다',
     offlineModeEmpty: '열람할 저장된 일정이 없습니다.',
     email: '이메일',
@@ -831,7 +983,7 @@ export const SETUP_COPY: Record<
     skipAll: '온보딩 전체 건너뛰기',
     next: '다음',
     back: '이전',
-    finish: '시작하기',
+    finish: 'BU-TING 시작! ✨',
     save: '저장',
     cancelEdit: '취소',
     stepOf: (c, t) => `${c} / ${t}`,
@@ -848,13 +1000,21 @@ export const SETUP_COPY: Record<
   },
   en: {
     languageTitle: 'Choose your language',
-    languageSubtitle: 'Used for app UI and tourism content',
+    languageSubtitle: 'Select · 言語を選択 · 请选择语言',
+    languageSlogan: 'BU-TING — Busan AI travel companion',
     continue: 'Continue',
     welcomeTitle: 'Welcome!',
     welcomeSubtitle: 'Plan your Busan trip with Bu-Ting. A few quick questions help us personalize your experience.',
     loginTitle: 'Sign in',
-    loginSubtitle: 'Sync itineraries and share on Route Feed',
-    offlineMode: 'Offline mode',
+    loginSubtitle: 'Sign in to sync AI itineraries and share on Route Feed',
+    loginSlogan: 'A new start for Busan travel',
+    loginOr: 'or',
+    loginTermsPrefix: 'By continuing, you agree to the ',
+    loginTermsOfService: 'Terms of Service',
+    loginTermsMiddle: ' and ',
+    loginPrivacyPolicy: 'Privacy Policy',
+    loginTermsSuffix: '',
+    offlineMode: 'View itinerary offline',
     offlineModeHint: 'View your latest saved itinerary only',
     offlineModeEmpty: 'No saved itinerary to browse.',
     email: 'Email',
@@ -864,7 +1024,7 @@ export const SETUP_COPY: Record<
     skipAll: 'Skip all onboarding',
     next: 'Next',
     back: 'Back',
-    finish: 'Get started',
+    finish: 'Start BU-TING! ✨',
     save: 'Save',
     cancelEdit: 'Cancel',
     stepOf: (c, t) => `${c} / ${t}`,
@@ -881,13 +1041,21 @@ export const SETUP_COPY: Record<
   },
   ja: {
     languageTitle: '言語を選択',
-    languageSubtitle: 'アプリと観光情報の表示言語に使用',
+    languageSubtitle: 'Select · 言語を選択 · 请选择语言',
+    languageSlogan: 'BU-TING — 釜山AIトラベルパートナー',
     continue: '続ける',
     welcomeTitle: 'ようこそ！',
     welcomeSubtitle: 'BU-TINGで釜山旅行を始めましょう。いくつかの質問であなたに合った案内をします。',
     loginTitle: 'ログイン',
-    loginSubtitle: '行程の同期とRoute Feedのために',
-    offlineMode: 'オフラインモード',
+    loginSubtitle: 'AI行程の同期とRoute Feed共有のためにログインしてください',
+    loginSlogan: '釜山旅行の新しいはじまり',
+    loginOr: 'または',
+    loginTermsPrefix: '続行すると',
+    loginTermsOfService: '利用規約',
+    loginTermsMiddle: 'および',
+    loginPrivacyPolicy: 'プライバシーポリシー',
+    loginTermsSuffix: 'に同意したものとみなされます',
+    offlineMode: 'オフラインで行程を見る',
     offlineModeHint: '保存した最新の行程のみ閲覧できます',
     offlineModeEmpty: '閲覧できる行程がありません。',
     email: 'メール',
@@ -897,7 +1065,7 @@ export const SETUP_COPY: Record<
     skipAll: 'オンボーディングをすべてスキップ',
     next: '次へ',
     back: '戻る',
-    finish: 'はじめる',
+    finish: 'BU-TINGを始める! ✨',
     save: '保存',
     cancelEdit: 'キャンセル',
     stepOf: (c, t) => `${c} / ${t}`,
@@ -913,14 +1081,22 @@ export const SETUP_COPY: Record<
     travelSurveySaveError: '好みの保存に失敗しました。もう一度お試しください。',
   },
   zh: {
-    languageTitle: '选择语言',
-    languageSubtitle: '用于应用界面与旅游信息',
+    languageTitle: '请选择语言',
+    languageSubtitle: 'Select · 言語を選択 · 请选择语言',
+    languageSlogan: 'BU-TING — 釜山 AI 旅行伙伴',
     continue: '继续',
     welcomeTitle: '欢迎！',
     welcomeSubtitle: '与 BU-TING 一起规划釜山之旅。回答几个问题，我们将为您提供个性化指引。',
     loginTitle: '登录',
-    loginSubtitle: '同步行程并分享至 Route Feed',
-    offlineMode: '离线模式',
+    loginSubtitle: '登录以同步 AI 行程并分享至 Route Feed',
+    loginSlogan: '釜山旅行的全新开始',
+    loginOr: '或',
+    loginTermsPrefix: '继续即表示同意',
+    loginTermsOfService: '服务条款',
+    loginTermsMiddle: '与',
+    loginPrivacyPolicy: '隐私政策',
+    loginTermsSuffix: '',
+    offlineMode: '离线查看行程',
     offlineModeHint: '仅可浏览最近保存的行程',
     offlineModeEmpty: '没有可浏览的已保存行程。',
     email: '邮箱',
@@ -930,7 +1106,7 @@ export const SETUP_COPY: Record<
     skipAll: '跳过全部引导',
     next: '下一步',
     back: '上一步',
-    finish: '开始',
+    finish: '开始 BU-TING! ✨',
     save: '保存',
     cancelEdit: '取消',
     stepOf: (c, t) => `${c} / ${t}`,

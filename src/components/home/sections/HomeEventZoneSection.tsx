@@ -16,6 +16,8 @@ import { useZoneChatRoomSummary } from '../../../hooks/useZoneChatRoomSummary';
 import { useZoneEventStore } from '../../../stores';
 import type { EventZoneId } from '../../../types/eventZone';
 import { isInsideBusanBounds } from '../../../utils/eventZone/zoneResolver';
+import { GUIDE_TARGET } from '../../guide/guideTypes';
+import { GuideTarget } from '../../guide/GuideTarget';
 
 const WIDGET_BODY_HEIGHT = 210;
 const CHAT_PANEL_WIDTH_RATIO = 0.54;
@@ -60,7 +62,7 @@ export function HomeEventZoneSection({
   const activeEvent = useZoneEventStore(s => s.activeEventsByZone[chatZoneId]);
 
   return (
-    <View className="mb-6">
+    <GuideTarget id={GUIDE_TARGET.homeEventZone} className="mb-6">
       <View className="mb-3 flex-row items-center justify-between">
         <Text className="text-base font-bold text-brand-text">{copy.sectionTitle}</Text>
         {isCycling ? (
@@ -154,6 +156,6 @@ export function HomeEventZoneSection({
           </Pressable>
         </Animated.View>
       </View>
-    </View>
+    </GuideTarget>
   );
 }

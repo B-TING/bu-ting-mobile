@@ -2,7 +2,8 @@ import { ReactNode } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { layout } from '../../../constants/common/layout';
+import { ICON_COLOR_DEFAULT } from '../../../constants/icons';
+import { AppIcon } from '../icons/AppIcon';
 import { SkipButton } from '../buttons/SkipButton';
 
 type OnboardingStepLayoutProps = {
@@ -37,54 +38,61 @@ export function OnboardingStepLayout({
   footer,
 }: OnboardingStepLayoutProps) {
   const insets = useSafeAreaInsets();
-  const progress = (stepIndex + 1) / stepTotal;
+  const activeSegments = Math.min(stepIndex + 1, stepTotal);
 
   return (
     <View
-      className="flex-1 bg-brand-background px-6"
-      style={[layout.screenPad24, { paddingTop: insets.top + 8 }]}>
-      <View className="mb-3 flex-row items-center justify-between">
-        {onBack && backLabel ? (
-          <Pressable onPress={onBack} hitSlop={8} className="min-w-[52px] active:opacity-80">
-            <Text className="text-sm font-semibold text-brand-primary">{backLabel}</Text>
+      className="flex-1 bg-white px-6"
+      style={{ paddingTop: insets.top + 8 }}>
+      <View className="mb-5 flex-row items-center gap-3">
+        {onBack ? (
+          <Pressable
+            onPress={onBack}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel={backLabel}
+            className="h-9 w-9 items-center justify-center active:opacity-70">
+            <AppIcon name="chevronLeft" size={24} color={ICON_COLOR_DEFAULT} />
           </Pressable>
         ) : (
-          <View className="min-w-[52px]" />
+          <View className="h-9 w-9" />
         )}
-        <Text className="text-sm font-semibold text-brand-muted">{stepLabel}</Text>
-        <SkipButton label={skipLabel} onPress={onSkipStep} />
+
+        <View className="min-w-0 flex-1 flex-row items-center gap-1.5">
+          {Array.from({ length: stepTotal }, (_, index) => (
+            <View
+              key={`progress-${index}`}
+              className={`h-1 flex-1 rounded-full ${
+                index < activeSegments ? 'bg-brand-primary' : 'bg-brand-border'
+              }`}
+            />
+          ))}
+        </View>
+
+        <SkipButton label={skipLabel} onPress={onSkipStep} variant="secondary" />
       </View>
 
-      <View className="mb-2 h-1 overflow-hidden rounded-sm bg-brand-border">
-        <View
-          className="h-full rounded-sm bg-brand-primary"
-          style={{ width: `${progress * 100}%` }}
-        />
-      </View>
+      {onSkipAll && skipAllLabel ? (
+        <Pressable
+          onPress={onSkipAll}
+          className="mb-2 self-end active:opacity-70"
+          hitSlop={8}>
+          <Text className="text-xs font-medium text-brand-muted">{skipAllLabel}</Text>
+        </Pressable>
+      ) : null}
 
-      <Pressable
-        onPress={onSkipAll}
-        disabled={!onSkipAll}
-        className="mb-2 self-center py-2 active:opacity-80"
-        hitSlop={8}>
-        {onSkipAll && skipAllLabel ? (
-          <Text className="text-sm font-semibold text-brand-primary underline">
-            {skipAllLabel}
-          </Text>
-        ) : null}
-      </Pressable>
-
-      <View className="flex-1 pt-4">
+      <View className="flex-1">
+        <Text className="mb-2 text-sm font-bold text-brand-primary">{stepLabel}</Text>
         <Text className="mb-2 text-[26px] font-bold leading-[34px] text-brand-text">
           {title}
         </Text>
-        <Text className="mb-7 text-[15px] leading-[22px] text-brand-muted">
+        <Text className="mb-6 text-[15px] leading-[22px] text-brand-muted">
           {subtitle}
         </Text>
         <View className="flex-1">{children}</View>
       </View>
 
-      <View className="pt-2" style={{ paddingBottom: insets.bottom + 16 }}>
+      <View className="pt-3" style={{ paddingBottom: insets.bottom + 16 }}>
         {footer}
       </View>
     </View>
