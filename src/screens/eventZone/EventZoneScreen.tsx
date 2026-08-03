@@ -32,10 +32,16 @@ import {
   ALPHA_FEATURE_LABELS,
   isAlphaFeatureBlocked,
 } from '../../constants/common/alphaFeatureBlocks';
+import {
+  EVENT_MAP_BG,
+  EVENT_MAP_DIM_FILL,
+} from '../../constants/eventZone/mapChrome';
 import { useFeatureUnavailableAlert } from '../../components/shared/modals';
 import { FOCUS_ANIMATION_MS } from '../../utils/eventZone/useZoneMapCamera';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EventZone'>;
+
+const BOTTOM_SHEET_MARGIN = 12;
 
 export function EventZoneScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
@@ -52,6 +58,8 @@ export function EventZoneScreen({ navigation }: Props) {
   const selectionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isFocusedOnZone = focusZoneId != null;
+  /** 맵 SelectionOverlay dim 과 동일 타이밍 */
+  const isSlotDimmed = highlightZoneId != null;
 
   const activeEventsByZone = useZoneEventStore(s => s.activeEventsByZone);
   const triggerEvent = useZoneEventStore(s => s.triggerEvent);
@@ -161,7 +169,7 @@ export function EventZoneScreen({ navigation }: Props) {
   };
 
   return (
-    <View className="flex-1 bg-[#EAEAEA]">
+    <View className="flex-1" style={{ backgroundColor: EVENT_MAP_BG }}>
       {/* 상단 맵 — 선택 여부와 무관하게 항상 동일 높이(하단 리스트 슬롯 유지) */}
       <View className="relative flex-1">
         <BusanZoneMap
@@ -238,8 +246,15 @@ export function EventZoneScreen({ navigation }: Props) {
         ) : null}
       </View>
 
-      {/* 하단 슬롯 — 리스트 ↔ 상세 패널 교체 (맵 높이 고정) */}
-      <View className="flex-1">
+      {/* 하단 슬롯 — 마진 밖 배경은 맵 BG / 선택 시 맵 dim 과 동일 */}
+      <View
+        className="flex-1"
+        style={{
+          backgroundColor: isSlotDimmed ? EVENT_MAP_DIM_FILL : EVENT_MAP_BG,
+          paddingHorizontal: BOTTOM_SHEET_MARGIN,
+          paddingBottom: Math.max(BOTTOM_SHEET_MARGIN, insets.bottom),
+          paddingTop: BOTTOM_SHEET_MARGIN,
+        }}>
         {selectedZone ? (
           <EventZoneZoneDetailPanel
             zone={selectedZone}
@@ -268,7 +283,7 @@ export function EventZoneScreen({ navigation }: Props) {
               }
             }}
             liveMemberCount={selectedLiveMemberCount}
-            bottomInset={insets.bottom}
+            bottomInset={12}
           />
         ) : (
           <EventZoneChatList
@@ -280,7 +295,7 @@ export function EventZoneScreen({ navigation }: Props) {
             activeEventsByZone={
               isAlphaFeatureBlocked('zoneEvent') ? {} : activeEventsByZone
             }
-            bottomInset={insets.bottom}
+            bottomInset={12}
             liveMemberCounts={liveMemberCounts}
             onRoomPress={selectZone}
             onJoinPress={roomId => navigation.navigate('EventZoneChat', { roomId })}

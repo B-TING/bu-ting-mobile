@@ -129,7 +129,7 @@ export function EventZoneChatList({
   return (
     <View
       style={panelShadow.card}
-      className="flex-1 overflow-hidden rounded-t-3xl border border-brand-border bg-white">
+      className="flex-1 overflow-hidden rounded-3xl border border-brand-border bg-white">
       <View className="border-b border-brand-border px-4 pb-3 pt-4">
         <Text className="text-base font-bold text-brand-text">{title}</Text>
       </View>
@@ -233,7 +233,7 @@ export function EventZoneZoneDetailPanel({
   return (
     <View
       style={panelShadow.card}
-      className="flex-1 overflow-hidden rounded-t-3xl border border-brand-border bg-white">
+      className="flex-1 overflow-hidden rounded-3xl border border-brand-border bg-white">
       <View className="flex-row items-start justify-between border-b border-brand-border px-4 pb-3 pt-4">
         <View className="min-w-0 flex-1 pr-2">
           <View className="flex-row flex-wrap items-center gap-x-1.5 gap-y-1">

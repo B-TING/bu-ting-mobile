@@ -3,6 +3,7 @@ import { Animated, StyleSheet, View } from 'react-native';
 import Svg, { Rect } from 'react-native-svg';
 
 import { BUSAN_SVG_VIEWBOX } from '../../constants/eventZone/busanMapPaths';
+import { EVENT_MAP_BG } from '../../constants/eventZone/mapChrome';
 import { EVENT_ZONE_BY_ID } from '../../constants/eventZone/eventZone';
 import type { AppLanguage } from '../../types/user';
 import type { EventZoneId } from '../../types/eventZone';
@@ -76,7 +77,8 @@ export function BusanZoneMap({
   return (
     <View
       style={styles.root}
-      className="flex-1 overflow-hidden rounded-b-3xl bg-[#EAEAEA]"
+      className="flex-1 overflow-hidden"
+      style={{ backgroundColor: EVENT_MAP_BG }}
       onLayout={onLayout}
       {...panHandlers}>
       <Animated.View style={cameraStyle}>
@@ -90,7 +92,7 @@ export function BusanZoneMap({
             y={0}
             width={BUSAN_SVG_VIEWBOX.width}
             height={BUSAN_SVG_VIEWBOX.height}
-            fill="#EAEAEA"
+            fill={EVENT_MAP_BG}
           />
           <BaseDistrictLayer
             currentZoneId={currentZoneId}

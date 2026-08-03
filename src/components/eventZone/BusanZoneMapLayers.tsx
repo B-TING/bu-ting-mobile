@@ -7,6 +7,10 @@ import {
   EVENT_ZONE_DISTRICT_IDS,
 } from '../../constants/eventZone/busanMapPaths';
 import {
+  EVENT_MAP_DIM_COLOR,
+  EVENT_MAP_DIM_OPACITY,
+} from '../../constants/eventZone/mapChrome';
+import {
   EVENT_ZONES,
   EVENT_ZONE_BY_ID,
   landmarkName,
@@ -118,8 +122,8 @@ export const SelectionOverlay = memo(function SelectionOverlay({
         y={0}
         width={BUSAN_SVG_VIEWBOX.width}
         height={BUSAN_SVG_VIEWBOX.height}
-        fill="#0F172A"
-        fillOpacity={0.22}
+        fill={EVENT_MAP_DIM_COLOR}
+        fillOpacity={EVENT_MAP_DIM_OPACITY}
         onPress={onDismiss}
       />
       {districtIds.map(districtId => {

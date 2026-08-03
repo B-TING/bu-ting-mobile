@@ -9,7 +9,7 @@ export const ALPHA_FEATURE_BLOCKS = {
   /** 팀원(일행) 초대 */
   invite: true,
   /** 구역 이벤트 (구역 채팅방은 유지) */
-  zoneEvent: false,
+  zoneEvent: true,
   /** 일정 AI 추천·생성 (직접 생성은 유지) */
   planAi: true,
   /** AI 헬프데스크 */
