@@ -6,7 +6,6 @@ import {
   AppModalActions,
 } from '../../shared/modals';
 import type { CopyFor } from '../../../i18n';
-import type { AppLanguage } from '../../../types/user';
 import { authorInitial } from '../../../utils/review/travelReview';
 
 type Copy = CopyFor<'travelReview'>;
@@ -16,8 +15,11 @@ type TravelogueCommentModalProps = {
   copy: Copy;
   userName: string;
   subtitle?: string;
+  mode?: 'create' | 'edit';
+  initialContent?: string;
+  submitting?: boolean;
   onClose: () => void;
-  onSubmit: (text: string) => void;
+  onSubmit: (text: string) => void | Promise<void>;
 };
 
 export function TravelogueCommentModal({
@@ -25,36 +27,61 @@ export function TravelogueCommentModal({
   copy,
   userName,
   subtitle,
+  mode = 'create',
+  initialContent = '',
+  submitting = false,
   onClose,
   onSubmit,
 }: TravelogueCommentModalProps) {
   const inputRef = useRef<TextInput>(null);
   const [draft, setDraft] = useState('');
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!visible) {
       setDraft('');
+      setBusy(false);
       return;
     }
+    setDraft(initialContent);
     const timer = setTimeout(() => inputRef.current?.focus(), 100);
     return () => clearTimeout(timer);
-  }, [visible]);
+  }, [visible, initialContent]);
 
   const handleSubmit = () => {
     const trimmed = draft.trim();
-    if (!trimmed) {
+    if (!trimmed || busy || submitting) {
       return;
     }
-    onSubmit(trimmed);
-    setDraft('');
-    onClose();
+    if (mode === 'edit' && trimmed === initialContent.trim()) {
+      onClose();
+      return;
+    }
+    setBusy(true);
+    void Promise.resolve(onSubmit(trimmed))
+      .then(() => {
+        setDraft('');
+        onClose();
+      })
+      .catch(() => {
+        // 호출 측에서 안내. 모달은 유지해 재시도 가능.
+      })
+      .finally(() => {
+        setBusy(false);
+      });
   };
+
+  const disabled = !draft.trim() || busy || submitting;
+  const title =
+    mode === 'edit' ? copy.feedEditComment : copy.feedCommentsTitle;
+  const submitLabel =
+    mode === 'edit' ? copy.feedEditComment : copy.feedAddComment;
 
   return (
     <AppModal
       visible={visible}
-      onClose={onClose}
-      title={copy.feedCommentsTitle}
+      onClose={busy || submitting ? () => undefined : onClose}
+      title={title}
       subtitle={subtitle}
       keyboardAware
       closeAccessibilityLabel={copy.cancel}
@@ -62,12 +89,17 @@ export function TravelogueCommentModal({
         <AppModalActions
           className="mt-5"
           actions={[
-            { label: copy.cancel, onPress: onClose, variant: 'secondary' },
             {
-              label: copy.feedAddComment,
+              label: copy.cancel,
+              onPress: onClose,
+              variant: 'secondary',
+              disabled: busy || submitting,
+            },
+            {
+              label: submitLabel,
               onPress: handleSubmit,
               variant: 'primary',
-              disabled: !draft.trim(),
+              disabled,
             },
           ]}
         />
@@ -86,6 +118,7 @@ export function TravelogueCommentModal({
             placeholder={copy.feedCommentPlaceholder}
             placeholderTextColor="#94A3B8"
             multiline
+            editable={!busy && !submitting}
             className="min-h-[64px] flex-1 text-sm leading-5 text-brand-text"
             textAlignVertical="top"
           />

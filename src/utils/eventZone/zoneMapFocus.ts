@@ -27,6 +27,66 @@ export function focusRectToViewBox(rect: MapFocusRect): string {
   return `${rect.x} ${rect.y} ${rect.width} ${rect.height}`;
 }
 
+/**
+ * Fixed viewBox(0,0,FW,FH) + layout meet 기준으로,
+ * focus rect 가 화면에 맞도록 Animated.View transform 을 계산한다.
+ *
+ * 값은 RN 기본 transformOrigin(center) 기준이다.
+ * (top-left 수학 → center 보정: t' = t - c*(1-s))
+ */
+export function focusRectToCameraTransform(
+  rect: MapFocusRect,
+  layout: { width: number; height: number },
+): { scale: number; translateX: number; translateY: number } {
+  const LW = Math.max(1, layout.width);
+  const LH = Math.max(1, layout.height);
+  const FW = BUSAN_SVG_VIEWBOX.width;
+  const FH = BUSAN_SVG_VIEWBOX.height;
+
+  const fit = Math.min(LW / FW, LH / FH);
+  const ox = (LW - FW * fit) / 2;
+  const oy = (LH - FH * fit) / 2;
+
+  const scale = Math.min(LW / (rect.width * fit), LH / (rect.height * fit));
+
+  const zoomedW = rect.width * fit * scale;
+  const zoomedH = rect.height * fit * scale;
+  const targetOx = (LW - zoomedW) / 2;
+  const targetOy = (LH - zoomedH) / 2;
+
+  const srcX = ox + rect.x * fit;
+  const srcY = oy + rect.y * fit;
+
+  const translateXTopLeft = targetOx - srcX * scale;
+  const translateYTopLeft = targetOy - srcY * scale;
+  const cx = LW / 2;
+  const cy = LH / 2;
+
+  return {
+    scale,
+    translateX: translateXTopLeft - cx * (1 - scale),
+    translateY: translateYTopLeft - cy * (1 - scale),
+  };
+}
+
+/** SVG 좌표 → 레이아웃 픽셀 (meet, transform 적용 전) */
+export function svgPointToLayout(
+  point: { x: number; y: number },
+  layout: { width: number; height: number },
+): { left: number; top: number } {
+  const LW = Math.max(1, layout.width);
+  const LH = Math.max(1, layout.height);
+  const FW = BUSAN_SVG_VIEWBOX.width;
+  const FH = BUSAN_SVG_VIEWBOX.height;
+  const fit = Math.min(LW / FW, LH / FH);
+  const ox = (LW - FW * fit) / 2;
+  const oy = (LH - FH * fit) / 2;
+  return {
+    left: ox + point.x * fit,
+    top: oy + point.y * fit,
+  };
+}
+
 export function getLandmarkCentroid(zoneId: EventZoneId): { x: number; y: number } {
   const zone = EVENT_ZONE_BY_ID[zoneId];
   const points = zone.landmarks.map(landmark => landmark.mapPoint);

@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Animated, Pressable, ScrollView, Text, View } from 'react-native';
+import { Animated, Pressable, Text, View } from 'react-native';
 
 import { ICON_COLOR_WHITE } from '../../../constants/icons';
 import { AppIcon } from '../../shared/icons/AppIcon';
 
 import { BudgetDateChips } from '../budget/BudgetDateChips';
 import { BudgetCategoryBadge } from '../budget/BudgetCategoryBadge';
+import { BudgetSettlementSection } from '../budget/BudgetSettlementSection';
 import { BudgetSummarySection } from '../budget/BudgetSummarySection';
 import {
   budgetCategoryDisplay,
@@ -14,6 +15,10 @@ import {
 } from '../modals/BudgetEntryModal';
 import type { CopyFor } from '../../../i18n';
 import type { AppLanguage } from '../../../types/user';
+import type {
+  TravelExpenseMemberSummary,
+  TravelSettlementResponse,
+} from '../../../types/travelApi';
 import type { BudgetEntry, PlanMember } from '../../../types/travelPlan';
 import {
   buildBudgetDateTabs,
@@ -31,6 +36,15 @@ type PlanBudgetTabProps = {
   members: PlanMember[];
   onAddExpense?: () => void;
   scrollBottomInset?: number;
+  settlement?: TravelSettlementResponse | null;
+  memberSummaries?: TravelExpenseMemberSummary[];
+  settlementLoading?: boolean;
+  settlementError?: string | null;
+  canConfirmSettlement?: boolean;
+  confirmingSettlement?: boolean;
+  onConfirmSettlement?: () => void;
+  onRetrySettlement?: () => void;
+  showSettlement?: boolean;
 };
 
 const ROW = 'flex-row items-center px-4 py-3.5';
@@ -207,6 +221,15 @@ export function PlanBudgetTab({
   members,
   onAddExpense,
   scrollBottomInset = 0,
+  settlement = null,
+  memberSummaries = [],
+  settlementLoading = false,
+  settlementError = null,
+  canConfirmSettlement = false,
+  confirmingSettlement = false,
+  onConfirmSettlement,
+  onRetrySettlement,
+  showSettlement = false,
 }: PlanBudgetTabProps) {
   const [expandedEntryId, setExpandedEntryId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -244,8 +267,8 @@ export function PlanBudgetTab({
   };
 
   return (
-    <View className="flex-1 bg-brand-background">
-      <View className="shrink border-b border-brand-border px-4 py-2">
+    <View className="bg-brand-background">
+      <View className="border-b border-brand-border px-4 py-2">
         <BudgetSummarySection
           copy={copy}
           budgetTotal={budgetTotal}
@@ -255,9 +278,9 @@ export function PlanBudgetTab({
         />
       </View>
 
-      <View className="mt-2 min-h-0 flex-1 px-4 pt-1.5">
+      <View className="mt-2 px-4 pt-1.5" style={{ paddingBottom: listBottomPadding }}>
         <View className="gap-1">
-          <Text className="text-sm font-bold text-brand-text mb-2">{copy.budgetExpenseList}</Text>
+          <Text className="mb-2 text-sm font-bold text-brand-text">{copy.budgetExpenseList}</Text>
 
           {dateTabs.length > 0 && selectedDate ? (
             <BudgetDateChips
@@ -270,17 +293,9 @@ export function PlanBudgetTab({
           ) : null}
         </View>
 
-        <ScrollView
-          className="mt-3 flex-1"
-          contentContainerStyle={
-            dateTabs.length === 0
-              ? { paddingBottom: listBottomPadding, flexGrow: 1 }
-              : { paddingBottom: listBottomPadding }
-          }
-          showsVerticalScrollIndicator={false}
-          nestedScrollEnabled>
+        <View className="mt-3">
           {dateTabs.length === 0 ? (
-            <View className="justify-center">
+            <View className="py-6">
               <Text className="text-center text-sm text-brand-muted">{copy.budgetEmpty}</Text>
               {onAddExpense ? (
                 <Pressable
@@ -312,7 +327,21 @@ export function PlanBudgetTab({
               ))}
             </View>
           )}
-        </ScrollView>
+
+          {showSettlement ? (
+            <BudgetSettlementSection
+              copy={copy}
+              settlement={settlement}
+              memberSummaries={memberSummaries}
+              loading={settlementLoading}
+              error={settlementError}
+              canConfirm={canConfirmSettlement}
+              confirming={confirmingSettlement}
+              onConfirm={onConfirmSettlement}
+              onRetry={onRetrySettlement}
+            />
+          ) : null}
+        </View>
       </View>
     </View>
   );

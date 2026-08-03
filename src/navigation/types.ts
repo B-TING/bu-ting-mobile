@@ -11,7 +11,7 @@ export type RootStackParamList = {
   /** planId 생략 시 진행 중(active) 플랜 사용 */
   PlanDetail: { planId?: string; openReboot?: boolean; tab?: 'overview' | 'schedule' | 'budget' | 'records' } | undefined;
   MenuPlaceholder: { title: string };
-  TravelogueDetail: { travelogueId: string };
+  TravelRecordDetail: { travelRecordId: string };
   FestivalCalendar: { initialDate?: string } | undefined;
   /** @deprecated PlaceMapSearch 사용 */
   FestivalDetail: { festivalId: string };

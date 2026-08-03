@@ -8,7 +8,12 @@ import { AppBar } from '../components/shared/navigation/AppBar';
 import { AppMenuDrawer } from '../components/shared/navigation/AppMenuDrawer';
 import { Navbar, type NavbarTab } from '../components/shared/navigation/Navbar';
 import { layout } from '../constants/common/layout';
+import {
+  ALPHA_FEATURE_LABELS,
+  isAlphaFeatureBlocked,
+} from '../constants/common/alphaFeatureBlocks';
 import { useAppLanguage } from '../i18n';
+import { useFeatureUnavailableAlert } from '../components/shared/modals';
 import { MainHomeScreen } from '../screens/MainHomeScreen';
 import { MyPageScreen } from '../screens/MyPageScreen';
 import { PlanDetailScreen } from '../screens/plan/PlanDetailScreen';
@@ -83,9 +88,14 @@ function MainTabPanel({
 export function MainTabNavigator({ navigation, route }: Props) {
   const { width } = useWindowDimensions();
   const language = useAppLanguage();
+  const { showUnavailable } = useFeatureUnavailableAlert();
   const initialTab = route.params?.tab ?? 'home';
   const safeInitialTab =
-    initialTab === 'route' && !resolveItineraryPlan() ? 'home' : initialTab;
+    initialTab === 'route' && !resolveItineraryPlan()
+      ? 'home'
+      : initialTab === 'feed' && isAlphaFeatureBlocked('feed')
+        ? 'home'
+        : initialTab;
 
   const [activeTab, setActiveTab] = useState<NavbarTab>(safeInitialTab);
   const [mountedTabs, setMountedTabs] = useState<Set<NavbarTab>>(
@@ -138,6 +148,11 @@ export function MainTabNavigator({ navigation, route }: Props) {
         return;
       }
 
+      if (tab === 'feed' && isAlphaFeatureBlocked('feed')) {
+        showUnavailable(ALPHA_FEATURE_LABELS.feed);
+        return;
+      }
+
       if (tab === 'route' && !resolveItineraryPlan()) {
         navigation.navigate('PlanWizard');
         return;
@@ -146,7 +161,7 @@ export function MainTabNavigator({ navigation, route }: Props) {
       navigation.setParams({ tab });
       switchToTab(tab);
     },
-    [navigation, switchToTab],
+    [navigation, showUnavailable, switchToTab],
   );
 
   useEffect(() => {
@@ -159,6 +174,12 @@ export function MainTabNavigator({ navigation, route }: Props) {
       return;
     }
 
+    if (tab === 'feed' && isAlphaFeatureBlocked('feed')) {
+      navigation.setParams({ tab: activeTabRef.current });
+      showUnavailable(ALPHA_FEATURE_LABELS.feed);
+      return;
+    }
+
     if (tab === 'route' && !resolveItineraryPlan()) {
       navigation.setParams({ tab: activeTabRef.current });
       navigation.navigate('PlanWizard');
@@ -166,7 +187,7 @@ export function MainTabNavigator({ navigation, route }: Props) {
     }
 
     switchToTab(tab);
-  }, [navigation, route.params?.tab, switchToTab]);
+  }, [navigation, route.params?.tab, showUnavailable, switchToTab]);
 
   const contextValue = useMemo(
     () => ({

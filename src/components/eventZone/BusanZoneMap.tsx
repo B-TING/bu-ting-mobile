@@ -1,317 +1,127 @@
-import { useMemo, useState } from 'react';
-import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
-import Svg, { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
+import { useMemo } from 'react';
+import { Animated, StyleSheet, View } from 'react-native';
+import Svg, { Rect } from 'react-native-svg';
 
-import {
-  BUSAN_DISTRICT_BY_ID,
-  BUSAN_SVG_VIEWBOX,
-  EVENT_ZONE_DISTRICT_IDS,
-} from '../../constants/eventZone/busanMapPaths';
-import { EVENT_ZONES, EVENT_ZONE_BY_ID, landmarkName } from '../../constants/eventZone/eventZone';
-import { PRETENDARD } from '../../constants/fonts/pretendard';
+import { BUSAN_SVG_VIEWBOX } from '../../constants/eventZone/busanMapPaths';
+import { EVENT_MAP_BG } from '../../constants/eventZone/mapChrome';
+import { EVENT_ZONE_BY_ID } from '../../constants/eventZone/eventZone';
 import type { AppLanguage } from '../../types/user';
 import type { EventZoneId } from '../../types/eventZone';
 import { resolveLandmarkMapPoint } from '../../utils/eventZone/landmarkMapPoint';
-import { svgPointToLayout } from '../../utils/eventZone/svgMapCoordinates';
-import { useZoneMapViewBox } from '../../utils/eventZone/useZoneMapViewBox';
-import { EventPulseMarkerOverlay } from '../eventGame/EventPulseMarkerOverlay';
+import { useZoneMapCamera } from '../../utils/eventZone/useZoneMapCamera';
+import { svgPointToLayout } from '../../utils/eventZone/zoneMapFocus';
+import {
+  BaseDistrictLayer,
+  LandmarkLayer,
+  SelectionLandmarkLabels,
+  SelectionOverlay,
+} from './BusanZoneMapLayers';
+import { EventPulseMarker } from './EventPulseMarker';
 
-const EVENT_GLOW_COLOR = '#E91E63';
+const MAX_EVENT_PULSES = 3;
 
 type BusanZoneMapProps = {
+  /** 카메라 줌 타겟 (터치 즉시) */
+  focusZoneId?: EventZoneId | null;
+  /** 구 하이라이트·랜드마크 (줌 애니 이후) */
   selectedZoneId: EventZoneId | null;
-  currentZoneId: EventZoneId;
+  currentZoneId: EventZoneId | null;
   language: AppLanguage;
   /** 이벤트가 발생한 구역들 (glow 강조) */
   eventZoneIds?: readonly EventZoneId[];
+  /** false 이면 pulse 애니메이션 정지 */
+  pulsesActive?: boolean;
   onZonePress: (zoneId: EventZoneId) => void;
+  /** dim / 맵 배경 탭 시 선택 해제 */
+  onDismiss?: () => void;
 };
-
-function zoneFill(
-  zoneId: EventZoneId,
-  baseColor: string,
-  selectedZoneId: EventZoneId | null,
-  currentZoneId: EventZoneId | null,
-): string {
-  if (selectedZoneId === zoneId) {
-    return baseColor;
-  }
-  if (currentZoneId === zoneId) {
-    return `${baseColor}DD`;
-  }
-  if (selectedZoneId && selectedZoneId !== zoneId) {
-    return `${baseColor}44`;
-  }
-  return `${baseColor}88`;
-}
-
-function zoneStroke(
-  zoneId: EventZoneId,
-  selectedZoneId: EventZoneId | null,
-  currentZoneId: EventZoneId | null,
-): { color: string; width: number } {
-  if (selectedZoneId === zoneId) {
-    return { color: '#0F172A', width: 1.5 };
-  }
-  if (currentZoneId === zoneId) {
-    return { color: '#EAB308', width: 2.5 };
-  }
-  return { color: '#FFFFFF', width: 2 };
-}
-
-const MAP_SHADOW = { dx: 5, dy: 7, opacity: 0.2 } as const;
-
-const SELECTED_ZONE_GLOW = [
-  { strokeWidth: 12, opacity: 0.22 },
-  { strokeWidth: 7, opacity: 0.38 },
-] as const;
-
-type LandmarkNamePillProps = {
-  x: number;
-  y: number;
-  label: string;
-};
-
-function LandmarkNamePill({ x, y, label }: LandmarkNamePillProps) {
-  const text = label.slice(0, 10);
-  const pillWidth = text.length * 6 + 15;
-  const pillHeight = 14;
-  const pillX = x - pillWidth / 2;
-  const pillY = y + 12;
-
-  return (
-    <>
-      <Rect
-        x={pillX}
-        y={pillY}
-        width={pillWidth}
-        height={pillHeight}
-        rx={7}
-        ry={7}
-        fill="#FFFFFF"
-        fillOpacity={0.94}
-        stroke="#0F172A"
-        strokeWidth={1}
-        strokeOpacity={0.2}
-      />
-      <SvgText
-        x={x}
-        y={y + 22}
-        fontSize={9}
-        fontFamily={PRETENDARD.semibold}
-        textAnchor="middle"
-        fill="#0F172A">
-        {text}
-      </SvgText>
-    </>
-  );
-}
 
 export function BusanZoneMap({
+  focusZoneId,
   selectedZoneId,
   currentZoneId,
   language,
   eventZoneIds = [],
+  pulsesActive = true,
   onZonePress,
+  onDismiss,
 }: BusanZoneMapProps) {
-  const panelOpen = selectedZoneId != null;
-  const { viewBox, panHandlers, onLayout } = useZoneMapViewBox(selectedZoneId, panelOpen);
-  const [layoutSize, setLayoutSize] = useState({ width: 0, height: 0 });
-  const hasEvent = (zoneId: EventZoneId) => eventZoneIds.includes(zoneId);
+  const cameraZoneId = focusZoneId !== undefined ? focusZoneId : selectedZoneId;
+  // 상세 패널은 하단 슬롯 — 맵 위 플로팅이 아니므로 중앙 포커스
+  const { cameraStyle, panHandlers, onLayout, fixedViewBox, layoutSize } =
+    useZoneMapCamera({
+      selectedZoneId: cameraZoneId,
+      panelOpen: false,
+      interactive: true,
+    });
 
-  const handleLayout = (event: LayoutChangeEvent) => {
-    onLayout(event);
-    const { width, height } = event.nativeEvent.layout;
-    if (width > 0 && height > 0) {
-      setLayoutSize({ width, height });
-    }
-  };
+  const eventCenters = useMemo(() => {
+    const centers = eventZoneIds
+      .map(zoneId => ({ zoneId, center: zoneMapCenter(zoneId) }))
+      .filter(
+        (item): item is { zoneId: EventZoneId; center: { x: number; y: number } } =>
+          item.center != null,
+      );
+    return centers.slice(0, MAX_EVENT_PULSES);
+  }, [eventZoneIds]);
 
-  const landmarkPoints = useMemo(() => {
-    const zones =
-      selectedZoneId != null
-        ? EVENT_ZONES.filter(zone => zone.id === selectedZoneId)
-        : EVENT_ZONES;
-
-    return zones.flatMap(zone =>
-      zone.landmarks.map(landmark => ({
-        landmark,
-        point: resolveLandmarkMapPoint(landmark),
-      })),
-    );
-  }, [selectedZoneId]);
-
-  const eventCenters = useMemo(
+  const pulseLayoutPoints = useMemo(
     () =>
-      eventZoneIds
-        .map(zoneId => ({ zoneId, center: zoneMapCenter(zoneId) }))
-        .filter(
-          (item): item is { zoneId: EventZoneId; center: { x: number; y: number } } =>
-            item.center != null,
-        ),
-    [eventZoneIds],
+      eventCenters.map(({ zoneId, center }) => ({
+        zoneId,
+        ...svgPointToLayout(center, layoutSize),
+      })),
+    [eventCenters, layoutSize],
   );
 
-  const pulseMarkers = useMemo(() => {
-    if (layoutSize.width <= 0 || layoutSize.height <= 0) {
-      return [];
-    }
-    return eventCenters
-      .map(({ zoneId, center }) => {
-        const point = svgPointToLayout(
-          center.x,
-          center.y,
-          viewBox,
-          layoutSize.width,
-          layoutSize.height,
-        );
-        if (!point) {
-          return null;
-        }
-        return { zoneId, ...point };
-      })
-      .filter((item): item is { zoneId: EventZoneId; x: number; y: number } => item != null);
-  }, [eventCenters, layoutSize.height, layoutSize.width, viewBox]);
-
   return (
-    <View className="flex-1 bg-[#EAEAEA]" onLayout={handleLayout} {...panHandlers}>
-      <Svg
-        width="100%"
-        height="100%"
-        viewBox={viewBox}
-        preserveAspectRatio="xMidYMid meet">
-        <Rect
-          x={0}
-          y={0}
-          width={BUSAN_SVG_VIEWBOX.width}
-          height={BUSAN_SVG_VIEWBOX.height}
-          fill="#EAEAEA"
-        />
+    <View
+      style={[styles.root, { backgroundColor: EVENT_MAP_BG }]}
+      className="flex-1 overflow-hidden"
+      onLayout={onLayout}
+      {...panHandlers}>
+      <Animated.View style={cameraStyle}>
+        <Svg
+          width="100%"
+          height="100%"
+          viewBox={fixedViewBox}
+          preserveAspectRatio="xMidYMid meet">
+          <Rect
+            x={0}
+            y={0}
+            width={BUSAN_SVG_VIEWBOX.width}
+            height={BUSAN_SVG_VIEWBOX.height}
+            fill={EVENT_MAP_BG}
+          />
+          <BaseDistrictLayer
+            currentZoneId={currentZoneId}
+            eventZoneIds={eventZoneIds}
+            onZonePress={onZonePress}
+          />
+          <SelectionOverlay
+            selectedZoneId={selectedZoneId}
+            onDismiss={onDismiss}
+          />
+          <LandmarkLayer />
+          <SelectionLandmarkLabels
+            selectedZoneId={selectedZoneId}
+            language={language}
+          />
+        </Svg>
 
-        <G
-          transform={`translate(${MAP_SHADOW.dx}, ${MAP_SHADOW.dy})`}
-          opacity={MAP_SHADOW.opacity}
-          pointerEvents="none">
-          {EVENT_ZONES.flatMap(zone =>
-            EVENT_ZONE_DISTRICT_IDS[zone.id].map(districtId => {
-              const district = BUSAN_DISTRICT_BY_ID[districtId];
-              if (!district) {
-                return null;
-              }
-              return (
-                <Path
-                  key={`shadow-${zone.id}-${districtId}`}
-                  d={district.d}
-                  fill="#0F172A"
-                  stroke="none"
-                />
-              );
-            }),
-          )}
-        </G>
-
-        {EVENT_ZONES.map(zone =>
-          EVENT_ZONE_DISTRICT_IDS[zone.id].map(districtId => {
-            const district = BUSAN_DISTRICT_BY_ID[districtId];
-            if (!district) {
-              return null;
-            }
-            if (selectedZoneId === zone.id) {
-              return null;
-            }
-            const stroke = zoneStroke(zone.id, selectedZoneId, currentZoneId);
-            const eventActive = hasEvent(zone.id);
-            return (
-              <Path
-                key={`${zone.id}-${districtId}`}
-                d={district.d}
-                fill={zoneFill(zone.id, zone.baseColor, selectedZoneId, currentZoneId)}
-                stroke={eventActive ? EVENT_GLOW_COLOR : stroke.color}
-                strokeWidth={eventActive ? 3 : stroke.width}
-                strokeLinejoin="round"
-                onPress={() => onZonePress(zone.id)}
-              />
-            );
-          }),
-        )}
-
-        {selectedZoneId
-          ? EVENT_ZONE_DISTRICT_IDS[selectedZoneId].flatMap(districtId => {
-              const district = BUSAN_DISTRICT_BY_ID[districtId];
-              const zone = EVENT_ZONE_BY_ID[selectedZoneId];
-              if (!district || !zone) {
-                return [];
-              }
-              const glowLayers = SELECTED_ZONE_GLOW.map(({ strokeWidth, opacity }, index) => (
-                <Path
-                  key={`glow-${districtId}-${index}`}
-                  d={district.d}
-                  fill="none"
-                  stroke={zone.baseColor}
-                  strokeWidth={strokeWidth}
-                  strokeOpacity={opacity}
-                  strokeLinejoin="round"
-                  pointerEvents="none"
-                />
-              ));
-              const stroke = zoneStroke(zone.id, selectedZoneId, currentZoneId);
-              const eventActive = hasEvent(zone.id);
-              return [
-                ...glowLayers,
-                <Path
-                  key={`selected-${districtId}`}
-                  d={district.d}
-                  fill={zoneFill(zone.id, zone.baseColor, selectedZoneId, currentZoneId)}
-                  stroke={eventActive ? EVENT_GLOW_COLOR : stroke.color}
-                  strokeWidth={eventActive ? 3 : stroke.width}
-                  strokeLinejoin="round"
-                  onPress={() => onZonePress(zone.id)}
-                />,
-              ];
-            })
-          : null}
-
-        {landmarkPoints.map(({ landmark, point }) => (
-          <G key={landmark.id}>
-            <Circle
-              cx={point.x}
-              cy={point.y}
-              r={selectedZoneId ? 10 : 14}
-              fill="#FFFFFF"
-              stroke="#0F172A"
-              strokeWidth={selectedZoneId ? 1.5 : 2}
-            />
-            <SvgText
-              x={point.x}
-              y={point.y + (selectedZoneId ? 3.5 : 5)}
-              fontSize={selectedZoneId ? 10 : 13}
-              fontFamily={PRETENDARD.regular}
-              textAnchor="middle"
-              fill="#0F172A">
-              {landmark.emoji}
-            </SvgText>
-            {selectedZoneId ? (
-              <LandmarkNamePill
-                x={point.x}
-                y={point.y}
-                label={landmarkName(landmark, language)}
-              />
-            ) : null}
-          </G>
+        {pulseLayoutPoints.map(({ zoneId, left, top }) => (
+          <EventPulseMarker
+            key={`event-pulse-${zoneId}`}
+            left={left}
+            top={top}
+            active={pulsesActive}
+          />
         ))}
-
-      </Svg>
-
-      <View style={StyleSheet.absoluteFill} pointerEvents="none">
-        {pulseMarkers.map(({ zoneId, x, y }) => (
-          <EventPulseMarkerOverlay key={`event-pulse-${zoneId}`} left={x} top={y} />
-        ))}
-      </View>
+      </Animated.View>
     </View>
   );
 }
 
-/** 구역 랜드마크 좌표 평균으로 구역 중심점 계산 */
 function zoneMapCenter(zoneId: EventZoneId): { x: number; y: number } | null {
   const zone = EVENT_ZONE_BY_ID[zoneId];
   if (!zone || zone.landmarks.length === 0) {
@@ -324,3 +134,9 @@ function zoneMapCenter(zoneId: EventZoneId): { x: number; y: number } | null {
   );
   return { x: sum.x / points.length, y: sum.y / points.length };
 }
+
+const styles = StyleSheet.create({
+  root: {
+    overflow: 'hidden',
+  },
+});

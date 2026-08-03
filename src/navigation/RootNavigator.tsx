@@ -112,7 +112,7 @@ export function RootNavigator() {
         <Stack.Screen name="PlanWizard" component={PlanWizardScreen} />
         <Stack.Screen name="PlanCandidates" component={PlanCandidatesScreen} />
         <Stack.Screen name="PlanDetail" component={PlanDetailScreen} />
-        <Stack.Screen name="TravelogueDetail" component={TravelogueDetailScreen} />
+        <Stack.Screen name="TravelRecordDetail" component={TravelogueDetailScreen} />
         <Stack.Screen name="FestivalCalendar" component={FestivalCalendarScreen} />
         <Stack.Screen name="FestivalDetail" component={FestivalDetailScreen} />
         <Stack.Screen name="LuggageStorage" component={LuggageStorageScreen} />

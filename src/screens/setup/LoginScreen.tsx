@@ -126,7 +126,7 @@ export function LoginScreen({ navigation }: Props) {
       </View>
 
       <View
-        className="-mt-5 flex-1 bg-white px-6 pt-7"
+        className="mt-1 flex-1 bg-white px-6 pt-4"
         style={{ paddingBottom: insets.bottom + 16 }}>
         <Text className="mb-2 text-[28px] font-bold text-brand-text">{copy.loginTitle}</Text>
         <Text className="mb-6 text-[15px] leading-[22px] text-brand-muted">

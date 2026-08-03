@@ -16,12 +16,43 @@ import type {
   EventZoneId,
   ZoneEvent,
 } from '../../types/eventZone';
+import {
+  formatZoneEventRemaining,
+  useZoneEventRemaining,
+} from '../../utils/eventZone/zoneEventRemaining';
+
+type EventRemainingLabelProps = {
+  event: ZoneEvent;
+  language: AppLanguage;
+  endsInLabel: (remaining: string) => string;
+  endedLabel: string;
+};
+
+function EventRemainingLabel({
+  event,
+  language,
+  endsInLabel,
+  endedLabel,
+}: EventRemainingLabelProps) {
+  const remainingMs = useZoneEventRemaining(event);
+  const remainingText = formatZoneEventRemaining(remainingMs, language);
+
+  return (
+    <View className="mt-2 flex-row items-center gap-1.5">
+      <AppIcon name="timer" size={12} color="#DB2777" />
+      <Text className="text-xs font-semibold text-pink-600">
+        {remainingMs > 0 ? endsInLabel(remainingText) : endedLabel}
+      </Text>
+    </View>
+  );
+}
 
 type EventZoneMapBadgeProps = {
-  zone: EventZoneDefinition;
+  zone?: EventZoneDefinition | null;
   room: EventZoneChatRoom | undefined;
   language: AppLanguage;
   currentZoneLabel: string;
+  noZoneLabel?: string;
   memberCountLabel: (n: number) => string;
   fallbackHint?: string;
   /** 백엔드 currentMembers (없으면 room.memberCount) */
@@ -33,6 +64,7 @@ export function EventZoneMapBadge({
   room,
   language,
   currentZoneLabel,
+  noZoneLabel,
   memberCountLabel,
   fallbackHint,
   liveMemberCount,
@@ -40,12 +72,14 @@ export function EventZoneMapBadge({
   return (
     <View className="rounded-2xl border border-brand-border bg-white px-3 py-2 shadow-sm">
       <Text className="text-[10px] font-semibold uppercase tracking-wide text-brand-muted">
-        {currentZoneLabel}
+        {zone ? currentZoneLabel : (noZoneLabel ?? currentZoneLabel)}
       </Text>
-      <Text className="mt-0.5 text-sm font-bold text-brand-text">
-        {eventZoneName(zone, language)}
-      </Text>
-      {room ? (
+      {zone ? (
+        <Text className="mt-0.5 text-sm font-bold text-brand-text">
+          {eventZoneName(zone, language)}
+        </Text>
+      ) : null}
+      {zone && room ? (
         <Text className="mt-0.5 text-xs text-brand-primary">
           {memberCountLabel(liveMemberCount ?? room.memberCount)}
         </Text>
@@ -95,7 +129,7 @@ export function EventZoneChatList({
   return (
     <View
       style={panelShadow.card}
-      className="flex-1 overflow-hidden rounded-t-3xl border border-brand-border bg-white">
+      className="flex-1 overflow-hidden rounded-3xl border border-brand-border bg-white">
       <View className="border-b border-brand-border px-4 pb-3 pt-4">
         <Text className="text-base font-bold text-brand-text">{title}</Text>
       </View>
@@ -166,9 +200,15 @@ type EventZoneZoneDetailPanelProps = {
   closeLabel: string;
   currentZoneLabel: string;
   isCurrentZone: boolean;
+  activeEvent?: ZoneEvent;
+  eventEndsInLabel: (remaining: string) => string;
+  eventEndedLabel: string;
+  surpriseMissionBadge: string;
   onClose: () => void;
   onEnterChat: () => void;
   liveMemberCount?: number | null;
+  /** 하단 리스트 슬롯과 동일한 시트 레이아웃 */
+  bottomInset?: number;
 };
 
 export function EventZoneZoneDetailPanel({
@@ -181,19 +221,31 @@ export function EventZoneZoneDetailPanel({
   closeLabel,
   currentZoneLabel,
   isCurrentZone,
+  activeEvent,
+  eventEndsInLabel,
+  eventEndedLabel,
+  surpriseMissionBadge,
   onClose,
   onEnterChat,
   liveMemberCount,
+  bottomInset = 0,
 }: EventZoneZoneDetailPanelProps) {
   return (
     <View
       style={panelShadow.card}
-      className="w-full overflow-hidden rounded-2xl border border-brand-border bg-white">
-      <View className="flex-row items-start justify-between border-b border-brand-border px-4 py-3">
+      className="flex-1 overflow-hidden rounded-3xl border border-brand-border bg-white">
+      <View className="flex-row items-start justify-between border-b border-brand-border px-4 pb-3 pt-4">
         <View className="min-w-0 flex-1 pr-2">
-          <Text className="text-lg font-bold text-brand-text">
-            {eventZoneName(zone, language)}
-          </Text>
+          <View className="flex-row flex-wrap items-center gap-x-1.5 gap-y-1">
+            <Text className="text-lg font-bold text-brand-text">
+              {eventZoneName(zone, language)}
+            </Text>
+            {activeEvent ? (
+              <View className="rounded-full bg-pink-600 px-2 py-0.5">
+                <Text className="text-[10px] font-bold text-white">{surpriseMissionBadge}</Text>
+              </View>
+            ) : null}
+          </View>
           {room ? (
             <Text className="mt-0.5 text-xs font-semibold text-brand-primary">
               {memberCountLabel(liveMemberCount ?? room.memberCount)}
@@ -215,7 +267,35 @@ export function EventZoneZoneDetailPanel({
         </Pressable>
       </View>
 
-      <View className="gap-3.5 px-4 py-3.5">
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingTop: 14,
+          paddingBottom: bottomInset + 12,
+          gap: 14,
+        }}
+        showsVerticalScrollIndicator={false}>
+        {activeEvent ? (
+          <View className="rounded-xl border border-pink-300 bg-pink-50 px-3 py-2.5">
+            <View className="flex-row items-center gap-1.5">
+              <AppIcon name="zap" size={14} color="#BE185D" />
+              <Text className="flex-1 text-sm font-bold text-pink-700">
+                {activeEvent.titleKo}
+              </Text>
+            </View>
+            <Text className="mt-1 text-xs leading-[18px] text-pink-900">
+              {activeEvent.descriptionKo}
+            </Text>
+            <EventRemainingLabel
+              event={activeEvent}
+              language={language}
+              endsInLabel={eventEndsInLabel}
+              endedLabel={eventEndedLabel}
+            />
+          </View>
+        ) : null}
+
         <Text className="text-[15px] leading-[22px] text-brand-text">
           {eventZoneSummary(zone, language)}
         </Text>
@@ -247,7 +327,7 @@ export function EventZoneZoneDetailPanel({
           }`}>
           <Text className="text-[15px] font-bold text-white">{enterLabel}</Text>
         </Pressable>
-      </View>
+      </ScrollView>
     </View>
   );
 }

@@ -117,8 +117,8 @@ export function PlaceDetailModal({
             {language === 'ko' ? '내 후기' : 'My review'}
           </Text>
           <StarRating value={placeReview.rating} readonly size="sm" />
-          {placeReview.comment ? (
-            <Text className="mt-2 text-sm text-brand-text">{placeReview.comment}</Text>
+          {placeReview.content ? (
+            <Text className="mt-2 text-sm text-brand-text">{placeReview.content}</Text>
           ) : null}
         </View>
       ) : route.isVisited && copy.visitFirstReview && onWriteReview ? (

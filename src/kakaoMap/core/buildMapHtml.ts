@@ -189,8 +189,13 @@ window.renderKakaoMapOverlays = function (overlays) {
 
       if (overlay.active && overlay.subtitle) {
         var lockerSubtitle = document.createElement('div');
+        var subtitleColor = overlay.color || '#0077B6';
         lockerSubtitle.style.cssText =
-          'margin-top:2px;max-width:128px;padding:1px 4px;border-radius:3px;background:rgba(0,119,182,0.12);color:#0077B6;font-size:8px;font-weight:600;text-align:center;line-height:1.2;';
+          'margin-top:2px;max-width:128px;padding:1px 4px;border-radius:3px;background:rgba(255,255,255,0.94);color:' +
+          subtitleColor +
+          ';border:1px solid ' +
+          subtitleColor +
+          ';font-size:8px;font-weight:700;text-align:center;line-height:1.2;';
         lockerSubtitle.textContent = overlay.subtitle;
         lockerWrap.appendChild(lockerSubtitle);
       }
@@ -234,7 +239,7 @@ export function buildKakaoMapHtml(appKey: string, camera: MapCamera): string {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
-    <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}"></script>
+    <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&autoload=false"></script>
     <style>
       html, body {
         margin: 0;
@@ -251,43 +256,77 @@ export function buildKakaoMapHtml(appKey: string, camera: MapCamera): string {
     <div id="map"></div>
     <script>
       ${KAKAO_MAP_OVERLAY_RUNTIME}
-      window.onload = function () {
-        if (typeof kakao !== 'undefined' && kakao.maps) {
-          var mapContainer = document.getElementById('map');
-          var mapOption = {
-            center: new kakao.maps.LatLng(${lat}, ${lng}),
-            level: ${level},
-            draggable: true,
-            scrollwheel: true,
-            disableDoubleClick: false,
-            disableDoubleClickZoom: false,
-          };
-          window.kakaoMap = new kakao.maps.Map(mapContainer, mapOption);
-          window.renderKakaoMapOverlays([]);
-          kakao.maps.event.addListener(window.kakaoMap, 'dragend', function () {
-            var center = window.kakaoMap.getCenter();
-            if (window.ReactNativeWebView) {
-              window.ReactNativeWebView.postMessage(
-                JSON.stringify({
+      function postToRN(payload) {
+        var message = JSON.stringify(payload);
+        var attempts = 0;
+        function send() {
+          if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
+            window.ReactNativeWebView.postMessage(message);
+            return;
+          }
+          attempts += 1;
+          if (attempts < 40) {
+            setTimeout(send, 50);
+          }
+        }
+        send();
+      }
+
+      function initKakaoMap() {
+        try {
+          if (typeof kakao === 'undefined' || !kakao.maps) {
+            postToRN({
+              type: 'error',
+              message: 'Kakao Maps SDK를 불러오지 못했습니다. Web 도메인(localhost)을 확인하세요.',
+            });
+            return;
+          }
+          kakao.maps.load(function () {
+            try {
+              var mapContainer = document.getElementById('map');
+              var mapOption = {
+                center: new kakao.maps.LatLng(${lat}, ${lng}),
+                level: ${level},
+                draggable: true,
+                scrollwheel: true,
+                disableDoubleClick: false,
+                disableDoubleClickZoom: false,
+              };
+              window.kakaoMap = new kakao.maps.Map(mapContainer, mapOption);
+              window.renderKakaoMapOverlays([]);
+              kakao.maps.event.addListener(window.kakaoMap, 'dragend', function () {
+                var center = window.kakaoMap.getCenter();
+                postToRN({
                   type: 'centerChange',
                   lat: center.getLat(),
                   lng: center.getLng(),
-                }),
-              );
+                });
+              });
+              postToRN({ type: 'ready' });
+            } catch (error) {
+              postToRN({
+                type: 'error',
+                message: (error && error.message) || '카카오맵 초기화에 실패했습니다.',
+              });
             }
           });
-          if (window.ReactNativeWebView) {
-            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'ready' }));
-          }
-        } else if (window.ReactNativeWebView) {
-          window.ReactNativeWebView.postMessage(
-            JSON.stringify({
-              type: 'error',
-              message: 'Kakao Maps SDK를 불러오지 못했습니다.',
-            }),
-          );
+        } catch (error) {
+          postToRN({
+            type: 'error',
+            message: (error && error.message) || '카카오맵 초기화에 실패했습니다.',
+          });
         }
-      };
+      }
+
+      window.onload = initKakaoMap;
+      setTimeout(function () {
+        if (!window.kakaoMap) {
+          postToRN({
+            type: 'error',
+            message: '카카오맵 응답이 없습니다. JavaScript 키·Web 도메인(localhost)을 확인하세요.',
+          });
+        }
+      }, 12000);
     </script>
   </body>
 </html>`;

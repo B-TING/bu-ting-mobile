@@ -62,7 +62,7 @@ export function toTravelCreateRequest(input: ManualTravelInput): TravelCreateReq
     companionCount: input.companionCount,
     hasHeavyBaggage: input.hasHeavyBaggage,
     hasPets: input.hasPets,
-    companionTypes: primaryCompanion ? COMPANION_MAP[primaryCompanion] : 'SOLO',
+    companionType: primaryCompanion ? COMPANION_MAP[primaryCompanion] : 'SOLO',
     travelStyle: primaryStyle ? STYLE_MAP[primaryStyle] ?? 'TOURISM' : null,
     preferredFoods: input.foodIds.length ? input.foodIds.join(',') : null,
     accommodationArea: input.accommodationAreaIds[0] ?? null,
@@ -160,7 +160,7 @@ export function travelResponseToPlan(
   constraints: PlanConstraints,
 ): TravelPlan {
   return {
-    planId: travel.id,
+    planId: travel.travelId,
     title: travel.title?.trim() || '부산 여행',
     startDate: travel.startDate,
     endDate: travel.endDate,
@@ -174,8 +174,8 @@ export function travelResponseToPlan(
     itinerary: emptyDailyItineraryFromPlans(dayPlans, travel.startDate, travel.endDate),
     createdAt: travel.createdAt ?? new Date().toISOString(),
     source: 'api',
+    apiTravelId: travel.travelId,
     apiServerOrigin: getCurrentApiServerOrigin(),
-    apiTravelId: travel.id,
   };
 }
 
@@ -232,6 +232,7 @@ export function travelPlansResponseToPlan(
           providerPlaceId: p.providerPlaceId,
           durationMinutes: p.durationMinutes,
           memo: p.memo,
+          scheduledTime: p.scheduledTime,
           visited: p.visited,
         }),
       ),
@@ -240,7 +241,7 @@ export function travelPlansResponseToPlan(
   if (!itinerary.length) {
     return travelResponseToPlan(
       {
-        id: response.travelId,
+        travelId: response.travelId,
         title: response.title,
         startDate,
         endDate,

@@ -6,6 +6,9 @@ import type { PlaceContentTypeId } from '../../types/placesApi';
 /** 위치 기반 장소 검색 반경 (meter) */
 export const PLACE_SEARCH_RADIUS_M = 3000;
 
+/** 같은 카테고리 연속 검색(새로고침) 최소 간격 */
+export const PLACE_SEARCH_REFRESH_COOLDOWN_MS = 10_000;
+
 /** 지도 중심이 검색 중심과 이 거리(m) 이상 벗어나면 '이곳에서 검색하기' 표시 */
 export const PLACE_SEARCH_CENTER_THRESHOLD_M = 150;
 
@@ -19,8 +22,13 @@ export const PLACE_SEARCH_COPY: Record<
     notFound: string;
     empty: string;
     emptySub: string;
+    /** 검색 API 400(null) 등 — 결과 없음 토스트 */
+    searchNoResults: string;
     summary: (count: number, radiusKm: number) => string;
     searchHere: string;
+    /** 짧은 간격 재검색으로 서버 오류가 났을 때·쿨다운 안내 */
+    searchRefreshTooSoon: string;
+    searchCooldown: (remainingSeconds: number) => string;
     dataHint: string;
     mapTitle: string;
     mapSubtitle: string;
@@ -66,8 +74,12 @@ export const PLACE_SEARCH_COPY: Record<
     notFound: '장소 정보를 찾을 수 없어요.',
     empty: '표시할 장소가 없어요',
     emptySub: '지도를 움직여 다른 위치를 검색해 보세요',
+    searchNoResults: '검색 결과 없음',
     summary: (count, radiusKm) => `주변 ${radiusKm}km · ${count}곳`,
     searchHere: '이곳에서 검색하기',
+    searchRefreshTooSoon:
+      '새로고침을 짧은 시간 동안 여러 번 할 수 없습니다, 잠시 후에 다시 시도해주세요.',
+    searchCooldown: seconds => `${seconds}초 후에 다시 검색할 수 있어요`,
     dataHint: '한국관광공사·Google Places 연동',
     mapTitle: '카카오맵',
     mapSubtitle: '지도를 움직이면 다른 위치를 검색할 수 있어요',
@@ -121,8 +133,12 @@ export const PLACE_SEARCH_COPY: Record<
     notFound: 'Place not found.',
     empty: 'No places to show',
     emptySub: 'Move the map and search another area',
+    searchNoResults: 'No search results',
     summary: (count, radiusKm) => `Within ${radiusKm} km · ${count} places`,
     searchHere: 'Search this area',
+    searchRefreshTooSoon:
+      'You can’t refresh too quickly. Please try again in a moment.',
+    searchCooldown: seconds => `Try again in ${seconds}s`,
     dataHint: 'Korea Tourism Organization · Google Places',
     mapTitle: 'Kakao Map',
     mapSubtitle: 'Pan the map to search a different area',
@@ -176,8 +192,12 @@ export const PLACE_SEARCH_COPY: Record<
     notFound: '情報が見つかりません。',
     empty: '表示する場所がありません',
     emptySub: '地図を動かして別のエリアを検索してください',
+    searchNoResults: '検索結果がありません',
     summary: (count, radiusKm) => `周辺${radiusKm}km · ${count}件`,
     searchHere: 'このエリアで検索',
+    searchRefreshTooSoon:
+      '短時間に何度も更新できません。しばらくしてから再試行してください。',
+    searchCooldown: seconds => `${seconds}秒後に再検索できます`,
     dataHint: '韓国観光公社・Google Places',
     mapTitle: 'カカオマップ',
     mapSubtitle: '地図を動かすと別のエリアを検索できます',
@@ -231,8 +251,11 @@ export const PLACE_SEARCH_COPY: Record<
     notFound: '未找到地点信息。',
     empty: '暂无地点',
     emptySub: '移动地图后搜索其他区域',
+    searchNoResults: '没有搜索结果',
     summary: (count, radiusKm) => `周边 ${radiusKm} km · ${count} 个`,
     searchHere: '在此区域搜索',
+    searchRefreshTooSoon: '短时间内无法多次刷新，请稍后再试。',
+    searchCooldown: seconds => `${seconds} 秒后可再次搜索`,
     dataHint: '韩国观光公社 · Google Places',
     mapTitle: 'Kakao地图',
     mapSubtitle: '移动地图可搜索其他区域',

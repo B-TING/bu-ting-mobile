@@ -9,6 +9,7 @@ import {
   updatePlanPlace,
   updatePlanPlacePlace,
   updatePlanPlaceSequence,
+  updatePlanPlaceVisited,
 } from './travelService';
 import { planPlaceToRouteItem } from './travelMapper';
 
@@ -166,6 +167,14 @@ export async function updatePlanPlaceMemoOnApi(
 ): Promise<void> {
   const normalized = memo?.trim() || null;
   await updatePlanPlace(accessToken, resolveApiPlanPlaceId(route), { memo: normalized });
+}
+
+export async function updatePlanPlaceVisitedOnApi(
+  accessToken: string,
+  route: RouteItem,
+  visited: boolean,
+): Promise<PlanPlaceResponse> {
+  return updatePlanPlaceVisited(accessToken, resolveApiPlanPlaceId(route), { visited });
 }
 
 /**

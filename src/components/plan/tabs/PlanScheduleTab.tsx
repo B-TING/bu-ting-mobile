@@ -9,7 +9,11 @@ import {
 } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
-import { useAppAlert } from '../../shared/modals';
+import { useAppAlert, useFeatureUnavailableAlert } from '../../shared/modals';
+import {
+  ALPHA_FEATURE_LABELS,
+  isAlphaFeatureBlocked,
+} from '../../../constants/common/alphaFeatureBlocks';
 import { AppIcon } from '../../shared/icons/AppIcon';
 import { DayChips } from '../schedule/DayChips';
 import { ScheduleMapSplit } from '../schedule/ScheduleMapSplit';
@@ -33,7 +37,7 @@ import { countScheduleZoneSegments } from '../../../utils/plan/scheduleZoneGroup
 import { resolveEventZoneForRoute } from '../../../utils/eventZone/zoneResolver';
 import { estimateTravelLeg } from '../../../utils/geo/geo';
 import { computeDayTotalMinutes, formatDurationMinutes } from '../../../utils/geo/tripDuration';
-import { getReviewForRoute } from '../../../utils/review/travelReview';
+import { getReviewForPlace } from '../../../utils/review/travelReview';
 
 type Copy = CopyFor<'planDetail'>;
 
@@ -111,6 +115,7 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
     ref,
   ) {
     const { alert } = useAppAlert();
+    const { showUnavailable } = useFeatureUnavailableAlert();
     const reorderRoutes = usePlanStore(s => s.reorderRoutesInPlan);
     const updateLegMode = usePlanStore(s => s.updateRouteLegMode);
     const optimizeDayRouteLocal = usePlanStore(s => s.optimizeDayRoute);
@@ -327,6 +332,10 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
     );
 
     const openNearestReboot = useCallback(() => {
+      if (isAlphaFeatureBlocked('reboot')) {
+        showUnavailable(ALPHA_FEATURE_LABELS.reboot);
+        return;
+      }
       if (guardReadOnly()) {
         return;
       }
@@ -339,7 +348,7 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
         setReboot(null);
         onScheduleModalChange({ kind: 'pick', itemId: nearest.itemId });
       }
-    }, [dayRoutes, onScheduleModalChange, guardReadOnly]);
+    }, [dayRoutes, onScheduleModalChange, guardReadOnly, showUnavailable]);
 
     const handleRouteOptimize = useCallback(() => {
       if (guardReadOnly()) {
@@ -386,7 +395,10 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
       const indexHint = indexSelected
         ? copy.reorderHandleHintSelected
         : copy.reorderHandleHint;
-      const review = getReviewForRoute(planReviews, r.itemId);
+      const review = getReviewForPlace(
+        planReviews,
+        r.apiPlanPlaceId ?? r.itemId,
+      );
       const zoneColor =
         EVENT_ZONE_BY_ID[resolveEventZoneForRoute(r)].baseColor;
 
@@ -404,6 +416,10 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
           isFocused={isFocused}
           onPress={() => openRouteDetail(r)}
           onEdit={() => {
+            if (isAlphaFeatureBlocked('reboot')) {
+              showUnavailable(ALPHA_FEATURE_LABELS.reboot);
+              return;
+            }
             if (guardReadOnly()) {
               return;
             }
@@ -440,7 +456,10 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
         language={language}
         copy={copy}
         layout="sheetHeader"
-        placeReview={getReviewForRoute(planReviews, focusedRoute.itemId)}
+        placeReview={getReviewForPlace(
+          planReviews,
+          focusedRoute.apiPlanPlaceId ?? focusedRoute.itemId,
+        )}
         onToggleVisited={() => {
           if (guardReadOnly()) {
             return;

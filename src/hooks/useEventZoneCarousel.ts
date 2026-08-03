@@ -10,22 +10,24 @@ const FADE_MS = 360;
 
 export function useEventZoneCarousel(
   isCycling: boolean,
-  userZoneId: EventZoneId,
+  userZoneId: EventZoneId | null,
 ) {
+  const fallbackZoneId = ZONE_IDS[0];
+  const resolvedUserZoneId = userZoneId ?? fallbackZoneId;
   const [carouselIndex, setCarouselIndex] = useState(0);
-  const [mapZoneId, setMapZoneId] = useState<EventZoneId>(userZoneId);
-  const [chatZoneId, setChatZoneId] = useState<EventZoneId>(userZoneId);
+  const [mapZoneId, setMapZoneId] = useState<EventZoneId>(resolvedUserZoneId);
+  const [chatZoneId, setChatZoneId] = useState<EventZoneId>(resolvedUserZoneId);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const indexRef = useRef(0);
 
   useEffect(() => {
     if (!isCycling) {
       fadeAnim.setValue(1);
-      const userIndex = ZONE_IDS.indexOf(userZoneId);
+      const userIndex = ZONE_IDS.indexOf(resolvedUserZoneId);
       indexRef.current = Math.max(0, userIndex);
       setCarouselIndex(Math.max(0, userIndex));
-      setMapZoneId(userZoneId);
-      setChatZoneId(userZoneId);
+      setMapZoneId(resolvedUserZoneId);
+      setChatZoneId(resolvedUserZoneId);
       return;
     }
 
@@ -77,11 +79,11 @@ export function useEventZoneCarousel(
       clearTimeout(timeoutId);
       fadeAnim.stopAnimation();
     };
-  }, [fadeAnim, isCycling, userZoneId]);
+  }, [fadeAnim, isCycling, resolvedUserZoneId]);
 
   return {
-    mapZoneId: isCycling ? mapZoneId : userZoneId,
-    chatZoneId: isCycling ? chatZoneId : userZoneId,
+    mapZoneId: isCycling ? mapZoneId : resolvedUserZoneId,
+    chatZoneId: isCycling ? chatZoneId : resolvedUserZoneId,
     fadeAnim,
     carouselIndex,
     zoneCount: ZONE_IDS.length,
