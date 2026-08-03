@@ -13,6 +13,7 @@ import {
 import { ICON_COLOR_PRIMARY } from '../../../constants/icons';
 import { useCopy } from '../../../i18n';
 import { deletePlaceReviewForTravel } from '../../../services/travel/deletePlaceReviewForTravel';
+import { loadPlanPlaceReviewsForTravel } from '../../../services/travel/loadPlanPlaceReviewsForTravel';
 import {
   publishTravelRecordForTravel,
   PublishTravelRecordError,
@@ -125,6 +126,28 @@ export function PlanRecordsTab({
     };
   }, [accessToken, authorNickname, plan.source, travelId]);
 
+  const reloadReviewsFromServer = async () => {
+    if (!accessToken?.trim() || plan.source !== 'api') {
+      return;
+    }
+    await loadPlanPlaceReviewsForTravel({ accessToken, plan });
+  };
+
+  const reloadPublishedTravelRecord = async () => {
+    if (!accessToken?.trim() || plan.source !== 'api') {
+      return;
+    }
+    const list = await fetchMyTravelRecords(accessToken);
+    const match = list.find(
+      item =>
+        item.travelId === travelId &&
+        (item.status === 'PUBLISHED' || item.status === 'HIDDEN'),
+    );
+    setPublishedTravelRecord(
+      match ? mapTravelRecordManageItem(match, authorNickname) : null,
+    );
+  };
+
   const eligibleRoutes = useMemo(() => collectPlanRoutes(allRoutes), [allRoutes]);
   const progress = useMemo(
     () => reviewProgress(allRoutes, reviews),
@@ -180,6 +203,7 @@ export function PlanRecordsTab({
           media: payload.media,
         },
       });
+      await reloadReviewsFromServer();
     } catch (error) {
       alert({
         title:
@@ -224,6 +248,7 @@ export function PlanRecordsTab({
                     route: reviewRoute,
                     placeReviewId: existing?.placeReviewId,
                   });
+                  await reloadReviewsFromServer();
                   resolve();
                 } catch (error) {
                   alert({
@@ -264,8 +289,11 @@ export function PlanRecordsTab({
     setPublishing(true);
     try {
       const firstImage = reviews.flatMap(r => r.media ?? []).find(m => m.type === 'image');
+      // 표지: 가능하면 Presigned URL 유지 (서명 제거 시 피드 Image 403)
       const coverImageUrl = firstImage?.uri
-        ? toStoredMediaUrl(firstImage.uri)
+        ? firstImage.uri.length <= 1000
+          ? firstImage.uri
+          : toStoredMediaUrl(firstImage.uri)
         : null;
       const editingExisting =
         composeMode === 'edit' &&
@@ -292,6 +320,7 @@ export function PlanRecordsTab({
             ? copy.updatedSuccessPublic
             : copy.updatedSuccessPrivate,
         );
+        await reloadPublishedTravelRecord().catch(() => undefined);
       } else {
         const published = await publishTravelRecordForTravel({
           accessToken,
@@ -309,6 +338,7 @@ export function PlanRecordsTab({
             ? copy.publishedSuccessPublic
             : copy.publishedSuccessPrivate,
         );
+        await reloadPublishedTravelRecord().catch(() => undefined);
         onPublished?.();
       }
     } catch (error) {

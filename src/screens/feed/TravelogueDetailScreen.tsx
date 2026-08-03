@@ -1,5 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -17,6 +24,8 @@ import { PlaceReviewFormModal } from '../../components/review/modals/PlaceReview
 import { TravelogueComposeModal } from '../../components/review/modals/TravelogueComposeModal';
 import { BackButton } from '../../components/shared/buttons/BackButton';
 import { AppIcon } from '../../components/shared/icons/AppIcon';
+import { ResolvedRemoteImage } from '../../components/shared/media/ResolvedRemoteImage';
+import { ReviewVideoThumb } from '../../components/shared/media/ReviewVideoViews';
 import { useAppAlert } from '../../components/shared/modals';
 import { StarRating } from '../../components/shared/rating/StarRating';
 import { EVENT_ZONE_BY_ID } from '../../constants/eventZone/eventZone';
@@ -129,32 +138,32 @@ function PlaceReviewBlock({
             const isRemoteImage =
               item.type === 'image' &&
               (item.uri.startsWith('http://') || item.uri.startsWith('https://'));
+            if (item.type === 'video') {
+              return (
+                <ReviewVideoThumb
+                  key={item.mediaId}
+                  uri={item.uri}
+                  fileKey={item.fileKey}
+                  size={56}
+                />
+              );
+            }
             return (
               <View
                 key={item.mediaId}
                 className="relative h-14 w-14 overflow-hidden rounded-xl bg-brand-selected">
                 {isRemoteImage ? (
-                  <Image
-                    source={{ uri: item.uri }}
+                  <ResolvedRemoteImage
+                    uri={item.uri}
+                    fileKey={item.fileKey}
                     style={{ width: '100%', height: '100%' }}
                     resizeMode="cover"
                   />
                 ) : (
                   <View className="h-full w-full items-center justify-center">
-                    <AppIcon
-                      name={item.type === 'video' ? 'film' : 'paperclip'}
-                      size={18}
-                      color={ICON_COLOR_MUTED}
-                    />
+                    <AppIcon name="paperclip" size={18} color={ICON_COLOR_MUTED} />
                   </View>
                 )}
-                {item.type === 'video' ? (
-                  <View className="absolute bottom-0 left-0 right-0 bg-black/50 py-0.5">
-                    <Text className="text-center text-[8px] font-bold text-white">
-                      VIDEO
-                    </Text>
-                  </View>
-                ) : null}
               </View>
             );
           })}
@@ -168,6 +177,7 @@ function TravelRecordDetailBody({
   travelRecord,
   isOwner,
   onTravelRecordChange,
+  onReloadTravelRecord,
   navigation,
   language,
   copy,
@@ -176,6 +186,8 @@ function TravelRecordDetailBody({
   travelRecord: TravelRecord;
   isOwner: boolean;
   onTravelRecordChange: (next: TravelRecord) => void;
+  /** 후기/여행기 수정 후 서버 상태로 다시 맞춤 */
+  onReloadTravelRecord: () => Promise<void>;
   navigation: Props['navigation'];
   language: AppLanguage;
   copy: Copy;
@@ -218,6 +230,22 @@ function TravelRecordDetailBody({
   const [publishing, setPublishing] = useState(false);
   const [reviewRoute, setReviewRoute] = useState<RouteItem | null>(null);
   const [savingReview, setSavingReview] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const reloadAfterEdit = async () => {
+    try {
+      await onReloadTravelRecord();
+    } catch {
+      // 저장은 성공했을 수 있음 — 새로고침 실패만 조용히 무시
+    }
+  };
+
+  const onPullRefresh = () => {
+    setRefreshing(true);
+    void onReloadTravelRecord()
+      .catch(() => undefined)
+      .finally(() => setRefreshing(false));
+  };
 
   const onToggleBookmark = () => {
     void handleToggleBookmark().catch(error => {
@@ -410,6 +438,7 @@ function TravelRecordDetailBody({
         placeReviews: travelRecord.placeReviews,
         days: updated.days.length > 0 ? updated.days : travelRecord.days,
       });
+      await reloadAfterEdit();
     } catch (error) {
       alert({
         title:
@@ -450,11 +479,18 @@ function TravelRecordDetailBody({
       });
       const nextReviews = [
         ...travelRecord.placeReviews.filter(
-          r => r.placeReviewId !== saved.placeReviewId,
+          r =>
+            r.placeReviewId !== saved.placeReviewId &&
+            !(
+              saved.planPlaceId &&
+              r.planPlaceId &&
+              r.planPlaceId === saved.planPlaceId
+            ),
         ),
         saved,
       ];
       onTravelRecordChange({ ...travelRecord, placeReviews: nextReviews });
+      await reloadAfterEdit();
     } catch (error) {
       alert({
         title:
@@ -508,6 +544,7 @@ function TravelRecordDetailBody({
                       ),
                     });
                   }
+                  await reloadAfterEdit();
                   resolve();
                 } catch (error) {
                   alert({
@@ -569,7 +606,15 @@ function TravelRecordDetailBody({
         className="flex-1 bg-brand-background"
         contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
         keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}>
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onPullRefresh}
+            tintColor={ICON_COLOR_PRIMARY}
+            colors={[ICON_COLOR_PRIMARY]}
+          />
+        }>
         <View className="flex-row items-center border-b border-brand-border bg-brand-surface px-4 py-3">
           <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-brand-primary">
             <Text className="text-sm font-bold text-white">
@@ -913,6 +958,16 @@ export function TravelogueDetailScreen({ navigation, route }: Props) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
 
+  const reloadTravelRecord = useCallback(async () => {
+    const { record, loadedAsOwner: asOwner } = await loadTravelRecordDetail({
+      travelRecordId,
+      accessToken,
+    });
+    setTravelRecord(record);
+    setLoadedAsOwner(asOwner);
+    setLoadError(false);
+  }, [travelRecordId, accessToken]);
+
   useEffect(() => {
     let cancelled = false;
     setLoadError(false);
@@ -992,6 +1047,7 @@ export function TravelogueDetailScreen({ navigation, route }: Props) {
       travelRecord={travelRecord}
       isOwner={isOwner}
       onTravelRecordChange={setTravelRecord}
+      onReloadTravelRecord={reloadTravelRecord}
       navigation={navigation}
       language={language}
       copy={copy}

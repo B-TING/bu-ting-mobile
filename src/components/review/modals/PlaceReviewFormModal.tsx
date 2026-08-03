@@ -17,9 +17,11 @@ import type { PlaceReview, ReviewMedia } from '../../../types/travelReview';
 import type { RouteItem } from '../../../types/travelPlan';
 import { createId } from '../../../utils/common/id';
 import { pickReviewMedia } from '../../../utils/media/pickMedia';
-import { StarRating } from '../../shared/rating/StarRating';
 import { AppIcon } from '../../shared/icons/AppIcon';
+import { ResolvedRemoteImage } from '../../shared/media/ResolvedRemoteImage';
+import { ReviewVideoThumb } from '../../shared/media/ReviewVideoViews';
 import { AppModal, AppModalActions } from '../../shared/modals';
+import { StarRating } from '../../shared/rating/StarRating';
 
 type Copy = CopyFor<'travelReview'>;
 
@@ -339,35 +341,51 @@ export function PlaceReviewFormModal({
         {media.length > 0 ? (
           <View className="mb-2 flex-row flex-wrap gap-2">
             {media.map(item => {
-              const showImage =
-                item.type === 'image' && isDisplayableImageUri(item.uri);
+              if (item.type === 'video') {
+                return (
+                  <View key={item.mediaId} className="relative">
+                    <ReviewVideoThumb
+                      uri={item.uri}
+                      fileKey={item.fileKey}
+                      size={64}
+                    />
+                    <Pressable
+                      onPress={() => removeMedia(item.mediaId)}
+                      className="absolute right-0.5 top-0.5 z-10 rounded-full bg-black/60 p-0.5"
+                      accessibilityRole="button"
+                      accessibilityLabel="Remove">
+                      <AppIcon name="x" size={10} color="#FFFFFF" />
+                    </Pressable>
+                  </View>
+                );
+              }
+              const showImage = isDisplayableImageUri(item.uri);
               return (
                 <Pressable
                   key={item.mediaId}
                   onPress={() => removeMedia(item.mediaId)}
                   className="relative h-16 w-16 overflow-hidden rounded-xl bg-brand-selected">
                   {showImage ? (
-                    <Image
-                      source={{ uri: item.uri }}
-                      style={{ width: '100%', height: '100%' }}
-                      resizeMode="cover"
-                    />
+                    item.uri.startsWith('http://') ||
+                    item.uri.startsWith('https://') ? (
+                      <ResolvedRemoteImage
+                        uri={item.uri}
+                        fileKey={item.fileKey}
+                        style={{ width: '100%', height: '100%' }}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <Image
+                        source={{ uri: item.uri }}
+                        style={{ width: '100%', height: '100%' }}
+                        resizeMode="cover"
+                      />
+                    )
                   ) : (
                     <View className="h-full w-full items-center justify-center">
-                      <AppIcon
-                        name={item.type === 'video' ? 'film' : 'camera'}
-                        size={24}
-                        color={ICON_COLOR_PRIMARY}
-                      />
+                      <AppIcon name="camera" size={24} color={ICON_COLOR_PRIMARY} />
                     </View>
                   )}
-                  {item.type === 'video' ? (
-                    <View className="absolute bottom-0 left-0 right-0 bg-black/50 py-0.5">
-                      <Text className="text-center text-[8px] font-bold text-white">
-                        VIDEO
-                      </Text>
-                    </View>
-                  ) : null}
                   <View className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5">
                     <AppIcon name="x" size={10} color="#FFFFFF" />
                   </View>

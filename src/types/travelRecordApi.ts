@@ -28,7 +28,8 @@ export type PlaceReviewCreateRequest = {
   content?: string | null;
   tags?: string[];
   stayMinutes?: number | null;
-  mediaUrls?: string[];
+  /** 업로드 응답 `fileKey` (예: uploads/images/....png) */
+  mediaFileKeys?: string[];
 };
 
 export type PlaceReviewUpdateRequest = {
@@ -36,7 +37,7 @@ export type PlaceReviewUpdateRequest = {
   content?: string | null;
   tags?: string[] | null;
   stayMinutes?: number | null;
-  mediaUrls?: string[] | null;
+  mediaFileKeys?: string[] | null;
 };
 
 export type TravelRecordCommentCreateRequest = {
