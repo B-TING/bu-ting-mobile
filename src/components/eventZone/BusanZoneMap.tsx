@@ -18,6 +18,9 @@ import { EventPulseMarker } from './EventPulseMarker';
 const MAX_EVENT_PULSES = 3;
 
 type BusanZoneMapProps = {
+  /** 카메라 줌 타겟 (터치 즉시) */
+  focusZoneId?: EventZoneId | null;
+  /** 구 하이라이트·랜드마크 (한 프레임 지연 가능) */
   selectedZoneId: EventZoneId | null;
   currentZoneId: EventZoneId | null;
   language: AppLanguage;
@@ -29,6 +32,7 @@ type BusanZoneMapProps = {
 };
 
 export function BusanZoneMap({
+  focusZoneId,
   selectedZoneId,
   currentZoneId,
   language,
@@ -36,11 +40,12 @@ export function BusanZoneMap({
   pulsesActive = true,
   onZonePress,
 }: BusanZoneMapProps) {
-  const panelOpen = selectedZoneId != null;
+  const cameraZoneId = focusZoneId !== undefined ? focusZoneId : selectedZoneId;
+  // 상세 패널은 하단 슬롯 — 맵 위 플로팅이 아니므로 중앙 포커스
   const { cameraStyle, panHandlers, onLayout, fixedViewBox, layoutSize } =
     useZoneMapCamera({
-      selectedZoneId,
-      panelOpen,
+      selectedZoneId: cameraZoneId,
+      panelOpen: false,
       interactive: true,
     });
 

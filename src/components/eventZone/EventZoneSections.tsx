@@ -207,6 +207,8 @@ type EventZoneZoneDetailPanelProps = {
   onClose: () => void;
   onEnterChat: () => void;
   liveMemberCount?: number | null;
+  /** 하단 리스트 슬롯과 동일한 시트 레이아웃 */
+  bottomInset?: number;
 };
 
 export function EventZoneZoneDetailPanel({
@@ -226,12 +228,13 @@ export function EventZoneZoneDetailPanel({
   onClose,
   onEnterChat,
   liveMemberCount,
+  bottomInset = 0,
 }: EventZoneZoneDetailPanelProps) {
   return (
     <View
       style={panelShadow.card}
-      className="w-[68%] min-w-[272px] max-w-[340px] overflow-hidden rounded-2xl border border-brand-border bg-white">
-      <View className="flex-row items-start justify-between border-b border-brand-border px-4 py-3">
+      className="flex-1 overflow-hidden rounded-t-3xl border border-brand-border bg-white">
+      <View className="flex-row items-start justify-between border-b border-brand-border px-4 pb-3 pt-4">
         <View className="min-w-0 flex-1 pr-2">
           <View className="flex-row flex-wrap items-center gap-x-1.5 gap-y-1">
             <Text className="text-lg font-bold text-brand-text">
@@ -264,7 +267,15 @@ export function EventZoneZoneDetailPanel({
         </Pressable>
       </View>
 
-      <View className="gap-3.5 px-4 py-3.5">
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingTop: 14,
+          paddingBottom: bottomInset + 12,
+          gap: 14,
+        }}
+        showsVerticalScrollIndicator={false}>
         {activeEvent ? (
           <View className="rounded-xl border border-pink-300 bg-pink-50 px-3 py-2.5">
             <View className="flex-row items-center gap-1.5">
@@ -316,7 +327,7 @@ export function EventZoneZoneDetailPanel({
           }`}>
           <Text className="text-[15px] font-bold text-white">{enterLabel}</Text>
         </Pressable>
-      </View>
+      </ScrollView>
     </View>
   );
 }

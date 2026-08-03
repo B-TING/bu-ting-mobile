@@ -50,11 +50,8 @@ export type ZoneMapCameraOptions = {
 /**
  * 고정 SVG viewBox + Animated.View transform 카메라.
  *
- * 포커스 줌인/아웃: useNativeDriver(true) — UI 스레드, 프레임당 setValue 없음.
- * pan/pinch: setValue 만 (React 리렌더/viewBox 변경 없음).
- *
- * 패널 확장으로 layout 이 바뀌면 애니를 최신 layout 기준으로 다시 시작해
- * onLayout setValue 가 네이티브 포커스 애니를 덮어쓰지 않게 한다.
+ * 포커스 줌: useNativeDriver(true). layout 크기 변화로 애니를 재시작하지 않는다
+ * (초기 layoutReady 이후에만 포커스 effect 실행).
  */
 export function useZoneMapCamera({
   selectedZoneId,
@@ -77,6 +74,8 @@ export function useZoneMapCamera({
   const focusAnimatingRef = useRef(false);
   const layoutRef = useRef({ width: 1, height: 1 });
   const [layoutSize, setLayoutSize] = useState({ width: 1, height: 1 });
+  /** 첫 유효 layout 이후 true — 포커스 effect 는 이 플래그만 보고, 이후 size 변경으로 재시작하지 않음 */
+  const [layoutReady, setLayoutReady] = useState(false);
   const pinchRef = useRef<{ startDist: number; startRect: MapFocusRect } | null>(
     null,
   );
@@ -126,7 +125,6 @@ export function useZoneMapCamera({
   );
 
   useEffect(() => {
-    // 포커스 네이티브 애니 중에는 layout 보정 setValue 로 덮지 않음
     if (focusAnimatingRef.current) {
       return;
     }
@@ -134,24 +132,23 @@ export function useZoneMapCamera({
   }, [applyTransformValues, layoutSize]);
 
   useEffect(() => {
-    const from = viewRectRef.current;
-    const to = resolveRect(selectedZoneId);
-
-    // layout 미측정: 다음 layoutSize 변경 때 재실행
-    if (layoutSize.width <= 1 || layoutSize.height <= 1) {
+    if (!layoutReady) {
       return;
     }
 
+    const from = viewRectRef.current;
+    const to = resolveRect(selectedZoneId);
+    const layout = layoutRef.current;
+
     if (rectsEqual(from, to)) {
-      // 애니 중단 후 논리 rect 는 같은데 transform 만 어긋난 경우 보정
       focusAnimatingRef.current = false;
-      applyTransformValues(to, layoutSize);
+      applyTransformValues(to, layout);
       return;
     }
 
     focusTargetRef.current = to;
-    const fromT = focusRectToCameraTransform(from, layoutSize);
-    const toT = focusRectToCameraTransform(to, layoutSize);
+    const fromT = focusRectToCameraTransform(from, layout);
+    const toT = focusRectToCameraTransform(to, layout);
 
     scaleAnim.stopAnimation();
     translateXAnim.stopAnimation();
@@ -193,19 +190,19 @@ export function useZoneMapCamera({
     });
 
     return () => {
-      // viewRectRef 는 커밋하지 않음 — layout 변경으로 재시작 시 from 을 유지해야 줌 트랜지션이 보인다
       anim.stop();
       focusAnimatingRef.current = false;
     };
   }, [
     applyTransformValues,
-    layoutSize,
+    layoutReady,
     resolveRect,
     scaleAnim,
     selectedZoneId,
     translateXAnim,
     translateYAnim,
   ]);
+
   const onLayout = useCallback((event: LayoutChangeEvent) => {
     const { width, height } = event.nativeEvent.layout;
     if (width > 0 && height > 0) {
@@ -215,6 +212,7 @@ export function useZoneMapCamera({
           ? prev
           : { width, height },
       );
+      setLayoutReady(ready => ready || (width > 1 && height > 1));
     }
   }, []);
 
