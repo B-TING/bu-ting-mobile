@@ -6,14 +6,41 @@ const svgPath = path.join(__dirname, '..', 'assets', 'map', 'busan.svg');
 const outPath = path.join(__dirname, '..', 'src', 'constants', 'eventZone', 'busanMapPaths.ts');
 
 const svg = fs.readFileSync(svgPath, 'utf8');
+
+function attr(tag, name) {
+  const match = tag.match(new RegExp(`\\b${name}="([^"]*)"`, 'i'));
+  return match ? match[1] : null;
+}
+
 const labelById = Object.fromEntries(
-  [...svg.matchAll(/<text id="L(CD\d+)"[^>]* x="([^"]*)" y="([^"]*)">([^<]+)<\/text>/g)].map(
-    m => [m[1], { labelKo: m[4], x: Number(m[2]), y: Number(m[3]) }],
-  ),
+  [...svg.matchAll(/<text\b[^>]*>[^<]*<\/text>/g)].map(m => {
+    const tag = m[0];
+    const id = attr(tag, 'id');
+    if (!id || !/^LCD\d+$/.test(id)) {
+      return null;
+    }
+    const districtId = id.slice(1);
+    const textMatch = tag.match(/>([^<]+)</);
+    return [
+      districtId,
+      {
+        labelKo: textMatch ? textMatch[1] : districtId,
+        x: Number(attr(tag, 'x') ?? 0),
+        y: Number(attr(tag, 'y') ?? 0),
+      },
+    ];
+  }).filter(Boolean),
 );
 
-const districts = [...svg.matchAll(/<path id="(CD\d+)" class="OUTLINE" d="([^"]+)"/g)].map(
-  ([, id, d]) => {
+const districts = [...svg.matchAll(/<path\b[^>]*\/?>/g)]
+  .map(m => m[0])
+  .filter(tag => attr(tag, 'class') === 'OUTLINE')
+  .map(tag => {
+    const id = attr(tag, 'id');
+    const d = attr(tag, 'd');
+    if (!id || !d || !/^CD\d+$/.test(id)) {
+      return null;
+    }
     const label = labelById[id];
     return {
       id,
@@ -22,8 +49,15 @@ const districts = [...svg.matchAll(/<path id="(CD\d+)" class="OUTLINE" d="([^"]+
       labelX: label?.x ?? null,
       labelY: label?.y ?? null,
     };
-  },
-);
+  })
+  .filter(Boolean);
+
+if (districts.length < 16) {
+  console.error(
+    `[Bu-Ting] extract failed: expected ≥16 districts, got ${districts.length}`,
+  );
+  process.exit(1);
+}
 
 const labelCenters = Object.fromEntries(
   districts
@@ -64,4 +98,6 @@ export const BUSAN_DISTRICT_BY_ID: Record<string, BusanDistrictPath> = Object.fr
 `;
 
 fs.writeFileSync(outPath, content, 'utf8');
-console.log(`[Bu-Ting] Wrote ${path.relative(process.cwd(), outPath)} (${districts.length} districts)`);
+console.log(
+  `[Bu-Ting] Wrote ${path.relative(process.cwd(), outPath)} (${districts.length} districts)`,
+);
