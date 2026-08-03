@@ -10,8 +10,10 @@ import { resolveLandmarkMapPoint } from '../../utils/eventZone/landmarkMapPoint'
 import { useZoneMapCamera } from '../../utils/eventZone/useZoneMapCamera';
 import { svgPointToLayout } from '../../utils/eventZone/zoneMapFocus';
 import {
-  DistrictLayer,
+  BaseDistrictLayer,
   LandmarkLayer,
+  SelectionLandmarkLabels,
+  SelectionOverlay,
 } from './BusanZoneMapLayers';
 import { EventPulseMarker } from './EventPulseMarker';
 
@@ -20,7 +22,7 @@ const MAX_EVENT_PULSES = 3;
 type BusanZoneMapProps = {
   /** 카메라 줌 타겟 (터치 즉시) */
   focusZoneId?: EventZoneId | null;
-  /** 구 하이라이트·랜드마크 (한 프레임 지연 가능) */
+  /** 구 하이라이트·랜드마크 (줌 애니 이후) */
   selectedZoneId: EventZoneId | null;
   currentZoneId: EventZoneId | null;
   language: AppLanguage;
@@ -29,6 +31,8 @@ type BusanZoneMapProps = {
   /** false 이면 pulse 애니메이션 정지 */
   pulsesActive?: boolean;
   onZonePress: (zoneId: EventZoneId) => void;
+  /** dim / 맵 배경 탭 시 선택 해제 */
+  onDismiss?: () => void;
 };
 
 export function BusanZoneMap({
@@ -39,6 +43,7 @@ export function BusanZoneMap({
   eventZoneIds = [],
   pulsesActive = true,
   onZonePress,
+  onDismiss,
 }: BusanZoneMapProps) {
   const cameraZoneId = focusZoneId !== undefined ? focusZoneId : selectedZoneId;
   // 상세 패널은 하단 슬롯 — 맵 위 플로팅이 아니므로 중앙 포커스
@@ -71,7 +76,7 @@ export function BusanZoneMap({
   return (
     <View
       style={styles.root}
-      className="flex-1 bg-[#EAEAEA]"
+      className="flex-1 overflow-hidden rounded-b-3xl bg-[#EAEAEA]"
       onLayout={onLayout}
       {...panHandlers}>
       <Animated.View style={cameraStyle}>
@@ -87,13 +92,20 @@ export function BusanZoneMap({
             height={BUSAN_SVG_VIEWBOX.height}
             fill="#EAEAEA"
           />
-          <DistrictLayer
-            selectedZoneId={selectedZoneId}
+          <BaseDistrictLayer
             currentZoneId={currentZoneId}
             eventZoneIds={eventZoneIds}
             onZonePress={onZonePress}
           />
-          <LandmarkLayer selectedZoneId={selectedZoneId} language={language} />
+          <SelectionOverlay
+            selectedZoneId={selectedZoneId}
+            onDismiss={onDismiss}
+          />
+          <LandmarkLayer />
+          <SelectionLandmarkLabels
+            selectedZoneId={selectedZoneId}
+            language={language}
+          />
         </Svg>
 
         {pulseLayoutPoints.map(({ zoneId, left, top }) => (

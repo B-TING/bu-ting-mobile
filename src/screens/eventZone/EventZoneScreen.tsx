@@ -33,6 +33,7 @@ import {
   isAlphaFeatureBlocked,
 } from '../../constants/common/alphaFeatureBlocks';
 import { useFeatureUnavailableAlert } from '../../components/shared/modals';
+import { FOCUS_ANIMATION_MS } from '../../utils/eventZone/useZoneMapCamera';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EventZone'>;
 
@@ -44,11 +45,11 @@ export function EventZoneScreen({ navigation }: Props) {
   const { showUnavailable } = useFeatureUnavailableAlert();
   const { zoneId: currentZoneId, usedFallback } = useCurrentEventZone();
 
-  /** 카메라 줌 타겟 — 터치 즉시 */
+  /** 카메라 줌 타겟 + 하단 패널 — 터치 즉시 */
   const [focusZoneId, setFocusZoneId] = useState<EventZoneId | null>(null);
-  /** 하이라이트·패널 — 다음 프레임 (무거운 SVG restyle 지연) */
-  const [selectedZoneId, setSelectedZoneId] = useState<EventZoneId | null>(null);
-  const selectionFrameRef = useRef<number | null>(null);
+  /** 맵 glow/dim 오버레이 — 줌 애니 이후 (베이스 Path 와 분리·지연) */
+  const [highlightZoneId, setHighlightZoneId] = useState<EventZoneId | null>(null);
+  const selectionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isFocusedOnZone = focusZoneId != null;
 
@@ -67,9 +68,9 @@ export function EventZoneScreen({ navigation }: Props) {
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const cancelPendingSelection = useCallback(() => {
-    if (selectionFrameRef.current != null) {
-      cancelAnimationFrame(selectionFrameRef.current);
-      selectionFrameRef.current = null;
+    if (selectionTimerRef.current != null) {
+      clearTimeout(selectionTimerRef.current);
+      selectionTimerRef.current = null;
     }
   }, []);
 
@@ -77,21 +78,18 @@ export function EventZoneScreen({ navigation }: Props) {
     (zoneId: EventZoneId) => {
       setFocusZoneId(zoneId);
       cancelPendingSelection();
-      selectionFrameRef.current = requestAnimationFrame(() => {
-        selectionFrameRef.current = null;
-        setSelectedZoneId(zoneId);
-      });
+      selectionTimerRef.current = setTimeout(() => {
+        selectionTimerRef.current = null;
+        setHighlightZoneId(zoneId);
+      }, FOCUS_ANIMATION_MS);
     },
     [cancelPendingSelection],
   );
 
   const handleCloseExpanded = useCallback(() => {
     setFocusZoneId(null);
+    setHighlightZoneId(null);
     cancelPendingSelection();
-    selectionFrameRef.current = requestAnimationFrame(() => {
-      selectionFrameRef.current = null;
-      setSelectedZoneId(null);
-    });
   }, [cancelPendingSelection]);
 
   const showToast = (text: string) => {
@@ -138,21 +136,21 @@ export function EventZoneScreen({ navigation }: Props) {
   };
 
   const currentZone = currentZoneId ? EVENT_ZONE_BY_ID[currentZoneId] : null;
-  const selectedZone = selectedZoneId ? EVENT_ZONE_BY_ID[selectedZoneId] : null;
+  const selectedZone = focusZoneId ? EVENT_ZONE_BY_ID[focusZoneId] : null;
   const { memberCounts: liveMemberCounts } = useAllZoneChatMemberCounts();
   const currentLiveMemberCount = currentZoneId
     ? (liveMemberCounts[currentZoneId] ?? null)
     : null;
-  const selectedLiveMemberCount = selectedZoneId
-    ? (liveMemberCounts[selectedZoneId] ?? null)
+  const selectedLiveMemberCount = focusZoneId
+    ? (liveMemberCounts[focusZoneId] ?? null)
     : null;
   const currentZoneRoom = useMemo(
     () => (currentZoneId ? getChatRoomByZoneId(currentZoneId) : undefined),
     [currentZoneId],
   );
   const selectedZoneRoom = useMemo(
-    () => (selectedZoneId ? getChatRoomByZoneId(selectedZoneId) : undefined),
-    [selectedZoneId],
+    () => (focusZoneId ? getChatRoomByZoneId(focusZoneId) : undefined),
+    [focusZoneId],
   );
 
   const handleEnterChat = (zoneId: EventZoneId) => {
@@ -168,12 +166,13 @@ export function EventZoneScreen({ navigation }: Props) {
       <View className="relative flex-1">
         <BusanZoneMap
           focusZoneId={focusZoneId}
-          selectedZoneId={selectedZoneId}
+          selectedZoneId={highlightZoneId}
           currentZoneId={currentZoneId}
           language={language}
           eventZoneIds={eventZoneIds}
           pulsesActive={isFocused}
           onZonePress={selectZone}
+          onDismiss={handleCloseExpanded}
         />
 
         <View
@@ -251,12 +250,12 @@ export function EventZoneScreen({ navigation }: Props) {
             enterLabel={copy.enterChat}
             closeLabel={copy.closePanel}
             currentZoneLabel={copy.currentZoneLabel}
-            isCurrentZone={selectedZoneId === currentZoneId}
+            isCurrentZone={focusZoneId === currentZoneId}
             activeEvent={
               isAlphaFeatureBlocked('zoneEvent')
                 ? undefined
-                : selectedZoneId
-                  ? activeEventsByZone[selectedZoneId]
+                : focusZoneId
+                  ? activeEventsByZone[focusZoneId]
                   : undefined
             }
             eventEndsInLabel={copy.eventEndsIn}
@@ -264,8 +263,8 @@ export function EventZoneScreen({ navigation }: Props) {
             surpriseMissionBadge={copy.surpriseMissionBadge}
             onClose={handleCloseExpanded}
             onEnterChat={() => {
-              if (selectedZoneId) {
-                handleEnterChat(selectedZoneId);
+              if (focusZoneId) {
+                handleEnterChat(focusZoneId);
               }
             }}
             liveMemberCount={selectedLiveMemberCount}

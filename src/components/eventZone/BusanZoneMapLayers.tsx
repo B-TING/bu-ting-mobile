@@ -3,6 +3,7 @@ import { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
 
 import {
   BUSAN_DISTRICT_BY_ID,
+  BUSAN_SVG_VIEWBOX,
   EVENT_ZONE_DISTRICT_IDS,
 } from '../../constants/eventZone/busanMapPaths';
 import {
@@ -17,36 +18,23 @@ import { resolveLandmarkMapPoint } from '../../utils/eventZone/landmarkMapPoint'
 
 const EVENT_GLOW_COLOR = '#E91E63';
 
-const SELECTED_ZONE_GLOW = [
-  { strokeWidth: 12, opacity: 0.22 },
-  { strokeWidth: 7, opacity: 0.38 },
-] as const;
+/** 선택 강조 — 선택 구 district + glow 1장 (+ dim Rect) */
+const SELECT_GLOW = { strokeWidth: 8, opacity: 0.35 } as const;
 
-function zoneFill(
-  zoneId: EventZoneId,
-  baseColor: string,
-  selectedZoneId: EventZoneId | null,
-  currentZoneId: EventZoneId | null,
-): string {
-  if (selectedZoneId === zoneId) {
-    return baseColor;
-  }
+function baseFill(zoneId: EventZoneId, baseColor: string, currentZoneId: EventZoneId | null): string {
   if (currentZoneId === zoneId) {
     return `${baseColor}DD`;
-  }
-  if (selectedZoneId && selectedZoneId !== zoneId) {
-    return `${baseColor}44`;
   }
   return `${baseColor}88`;
 }
 
-function zoneStroke(
+function baseStroke(
   zoneId: EventZoneId,
-  selectedZoneId: EventZoneId | null,
   currentZoneId: EventZoneId | null,
+  eventActive: boolean,
 ): { color: string; width: number } {
-  if (selectedZoneId === zoneId) {
-    return { color: '#0F172A', width: 1.5 };
+  if (eventActive) {
+    return { color: EVENT_GLOW_COLOR, width: 3 };
   }
   if (currentZoneId === zoneId) {
     return { color: '#EAB308', width: 2.5 };
@@ -54,85 +42,153 @@ function zoneStroke(
   return { color: '#FFFFFF', width: 2 };
 }
 
-type DistrictLayerProps = {
-  selectedZoneId: EventZoneId | null;
+type BaseDistrictLayerProps = {
   currentZoneId: EventZoneId | null;
   eventZoneIds: readonly EventZoneId[];
   onZonePress: (zoneId: EventZoneId) => void;
 };
 
-export const DistrictLayer = memo(function DistrictLayer({
-  selectedZoneId,
+/**
+ * 선택과 무관한 고정 Path 트리.
+ * selectedZoneId 가 바뀌어도 리렌더되지 않아 줌 중 SVG 재레이아웃을 막는다.
+ */
+export const BaseDistrictLayer = memo(function BaseDistrictLayer({
   currentZoneId,
   eventZoneIds,
   onZonePress,
-}: DistrictLayerProps) {
-  const hasEvent = (zoneId: EventZoneId) => eventZoneIds.includes(zoneId);
+}: BaseDistrictLayerProps) {
+  const eventSet = new Set(eventZoneIds);
 
   return (
     <G>
       {EVENT_ZONES.map(zone =>
         EVENT_ZONE_DISTRICT_IDS[zone.id].map(districtId => {
           const district = BUSAN_DISTRICT_BY_ID[districtId];
-          if (!district || selectedZoneId === zone.id) {
+          if (!district) {
             return null;
           }
-          const stroke = zoneStroke(zone.id, selectedZoneId, currentZoneId);
-          const eventActive = hasEvent(zone.id);
+          const eventActive = eventSet.has(zone.id);
+          const stroke = baseStroke(zone.id, currentZoneId, eventActive);
           return (
             <Path
               key={`${zone.id}-${districtId}`}
               d={district.d}
-              fill={zoneFill(zone.id, zone.baseColor, selectedZoneId, currentZoneId)}
-              stroke={eventActive ? EVENT_GLOW_COLOR : stroke.color}
-              strokeWidth={eventActive ? 3 : stroke.width}
+              fill={baseFill(zone.id, zone.baseColor, currentZoneId)}
+              stroke={stroke.color}
+              strokeWidth={stroke.width}
               strokeLinejoin="round"
               onPress={() => onZonePress(zone.id)}
             />
           );
         }),
       )}
-
-      {selectedZoneId
-        ? EVENT_ZONE_DISTRICT_IDS[selectedZoneId].flatMap(districtId => {
-            const district = BUSAN_DISTRICT_BY_ID[districtId];
-            const zone = EVENT_ZONE_BY_ID[selectedZoneId];
-            if (!district || !zone) {
-              return [];
-            }
-            const glowLayers = SELECTED_ZONE_GLOW.map(({ strokeWidth, opacity }, index) => (
-              <Path
-                key={`glow-${districtId}-${index}`}
-                d={district.d}
-                fill="none"
-                stroke={zone.baseColor}
-                strokeWidth={strokeWidth}
-                strokeOpacity={opacity}
-                strokeLinejoin="round"
-                pointerEvents="none"
-              />
-            ));
-            const stroke = zoneStroke(zone.id, selectedZoneId, currentZoneId);
-            const eventActive = hasEvent(zone.id);
-            return [
-              ...glowLayers,
-              <Path
-                key={`selected-${districtId}`}
-                d={district.d}
-                fill={zoneFill(zone.id, zone.baseColor, selectedZoneId, currentZoneId)}
-                stroke={eventActive ? EVENT_GLOW_COLOR : stroke.color}
-                strokeWidth={eventActive ? 3 : stroke.width}
-                strokeLinejoin="round"
-                onPress={() => onZonePress(zone.id)}
-              />,
-            ];
-          })
-        : null}
     </G>
   );
 });
 
-type LandmarkLayerProps = {
+type SelectionOverlayProps = {
+  selectedZoneId: EventZoneId | null;
+  onDismiss?: () => void;
+};
+
+/**
+ * 선택 시에만 올라가는 얇은 오버레이.
+ * 전체 구 Path 재페인트 없이 dim Rect + 선택 구만 덧그린다.
+ * dim 탭 시 onDismiss (선택 취소).
+ */
+export const SelectionOverlay = memo(function SelectionOverlay({
+  selectedZoneId,
+  onDismiss,
+}: SelectionOverlayProps) {
+  if (!selectedZoneId) {
+    return null;
+  }
+
+  const zone = EVENT_ZONE_BY_ID[selectedZoneId];
+  if (!zone) {
+    return null;
+  }
+
+  const districtIds = EVENT_ZONE_DISTRICT_IDS[selectedZoneId];
+
+  return (
+    <G>
+      <Rect
+        x={0}
+        y={0}
+        width={BUSAN_SVG_VIEWBOX.width}
+        height={BUSAN_SVG_VIEWBOX.height}
+        fill="#0F172A"
+        fillOpacity={0.22}
+        onPress={onDismiss}
+      />
+      {districtIds.map(districtId => {
+        const district = BUSAN_DISTRICT_BY_ID[districtId];
+        if (!district) {
+          return null;
+        }
+        return (
+          <G key={`sel-${districtId}`} pointerEvents="none">
+            <Path
+              d={district.d}
+              fill="none"
+              stroke={zone.baseColor}
+              strokeWidth={SELECT_GLOW.strokeWidth}
+              strokeOpacity={SELECT_GLOW.opacity}
+              strokeLinejoin="round"
+            />
+            <Path
+              d={district.d}
+              fill={zone.baseColor}
+              stroke="#0F172A"
+              strokeWidth={1.5}
+              strokeLinejoin="round"
+            />
+          </G>
+        );
+      })}
+    </G>
+  );
+});
+
+/** @deprecated Use BaseDistrictLayer + SelectionOverlay */
+export const DistrictLayer = BaseDistrictLayer;
+
+/** 랜드마크 마커 — 선택과 무관하게 항상 동일 트리 */
+export const LandmarkLayer = memo(function LandmarkLayer() {
+  return (
+    <G>
+      {EVENT_ZONES.flatMap(zone =>
+        zone.landmarks.map(landmark => {
+          const point = resolveLandmarkMapPoint(landmark);
+          return (
+            <G key={landmark.id}>
+              <Circle
+                cx={point.x}
+                cy={point.y}
+                r={14}
+                fill="#FFFFFF"
+                stroke="#0F172A"
+                strokeWidth={2}
+              />
+              <SvgText
+                x={point.x}
+                y={point.y + 5}
+                fontSize={13}
+                fontFamily={PRETENDARD.regular}
+                textAnchor="middle"
+                fill="#0F172A">
+                {landmark.emoji}
+              </SvgText>
+            </G>
+          );
+        }),
+      )}
+    </G>
+  );
+});
+
+type SelectionLandmarkLabelsProps = {
   selectedZoneId: EventZoneId | null;
   language: AppLanguage;
 };
@@ -180,50 +236,32 @@ function LandmarkNamePill({
   );
 }
 
-export const LandmarkLayer = memo(function LandmarkLayer({
+/** 선택 구역 랜드마크 이름만 — Path 트리와 분리 */
+export const SelectionLandmarkLabels = memo(function SelectionLandmarkLabels({
   selectedZoneId,
   language,
-}: LandmarkLayerProps) {
-  const zones =
-    selectedZoneId != null
-      ? EVENT_ZONES.filter(zone => zone.id === selectedZoneId)
-      : EVENT_ZONES;
+}: SelectionLandmarkLabelsProps) {
+  if (!selectedZoneId) {
+    return null;
+  }
+  const zone = EVENT_ZONE_BY_ID[selectedZoneId];
+  if (!zone) {
+    return null;
+  }
 
   return (
-    <G>
-      {zones.flatMap(zone =>
-        zone.landmarks.map(landmark => {
-          const point = resolveLandmarkMapPoint(landmark);
-          return (
-            <G key={landmark.id}>
-              <Circle
-                cx={point.x}
-                cy={point.y}
-                r={selectedZoneId ? 10 : 14}
-                fill="#FFFFFF"
-                stroke="#0F172A"
-                strokeWidth={selectedZoneId ? 1.5 : 2}
-              />
-              <SvgText
-                x={point.x}
-                y={point.y + (selectedZoneId ? 3.5 : 5)}
-                fontSize={selectedZoneId ? 10 : 13}
-                fontFamily={PRETENDARD.regular}
-                textAnchor="middle"
-                fill="#0F172A">
-                {landmark.emoji}
-              </SvgText>
-              {selectedZoneId ? (
-                <LandmarkNamePill
-                  x={point.x}
-                  y={point.y}
-                  label={landmarkName(landmark, language)}
-                />
-              ) : null}
-            </G>
-          );
-        }),
-      )}
+    <G pointerEvents="none">
+      {zone.landmarks.map(landmark => {
+        const point = resolveLandmarkMapPoint(landmark);
+        return (
+          <LandmarkNamePill
+            key={`label-${landmark.id}`}
+            x={point.x}
+            y={point.y}
+            label={landmarkName(landmark, language)}
+          />
+        );
+      })}
     </G>
   );
 });

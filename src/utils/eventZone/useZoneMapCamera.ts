@@ -18,6 +18,8 @@ import {
 const FOCUS_ANIMATION_MS = 480;
 const MIN_ZOOM_WIDTH = 140;
 
+export { FOCUS_ANIMATION_MS };
+
 function rectsEqual(a: MapFocusRect, b: MapFocusRect): boolean {
   return (
     a.x === b.x &&
