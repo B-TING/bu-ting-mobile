@@ -23,12 +23,12 @@ export type TravelCreateRequest = {
   pace?: TravelPaceDto | null;
   companionCount?: number | null;
   preferredFoods?: string | null;
-  companionTypes?: CompanionTypeDto | null;
+  companionType?: CompanionTypeDto | null;
   accommodationArea?: string | null;
 };
 
 export type TravelResponse = TravelCreateRequest & {
-  id: string;
+  travelId: string;
   status: TravelStatusDto;
   createdAt?: string | null;
 };
@@ -116,7 +116,10 @@ export type PlanPlaceUpdateRequest = {
   memo?: string | null;
   durationMinutes?: number | null;
   scheduledTime?: string | null;
-  visited?: boolean | null;
+};
+
+export type PlanPlaceVisitedUpdateRequest = {
+  visited: boolean;
 };
 
 export type PlanPlaceUpdatePlaceRequest = {
@@ -139,6 +142,7 @@ export type TravelPlanPlaceDto = {
   providerPlaceId: string;
   durationMinutes?: number | null;
   memo?: string | null;
+  scheduledTime?: string | null;
   visited?: boolean | null;
   routeToNext?: {
     transportType?: string;
@@ -165,3 +169,159 @@ export type ManualTravelInput = Pick<
   | 'accommodationAreaIds'
   | 'accommodationName'
 >;
+
+/** 여행 가계부 (TravelExpense) API DTO */
+
+export type ExpenseCategoryDto =
+  | 'FOOD'
+  | 'TRANSPORT'
+  | 'ACCOMMODATION'
+  | 'ACTIVITY'
+  | 'SHOPPING'
+  | 'ETC';
+
+export type ExpenseSplitTypeDto = 'EQUAL' | 'CUSTOM';
+
+export type TravelExpenseCreateRequest = {
+  title: string;
+  amount: number;
+  currency?: string;
+  category: ExpenseCategoryDto;
+  payerId: string;
+  participantIds: string[];
+  spentAt: string;
+  memo?: string | null;
+};
+
+export type TravelExpenseUpdateRequest = TravelExpenseCreateRequest;
+
+export type TravelExpenseShareResponse = {
+  participantId: string;
+  shareAmount: number;
+};
+
+export type TravelExpenseUserSummary = {
+  userId: string;
+  nickname: string;
+};
+
+export type TravelExpenseShareDetail = {
+  participantId: string;
+  nickname: string;
+  shareAmount: number;
+};
+
+export type TravelExpenseCreateResponse = {
+  expenseId: string;
+  travelId: string;
+  title: string;
+  amount: number;
+  currency: string;
+  category: ExpenseCategoryDto;
+  payerId: string;
+  creatorId: string;
+  splitType: ExpenseSplitTypeDto;
+  spentAt: string;
+  memo?: string | null;
+  shares: TravelExpenseShareResponse[];
+};
+
+export type TravelExpenseListItem = {
+  expenseId: string;
+  title: string;
+  amount: number;
+  currency: string;
+  category: ExpenseCategoryDto;
+  payer: TravelExpenseUserSummary;
+  participantCount: number;
+  spentAt: string;
+  createdAt?: string;
+};
+
+export type TravelExpenseListResponse = {
+  content: TravelExpenseListItem[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+};
+
+export type TravelExpenseDetailResponse = {
+  expenseId: string;
+  travelId: string;
+  title: string;
+  amount: number;
+  currency: string;
+  category: ExpenseCategoryDto;
+  payer: TravelExpenseUserSummary;
+  createdBy: TravelExpenseUserSummary;
+  splitType: ExpenseSplitTypeDto;
+  spentAt: string;
+  memo?: string | null;
+  shares: TravelExpenseShareDetail[];
+  editable: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type TravelExpenseCategorySummary = {
+  category: ExpenseCategoryDto;
+  amount: number;
+  expenseCount: number;
+  ratio: number;
+};
+
+export type TravelExpenseMemberSummary = {
+  memberId: string;
+  nickname: string;
+  paidAmount: number;
+  shareAmount: number;
+  balance: number;
+};
+
+export type TravelExpenseCurrencySummary = {
+  currency: string;
+  totalAmount: number;
+  categorySummaries: TravelExpenseCategorySummary[];
+  memberSummaries: TravelExpenseMemberSummary[];
+};
+
+export type TravelExpenseSummaryResponse = {
+  travelId: string;
+  expenseCount: number;
+  currencySummaries: TravelExpenseCurrencySummary[];
+  from?: string | null;
+  to?: string | null;
+};
+
+export type TravelSettlementTransfer = {
+  currency: string;
+  senderId: string;
+  senderNickname: string;
+  receiverId: string;
+  receiverNickname: string;
+  amount: number;
+};
+
+export type TravelSettlementResponse = {
+  travelId: string;
+  confirmed: boolean;
+  confirmedById?: string | null;
+  confirmedAt?: string | null;
+  transfers: TravelSettlementTransfer[];
+};
+
+export type TravelExpenseListQuery = {
+  category?: ExpenseCategoryDto;
+  from?: string;
+  to?: string;
+  payerId?: string;
+  page?: number;
+  size?: number;
+  sort?: string;
+};
+
+export type TravelExpenseSummaryQuery = {
+  from?: string;
+  to?: string;
+};

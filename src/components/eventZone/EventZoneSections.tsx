@@ -48,10 +48,11 @@ function EventRemainingLabel({
 }
 
 type EventZoneMapBadgeProps = {
-  zone: EventZoneDefinition;
+  zone?: EventZoneDefinition | null;
   room: EventZoneChatRoom | undefined;
   language: AppLanguage;
   currentZoneLabel: string;
+  noZoneLabel?: string;
   memberCountLabel: (n: number) => string;
   fallbackHint?: string;
   /** 백엔드 currentMembers (없으면 room.memberCount) */
@@ -63,6 +64,7 @@ export function EventZoneMapBadge({
   room,
   language,
   currentZoneLabel,
+  noZoneLabel,
   memberCountLabel,
   fallbackHint,
   liveMemberCount,
@@ -70,12 +72,14 @@ export function EventZoneMapBadge({
   return (
     <View className="rounded-2xl border border-brand-border bg-white px-3 py-2 shadow-sm">
       <Text className="text-[10px] font-semibold uppercase tracking-wide text-brand-muted">
-        {currentZoneLabel}
+        {zone ? currentZoneLabel : (noZoneLabel ?? currentZoneLabel)}
       </Text>
-      <Text className="mt-0.5 text-sm font-bold text-brand-text">
-        {eventZoneName(zone, language)}
-      </Text>
-      {room ? (
+      {zone ? (
+        <Text className="mt-0.5 text-sm font-bold text-brand-text">
+          {eventZoneName(zone, language)}
+        </Text>
+      ) : null}
+      {zone && room ? (
         <Text className="mt-0.5 text-xs text-brand-primary">
           {memberCountLabel(liveMemberCount ?? room.memberCount)}
         </Text>

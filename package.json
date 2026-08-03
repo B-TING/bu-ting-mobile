@@ -1,6 +1,6 @@
 {
   "name": "BUTingMobile",
-  "version": "0.0.1",
+  "version": "1.0.3-alpha",
   "private": true,
   "scripts": {
     "android": "node scripts/run-android.cjs",
@@ -34,6 +34,7 @@
     "@react-native-async-storage/async-storage": "^3.1.1",
     "@react-native-clipboard/clipboard": "^1.16.3",
     "@react-native-community/blur": "^4.4.1",
+    "@react-native-community/geolocation": "^3.4.0",
     "@react-native-google-signin/google-signin": "^16.1.2",
     "@react-native-seoul/kakao-login": "^5.4.2",
     "@react-native-seoul/naver-login": "^4.2.4",
@@ -47,9 +48,11 @@
     "react-i18next": "^17.0.8",
     "react-native": "0.85.3",
     "react-native-get-random-values": "^2.0.0",
+    "react-native-image-picker": "^8.2.1",
     "react-native-safe-area-context": "^5.5.2",
     "react-native-screens": "^4.25.2",
     "react-native-svg": "^15.15.5",
+    "react-native-video": "^6.19.2",
     "react-native-webview": "^13.16.1",
     "zustand": "^5.0.14"
   },
@@ -83,8 +86,9 @@
   },
   "overrides": {
     "fast-xml-parser": ">=5.7.0",
-    "js-yaml": ">=5.2.1",
-    "brace-expansion@1": "1.1.16",
-    "brace-expansion@5": "5.0.7"
+    "js-yaml": ">=5.2.2",
+    "postcss": ">=8.5.18",
+    "brace-expansion@1": "1.1.17",
+    "brace-expansion@5": "5.0.8"
   }
 }

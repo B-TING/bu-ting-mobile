@@ -21,7 +21,7 @@ export type ZoneChatConnectionStatus =
   | 'disconnected'
   | 'failed';
 
-/** 서버 수신 메시지는 백엔드 ChatMessage 를 그대로 사용 */
+/** 서버 실시간 메시지는 백엔드 ChatMessageResponse 정규화본 */
 export type ZoneChatServerMessage = ChatMessage;
 
 export type ZoneChatWebSocketConnectOptions = {

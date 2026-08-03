@@ -6,26 +6,28 @@ import {
   type LucideIconName,
 } from '../../../constants/icons';
 import type { CopyFor } from '../../../i18n';
-import { AppIcon } from '../../shared/icons/AppIcon';
-import type { Travelogue } from '../../../types/travelReview';
-import type { TravelPlan } from '../../../types/travelPlan';
 import type { AppLanguage } from '../../../types/user';
+import { AppIcon } from '../../shared/icons/AppIcon';
 import { AppModal, AppModalActions } from '../../shared/modals';
 
 type Copy = CopyFor<'travelReview'>;
 
-export type ImportPlanModalPhase = 'confirm' | 'activePlanConfirm' | 'success' | 'error';
+export type ImportPlanModalPhase =
+  | 'confirm'
+  | 'activePlanWarning'
+  | 'success'
+  | 'error';
 
 export type ImportPlanModalProps = {
-  visible: boolean;
-  phase: ImportPlanModalPhase;
+  phase: ImportPlanModalPhase | null;
   copy: Copy;
-  travelogue: Travelogue;
-  activePlan?: TravelPlan | null;
+  language: AppLanguage;
+  travelRecordTitle: string;
+  activePlanTitle?: string;
   onClose: () => void;
   onConfirm: () => void;
-  onConfirmOverwrite: () => void;
-  onViewPlan: () => void;
+  onConfirmActivePlan: () => void;
+  onGoToPlan: () => void;
 };
 
 function InfoRow({ label, value }: { label: string; value: string }) {
@@ -38,32 +40,23 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 }
 
 export function ImportPlanModal({
-  visible,
   phase,
   copy,
-  travelogue,
-  activePlan,
+  travelRecordTitle,
+  activePlanTitle,
   onClose,
   onConfirm,
-  onConfirmOverwrite,
-  onViewPlan,
+  onConfirmActivePlan,
+  onGoToPlan,
 }: ImportPlanModalProps) {
-  const tripPeriod =
-    travelogue.startDate && travelogue.endDate
-      ? copy.tripPeriod(travelogue.startDate, travelogue.endDate)
-      : null;
-
-  const activePlanPeriod =
-    activePlan?.startDate && activePlan?.endDate
-      ? copy.tripPeriod(activePlan.startDate, activePlan.endDate)
-      : null;
+  const visible = phase != null;
 
   const iconName: LucideIconName =
     phase === 'success'
       ? 'checkCircle'
       : phase === 'error'
         ? 'alertTriangle'
-        : phase === 'activePlanConfirm'
+        : phase === 'activePlanWarning'
           ? 'luggage'
           : 'clipboardList';
   const iconColor =
@@ -77,7 +70,7 @@ export function ImportPlanModal({
       ? copy.importPlanSuccess
       : phase === 'error'
         ? copy.importPlanConfirmTitle
-        : phase === 'activePlanConfirm'
+        : phase === 'activePlanWarning'
           ? copy.importPlanActivePlanTitle
           : copy.importPlanConfirmTitle;
   const message =
@@ -85,9 +78,9 @@ export function ImportPlanModal({
       ? copy.importPlanSuccessSub
       : phase === 'error'
         ? copy.importPlanNoItinerary
-        : phase === 'activePlanConfirm' && activePlan
-          ? copy.importPlanActivePlanMessage(activePlan.title)
-          : copy.importPlanConfirmMessage(travelogue.title);
+        : phase === 'activePlanWarning' && activePlanTitle
+          ? copy.importPlanActivePlanMessage(activePlanTitle)
+          : copy.importPlanConfirmMessage(travelRecordTitle);
 
   const footerActions =
     phase === 'confirm'
@@ -95,19 +88,19 @@ export function ImportPlanModal({
           { label: copy.cancel, onPress: onClose, variant: 'secondary' as const },
           { label: copy.importPlan, onPress: onConfirm, variant: 'primary' as const },
         ]
-      : phase === 'activePlanConfirm'
+      : phase === 'activePlanWarning'
         ? [
             { label: copy.cancel, onPress: onClose, variant: 'secondary' as const },
             {
               label: copy.importPlanActivePlanConfirm,
-              onPress: onConfirmOverwrite,
+              onPress: onConfirmActivePlan,
               variant: 'primary' as const,
             },
           ]
         : phase === 'success'
           ? [
               { label: copy.cancel, onPress: onClose, variant: 'secondary' as const },
-              { label: copy.importPlanGo, onPress: onViewPlan, variant: 'primary' as const },
+              { label: copy.importPlanGo, onPress: onGoToPlan, variant: 'primary' as const },
             ]
           : [{ label: copy.importPlanClose, onPress: onClose, variant: 'primary' as const }];
 
@@ -127,20 +120,14 @@ export function ImportPlanModal({
 
       {phase === 'confirm' ? (
         <View className="mx-5 mt-5 rounded-2xl border border-brand-border bg-brand-background px-4 py-3">
-          <InfoRow label={copy.travelogueTitle} value={travelogue.title} />
-          <InfoRow label={copy.authorLabel} value={travelogue.authorName} />
-          <InfoRow label={copy.placeLabel} value={travelogue.destinationLabel} />
-          {tripPeriod ? <InfoRow label={copy.tripPeriodLabel} value={tripPeriod} /> : null}
+          <InfoRow label={copy.travelogueTitle} value={travelRecordTitle} />
         </View>
       ) : null}
 
-      {phase === 'activePlanConfirm' && activePlan ? (
+      {phase === 'activePlanWarning' && activePlanTitle ? (
         <View className="mx-5 mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
-          <InfoRow label={copy.activePlanLabel} value={activePlan.title} />
-          {activePlanPeriod ? (
-            <InfoRow label={copy.tripPeriodLabel} value={activePlanPeriod} />
-          ) : null}
-          <InfoRow label={copy.travelogueTitle} value={travelogue.title} />
+          <InfoRow label={copy.activePlanLabel} value={activePlanTitle} />
+          <InfoRow label={copy.travelogueTitle} value={travelRecordTitle} />
         </View>
       ) : null}
     </AppModal>

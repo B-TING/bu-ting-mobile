@@ -6,10 +6,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PlanSyncStatusDot } from '../../components/plan/PlanSyncStatusDot';
 import { TransientBottomToast } from '../../components/shared/feedback/TransientBottomToast';
 import { BackButton } from '../../components/shared/buttons/BackButton';
-import { BudgetEntryModal } from '../../components/plan/modals/BudgetEntryModal';
+import { BudgetEntryModal, type BudgetEntryDraft } from '../../components/plan/modals/BudgetEntryModal';
 import { PlacePickModal } from '../../components/plan/modals/PlacePickModal';
 import { TravelInviteLinkModal } from '../../components/plan/modals/TravelInviteLinkModal';
 import { RouteOptimizeFab, routeFabBottom } from '../../components/plan/fab/RouteOptimizeFab';
+import { getNavbarOverlayHeight } from '../../components/shared/navigation/Navbar';
 import { PlanBudgetTab } from '../../components/plan/tabs/PlanBudgetTab';
 import { PlanOverviewTab } from '../../components/plan/tabs/PlanOverviewTab';
 import { PlanRecordsTab } from '../../components/plan/tabs/PlanRecordsTab';
@@ -22,12 +23,18 @@ import { PlanTabPager } from '../../components/plan/tabs/PlanTabPager';
 import { PlaceReviewFormModal } from '../../components/review/modals/PlaceReviewFormModal';
 import { type PlanDetailTab } from '../../constants/plan/planDetail';
 import { useAppLanguage, useCopy } from '../../i18n';
-import { useAppAlert } from '../../components/shared/modals';
+import { useAppAlert, useFeatureUnavailableAlert } from '../../components/shared/modals';
+import {
+  ALPHA_FEATURE_LABELS,
+  isAlphaFeatureBlocked,
+} from '../../constants/common/alphaFeatureBlocks';
+import { useBusanSearchLocationWhen } from '../../hooks/usePlaceMapUserLocation';
 import { usePlanRoutePlaceDetails } from '../../hooks/usePlanRoutePlaceDetails';
+import { useTravelExpensesSync } from '../../hooks/useTravelExpensesSync';
 import { useTravelMembersSync } from '../../hooks/useTravelMembersSync';
 import type { RootStackParamList } from '../../navigation/types';
 import { navigateToMainTab } from '../../navigation/navigateToMainTab';
-import { addPlanPlaceFromCandidate, findDayRoute, getDayRoutesFromPlan, removePlanPlaceFromApi, replacePlanPlaceFromCandidate, routesInItemOrder, updatePlanPlaceMemoOnApi, updatePlanPlaceOrderOnApi } from '../../services/travel/planPlaceSync';
+import { addPlanPlaceFromCandidate, findDayRoute, getDayRoutesFromPlan, removePlanPlaceFromApi, replacePlanPlaceFromCandidate, routesInItemOrder, updatePlanPlaceMemoOnApi, updatePlanPlaceOrderOnApi, updatePlanPlaceVisitedOnApi } from '../../services/travel/planPlaceSync';
 import {
   addPlanDayOnApi,
   canAddPlanDay,
@@ -35,29 +42,47 @@ import {
   computeNextPlanDay,
   removePlanDayOnApi,
 } from '../../services/travel/planDaySync';
+import {
+  budgetEntryToCreateRequest,
+  expenseCreateResponseToBudgetEntry,
+} from '../../services/travel/travelExpenseMapper';
+import { createTravelExpense } from '../../services/travel/travelExpenseService';
 import { resolveTravelInviteLink } from '../../services/travel/travelTeamService';
 import { updateTravelStatus } from '../../services/travel/travelService';
+import {
+  PlaceReviewSyncError,
+  savePlaceReviewForTravel,
+} from '../../services/travel/savePlaceReviewForTravel';
+import { deletePlaceReviewForTravel } from '../../services/travel/deletePlaceReviewForTravel';
+import { loadPlanPlaceReviewsForTravel } from '../../services/travel/loadPlanPlaceReviewsForTravel';
+import { fetchMyTravelRecords } from '../../services/travel/travelRecordService';
 import {
   EMPTY_REVIEWS,
   hydrateRoutePlaceInfo,
   useAppStore,
   useAuthStore,
   usePlanStore,
-  useTravelogueStore,
+  useTravelRecordStore,
 } from '../../stores';
 import { selectIsPlanOfflineSync } from '../../stores/usePlanStore';
 import { selectReusableAccessToken } from '../../stores/useAuthStore';
 import { useApiTravelPlanSync } from '../../hooks/useApiTravelPlanSync';
 import { usePlanOfflineSyncFeedback } from '../../hooks/usePlanOfflineSyncFeedback';
 import type { BudgetEntry, RouteItem, TravelLegMode } from '../../types/travelPlan';
+import type { PlaceReview } from '../../types/travelReview';
 import { sortedRoutes } from '../../utils/plan/planItinerary';
 import { optimizeRouteOrder } from '../../utils/plan/routeOptimize';
+import {
+  buildMemberSummariesFromBudgetEntries,
+  buildTransfersFromMemberSummaries,
+  pickCurrencyMemberSummaries,
+} from '../../utils/plan/budgetSettlementPreview';
 import {
   candidateToRouteItem,
   type RebootPlaceCandidate,
 } from '../../utils/places/rebootPlaces';
 import { mergeRouteWithPlaceDetail } from '../../utils/places/routePlaceDetail';
-import { getReviewForRoute, reviewProgress } from '../../utils/review/travelReview';
+import { getReviewForPlace, reviewProgress } from '../../utils/review/travelReview';
 import { lockPlanScheduleIfApiError } from '../../utils/travel/scheduleApiLock';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PlanDetail'> & {
@@ -86,7 +111,6 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
   const removeItineraryDay = usePlanStore(s => s.removeItineraryDay);
   const addBudgetEntry = usePlanStore(s => s.addBudgetEntry);
   const completePlan = usePlanStore(s => s.completePlan);
-  const upsertPlaceReview = useTravelogueStore(s => s.upsertPlaceReview);
   const displayName = useAppStore(s => s.auth.displayName) ?? 'Traveler';
   const accessToken = useAuthStore(selectReusableAccessToken);
   const authUser = useAuthStore(s => s.user);
@@ -133,12 +157,76 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     accessToken,
     enabled: isApiPlan && !offlineMode,
   });
+  const {
+    syncExpenses,
+    refreshSettlementPreview,
+    settlement,
+    summary,
+    settlementLoading,
+    settlementError,
+    confirming,
+    confirmSettlement,
+  } = useTravelExpensesSync({
+    planId,
+    travelId,
+    accessToken,
+    enabled: isApiPlan && !offlineMode,
+  });
   const planReviews =
-    useTravelogueStore(s => (planId ? s.reviewsByPlan[planId] : undefined)) ??
-    EMPTY_REVIEWS;
-  const isPlanPublished = useTravelogueStore(s =>
-    planId ? s.publishedPlanIds.includes(planId) : false,
-  );
+    useTravelRecordStore(s =>
+      travelId ? s.reviewsByTravelId[travelId] : undefined,
+    ) ?? EMPTY_REVIEWS;
+  const [isPlanPublished, setIsPlanPublished] = useState(false);
+
+  const planPlaceIdsKey = useMemo(() => {
+    if (!plan) {
+      return '';
+    }
+    return plan.itinerary
+      .flatMap(day => day.routes)
+      .map(r => r.apiPlanPlaceId)
+      .filter(Boolean)
+      .join(',');
+  }, [plan]);
+
+  useEffect(() => {
+    if (!planId || !accessToken || !isApiPlan || !travelId) {
+      setIsPlanPublished(false);
+      return;
+    }
+    let cancelled = false;
+    void fetchMyTravelRecords(accessToken)
+      .then(list => {
+        if (cancelled) {
+          return;
+        }
+        const match = list.find(
+          item =>
+            item.travelId === travelId &&
+            (item.status === 'PUBLISHED' || item.status === 'HIDDEN'),
+        );
+        setIsPlanPublished(Boolean(match));
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setIsPlanPublished(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [planId, accessToken, isApiPlan, travelId]);
+
+  useEffect(() => {
+    if (!planId || !accessToken || !isApiPlan) {
+      return;
+    }
+    const current = usePlanStore.getState().plans.find(p => p.planId === planId);
+    if (!current) {
+      return;
+    }
+    void loadPlanPlaceReviewsForTravel({ accessToken, plan: current });
+  }, [planId, accessToken, isApiPlan, planPlaceIdsKey]);
 
   const budgetEntries = useMemo(
     () => (planId ? budgetByPlan[planId] : undefined) ?? EMPTY_BUDGET,
@@ -147,12 +235,14 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
 
   const reviewCopy = useCopy('travelReview');
   const { alert } = useAppAlert();
+  const { showUnavailable } = useFeatureUnavailableAlert();
 
   const [tab, setTab] = useState<PlanDetailTab>(route.params?.tab ?? 'overview');
   const [selectedDay, setSelectedDay] = useState(1);
   const [scheduleModal, setScheduleModal] = useState<ScheduleModalState>({ kind: 'none' });
   const [scheduleReorderActive, setScheduleReorderActive] = useState(false);
   const [reviewFormRoute, setReviewFormRoute] = useState<RouteItem | null>(null);
+  const [savingReview, setSavingReview] = useState(false);
   const [budgetModalOpen, setBudgetModalOpen] = useState(false);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
@@ -168,6 +258,46 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
       member => member.userId === authUser.userId && member.role === 'LEADER',
     );
   }, [authUser?.userId, isApiPlan, plan]);
+
+  const settlementConfirmed = settlement?.confirmed === true;
+  const canConfirmSettlement = canInvite && !settlementConfirmed && !offlineMode;
+
+  const settlementMemberSummaries = useMemo(() => {
+    const fromApi = pickCurrencyMemberSummaries(summary?.currencySummaries);
+    if (fromApi.length > 0) {
+      return fromApi;
+    }
+    if (!plan || budgetEntries.length === 0) {
+      return [];
+    }
+    return buildMemberSummariesFromBudgetEntries(budgetEntries, plan.members);
+  }, [budgetEntries, plan, summary]);
+
+  const settlementForDisplay = useMemo(() => {
+    if (!settlement && settlementMemberSummaries.length === 0) {
+      return null;
+    }
+
+    const apiTransfers = settlement?.transfers ?? [];
+    if (apiTransfers.length > 0 || settlementConfirmed) {
+      return (
+        settlement ?? {
+          travelId: travelId ?? '',
+          confirmed: false,
+          transfers: [],
+        }
+      );
+    }
+
+    const localTransfers = buildTransfersFromMemberSummaries(settlementMemberSummaries);
+    return {
+      travelId: settlement?.travelId ?? travelId ?? '',
+      confirmed: settlement?.confirmed ?? false,
+      confirmedById: settlement?.confirmedById,
+      confirmedAt: settlement?.confirmedAt,
+      transfers: localTransfers,
+    };
+  }, [settlement, settlementConfirmed, settlementMemberSummaries, travelId]);
 
   const loadInviteLink = useCallback(async () => {
     if (!accessToken || !travelId) {
@@ -189,13 +319,116 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
   }, [accessToken, copy.inviteLinkError, travelId]);
 
   const handleInvite = useCallback(() => {
+    if (isAlphaFeatureBlocked('invite')) {
+      showUnavailable(ALPHA_FEATURE_LABELS.invite);
+      return;
+    }
     if (!canInvite) {
       alert({ title: copy.inviteMembers, message: copy.inviteLeaderOnly });
       return;
     }
     setInviteModalOpen(true);
     void loadInviteLink();
-  }, [alert, canInvite, copy.inviteLeaderOnly, copy.inviteMembers, loadInviteLink]);
+  }, [
+    alert,
+    canInvite,
+    copy.inviteLeaderOnly,
+    copy.inviteMembers,
+    loadInviteLink,
+    showUnavailable,
+  ]);
+
+  const handleSaveBudgetEntry = useCallback(
+    async (entry: BudgetEntryDraft) => {
+      if (!isApiPlan || !accessToken || !travelId) {
+        addBudgetEntry(entry);
+        return;
+      }
+
+      if (settlementConfirmed) {
+        alert({
+          title: copy.budgetAdd,
+          message: copy.budgetSettlementLocked,
+        });
+        return;
+      }
+
+      try {
+        const request = budgetEntryToCreateRequest(entry);
+        const created = await createTravelExpense(accessToken, travelId, request);
+        addBudgetEntry(
+          expenseCreateResponseToBudgetEntry(created, planId, request.participantIds),
+        );
+        // 정산 미리보기를 먼저 맞추고, 전체 목록은 백그라운드로 재동기화
+        await refreshSettlementPreview();
+        void syncExpenses();
+      } catch (error) {
+        alert({
+          title: copy.budgetAdd,
+          message: error instanceof Error ? error.message : copy.budgetAdd,
+        });
+      }
+    },
+    [
+      accessToken,
+      addBudgetEntry,
+      alert,
+      copy.budgetAdd,
+      copy.budgetSettlementLocked,
+      isApiPlan,
+      planId,
+      refreshSettlementPreview,
+      settlementConfirmed,
+      syncExpenses,
+      travelId,
+    ],
+  );
+
+  const handleConfirmSettlement = useCallback(() => {
+    if (!canConfirmSettlement) {
+      alert({
+        title: copy.budgetSettlementConfirm,
+        message: copy.budgetSettlementLeaderOnly,
+      });
+      return;
+    }
+
+    alert({
+      title: copy.budgetSettlementConfirmTitle,
+      message: copy.budgetSettlementConfirmMessage,
+      buttons: [
+        { label: copy.budgetCancel, variant: 'secondary', onPress: () => {} },
+        {
+          label: copy.budgetSettlementConfirmAction,
+          variant: 'primary',
+          onPress: () => {
+            void (async () => {
+              try {
+                await confirmSettlement();
+              } catch (error) {
+                alert({
+                  title: copy.budgetSettlementConfirm,
+                  message:
+                    error instanceof Error ? error.message : copy.budgetSettlementError,
+                });
+              }
+            })();
+          },
+        },
+      ],
+    });
+  }, [
+    alert,
+    canConfirmSettlement,
+    confirmSettlement,
+    copy.budgetCancel,
+    copy.budgetSettlementConfirm,
+    copy.budgetSettlementConfirmAction,
+    copy.budgetSettlementConfirmMessage,
+    copy.budgetSettlementConfirmTitle,
+    copy.budgetSettlementError,
+    copy.budgetSettlementLeaderOnly,
+  ]);
 
   const closeInviteModal = useCallback(() => {
     setInviteModalOpen(false);
@@ -274,8 +507,12 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
       ? (scheduleRoutes.find(r => r.itemId === scheduleModal.itemId) ?? null)
       : null;
   const lastScheduleRoute = scheduleRoutes[scheduleRoutes.length - 1];
+  /** 당일 마지막 장소가 있으면 그 기준, 없으면 GPS(부산 외·실패 시 부산역) */
+  const needGpsAddAnchor =
+    !offlineMode && scheduleModal.kind === 'add' && !lastScheduleRoute?.location;
+  const { location: gpsAddAnchor } = useBusanSearchLocationWhen(needGpsAddAnchor);
   const addPlaceAnchor =
-    lastScheduleRoute?.location ?? enrichedPlan?.constraints.initialAnchor;
+    lastScheduleRoute?.location ?? gpsAddAnchor ?? undefined;
 
   const closeScheduleModal = useCallback(() => {
     setScheduleModal({ kind: 'none' });
@@ -469,6 +706,46 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     confirmRemoveDay,
     notifyScheduleReadOnly,
   ]);
+
+  const handleToggleVisited = useCallback(
+    (itemId: string) => {
+      if (!planId || !plan) {
+        return;
+      }
+      if (scheduleReadOnly) {
+        notifyScheduleReadOnly();
+        return;
+      }
+
+      const route = plan.itinerary
+        .flatMap(day => day.routes)
+        .find(r => r.itemId === itemId);
+      if (!route) {
+        return;
+      }
+
+      const nextVisited = !route.isVisited;
+      toggleVisited(planId, itemId);
+
+      if (isApiPlan && accessToken && route.apiPlanPlaceId) {
+        void updatePlanPlaceVisitedOnApi(accessToken, route, nextVisited).catch(error => {
+          toggleVisited(planId, itemId);
+          if (__DEV__) {
+            console.warn('[PlanDetail] visited PATCH failed', error);
+          }
+        });
+      }
+    },
+    [
+      planId,
+      plan,
+      scheduleReadOnly,
+      notifyScheduleReadOnly,
+      toggleVisited,
+      isApiPlan,
+      accessToken,
+    ],
+  );
 
   const handleSaveRouteMemo = useCallback(
     async (route: RouteItem, memo: string | undefined) => {
@@ -759,22 +1036,126 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
 
   const handleQuickRating = useCallback(
     (routeItem: RouteItem, rating: number) => {
-      if (offlineMode || !planId) {
+      if (offlineMode || !plan) {
         return;
       }
-      upsertPlaceReview(planId, {
-        planId,
-        routeItemId: routeItem.itemId,
-        placeId: routeItem.placeId,
-        placeName: routeItem.placeName,
-        rating,
-        tags: [],
-        comment: '',
-        media: [],
+      void savePlaceReviewForTravel({
+        accessToken,
+        plan,
+        route: routeItem,
+        authorNickname: displayName,
+        payload: {
+          rating,
+          tags: [],
+          content: null,
+          media: [],
+        },
       });
     },
-    [planId, upsertPlaceReview, offlineMode],
+    [accessToken, plan, displayName, offlineMode],
   );
+
+  const handleSavePlaceReview = useCallback(
+    async (
+      payload: Omit<PlaceReview, 'placeReviewId' | 'createdAt' | 'updatedAt'> & {
+        placeReviewId?: string;
+      },
+    ) => {
+      if (!plan || !reviewFormRoute) {
+        return;
+      }
+      setSavingReview(true);
+      try {
+        await savePlaceReviewForTravel({
+          accessToken,
+          plan,
+          route: reviewFormRoute,
+          authorNickname: displayName,
+          payload: {
+            placeReviewId: payload.placeReviewId,
+            rating: payload.rating,
+            content: payload.content,
+            tags: payload.tags,
+            media: payload.media,
+          },
+        });
+      } catch (error) {
+        alert({
+          title:
+            error instanceof PlaceReviewSyncError
+              ? error.message
+              : error instanceof Error
+                ? error.message
+                : '후기 저장에 실패했습니다.',
+        });
+        throw error;
+      } finally {
+        setSavingReview(false);
+      }
+    },
+    [accessToken, plan, reviewFormRoute, displayName, alert],
+  );
+
+  const handleDeletePlaceReview = useCallback(() => {
+    return new Promise<void>((resolve, reject) => {
+      if (!plan || !reviewFormRoute) {
+        reject(new Error('no route'));
+        return;
+      }
+      const existing = getReviewForPlace(
+        planReviews,
+        reviewFormRoute.apiPlanPlaceId ?? reviewFormRoute.itemId,
+      );
+      alert({
+        title: reviewCopy.deleteReviewConfirmTitle,
+        message: reviewCopy.deleteReviewConfirmMessage,
+        buttons: [
+          {
+            label: reviewCopy.cancel,
+            variant: 'secondary',
+            onPress: () => reject(new Error('cancelled')),
+          },
+          {
+            label: reviewCopy.deleteReviewConfirm,
+            variant: 'danger',
+            onPress: () => {
+              void (async () => {
+                setSavingReview(true);
+                try {
+                  await deletePlaceReviewForTravel({
+                    accessToken,
+                    plan,
+                    route: reviewFormRoute,
+                    placeReviewId: existing?.placeReviewId,
+                  });
+                  resolve();
+                } catch (error) {
+                  alert({
+                    title:
+                      error instanceof PlaceReviewSyncError
+                        ? error.message
+                        : error instanceof Error
+                          ? error.message
+                          : 'Failed to delete review.',
+                  });
+                  reject(error);
+                } finally {
+                  setSavingReview(false);
+                }
+              })();
+            },
+          },
+        ],
+      });
+    });
+  }, [
+    accessToken,
+    plan,
+    reviewFormRoute,
+    planReviews,
+    alert,
+    reviewCopy,
+  ]);
 
   const exitOffline = useCallback(() => {
     setOfflineMode(false);
@@ -794,15 +1175,21 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     }
 
     openRebootPendingRef.current = false;
-    setTab('schedule');
     navigation.setParams({ openReboot: undefined });
+
+    if (isAlphaFeatureBlocked('reboot')) {
+      showUnavailable(ALPHA_FEATURE_LABELS.reboot);
+      return;
+    }
+
+    setTab('schedule');
 
     const timer = setTimeout(() => {
       scheduleRef.current?.handleRebootFabPress();
     }, 400);
 
     return () => clearTimeout(timer);
-  }, [enrichedPlan, navigation, offlineMode]);
+  }, [enrichedPlan, navigation, offlineMode, showUnavailable]);
 
   useEffect(() => {
     if (scheduleModal.kind === 'pick' && !pickRoute) {
@@ -840,6 +1227,14 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     legDrive: copy.legDrive,
     legTransit: copy.legTransit,
   };
+
+  /** 메인 탭 absolute Navbar 위로 콘텐츠·FAB가 오도록 */
+  const mainTabBottomClearance = embeddedInMainTabs
+    ? getNavbarOverlayHeight(insets.bottom)
+    : 0;
+  const fabBottomInset = embeddedInMainTabs
+    ? mainTabBottomClearance
+    : insets.bottom;
 
   return (
     <View className="flex-1 bg-brand-background">
@@ -882,123 +1277,166 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
         </View>
       ) : null}
 
-      <PlanTabPager
-        active={tab}
-        onChange={setTab}
-        language={language}
-        horizontalScrollEnabled={
-          !scheduleReorderActive && tab !== 'schedule' && tab !== 'overview'
-        }
-        pages={{
-          overview: (
-            <PlanOverviewTab
-              plan={enrichedPlan}
-              language={language}
-              copy={copy}
-              roleLabels={roleLabels}
-              budgetEntries={budgetEntries}
-              budgetTotal={budgetTotal}
-              onNavigateToTab={setTab}
-              recordsProgress={recordsProgress}
-              isTraveloguePublished={isPlanPublished}
-              showInvite={isApiPlan && canInvite && !offlineMode}
-              onInvite={handleInvite}
-            />
-          ),
-          schedule: (
-            <PlanScheduleTab
-              ref={scheduleRef}
-              planId={planId}
-              plan={enrichedPlan}
-              language={language}
-              copy={copy}
-              readOnly={viewOnly}
-              onReadOnlyPress={scheduleReadOnly ? notifyScheduleReadOnly : undefined}
-              selectedDay={selectedDay}
-              planReviews={planReviews}
-              onSelectDay={setSelectedDay}
-              onToggleVisited={itemId => {
-                if (viewOnly) {
-                  if (scheduleReadOnly) {
-                    notifyScheduleReadOnly();
-                  }
-                  return;
-                }
-                toggleVisited(planId, itemId);
-              }}
-              onWriteReview={routeItem => {
-                if (offlineMode) {
-                  return;
-                }
-                setReviewFormRoute(routeItem);
-              }}
-              onQuickRating={handleQuickRating}
-              onDeleteRoute={handleDeleteRoute}
-              onSaveRouteMemo={viewOnly ? undefined : handleSaveRouteMemo}
-              onReorderRoutes={viewOnly ? undefined : isApiPlan ? handleReorderRoutes : undefined}
-              onOptimizeDayRoute={viewOnly ? undefined : isApiPlan ? handleOptimizeDayRoute : undefined}
-              onScheduleModalChange={modal => {
-                if (offlineMode) {
-                  return;
-                }
-                setScheduleModal(modal);
-              }}
-              onReorderActiveChange={setScheduleReorderActive}
-              canAddDay={!viewOnly}
-              canRemoveDay={canRemovePlanDay(enrichedPlan)}
-              onAddDay={() => {
-                void handleAddDay();
-              }}
-              onRemoveDay={handleRemoveDay}
-              scrollBottomInset={embeddedInMainTabs ? 0 : undefined}
-            />
-          ),
-          budget: (
-            <PlanBudgetTab
-              copy={copy}
-              language={language}
-              tripDates={tripDates}
-              budgetEntries={budgetEntries}
-              budgetTotal={budgetTotal}
-              members={enrichedPlan.members}
-              onAddExpense={
-                offlineMode ? undefined : () => setBudgetModalOpen(true)
-              }
-            />
-          ),
-          records: (
-            <PlanRecordsTab
-              plan={enrichedPlan}
-              allRoutes={allRoutes}
-              language={language}
-              authorName={displayName}
-              destinationLabel={enrichedPlan.title}
-              isTripActive={!offlineMode && enrichedPlan.status !== 'COMPLETED'}
-              onPublished={
-                offlineMode
-                  ? undefined
-                  : () => {
-                      void handleCompletePlan();
+      <View
+        className="min-h-0 flex-1"
+        style={
+          mainTabBottomClearance > 0
+            ? { marginBottom: mainTabBottomClearance }
+            : undefined
+        }>
+        <PlanTabPager
+          active={tab}
+          onChange={setTab}
+          language={language}
+          horizontalScrollEnabled={
+            !scheduleReorderActive && tab !== 'schedule' && tab !== 'overview'
+          }
+          pages={{
+            overview: (
+              <PlanOverviewTab
+                plan={enrichedPlan}
+                language={language}
+                copy={copy}
+                roleLabels={roleLabels}
+                budgetEntries={budgetEntries}
+                budgetTotal={budgetTotal}
+                onNavigateToTab={setTab}
+                recordsProgress={recordsProgress}
+                isTravelRecordPublished={isPlanPublished}
+                showInvite={isApiPlan && canInvite && !offlineMode}
+                onInvite={handleInvite}
+              />
+            ),
+            schedule: (
+              <PlanScheduleTab
+                ref={scheduleRef}
+                planId={planId}
+                plan={enrichedPlan}
+                language={language}
+                copy={copy}
+                readOnly={viewOnly}
+                onReadOnlyPress={scheduleReadOnly ? notifyScheduleReadOnly : undefined}
+                selectedDay={selectedDay}
+                planReviews={planReviews}
+                onSelectDay={setSelectedDay}
+                onToggleVisited={itemId => {
+                  if (viewOnly) {
+                    if (scheduleReadOnly) {
+                      notifyScheduleReadOnly();
                     }
-              }
-              onEndTrip={offlineMode ? undefined : requestCompletePlan}
-              onViewFeed={
-                offlineMode ? undefined : () => navigateToMainTab(navigation, 'feed')
-              }
-              onViewTravelogue={
-                offlineMode
-                  ? undefined
-                  : travelogueId =>
-                      navigation.navigate('TravelogueDetail', { travelogueId })
-              }
-            />
-          ),
-        }}
-      />
+                    return;
+                  }
+                  handleToggleVisited(itemId);
+                }}
+                onWriteReview={routeItem => {
+                  if (offlineMode) {
+                    return;
+                  }
+                  setReviewFormRoute(routeItem);
+                }}
+                onQuickRating={handleQuickRating}
+                onDeleteRoute={handleDeleteRoute}
+                onSaveRouteMemo={viewOnly ? undefined : handleSaveRouteMemo}
+                onReorderRoutes={
+                  viewOnly ? undefined : isApiPlan ? handleReorderRoutes : undefined
+                }
+                onOptimizeDayRoute={
+                  viewOnly ? undefined : isApiPlan ? handleOptimizeDayRoute : undefined
+                }
+                onScheduleModalChange={modal => {
+                  if (offlineMode) {
+                    return;
+                  }
+                  setScheduleModal(modal);
+                }}
+                onReorderActiveChange={setScheduleReorderActive}
+                canAddDay={!viewOnly}
+                canRemoveDay={canRemovePlanDay(enrichedPlan)}
+                onAddDay={() => {
+                  void handleAddDay();
+                }}
+                onRemoveDay={handleRemoveDay}
+                scrollBottomInset={embeddedInMainTabs ? 0 : undefined}
+              />
+            ),
+            budget: (
+              <PlanBudgetTab
+                copy={copy}
+                language={language}
+                tripDates={tripDates}
+                budgetEntries={budgetEntries}
+                budgetTotal={budgetTotal}
+                members={enrichedPlan.members}
+                onAddExpense={
+                  offlineMode || settlementConfirmed
+                    ? undefined
+                    : () => setBudgetModalOpen(true)
+                }
+                showSettlement={isApiPlan && !offlineMode}
+                settlement={settlementForDisplay}
+                memberSummaries={settlementMemberSummaries}
+                settlementLoading={settlementLoading}
+                settlementError={settlementError}
+                canConfirmSettlement={canConfirmSettlement}
+                confirmingSettlement={confirming}
+                onConfirmSettlement={handleConfirmSettlement}
+                onRetrySettlement={() => {
+                  void syncExpenses();
+                }}
+              />
+            ),
+            records: (
+              <PlanRecordsTab
+                plan={enrichedPlan}
+                allRoutes={allRoutes}
+                language={language}
+                authorNickname={displayName}
+                destinationLabel={enrichedPlan.title}
+                isTripActive={!offlineMode && enrichedPlan.status !== 'COMPLETED'}
+                onPublished={
+                  offlineMode
+                    ? undefined
+                    : () => {
+                        setIsPlanPublished(true);
+                        if (planId) {
+                          completePlan(planId);
+                        }
+                        navigateToMainTab(navigation, 'home');
+                      }
+                }
+                onEndTrip={offlineMode ? undefined : requestCompletePlan}
+                onViewFeed={
+                  offlineMode
+                    ? undefined
+                    : () => {
+                        if (isAlphaFeatureBlocked('feed')) {
+                          showUnavailable(ALPHA_FEATURE_LABELS.feed);
+                          return;
+                        }
+                        navigateToMainTab(navigation, 'feed');
+                      }
+                }
+                onViewTravelRecord={
+                  offlineMode
+                    ? undefined
+                    : travelRecordId => {
+                        if (isAlphaFeatureBlocked('travelogue')) {
+                          showUnavailable(ALPHA_FEATURE_LABELS.travelogue);
+                          return;
+                        }
+                        navigation.navigate('TravelRecordDetail', { travelRecordId });
+                      }
+                }
+              />
+            ),
+          }}
+        />
+      </View>
+
 
       {tab === 'schedule' && !viewOnly ? (
         <RouteOptimizeFab
-          bottom={routeFabBottom(embeddedInMainTabs ? 0 : insets.bottom)}
+          bottom={routeFabBottom(fabBottomInset)}
           label={copy.routeOptimize}
           addPlaceLabel={copy.addPlace}
           onPress={() => scheduleRef.current?.handleRouteOptimize()}
@@ -1014,7 +1452,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
         defaultDate={day?.date ?? enrichedPlan.startDate}
         planId={planId}
         onClose={() => setBudgetModalOpen(false)}
-        onSave={entry => addBudgetEntry(entry)}
+        onSave={handleSaveBudgetEntry}
       />
 
       <PlacePickModal
@@ -1068,14 +1506,30 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
         route={reviewFormRoute}
         existing={
           reviewFormRoute
-            ? getReviewForRoute(planReviews, reviewFormRoute.itemId)
+            ? getReviewForPlace(
+                planReviews,
+                reviewFormRoute.apiPlanPlaceId ?? reviewFormRoute.itemId,
+              )
             : undefined
         }
         copy={reviewCopy}
         language={language}
-        planId={planId}
-        onClose={() => setReviewFormRoute(null)}
-        onSave={payload => upsertPlaceReview(planId, payload)}
+        saving={savingReview}
+        onClose={() => {
+          if (!savingReview) {
+            setReviewFormRoute(null);
+          }
+        }}
+        onSave={handleSavePlaceReview}
+        onDelete={
+          reviewFormRoute &&
+          getReviewForPlace(
+            planReviews,
+            reviewFormRoute.apiPlanPlaceId ?? reviewFormRoute.itemId,
+          )
+            ? handleDeletePlaceReview
+            : undefined
+        }
       />
 
       <TravelInviteLinkModal
@@ -1092,7 +1546,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
       <TransientBottomToast
         text={toastText}
         opacity={toastOpacity}
-        bottom={(embeddedInMainTabs ? 0 : insets.bottom) + 16}
+        bottom={fabBottomInset + 16}
       />
     </View>
   );

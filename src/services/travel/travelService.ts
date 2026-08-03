@@ -6,6 +6,7 @@ import type {
   PlanPlaceSequenceUpdateRequest,
   PlanPlaceUpdatePlaceRequest,
   PlanPlaceUpdateRequest,
+  PlanPlaceVisitedUpdateRequest,
   PlanResponse,
   TravelCreateRequest,
   TravelPlansResponse,
@@ -94,8 +95,8 @@ export async function createTravel(
     body,
     ...travelPlanLogHooks('POST', url, accessToken, { requestBody: body }),
   });
-  if (!data?.id) {
-    throw new TravelServiceError('Travel create response missing id');
+  if (!data?.travelId) {
+    throw new TravelServiceError('Travel create response missing travelId');
   }
   return data;
 }
@@ -155,8 +156,8 @@ export async function updateTravelStatus(
     body,
     ...travelPlanLogHooks('PATCH', url, accessToken, { travelId, requestBody: body }),
   });
-  if (!data?.id) {
-    throw new TravelServiceError('Travel status response missing id');
+  if (!data?.travelId) {
+    throw new TravelServiceError('Travel status response missing travelId');
   }
   return data;
 }
@@ -220,6 +221,26 @@ export async function updatePlanPlace(
   });
   if (!data?.planPlaceId) {
     throw new TravelServiceError('Plan place update response missing planPlaceId');
+  }
+  return data;
+}
+
+export async function updatePlanPlaceVisited(
+  accessToken: string,
+  planPlaceId: string,
+  body: PlanPlaceVisitedUpdateRequest,
+): Promise<PlanPlaceResponse> {
+  const url = travelUrl(TRAVEL_ENDPOINTS.planPlaceVisited(planPlaceId));
+  const data = await apiPatch<PlanPlaceResponse>(url, {
+    ...authOpts(accessToken),
+    body,
+    ...travelPlanLogHooks('PATCH', url, accessToken, {
+      planId: planPlaceId,
+      requestBody: body,
+    }),
+  });
+  if (!data?.planPlaceId) {
+    throw new TravelServiceError('Plan place visited update response missing planPlaceId');
   }
   return data;
 }

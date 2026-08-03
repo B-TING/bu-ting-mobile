@@ -7,17 +7,16 @@ import {
 } from '../../constants/icons';
 import type { CopyFor } from '../../i18n';
 import { AppIcon } from '../shared/icons/AppIcon';
-import type { TravelogueSocial } from '../../types/travelReview';
-import type { AppLanguage } from '../../types/user';
-import { getHelpfulCount, isHelpfulByUser } from '../../utils/review/travelReview';
+import type { TravelRecordSocial } from '../../types/travelReview';
+import { getLikeCount, isLikedByUser } from '../../utils/review/travelReview';
 
 type Copy = CopyFor<'travelReview'>;
 
 type TravelogueSocialBarProps = {
   copy: Copy;
-  social: TravelogueSocial;
+  social: TravelRecordSocial;
   userId: string;
-  onToggleHelpful: () => void;
+  onToggleLike: () => void;
   onImportPlan: () => void;
 };
 
@@ -25,36 +24,36 @@ export function TravelogueSocialBar({
   copy,
   social,
   userId,
-  onToggleHelpful,
+  onToggleLike,
   onImportPlan,
 }: TravelogueSocialBarProps) {
-  const helpfulCount = getHelpfulCount(social);
-  const isHelpful = isHelpfulByUser(social, userId);
+  const likeCount = getLikeCount(social);
+  const likedByMe = isLikedByUser(social, userId);
 
   return (
     <View className="flex-row flex-wrap items-center gap-2">
       <Pressable
-        onPress={onToggleHelpful}
+        onPress={onToggleLike}
         className={`flex-row items-center gap-1.5 rounded-full px-3 py-2 active:opacity-80 ${
-          isHelpful ? 'bg-brand-primary/15' : 'bg-brand-selected'
+          likedByMe ? 'bg-brand-primary/15' : 'bg-brand-selected'
         }`}
         accessibilityRole="button"
-        accessibilityState={{ selected: isHelpful }}>
+        accessibilityState={{ selected: likedByMe }}>
         <AppIcon
           name="heart"
           size={18}
-          color={isHelpful ? ICON_COLOR_HEART : ICON_COLOR_MUTED}
-          filled={isHelpful}
+          color={likedByMe ? ICON_COLOR_HEART : ICON_COLOR_MUTED}
+          filled={likedByMe}
         />
         <Text
           className={`text-xs font-bold ${
-            isHelpful ? 'text-brand-primary' : 'text-brand-text'
+            likedByMe ? 'text-brand-primary' : 'text-brand-text'
           }`}>
           {copy.helpfulLabel}
         </Text>
-        {helpfulCount > 0 ? (
+        {likeCount > 0 ? (
           <Text className="text-xs font-semibold text-brand-muted">
-            {copy.helpfulCount(helpfulCount)}
+            {copy.helpfulCount(likeCount)}
           </Text>
         ) : null}
       </Pressable>

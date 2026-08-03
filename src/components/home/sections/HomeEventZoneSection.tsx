@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { CompactBusanZoneMap } from '../../eventZone/CompactBusanZoneMap';
@@ -15,7 +14,7 @@ import { useEventZoneCarousel } from '../../../hooks/useEventZoneCarousel';
 import { useZoneChatRoomSummary } from '../../../hooks/useZoneChatRoomSummary';
 import { useZoneEventStore } from '../../../stores';
 import type { EventZoneId } from '../../../types/eventZone';
-import { isInsideBusanBounds } from '../../../utils/eventZone/zoneResolver';
+import { isAlphaFeatureBlocked } from '../../../constants/common/alphaFeatureBlocks';
 import { GUIDE_TARGET } from '../../guide/guideTypes';
 import { GuideTarget } from '../../guide/GuideTarget';
 
@@ -44,28 +43,29 @@ export function HomeEventZoneSection({
   const language = useAppLanguage();
   const copy = useCopy('homeEventZone');
   const zoneCopy = useCopy('eventZone');
-  const { zoneId: userZoneId, location, usedFallback } = useCurrentEventZone();
+  const { zoneId: userZoneId, usedFallback, status } = useCurrentEventZone();
 
-  const isOutsideBusan = useMemo(
-    () => !usedFallback && !isInsideBusanBounds(location),
-    [location, usedFallback],
-  );
+  /** 부산 밖이거나 위치를 모를 때 → 미소속, 구역 미리보기 캐러셀 */
+  const isUnaffiliated = userZoneId == null;
 
   const { mapZoneId, chatZoneId, fadeAnim, carouselIndex, zoneCount, isCycling } =
-    useEventZoneCarousel(isOutsideBusan, userZoneId);
+    useEventZoneCarousel(isUnaffiliated, userZoneId);
 
   const zone = EVENT_ZONE_BY_ID[chatZoneId];
   const room = getChatRoomByZoneId(chatZoneId);
   const { memberCount: liveMemberCount } = useZoneChatRoomSummary(chatZoneId);
   const landmarks = zone.landmarks.slice(0, 3);
 
-  const activeEvent = useZoneEventStore(s => s.activeEventsByZone[chatZoneId]);
+  const activeEventRaw = useZoneEventStore(s => s.activeEventsByZone[chatZoneId]);
+  const activeEvent = isAlphaFeatureBlocked('zoneEvent') ? undefined : activeEventRaw;
 
   return (
     <GuideTarget id={GUIDE_TARGET.homeEventZone} className="mb-6">
       <View className="mb-3 flex-row items-center justify-between">
         <Text className="text-base font-bold text-brand-text">{copy.sectionTitle}</Text>
-        {isCycling ? (
+        {status === 'loading' ? (
+          <Text className="text-xs font-semibold text-brand-muted">…</Text>
+        ) : isCycling ? (
           <View className="flex-row items-center gap-1">
             {Array.from({ length: zoneCount }).map((_, index) => (
               <View
@@ -82,6 +82,12 @@ export function HomeEventZoneSection({
           </Text>
         )}
       </View>
+
+      {isCycling && status !== 'loading' ? (
+        <Text className="mb-2 text-xs font-semibold text-brand-muted">
+          {usedFallback ? zoneCopy.locationFallbackHint : copy.outsideBusanHint}
+        </Text>
+      ) : null}
 
       <View className="relative w-full" style={{ height: WIDGET_BODY_HEIGHT }}>
         <View className="absolute inset-0 overflow-hidden">

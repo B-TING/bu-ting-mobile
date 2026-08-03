@@ -39,10 +39,26 @@ export type {
   PlaceReview,
   ReviewMedia,
   ReviewMediaType,
-  Travelogue,
-  TravelogueDaySnapshot,
-  TravelogueRouteSnapshot,
+  TravelRecord,
+  TravelRecordComment,
+  TravelRecordDay,
+  TravelRecordPlace,
+  TravelRecordSocial,
+  TravelRecordStatus,
 } from './travelReview';
+export type {
+  TravelRecordCreateRequest,
+  TravelRecordFeedPageResponse,
+  TravelRecordFeedResponse,
+  TravelRecordManageResponse,
+  TravelRecordResponse,
+  TravelRecordUpdateRequest,
+} from './travelRecordApi';
+export {
+  mapTravelRecordFeedItem,
+  mapTravelRecordManageItem,
+  mapTravelRecordResponse,
+} from './travelRecordApi';
 export type {
   PlaceDetailVO,
   PlaceListItemVO,

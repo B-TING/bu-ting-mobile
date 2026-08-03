@@ -8,7 +8,6 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import type { NavigationProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { WizardStepLayout } from '../../components/shared/layout/WizardStepLayout';
@@ -31,6 +30,11 @@ import {
   PLAN_WIZARD_STEPS,
 } from '../../constants/plan/planWizard';
 import { useAppLanguage, useCopy } from '../../i18n';
+import { useFeatureUnavailableAlert } from '../../components/shared/modals';
+import {
+  ALPHA_FEATURE_LABELS,
+  isAlphaFeatureBlocked,
+} from '../../constants/common/alphaFeatureBlocks';
 import type { RootStackParamList } from '../../navigation/types';
 import { navigateToMainTab } from '../../navigation/navigateToMainTab';
 import { requestAutoPlan, requestPlanCandidates } from '../../services/plan/planAiService';
@@ -57,6 +61,7 @@ function defaultDates() {
 export function PlanWizardScreen({ navigation }: Props) {
   const language = useAppLanguage();
   const copy = useCopy('planWizard');
+  const { showUnavailable } = useFeatureUnavailableAlert();
   const user = useAuthStore(selectAuthUser);
   const accessToken = useAuthStore(selectReusableAccessToken);
   const onboarding = useAppStore(selectOnboardingForUser(user?.userId));
@@ -209,6 +214,14 @@ export function PlanWizardScreen({ navigation }: Props) {
   };
 
   const finish = async () => {
+    if (
+      isAlphaFeatureBlocked('planAi') &&
+      answers.generationMode !== 'manual'
+    ) {
+      showUnavailable(ALPHA_FEATURE_LABELS.planAi);
+      return;
+    }
+
     setLoading(true);
     try {
       if (answers.generationMode === 'manual') {
@@ -476,7 +489,13 @@ export function PlanWizardScreen({ navigation }: Props) {
             <OptionCard
               label={copy.modeAuto}
               selected={answers.generationMode === 'auto'}
-              onPress={() => setAnswers(p => ({ ...p, generationMode: 'auto' }))}
+              onPress={() => {
+                if (isAlphaFeatureBlocked('planAi')) {
+                  showUnavailable(ALPHA_FEATURE_LABELS.planAi);
+                  return;
+                }
+                setAnswers(p => ({ ...p, generationMode: 'auto' }));
+              }}
             />
             <Text className="-mt-1 mb-3 ml-1 text-xs text-brand-muted">
               {copy.modeAutoSub}
@@ -484,7 +503,13 @@ export function PlanWizardScreen({ navigation }: Props) {
             <OptionCard
               label={copy.modeCandidates}
               selected={answers.generationMode === 'candidates'}
-              onPress={() => setAnswers(p => ({ ...p, generationMode: 'candidates' }))}
+              onPress={() => {
+                if (isAlphaFeatureBlocked('planAi')) {
+                  showUnavailable(ALPHA_FEATURE_LABELS.planAi);
+                  return;
+                }
+                setAnswers(p => ({ ...p, generationMode: 'candidates' }));
+              }}
             />
             <Text className="-mt-1 mb-3 ml-1 text-xs text-brand-muted">
               {copy.modeCandidatesSub}

@@ -17,6 +17,7 @@ type ScheduleMapViewProps = {
   highlightItemId?: string | null;
   mapTitle: string;
   mapSubtitle: string;
+  showFooter?: boolean;
 };
 
 export function ScheduleMapView({
@@ -25,6 +26,7 @@ export function ScheduleMapView({
   highlightItemId,
   mapTitle,
   mapSubtitle,
+  showFooter = true,
 }: ScheduleMapViewProps) {
   const { location } = useCurrentEventZone();
   const mapDays = useMemo(() => buildScheduleMapDays(itinerary), [itinerary]);
@@ -73,7 +75,7 @@ export function ScheduleMapView({
       fitPointsToCamera={!focusPoint}
       size="fill"
       emptySubtitle={mapSubtitle}
-      footer={{ title: mapTitle, subtitle: mapSubtitle }}
+      footer={showFooter ? { title: mapTitle, subtitle: mapSubtitle } : undefined}
     />
   );
 }

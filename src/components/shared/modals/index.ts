@@ -11,3 +11,20 @@ export {
   useAppAlert,
   showAppAlert,
 } from './AppAlertProvider';
+export {
+  FeatureUnavailableAlert,
+  type FeatureUnavailableAlertProps,
+} from './FeatureUnavailableAlert';
+export {
+  FeatureUnavailableAlertProvider,
+  useFeatureUnavailableAlert,
+} from './FeatureUnavailableAlertProvider';
+export {
+  LocationConsentDisclosure,
+  type LocationConsentDisclosureProps,
+} from './LocationConsentDisclosure';
+export {
+  LocationConsentProvider,
+  useLocationConsent,
+  type LocationConsentResult,
+} from './LocationConsentProvider';

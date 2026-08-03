@@ -31,6 +31,8 @@ export const LUGGAGE_STORAGE_COPY: Record<
     feeCurrency: string;
     close: string;
     selectStationHint: string;
+    lineFilterAll: string;
+    lineUnknown: string;
     lineLabel: (line: number) => string;
     pinA11y: (name: string, count: number) => string;
     bookmark: string;
@@ -66,7 +68,9 @@ export const LUGGAGE_STORAGE_COPY: Record<
     feeCurrency: '원',
     close: '닫기',
     selectStationHint: '지도에서 역을 선택하면 상세 정보를 볼 수 있어요',
-    lineLabel: line => `${line}호선`,
+    lineFilterAll: '전체',
+    lineUnknown: '기타',
+    lineLabel: line => (line > 0 ? `${line}호선` : '기타'),
     pinA11y: (name, count) => `${name}역 물품보관함 ${count}개`,
     bookmark: '북마크',
     unbookmark: '북마크 해제',
@@ -100,7 +104,9 @@ export const LUGGAGE_STORAGE_COPY: Record<
     feeCurrency: ' KRW',
     close: 'Close',
     selectStationHint: 'Tap a station on the map to see details',
-    lineLabel: line => `Line ${line}`,
+    lineFilterAll: 'All',
+    lineUnknown: 'Other',
+    lineLabel: line => (line > 0 ? `Line ${line}` : 'Other'),
     pinA11y: (name, count) => `${name} station, ${count} lockers`,
     bookmark: 'Bookmark',
     unbookmark: 'Remove bookmark',
@@ -134,7 +140,9 @@ export const LUGGAGE_STORAGE_COPY: Record<
     feeCurrency: 'ウォン',
     close: '閉じる',
     selectStationHint: '地図の駅をタップすると詳細が表示されます',
-    lineLabel: line => `${line}号線`,
+    lineFilterAll: 'すべて',
+    lineUnknown: 'その他',
+    lineLabel: line => (line > 0 ? `${line}号線` : 'その他'),
     pinA11y: (name, count) => `${name}駅 ロッカー${count}個`,
     bookmark: 'ブックマーク',
     unbookmark: 'ブックマーク解除',
@@ -168,7 +176,9 @@ export const LUGGAGE_STORAGE_COPY: Record<
     feeCurrency: '韩元',
     close: '关闭',
     selectStationHint: '点击地图上的车站查看详情',
-    lineLabel: line => `${line}号线`,
+    lineFilterAll: '全部',
+    lineUnknown: '其他',
+    lineLabel: line => (line > 0 ? `${line}号线` : '其他'),
     pinA11y: (name, count) => `${name}站 寄存柜 ${count} 个`,
     bookmark: '收藏',
     unbookmark: '取消收藏',

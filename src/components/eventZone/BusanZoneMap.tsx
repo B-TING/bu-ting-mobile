@@ -19,7 +19,7 @@ const EVENT_GLOW_COLOR = '#E91E63';
 
 type BusanZoneMapProps = {
   selectedZoneId: EventZoneId | null;
-  currentZoneId: EventZoneId;
+  currentZoneId: EventZoneId | null;
   language: AppLanguage;
   /** 이벤트가 발생한 구역들 (glow 강조) */
   eventZoneIds?: readonly EventZoneId[];

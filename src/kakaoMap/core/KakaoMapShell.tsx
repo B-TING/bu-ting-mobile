@@ -125,6 +125,20 @@ export function KakaoMapShell({
   }, [points.length]);
 
   useEffect(() => {
+    if (mapReady || mapError || !bootstrapHtmlRef.current) {
+      return;
+    }
+    const timer = setTimeout(() => {
+      if (!mapReadyRef.current) {
+        setMapError(
+          '카카오맵 응답이 없습니다. Kakao Developers → Web 플랫폼에 localhost 도메인을 등록하세요.',
+        );
+      }
+    }, 15000);
+    return () => clearTimeout(timer);
+  }, [mapReady, mapError, regionSyncKey]);
+
+  useEffect(() => {
     if (!mapReady || !targetCamera) {
       return;
     }
@@ -219,7 +233,7 @@ export function KakaoMapShell({
 
   const containerStyle =
     size === 'fill'
-      ? { flex: 1, width: '100%' as const, minHeight: 200 }
+      ? { flex: 1, width: '100%' as const }
       : { width: mapWidth, height: mapHeight };
 
   const mapBody = (
@@ -233,7 +247,11 @@ export function KakaoMapShell({
         <WebView
           ref={webViewRef}
           originWhitelist={['*']}
-          source={{ html: bootstrapHtmlRef.current }}
+          source={{
+            html: bootstrapHtmlRef.current,
+            // Kakao JS SDK domain check — register localhost on Web platform
+            baseUrl: 'https://localhost',
+          }}
           style={
             mapHeight != null
               ? { width: mapWidth, height: mapHeight }
@@ -246,9 +264,25 @@ export function KakaoMapShell({
           pointerEvents={interactive ? 'auto' : 'none'}
           javaScriptEnabled
           domStorageEnabled
+          mixedContentMode="always"
+          setSupportMultipleWindows={false}
           onMessage={handleWebViewMessage}
-          onLoad={() => setMapError(null)}
+          onLoad={() => {
+            setMapError(null);
+            // Bridge may become ready after HTML onload — re-ask for ready.
+            webViewRef.current?.injectJavaScript(`
+              (function () {
+                if (window.kakaoMap && window.ReactNativeWebView) {
+                  window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'ready' }));
+                }
+                return true;
+              })();
+            `);
+          }}
           onError={() => setMapError('WebView 로드 중 오류가 발생했습니다.')}
+          onHttpError={() =>
+            setMapError('카카오맵 SDK를 불러오지 못했습니다. 네트워크 또는 도메인을 확인하세요.')
+          }
         />
         {!mapReady && !mapError ? (
           <View
