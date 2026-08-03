@@ -17,7 +17,7 @@
     "start:tunnel": "node scripts/start-tunnel.cjs",
     "ngrok:auth": "node scripts/ngrok-auth.cjs",
     "kakao:sync": "node scripts/sync-kakao-map-key.cjs",
-    "map:sync": "node scripts/extract-busan-map-paths.cjs",
+    "map:sync": "node scripts/optimize-busan-map-svg.cjs && node scripts/extract-busan-map-paths.cjs",
     "api:sync": "node scripts/sync-api-config.cjs",
     "chat:test": "node scripts/test-zone-chat.cjs",
     "chat:test:pagination": "node scripts/test-zone-chat-pagination.cjs",
@@ -78,6 +78,7 @@
     "prettier": "2.8.8",
     "proj4": "^2.20.9",
     "react-test-renderer": "19.2.3",
+    "svgo": "^3.3.4",
     "tailwindcss": "^3.4.19",
     "typescript": "^5.8.3"
   },

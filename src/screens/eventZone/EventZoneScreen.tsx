@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Pressable, Text, View } from 'react-native';
+import { useIsFocused } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -40,6 +41,7 @@ const MAP_HEIGHT_RATIO = 0.5;
 
 export function EventZoneScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
+  const isFocused = useIsFocused();
   const language = useAppLanguage();
   const copy = useCopy('eventZone');
   const { showUnavailable } = useFeatureUnavailableAlert();
@@ -142,6 +144,7 @@ export function EventZoneScreen({ navigation }: Props) {
           currentZoneId={currentZoneId}
           language={language}
           eventZoneIds={eventZoneIds}
+          pulsesActive={isFocused}
           onZonePress={zoneId => setSelectedZoneId(zoneId)}
         />
 
