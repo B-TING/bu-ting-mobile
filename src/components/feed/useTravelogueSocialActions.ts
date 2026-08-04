@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { ImportPlanModalPhase, ImportPlanModalProps } from './modals/ImportPlanModal';
+import {
+  ALPHA_FEATURE_LABELS,
+  isAlphaFeatureBlocked,
+} from '../../constants/common/alphaFeatureBlocks';
 import type { CopyFor } from '../../i18n';
+import { useFeatureUnavailableAlert } from '../shared/modals';
 import type { RootStackParamList } from '../../navigation/types';
 import {
   createTravelRecordComment,
@@ -54,6 +59,7 @@ export function useTravelogueSocialActions(
   },
 ) {
   const language = useAppStore(s => s.language) ?? 'ko';
+  const { showUnavailable } = useFeatureUnavailableAlert();
   const accessToken = useAuthStore(selectReusableAccessToken);
   const authUser = useAuthStore(selectAuthUser);
   const userId = authUser?.userId ?? '';
@@ -413,6 +419,10 @@ export function useTravelogueSocialActions(
   ]);
 
   const handleImportPlan = () => {
+    if (isAlphaFeatureBlocked('importPlan')) {
+      showUnavailable(ALPHA_FEATURE_LABELS.importPlan);
+      return;
+    }
     setImportModalPhase('confirm');
   };
 
