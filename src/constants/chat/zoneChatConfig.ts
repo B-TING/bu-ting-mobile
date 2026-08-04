@@ -32,7 +32,9 @@ export const ZONE_CHAT_WS_CONFIG = {
   /** WS 입·퇴장 후 REST currentMembers 동기화 대기(ms) */
   memberCountSyncDelayMs: 400,
   /** STOMP DISCONNECT 후 소켓 close 대기(ms) */
-  gracefulDisconnectMs: 100,
+  gracefulDisconnectMs: 150,
+  /** hub↔채팅 세션 핸드오프 / Session already exists 재시도 대기(ms) */
+  sessionHandoffDelayMs: 350,
 } as const;
 
 export function isZoneChatWebSocketEnabled(): boolean {

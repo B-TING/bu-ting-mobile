@@ -23,6 +23,7 @@ import {
   encodeStompFrameBytes,
   isBenignStompShutdownError,
   isStompHeartbeat,
+  isStompSessionAlreadyExistsError,
   parseStompClientHeartbeatMs,
   type StompFrame,
 } from './stompFrame';
@@ -60,6 +61,7 @@ export class ZoneChatWebSocketClient {
   private intentionalClose = false;
   private stompConnected = false;
   private disconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private closeWaiters: Array<() => void> = [];
 
   getStatus(): ZoneChatConnectionStatus {
     return this.status;
@@ -67,6 +69,24 @@ export class ZoneChatWebSocketClient {
 
   setListeners(listeners: ZoneChatWebSocketListener): void {
     this.listeners = listeners;
+  }
+
+  /** DISCONNECT/close 가 끝날 때까지 대기 — hub 재연결 레이스 방지 */
+  waitUntilClosed(): Promise<void> {
+    if (!this.ws) {
+      return Promise.resolve();
+    }
+    return new Promise(resolve => {
+      this.closeWaiters.push(resolve);
+    });
+  }
+
+  private resolveCloseWaiters(): void {
+    const waiters = this.closeWaiters;
+    this.closeWaiters = [];
+    for (const resolve of waiters) {
+      resolve();
+    }
   }
 
   connect(options: ZoneChatWebSocketConnectOptions): void {
@@ -86,6 +106,7 @@ export class ZoneChatWebSocketClient {
     if (!ws) {
       this.stompConnected = false;
       this.setStatus('disconnected');
+      this.resolveCloseWaiters();
       return;
     }
 
@@ -99,6 +120,7 @@ export class ZoneChatWebSocketClient {
         this.ws = null;
       }
       this.stompConnected = false;
+      this.resolveCloseWaiters();
     };
 
     if (this.stompConnected && ws.readyState === WebSocket.OPEN) {
@@ -202,6 +224,7 @@ export class ZoneChatWebSocketClient {
       this.clearHeartbeatTimer();
       this.ws = null;
       this.stompConnected = false;
+      this.resolveCloseWaiters();
 
       if (this.intentionalClose) {
         this.setStatus('disconnected');
@@ -366,6 +389,25 @@ export class ZoneChatWebSocketClient {
       return;
     }
 
+    if (isStompSessionAlreadyExistsError(message)) {
+      logZoneChat('stomp.session-busy', 'STOMP session still held; retrying', {
+        level: 'warn',
+        detail: { message },
+      });
+      this.stompConnected = false;
+      this.clearHeartbeatTimer();
+      this.intentionalClose = true;
+      try {
+        this.ws?.close();
+      } catch {
+        /* ignore */
+      }
+      this.ws = null;
+      this.intentionalClose = false;
+      this.scheduleReconnect({ forceDelayMs: ZONE_CHAT_WS_CONFIG.sessionHandoffDelayMs });
+      return;
+    }
+
     logZoneChat('stomp.error', message, { level: 'error' });
     this.listeners.onError?.(new Error(message));
 
@@ -398,7 +440,7 @@ export class ZoneChatWebSocketClient {
     }
   }
 
-  private scheduleReconnect(): void {
+  private scheduleReconnect(options?: { forceDelayMs?: number }): void {
     if (!this.connectOptions || this.intentionalClose) {
       this.setStatus('disconnected');
       return;
@@ -414,6 +456,7 @@ export class ZoneChatWebSocketClient {
 
     this.reconnectAttempt += 1;
     const delay =
+      options?.forceDelayMs ??
       ZONE_CHAT_WS_CONFIG.reconnectBaseDelayMs * 2 ** (this.reconnectAttempt - 1);
 
     this.setStatus('reconnecting');

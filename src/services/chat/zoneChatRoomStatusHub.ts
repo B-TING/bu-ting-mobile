@@ -14,6 +14,7 @@ import {
   encodeStompFrameBytes,
   isBenignStompShutdownError,
   isStompHeartbeat,
+  isStompSessionAlreadyExistsError,
   parseStompClientHeartbeatMs,
   type StompFrame,
 } from './stompFrame';
@@ -24,23 +25,26 @@ type StatusListener = (status: ParsedChatRoomStatusPayload) => void;
 
 /**
  * 목록·홈용 실시간 인원 허브 — 방별 status 채널만 단일 WebSocket 으로 멀티 구독.
- * 구독자(ref count)가 0이 되면 연결을 닫습니다.
+ * 구독 방이 비거나 suspend 되면 연결을 닫습니다.
  */
 class ZoneChatRoomStatusHub {
   private listeners = new Set<StatusListener>();
-  private roomRefCounts = new Map<string, number>();
+  private desiredRoomIds = new Set<string>();
   private subscriptionIds = new Map<string, string>();
   private subscribedRoomIds = new Set<string>();
   private accessToken: string | null = null;
   private ws: WebSocket | null = null;
   private stompConnected = false;
   private intentionalClose = false;
+  private suspended = false;
   private reconnectAttempt = 0;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
   private heartbeatBytes: Uint8Array | null = null;
   private nextSubscriptionKey = 0;
   private disconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private closeWaiters: Array<() => void> = [];
+  private socketGeneration = 0;
 
   addListener(listener: StatusListener): () => void {
     this.listeners.add(listener);
@@ -49,40 +53,79 @@ class ZoneChatRoomStatusHub {
     };
   }
 
-  retainRooms(roomIds: string[], accessToken: string): () => void {
-    if (!isZoneChatWebSocketEnabled() || !accessToken || roomIds.length === 0) {
-      return () => undefined;
+  /**
+   * 목록 화면이 원하는 status 구독 방 집합을 설정합니다.
+   * 동일 집합이면 no-op 이라 불필요한 disconnect/connect 를 막습니다.
+   */
+  setDesiredRooms(roomIds: string[], accessToken: string): void {
+    if (!isZoneChatWebSocketEnabled() || !accessToken) {
+      this.desiredRoomIds.clear();
+      this.accessToken = null;
+      void this.disconnect();
+      return;
     }
 
-    const uniqueRoomIds = [...new Set(roomIds.filter(Boolean))];
-    for (const roomId of uniqueRoomIds) {
-      this.roomRefCounts.set(roomId, (this.roomRefCounts.get(roomId) ?? 0) + 1);
-    }
+    const uniqueRoomIds = [...new Set(roomIds.filter(Boolean))].sort();
+    const nextKey = uniqueRoomIds.join('|');
+    const prevKey = [...this.desiredRoomIds].sort().join('|');
+    const roomsUnchanged = nextKey === prevKey;
+    const tokenUnchanged = this.accessToken === accessToken;
 
+    this.desiredRoomIds = new Set(uniqueRoomIds);
     this.accessToken = accessToken;
-    this.ensureConnected();
 
+    if (this.suspended) {
+      return;
+    }
+
+    if (uniqueRoomIds.length === 0) {
+      void this.disconnect();
+      return;
+    }
+
+    if (roomsUnchanged && tokenUnchanged && this.stompConnected) {
+      this.syncSubscriptions();
+      return;
+    }
+
+    void this.ensureConnected();
+  }
+
+  /** 채팅방 STOMP 세션과 충돌하지 않도록 hub 를 잠시 내립니다. */
+  async suspend(): Promise<void> {
+    this.suspended = true;
+    this.clearReconnectTimer();
+    await this.disconnect();
+  }
+
+  /** 채팅 세션이 끝난 뒤 status hub 를 다시 켭니다. */
+  resume(): void {
+    if (!this.suspended) {
+      if (this.desiredRoomIds.size > 0 && this.accessToken) {
+        void this.ensureConnected();
+      }
+      return;
+    }
+    this.suspended = false;
+    if (this.desiredRoomIds.size > 0 && this.accessToken) {
+      void this.ensureConnected();
+    }
+  }
+
+  isSuspended(): boolean {
+    return this.suspended;
+  }
+
+  /** @deprecated store 가 setDesiredRooms 로 이전. 호환용. */
+  retainRooms(roomIds: string[], accessToken: string): () => void {
+    this.setDesiredRooms(roomIds, accessToken);
     return () => {
-      let shouldDisconnect = false;
-      for (const roomId of uniqueRoomIds) {
-        const next = (this.roomRefCounts.get(roomId) ?? 1) - 1;
-        if (next <= 0) {
-          this.roomRefCounts.delete(roomId);
-          this.unsubscribeRoom(roomId);
-          shouldDisconnect = true;
-        } else {
-          this.roomRefCounts.set(roomId, next);
-        }
-      }
-
-      if (shouldDisconnect && this.roomRefCounts.size === 0) {
-        this.disconnect();
-      }
+      this.setDesiredRooms([], accessToken);
     };
   }
 
   private getActiveRoomIds(): string[] {
-    return [...this.roomRefCounts.keys()];
+    return [...this.desiredRoomIds];
   }
 
   private subscriptionIdFor(roomId: string): string {
@@ -96,20 +139,49 @@ class ZoneChatRoomStatusHub {
     return id;
   }
 
-  private ensureConnected(): void {
-    if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
+  private async ensureConnected(): Promise<void> {
+    if (this.suspended || !this.accessToken || this.desiredRoomIds.size === 0) {
+      return;
+    }
+
+    if (this.ws && this.ws.readyState === WebSocket.CONNECTING) {
+      return;
+    }
+
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       if (this.stompConnected) {
         this.syncSubscriptions();
       }
       return;
     }
 
+    await this.waitForSocketClosed();
+    if (this.suspended || !this.accessToken || this.desiredRoomIds.size === 0) {
+      return;
+    }
+
     this.intentionalClose = false;
-    this.reconnectAttempt = 0;
     this.openSocket();
   }
 
-  private disconnect(): void {
+  private waitForSocketClosed(): Promise<void> {
+    if (!this.ws) {
+      return Promise.resolve();
+    }
+    return new Promise(resolve => {
+      this.closeWaiters.push(resolve);
+    });
+  }
+
+  private resolveCloseWaiters(): void {
+    const waiters = this.closeWaiters;
+    this.closeWaiters = [];
+    for (const resolve of waiters) {
+      resolve();
+    }
+  }
+
+  private disconnect(): Promise<void> {
     this.intentionalClose = true;
     this.clearReconnectTimer();
     this.clearHeartbeatTimer();
@@ -118,38 +190,42 @@ class ZoneChatRoomStatusHub {
     const ws = this.ws;
     if (!ws) {
       this.stompConnected = false;
-      this.accessToken = null;
       this.subscriptionIds.clear();
       this.subscribedRoomIds.clear();
-      return;
+      this.resolveCloseWaiters();
+      return Promise.resolve();
     }
 
-    const finishClose = () => {
-      if (this.ws === ws) {
-        try {
-          ws.close();
-        } catch {
-          /* ignore */
+    return new Promise(resolve => {
+      this.closeWaiters.push(resolve);
+
+      const finishClose = () => {
+        if (this.ws === ws) {
+          try {
+            ws.close();
+          } catch {
+            /* ignore */
+          }
+          this.ws = null;
         }
-        this.ws = null;
-      }
-      this.stompConnected = false;
-      this.accessToken = null;
-      this.subscriptionIds.clear();
-      this.subscribedRoomIds.clear();
-    };
+        this.stompConnected = false;
+        this.subscriptionIds.clear();
+        this.subscribedRoomIds.clear();
+        this.resolveCloseWaiters();
+      };
 
-    if (this.stompConnected && ws.readyState === WebSocket.OPEN) {
-      this.sendFrame({ command: 'DISCONNECT', headers: {}, body: '' });
-      this.stompConnected = false;
-      this.disconnectTimer = setTimeout(finishClose, ZONE_CHAT_WS_CONFIG.gracefulDisconnectMs);
-    } else {
-      finishClose();
-    }
+      if (this.stompConnected && ws.readyState === WebSocket.OPEN) {
+        this.sendFrame({ command: 'DISCONNECT', headers: {}, body: '' });
+        this.stompConnected = false;
+        this.disconnectTimer = setTimeout(finishClose, ZONE_CHAT_WS_CONFIG.gracefulDisconnectMs);
+      } else {
+        finishClose();
+      }
+    });
   }
 
   private openSocket(): void {
-    if (!this.accessToken || this.roomRefCounts.size === 0) {
+    if (this.suspended || !this.accessToken || this.desiredRoomIds.size === 0) {
       return;
     }
 
@@ -161,10 +237,15 @@ class ZoneChatRoomStatusHub {
     this.subscribedRoomIds.clear();
 
     if (this.ws) {
-      this.ws.close();
+      try {
+        this.ws.close();
+      } catch {
+        /* ignore */
+      }
       this.ws = null;
     }
 
+    const generation = ++this.socketGeneration;
     const url = buildZoneChatWebSocketUrl(this.accessToken);
     logZoneChat('status-hub.connect', 'Opening status WebSocket', {
       detail: { rooms: this.getActiveRoomIds().length, url: url.split('?')[0] },
@@ -178,10 +259,16 @@ class ZoneChatRoomStatusHub {
     }
 
     this.ws.onopen = () => {
+      if (generation !== this.socketGeneration || this.suspended) {
+        return;
+      }
       this.sendConnectFrame();
     };
 
     this.ws.onmessage = event => {
+      if (generation !== this.socketGeneration) {
+        return;
+      }
       const raw = decodeWebSocketPayload(event.data);
       if (!raw || isStompHeartbeat(raw)) {
         return;
@@ -193,20 +280,24 @@ class ZoneChatRoomStatusHub {
     };
 
     this.ws.onerror = () => {
-      if (this.intentionalClose) {
+      if (this.intentionalClose || generation !== this.socketGeneration) {
         return;
       }
       logZoneChat('status-hub.ws.error', 'WebSocket error', { level: 'error' });
     };
 
     this.ws.onclose = event => {
+      if (generation !== this.socketGeneration) {
+        return;
+      }
       this.clearHeartbeatTimer();
       this.ws = null;
       this.stompConnected = false;
       this.subscriptionIds.clear();
       this.subscribedRoomIds.clear();
+      this.resolveCloseWaiters();
 
-      if (this.intentionalClose) {
+      if (this.intentionalClose || this.suspended) {
         return;
       }
 
@@ -261,8 +352,14 @@ class ZoneChatRoomStatusHub {
   }
 
   private syncSubscriptions(): void {
-    if (!this.stompConnected) {
+    if (!this.stompConnected || this.suspended) {
       return;
+    }
+
+    for (const roomId of [...this.subscribedRoomIds]) {
+      if (!this.desiredRoomIds.has(roomId)) {
+        this.unsubscribeRoom(roomId);
+      }
     }
 
     for (const roomId of this.getActiveRoomIds()) {
@@ -285,6 +382,7 @@ class ZoneChatRoomStatusHub {
   private unsubscribeRoom(roomId: string): void {
     const subscriptionId = this.subscriptionIds.get(roomId);
     if (!subscriptionId) {
+      this.subscribedRoomIds.delete(roomId);
       return;
     }
 
@@ -332,6 +430,25 @@ class ZoneChatRoomStatusHub {
       return;
     }
 
+    if (isStompSessionAlreadyExistsError(message)) {
+      logZoneChat('status-hub.session-busy', 'STOMP session still held; retrying', {
+        level: 'warn',
+        detail: { message },
+      });
+      this.stompConnected = false;
+      this.clearHeartbeatTimer();
+      this.intentionalClose = true;
+      try {
+        this.ws?.close();
+      } catch {
+        /* ignore */
+      }
+      this.ws = null;
+      this.intentionalClose = false;
+      this.scheduleReconnect({ forceDelayMs: ZONE_CHAT_WS_CONFIG.sessionHandoffDelayMs });
+      return;
+    }
+
     logZoneChat('status-hub.error', message, { level: 'error' });
     this.stompConnected = false;
     this.clearHeartbeatTimer();
@@ -370,8 +487,8 @@ class ZoneChatRoomStatusHub {
     }, intervalMs);
   }
 
-  private scheduleReconnect(): void {
-    if (this.intentionalClose || this.roomRefCounts.size === 0 || !this.accessToken) {
+  private scheduleReconnect(options?: { forceDelayMs?: number }): void {
+    if (this.intentionalClose || this.suspended || this.desiredRoomIds.size === 0 || !this.accessToken) {
       return;
     }
 
@@ -384,10 +501,11 @@ class ZoneChatRoomStatusHub {
 
     this.reconnectAttempt += 1;
     const delay =
+      options?.forceDelayMs ??
       ZONE_CHAT_WS_CONFIG.reconnectBaseDelayMs * 2 ** (this.reconnectAttempt - 1);
 
     this.reconnectTimer = setTimeout(() => {
-      this.openSocket();
+      void this.ensureConnected();
     }, delay);
   }
 
