@@ -1,11 +1,14 @@
 /**
- * 알파 1.0.0 Play Store 제출용 — 미완 기능 차단 플래그.
+ * 알파 Play Store 제출용 — 미완 기능 차단 플래그.
  * true면 FeatureUnavailableAlert 로 진입을 막는다.
  */
 export const ALPHA_FEATURE_BLOCKS = {
-  /** 여행기·피드 (미디어 업로드 미완) */
+  /** 여행 피드 */
   feed: false,
+  /** 여행기 작성·조회·게시 */
   travelogue: false,
+  /** 다른 사용자 여행기 → 내 일정으로 가져오기 */
+  importPlan: true,
   /** 팀원(일행) 초대 */
   invite: true,
   /** 구역 이벤트 (구역 채팅방은 유지) */
@@ -23,6 +26,7 @@ export type AlphaBlockedFeature = keyof typeof ALPHA_FEATURE_BLOCKS;
 export const ALPHA_FEATURE_LABELS: Record<AlphaBlockedFeature, string> = {
   feed: '여행 피드',
   travelogue: '여행기',
+  importPlan: '여행 계획 가져오기',
   invite: '일행 초대',
   zoneEvent: '구역 이벤트',
   planAi: 'AI 일정 생성',

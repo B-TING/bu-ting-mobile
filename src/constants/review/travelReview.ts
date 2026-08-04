@@ -32,6 +32,13 @@ export const TRAVEL_REVIEW_COPY: Record<
     takeVideo: string;
     mediaHint: string;
     mediaPermissionDenied: string;
+    mediaPermissionTitle: string;
+    mediaPermissionLibraryDisclosure: string;
+    mediaPermissionCameraDisclosure: string;
+    mediaPermissionDetail: string;
+    mediaPermissionAllow: string;
+    mediaPermissionDeny: string;
+    mediaPermissionOpenSettings: string;
     mediaPickFailed: string;
     mediaUploadFailed: string;
     mediaLimitReached: string;
@@ -157,6 +164,16 @@ export const TRAVEL_REVIEW_COPY: Record<
     takeVideo: '영상 촬영',
     mediaHint: '탭하면 첨부 파일을 제거할 수 있어요. 영상은 MP4/MOV, 사진은 JPEG/PNG/WebP (최대 50MB).',
     mediaPermissionDenied: '사진·카메라 권한이 필요합니다. 설정에서 허용해 주세요.',
+    mediaPermissionTitle: '사진·카메라 접근',
+    mediaPermissionLibraryDisclosure:
+      '피드·후기에 사진과 영상을 첨부하려면 앨범 접근이 필요해요.',
+    mediaPermissionCameraDisclosure:
+      '피드·후기에 사진과 영상을 첨부하려면 카메라 접근이 필요해요.',
+    mediaPermissionDetail:
+      '허용을 누르면 기기 권한을 요청합니다. 거부해도 앱의 다른 기능은 계속 사용할 수 있어요.',
+    mediaPermissionAllow: '허용',
+    mediaPermissionDeny: '나중에',
+    mediaPermissionOpenSettings: '설정 열기',
     mediaPickFailed: '미디어를 가져오지 못했어요. 다시 시도해 주세요.',
     mediaUploadFailed: '미디어 업로드 또는 후기 저장에 실패했어요.',
     mediaLimitReached: '미디어는 최대 20개까지 첨부할 수 있어요.',
@@ -284,6 +301,16 @@ export const TRAVEL_REVIEW_COPY: Record<
     takeVideo: 'Record video',
     mediaHint: 'Tap an attachment to remove it. Files upload when you save.',
     mediaPermissionDenied: 'Photo and camera access is required. Please enable it in Settings.',
+    mediaPermissionTitle: 'Photo & camera access',
+    mediaPermissionLibraryDisclosure:
+      'To attach photos and videos to your feed or review, album access is needed.',
+    mediaPermissionCameraDisclosure:
+      'To attach photos and videos to your feed or review, camera access is needed.',
+    mediaPermissionDetail:
+      'We’ll ask for device permission next. You can still use other app features if you decline.',
+    mediaPermissionAllow: 'Allow',
+    mediaPermissionDeny: 'Not now',
+    mediaPermissionOpenSettings: 'Open Settings',
     mediaPickFailed: 'Could not pick media. Please try again.',
     mediaUploadFailed: 'Could not upload media or save the review.',
     mediaLimitReached: 'You can attach up to 20 media files.',
@@ -411,6 +438,16 @@ export const TRAVEL_REVIEW_COPY: Record<
     takeVideo: '動画を撮影',
     mediaHint: 'タップで添付を削除できます。保存時にサーバーへアップロードされます。',
     mediaPermissionDenied: '写真・カメラの権限が必要です。設定で許可してください。',
+    mediaPermissionTitle: '写真・カメラへのアクセス',
+    mediaPermissionLibraryDisclosure:
+      'フィード・レビューに写真や動画を添付するには、アルバムへのアクセスが必要です。',
+    mediaPermissionCameraDisclosure:
+      'フィード・レビューに写真や動画を添付するには、カメラへのアクセスが必要です。',
+    mediaPermissionDetail:
+      '許可を押すと端末の権限を求めます。拒否しても他の機能は使えます。',
+    mediaPermissionAllow: '許可',
+    mediaPermissionDeny: 'あとで',
+    mediaPermissionOpenSettings: '設定を開く',
     mediaPickFailed: 'メディアを取得できませんでした。もう一度お試しください。',
     mediaUploadFailed: 'メディアのアップロードまたはレビュー保存に失敗しました。',
     mediaLimitReached: 'メディアは最大20件まで添付できます。',
@@ -537,6 +574,13 @@ export const TRAVEL_REVIEW_COPY: Record<
     takeVideo: '拍摄视频',
     mediaHint: '点按附件可移除。保存时会上传到服务器。',
     mediaPermissionDenied: '需要照片和相机权限，请在设置中允许。',
+    mediaPermissionTitle: '照片与相机访问',
+    mediaPermissionLibraryDisclosure: '要将照片和视频添加到动态或点评，需要访问相册。',
+    mediaPermissionCameraDisclosure: '要将照片和视频添加到动态或点评，需要使用相机。',
+    mediaPermissionDetail: '点击允许后将请求设备权限。即使拒绝，仍可使用应用的其他功能。',
+    mediaPermissionAllow: '允许',
+    mediaPermissionDeny: '稍后',
+    mediaPermissionOpenSettings: '打开设置',
     mediaPickFailed: '无法选择媒体，请重试。',
     mediaUploadFailed: '媒体上传或评价保存失败。',
     mediaLimitReached: '最多可附加 20 个媒体文件。',

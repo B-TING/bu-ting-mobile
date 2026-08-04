@@ -141,3 +141,15 @@ export function isBenignStompShutdownError(message: string): boolean {
     normalized.includes('going away')
   );
 }
+
+/**
+ * 동일 사용자 STOMP 세션이 아직 살아 있을 때 CONNECT 거절.
+ * hub↔채팅 핸드오프·Strict Mode remount 등에서 흔히 나며, 지연 재연결로 복구한다.
+ */
+export function isStompSessionAlreadyExistsError(message: string): boolean {
+  const normalized = message.trim().toLowerCase();
+  return (
+    normalized.includes('session already exists') ||
+    normalized.includes('already connected')
+  );
+}
