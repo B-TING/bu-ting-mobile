@@ -16,16 +16,31 @@ import type { AppLanguage } from '../../../types/user';
 import type { PlaceReview, ReviewMedia } from '../../../types/travelReview';
 import type { RouteItem } from '../../../types/travelPlan';
 import { createId } from '../../../utils/common/id';
+import {
+  hasMediaPermission,
+  requestMediaPermission,
+  type MediaPermissionKind,
+} from '../../../utils/media/mediaPermissions';
 import { pickReviewMedia } from '../../../utils/media/pickMedia';
 import { AppIcon } from '../../shared/icons/AppIcon';
 import { ResolvedRemoteImage } from '../../shared/media/ResolvedRemoteImage';
 import { ReviewVideoThumb } from '../../shared/media/ReviewVideoViews';
 import { AppModal, AppModalActions } from '../../shared/modals';
 import { StarRating } from '../../shared/rating/StarRating';
+import { MediaPermissionDisclosure } from './MediaPermissionDisclosure';
+import { MediaSourcePickModal } from './MediaSourcePickModal';
 
 type Copy = CopyFor<'travelReview'>;
 
 const MAX_MEDIA = 20;
+
+type MediaSource = 'library' | 'camera';
+
+type PermissionPrompt = {
+  mediaType: 'image' | 'video';
+  source: MediaSource;
+  mode: 'request' | 'blocked';
+};
 
 type PlaceReviewFormModalProps = {
   visible: boolean;
@@ -54,6 +69,10 @@ function isDisplayableImageUri(uri: string): boolean {
   );
 }
 
+function permissionKindForSource(source: MediaSource): MediaPermissionKind {
+  return source === 'camera' ? 'camera' : 'library';
+}
+
 export function PlaceReviewFormModal({
   visible,
   route,
@@ -73,6 +92,8 @@ export function PlaceReviewFormModal({
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [picking, setPicking] = useState(false);
+  const [sourcePickType, setSourcePickType] = useState<'image' | 'video' | null>(null);
+  const [permissionPrompt, setPermissionPrompt] = useState<PermissionPrompt | null>(null);
 
   const presets = REVIEW_TAG_PRESETS[language];
   const canDelete = Boolean(existing?.placeReviewId && onDelete);
@@ -86,6 +107,8 @@ export function PlaceReviewFormModal({
     setTagInput('');
     setContent(existing?.content ?? '');
     setMedia(existing?.media ?? []);
+    setSourcePickType(null);
+    setPermissionPrompt(null);
   }, [visible, route, existing]);
 
   if (!route) {
@@ -109,7 +132,15 @@ export function PlaceReviewFormModal({
 
   const showPickError = (result: Awaited<ReturnType<typeof pickReviewMedia>>) => {
     if (result.status === 'denied') {
-      Alert.alert(copy.mediaPermissionDenied);
+      setPermissionPrompt(prev =>
+        prev
+          ? { ...prev, mode: 'blocked' }
+          : {
+              mediaType: 'image',
+              source: 'library',
+              mode: 'blocked',
+            },
+      );
       return;
     }
     if (result.status === 'error') {
@@ -117,18 +148,12 @@ export function PlaceReviewFormModal({
     }
   };
 
-  const addMedia = async (mediaType: 'image' | 'video') => {
-    if (picking || busy) {
-      return;
-    }
-    if (media.length >= MAX_MEDIA) {
-      Alert.alert(copy.mediaLimitReached);
-      return;
-    }
+  const appendPickedMedia = async (mediaType: 'image' | 'video', source: MediaSource) => {
     setPicking(true);
     try {
       const result = await pickReviewMedia({
         mediaType,
+        source,
         labels: {
           title: mediaType === 'video' ? copy.addVideo : copy.addPhoto,
           chooseFromLibrary: copy.chooseFromLibrary,
@@ -162,6 +187,46 @@ export function PlaceReviewFormModal({
     } finally {
       setPicking(false);
     }
+  };
+
+  const beginMediaSource = async (mediaType: 'image' | 'video', source: MediaSource) => {
+    setSourcePickType(null);
+    const kind = permissionKindForSource(source);
+    if (await hasMediaPermission(kind)) {
+      await appendPickedMedia(mediaType, source);
+      return;
+    }
+    setPermissionPrompt({ mediaType, source, mode: 'request' });
+  };
+
+  const handlePermissionAllow = async () => {
+    if (!permissionPrompt || permissionPrompt.mode !== 'request') {
+      return;
+    }
+    const { mediaType, source } = permissionPrompt;
+    const kind = permissionKindForSource(source);
+    const result = await requestMediaPermission(kind);
+    if (result === 'granted') {
+      setPermissionPrompt(null);
+      await appendPickedMedia(mediaType, source);
+      return;
+    }
+    if (result === 'blocked') {
+      setPermissionPrompt({ mediaType, source, mode: 'blocked' });
+      return;
+    }
+    setPermissionPrompt(null);
+  };
+
+  const openMediaSourcePicker = (mediaType: 'image' | 'video') => {
+    if (picking || busy) {
+      return;
+    }
+    if (media.length >= MAX_MEDIA) {
+      Alert.alert(copy.mediaLimitReached);
+      return;
+    }
+    setSourcePickType(mediaType);
   };
 
   const removeMedia = (mediaId: string) => {
@@ -217,11 +282,7 @@ export function PlaceReviewFormModal({
     ...(canDelete
       ? [
           {
-            label: deleting
-              ? language === 'ko'
-                ? '삭제 중…'
-                : 'Deleting…'
-              : copy.deleteReview,
+            label: deleting ? '…' : copy.deleteReview,
             onPress: () => {
               void handleDelete();
             },
@@ -231,7 +292,7 @@ export function PlaceReviewFormModal({
         ]
       : []),
     {
-      label: copy.save,
+      label: submitting || saving ? '…' : copy.save,
       onPress: () => {
         void handleSave();
       },
@@ -241,161 +302,205 @@ export function PlaceReviewFormModal({
   ];
 
   return (
-    <AppModal
-      visible={visible}
-      onClose={busy ? () => undefined : onClose}
-      title={existing ? copy.editReview : copy.reviewTitle}
-      maxHeight="90%"
-      keyboardAware
-      footer={<AppModalActions actions={footerActions} />}>
-      <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 16 }}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}>
-        <Text className="mb-1 text-xs font-bold text-brand-muted">{copy.placeLabel}</Text>
-        <Text className="mb-4 text-base font-semibold text-brand-text">{route.placeName}</Text>
+    <>
+      <AppModal
+        visible={visible}
+        onClose={onClose}
+        title={existing ? copy.editReview : copy.writeReview}
+        subtitle={route.placeName}
+        maxHeight="90%"
+        keyboardAware
+        backdropDismiss={!busy}
+        footer={<AppModalActions actions={footerActions} />}>
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 16 }}>
+          <Text className="mb-2 text-xs font-bold text-brand-muted">{copy.ratingLabel}</Text>
+          <StarRating value={rating} onChange={setRating} />
 
-        <Text className="mb-2 text-xs font-bold text-brand-muted">{copy.ratingLabel}</Text>
-        <StarRating value={rating} onChange={setRating} />
-
-        <Text className="mb-2 mt-4 text-xs font-bold text-brand-muted">{copy.tagsLabel}</Text>
-        <View className="mb-2 flex-row flex-wrap gap-2">
-          {presets.map(tag => {
-            const active = tags.includes(tag);
-            return (
-              <Pressable
-                key={tag}
-                onPress={() => (active ? removeTag(tag) : addTag(tag))}
-                className={`rounded-full px-3 py-1.5 ${
-                  active ? 'bg-brand-primary' : 'bg-brand-selected'
-                }`}>
-                <Text
-                  className={`text-xs font-semibold ${
-                    active ? 'text-white' : 'text-brand-primary'
-                  }`}>
-                  #{tag}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-        <View className="mb-2 flex-row gap-2">
-          <TextInput
-            value={tagInput}
-            onChangeText={setTagInput}
-            placeholder={copy.tagPlaceholder}
-            placeholderTextColor="#94A3B8"
-            onSubmitEditing={() => addTag(tagInput)}
-            className="flex-1 rounded-xl border border-brand-border bg-white px-3 py-2 text-sm text-brand-text"
-          />
-          <Pressable
-            onPress={() => addTag(tagInput)}
-            className="items-center justify-center rounded-xl bg-brand-selected px-4 active:opacity-80">
-            <Text className="text-sm font-bold text-brand-primary">+</Text>
-          </Pressable>
-        </View>
-        {tags.length > 0 ? (
-          <View className="mb-2 flex-row flex-wrap gap-1">
-            {tags.map(tag => (
-              <Pressable
-                key={tag}
-                onPress={() => removeTag(tag)}
-                className="rounded-full bg-brand-border px-2 py-1">
-                <Text className="text-[10px] text-brand-text">#{tag} ×</Text>
-              </Pressable>
-            ))}
-          </View>
-        ) : null}
-
-        <Text className="mb-2 mt-2 text-xs font-bold text-brand-muted">{copy.commentLabel}</Text>
-        <TextInput
-          value={content}
-          onChangeText={setContent}
-          placeholder={copy.commentPlaceholder}
-          placeholderTextColor="#94A3B8"
-          multiline
-          numberOfLines={4}
-          textAlignVertical="top"
-          className="mb-4 min-h-[96px] rounded-xl border border-brand-border bg-white px-3 py-3 text-sm text-brand-text"
-        />
-
-        <Text className="mb-2 text-xs font-bold text-brand-muted">{copy.mediaLabel}</Text>
-        <View className="mb-2 flex-row gap-2">
-          <Pressable
-            onPress={() => {
-              void addMedia('image');
-            }}
-            disabled={busy}
-            className="flex-1 items-center rounded-xl border border-dashed border-brand-border bg-brand-surface py-3 active:opacity-80">
-            <Text className="text-sm font-semibold text-brand-primary">{copy.addPhoto}</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => {
-              void addMedia('video');
-            }}
-            disabled={busy}
-            className="flex-1 items-center rounded-xl border border-dashed border-brand-border bg-brand-surface py-3 active:opacity-80">
-            <Text className="text-sm font-semibold text-brand-primary">{copy.addVideo}</Text>
-          </Pressable>
-        </View>
-        {media.length > 0 ? (
+          <Text className="mb-2 mt-4 text-xs font-bold text-brand-muted">{copy.tagsLabel}</Text>
           <View className="mb-2 flex-row flex-wrap gap-2">
-            {media.map(item => {
-              if (item.type === 'video') {
-                return (
-                  <View key={item.mediaId} className="relative">
-                    <ReviewVideoThumb
-                      uri={item.uri}
-                      fileKey={item.fileKey}
-                      size={64}
-                    />
-                    <Pressable
-                      onPress={() => removeMedia(item.mediaId)}
-                      className="absolute right-0.5 top-0.5 z-10 rounded-full bg-black/60 p-0.5"
-                      accessibilityRole="button"
-                      accessibilityLabel="Remove">
-                      <AppIcon name="x" size={10} color="#FFFFFF" />
-                    </Pressable>
-                  </View>
-                );
-              }
-              const showImage = isDisplayableImageUri(item.uri);
+            {presets.map(tag => {
+              const selected = tags.includes(tag);
               return (
                 <Pressable
-                  key={item.mediaId}
-                  onPress={() => removeMedia(item.mediaId)}
-                  className="relative h-16 w-16 overflow-hidden rounded-xl bg-brand-selected">
-                  {showImage ? (
-                    item.uri.startsWith('http://') ||
-                    item.uri.startsWith('https://') ? (
-                      <ResolvedRemoteImage
-                        uri={item.uri}
-                        fileKey={item.fileKey}
-                        style={{ width: '100%', height: '100%' }}
-                        resizeMode="cover"
-                      />
-                    ) : (
-                      <Image
-                        source={{ uri: item.uri }}
-                        style={{ width: '100%', height: '100%' }}
-                        resizeMode="cover"
-                      />
-                    )
-                  ) : (
-                    <View className="h-full w-full items-center justify-center">
-                      <AppIcon name="camera" size={24} color={ICON_COLOR_PRIMARY} />
-                    </View>
-                  )}
-                  <View className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5">
-                    <AppIcon name="x" size={10} color="#FFFFFF" />
-                  </View>
+                  key={tag}
+                  onPress={() => (selected ? removeTag(tag) : addTag(tag))}
+                  className={`rounded-full px-3 py-1.5 ${
+                    selected ? 'bg-brand-primary' : 'bg-brand-surface border border-brand-border'
+                  }`}>
+                  <Text
+                    className={`text-xs font-semibold ${
+                      selected ? 'text-white' : 'text-brand-text'
+                    }`}>
+                    #{tag}
+                  </Text>
                 </Pressable>
               );
             })}
           </View>
-        ) : null}
-        <Text className="mb-4 text-[10px] text-brand-muted">{copy.mediaHint}</Text>
-      </ScrollView>
-    </AppModal>
+          <View className="mb-2 flex-row items-center gap-2">
+            <TextInput
+              value={tagInput}
+              onChangeText={setTagInput}
+              placeholder={copy.tagPlaceholder}
+              placeholderTextColor="#94A3B8"
+              className="min-h-[40px] flex-1 rounded-xl border border-brand-border bg-white px-3 py-2 text-sm text-brand-text"
+              onSubmitEditing={() => addTag(tagInput)}
+              returnKeyType="done"
+            />
+            <Pressable
+              onPress={() => addTag(tagInput)}
+              className="rounded-xl bg-brand-surface px-3 py-2.5 active:opacity-80">
+              <Text className="text-sm font-semibold text-brand-primary">+</Text>
+            </Pressable>
+          </View>
+          {tags.length > 0 ? (
+            <View className="mb-2 flex-row flex-wrap gap-1.5">
+              {tags.map(tag => (
+                <Pressable
+                  key={tag}
+                  onPress={() => removeTag(tag)}
+                  className="rounded-full bg-brand-border px-2 py-1">
+                  <Text className="text-[10px] text-brand-text">#{tag} ×</Text>
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
+
+          <Text className="mb-2 mt-2 text-xs font-bold text-brand-muted">{copy.commentLabel}</Text>
+          <TextInput
+            value={content}
+            onChangeText={setContent}
+            placeholder={copy.commentPlaceholder}
+            placeholderTextColor="#94A3B8"
+            multiline
+            numberOfLines={4}
+            textAlignVertical="top"
+            className="mb-4 min-h-[96px] rounded-xl border border-brand-border bg-white px-3 py-3 text-sm text-brand-text"
+          />
+
+          <Text className="mb-2 text-xs font-bold text-brand-muted">{copy.mediaLabel}</Text>
+          <View className="mb-2 flex-row gap-2">
+            <Pressable
+              onPress={() => openMediaSourcePicker('image')}
+              disabled={busy}
+              className="flex-1 items-center rounded-xl border border-dashed border-brand-border bg-brand-surface py-3 active:opacity-80">
+              <Text className="text-sm font-semibold text-brand-primary">{copy.addPhoto}</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => openMediaSourcePicker('video')}
+              disabled={busy}
+              className="flex-1 items-center rounded-xl border border-dashed border-brand-border bg-brand-surface py-3 active:opacity-80">
+              <Text className="text-sm font-semibold text-brand-primary">{copy.addVideo}</Text>
+            </Pressable>
+          </View>
+          {media.length > 0 ? (
+            <View className="mb-2 flex-row flex-wrap gap-2">
+              {media.map(item => {
+                if (item.type === 'video') {
+                  return (
+                    <View key={item.mediaId} className="relative">
+                      <ReviewVideoThumb
+                        uri={item.uri}
+                        fileKey={item.fileKey}
+                        size={64}
+                      />
+                      <Pressable
+                        onPress={() => removeMedia(item.mediaId)}
+                        className="absolute right-0.5 top-0.5 z-10 rounded-full bg-black/60 p-0.5"
+                        accessibilityRole="button">
+                        <AppIcon name="x" size={10} color="#FFFFFF" />
+                      </Pressable>
+                    </View>
+                  );
+                }
+                return (
+                  <Pressable
+                    key={item.mediaId}
+                    onPress={() => removeMedia(item.mediaId)}
+                    className="relative h-20 w-20 overflow-hidden rounded-xl bg-brand-surface">
+                    {isDisplayableImageUri(item.uri) ? (
+                      item.uri.startsWith('http') ? (
+                        <ResolvedRemoteImage
+                          uri={item.uri}
+                          fileKey={item.fileKey}
+                          style={{ width: '100%', height: '100%' }}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <Image
+                          source={{ uri: item.uri }}
+                          style={{ width: '100%', height: '100%' }}
+                          resizeMode="cover"
+                        />
+                      )
+                    ) : (
+                      <View className="h-full w-full items-center justify-center">
+                        <AppIcon name="camera" size={24} color={ICON_COLOR_PRIMARY} />
+                      </View>
+                    )}
+                    <View className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5">
+                      <AppIcon name="x" size={10} color="#FFFFFF" />
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
+          ) : null}
+          <Text className="mb-4 text-[10px] text-brand-muted">{copy.mediaHint}</Text>
+        </ScrollView>
+      </AppModal>
+
+      <MediaSourcePickModal
+        visible={sourcePickType != null}
+        title={
+          sourcePickType === 'video'
+            ? copy.addVideo
+            : sourcePickType === 'image'
+              ? copy.addPhoto
+              : ''
+        }
+        libraryLabel={copy.chooseFromLibrary}
+        cameraLabel={sourcePickType === 'video' ? copy.takeVideo : copy.takePhoto}
+        cancelLabel={copy.cancel}
+        onPickLibrary={() => {
+          if (!sourcePickType) {
+            return;
+          }
+          void beginMediaSource(sourcePickType, 'library');
+        }}
+        onPickCamera={() => {
+          if (!sourcePickType) {
+            return;
+          }
+          void beginMediaSource(sourcePickType, 'camera');
+        }}
+        onCancel={() => setSourcePickType(null)}
+      />
+
+      <MediaPermissionDisclosure
+        visible={permissionPrompt != null}
+        title={copy.mediaPermissionTitle}
+        disclosure={
+          permissionPrompt?.source === 'camera'
+            ? copy.mediaPermissionCameraDisclosure
+            : copy.mediaPermissionLibraryDisclosure
+        }
+        detail={
+          permissionPrompt?.mode === 'blocked'
+            ? copy.mediaPermissionDenied
+            : copy.mediaPermissionDetail
+        }
+        allowLabel={copy.mediaPermissionAllow}
+        denyLabel={copy.mediaPermissionDeny}
+        openSettingsLabel={copy.mediaPermissionOpenSettings}
+        mode={permissionPrompt?.mode ?? 'request'}
+        onAllow={() => {
+          void handlePermissionAllow();
+        }}
+        onDeny={() => setPermissionPrompt(null)}
+      />
+    </>
   );
 }
