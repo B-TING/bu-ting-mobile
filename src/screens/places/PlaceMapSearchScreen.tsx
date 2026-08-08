@@ -32,7 +32,6 @@ import { useTransientBottomToast } from '../../hooks/useTransientBottomToast';
 import type { RootStackParamList } from '../../navigation/types';
 import {
   fetchPlaceDetail,
-  fetchPlaceDetailsForList,
   searchPlacesByKeyword,
 } from '../../services/places/placesApiService';
 import { usePlaceBookmarkStore, usePlaceDetailCacheStore, usePlaceSearchStore } from '../../stores';
@@ -465,31 +464,7 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
         }
 
         setKeywordPlaces(result.places);
-
-        try {
-          const detailsById = await fetchPlaceDetailsForList(result.places);
-          if (requestId !== keywordRequestIdRef.current) {
-            return;
-          }
-          const enriched = result.places.map(place =>
-            enrichBusanPlaceFromDetail(place, detailsById[place.contentId]),
-          );
-          setKeywordPlaces(enriched);
-          setKeywordDetailsById(detailsById);
-          mergePlaceDetails(detailsById);
-        } catch (detailError) {
-          if (requestId !== keywordRequestIdRef.current) {
-            return;
-          }
-          // 목록은 유지하고, 선택 시 개별 detail 조회로 보완
-          logPlacesApiError('GET', '(keyword-details)', detailError, {
-            keyword,
-            contentTypeId: typeId,
-            count: result.places.length,
-          });
-          setKeywordDetailsById({});
-        }
-
+        // detail/Google 일괄 호출하지 않음 — 선택 시에만 단건 조회
         const first = result.places[0];
         if (first) {
           setMapCenter(first.location);
@@ -511,7 +486,7 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
         }
       }
     },
-    [copy.searchNoResults, mergePlaceDetails, showToast],
+    [copy.searchNoResults, showToast],
   );
 
   const handleSubmitKeyword = useCallback(() => {
