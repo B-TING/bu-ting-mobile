@@ -24,6 +24,13 @@ export const PLACE_SEARCH_COPY: Record<
     emptySub: string;
     /** 검색 API 400(null) 등 — 결과 없음 토스트 */
     searchNoResults: string;
+    /** 하단 결과 위 키워드 검색창 */
+    keywordPlaceholder: string;
+    keywordSearchA11y: string;
+    keywordClearA11y: string;
+    keywordSearchButton: string;
+    keywordSummary: (keyword: string, count: number) => string;
+    keywordEmptySub: string;
     summary: (count: number, radiusKm: number) => string;
     searchHere: string;
     /** 짧은 간격 재검색으로 서버 오류가 났을 때·쿨다운 안내 */
@@ -75,6 +82,12 @@ export const PLACE_SEARCH_COPY: Record<
     empty: '표시할 장소가 없어요',
     emptySub: '지도를 움직여 다른 위치를 검색해 보세요',
     searchNoResults: '검색 결과 없음',
+    keywordPlaceholder: '장소 이름으로 검색',
+    keywordSearchA11y: '키워드로 장소 검색',
+    keywordClearA11y: '검색어 지우기',
+    keywordSearchButton: '검색',
+    keywordSummary: (keyword, count) => `"${keyword}" · ${count}곳`,
+    keywordEmptySub: '다른 키워드로 검색해 보세요',
     summary: (count, radiusKm) => `주변 ${radiusKm}km · ${count}곳`,
     searchHere: '이곳에서 검색하기',
     searchRefreshTooSoon:
@@ -134,6 +147,12 @@ export const PLACE_SEARCH_COPY: Record<
     empty: 'No places to show',
     emptySub: 'Move the map and search another area',
     searchNoResults: 'No search results',
+    keywordPlaceholder: 'Search by place name',
+    keywordSearchA11y: 'Search places by keyword',
+    keywordClearA11y: 'Clear search',
+    keywordSearchButton: 'Search',
+    keywordSummary: (keyword, count) => `"${keyword}" · ${count} places`,
+    keywordEmptySub: 'Try a different keyword',
     summary: (count, radiusKm) => `Within ${radiusKm} km · ${count} places`,
     searchHere: 'Search this area',
     searchRefreshTooSoon:
@@ -193,6 +212,12 @@ export const PLACE_SEARCH_COPY: Record<
     empty: '表示する場所がありません',
     emptySub: '地図を動かして別のエリアを検索してください',
     searchNoResults: '検索結果がありません',
+    keywordPlaceholder: 'スポット名で検索',
+    keywordSearchA11y: 'キーワードでスポット検索',
+    keywordClearA11y: '検索語を消去',
+    keywordSearchButton: '検索',
+    keywordSummary: (keyword, count) => `"${keyword}" · ${count}件`,
+    keywordEmptySub: '別のキーワードで検索してください',
     summary: (count, radiusKm) => `周辺${radiusKm}km · ${count}件`,
     searchHere: 'このエリアで検索',
     searchRefreshTooSoon:
@@ -252,6 +277,12 @@ export const PLACE_SEARCH_COPY: Record<
     empty: '暂无地点',
     emptySub: '移动地图后搜索其他区域',
     searchNoResults: '没有搜索结果',
+    keywordPlaceholder: '按地点名称搜索',
+    keywordSearchA11y: '按关键词搜索地点',
+    keywordClearA11y: '清除搜索词',
+    keywordSearchButton: '搜索',
+    keywordSummary: (keyword, count) => `"${keyword}" · ${count} 个`,
+    keywordEmptySub: '请尝试其他关键词',
     summary: (count, radiusKm) => `周边 ${radiusKm} km · ${count} 个`,
     searchHere: '在此区域搜索',
     searchRefreshTooSoon: '短时间内无法多次刷新，请稍后再试。',

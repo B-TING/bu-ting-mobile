@@ -34,6 +34,7 @@ type PlaceDetailSheetProps = {
   language: AppLanguage;
   copy: Copy;
   bookmarked?: boolean;
+  loading?: boolean;
   onToggleBookmark?: () => void;
   onClose: () => void;
 };
@@ -71,6 +72,7 @@ export function PlaceDetailSheet({
   language,
   copy,
   bookmarked = false,
+  loading = false,
   onToggleBookmark,
   onClose,
 }: PlaceDetailSheetProps) {
@@ -191,6 +193,7 @@ export function PlaceDetailSheet({
               detail={detail}
               language={language}
               copy={copy}
+              loading={loading}
               bookmarked={bookmarked}
               onToggleBookmark={onToggleBookmark}
               layout="sheetHeader"

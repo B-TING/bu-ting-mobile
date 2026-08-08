@@ -145,14 +145,15 @@ function contentTypeToKind(contentTypeId: string): PlaceKind {
   }
 }
 
-function asContentTypeId(value: string): PlaceContentTypeId {
+function asContentTypeId(value: string | number): PlaceContentTypeId {
+  const normalized = String(value);
   if (
-    value === PLACE_CONTENT_TYPE.attraction ||
-    value === PLACE_CONTENT_TYPE.accommodation ||
-    value === PLACE_CONTENT_TYPE.restaurant ||
-    value === PLACE_CONTENT_TYPE.festival
+    normalized === PLACE_CONTENT_TYPE.attraction ||
+    normalized === PLACE_CONTENT_TYPE.accommodation ||
+    normalized === PLACE_CONTENT_TYPE.restaurant ||
+    normalized === PLACE_CONTENT_TYPE.festival
   ) {
-    return value;
+    return normalized;
   }
   return PLACE_CONTENT_TYPE.attraction;
 }
@@ -163,7 +164,7 @@ export function mapPlaceSearchItemToBusanPlace(item: PlaceSearchItemDto): BusanP
     return null;
   }
 
-  const contentId = item.contentId;
+  const contentId = String(item.contentId);
   const reviewCount = item.reviewCount ?? item.userRatingCount ?? 0;
 
   return {

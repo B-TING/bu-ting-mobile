@@ -43,8 +43,8 @@ export type TourApiDistrictCode =
 
 /** GET /api/v1/places 목록 항목 (백엔드 표시용 필드) */
 export type PlaceSearchItemDto = {
-  contentId: string;
-  contentTypeId: string;
+  contentId: string | number;
+  contentTypeId: string | number;
   title: string;
   address?: string;
   lat?: number;
