@@ -74,6 +74,9 @@ export type PlaceSearchResponseDto = {
   total?: number;
 };
 
+/** GET /api/v1/places/search arrange (searchKeyword2) */
+export type PlaceKeywordArrange = 'A' | 'C' | 'D' | 'O' | 'Q' | 'R';
+
 /** GET /api/v1/places/festivals 목록 항목 */
 export type FestivalSearchItemDto = {
   contentId: string;
