@@ -1,4 +1,3 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -8,7 +7,6 @@ import {
   View,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ScheduleMapView } from '../../kakaoMap';
 import { TravelogueCommentsSection } from '../../components/feed/TravelogueCommentsSection';
@@ -16,96 +14,32 @@ import { ImportPlanModal } from '../../components/feed/modals/ImportPlanModal';
 import { TravelogueCommentModal } from '../../components/feed/modals/TravelogueCommentModal';
 import { TravelogueImageCarousel } from '../../components/feed/TravelogueImageCarousel';
 import { TravelogueSocialBar } from '../../components/feed/TravelogueSocialBar';
-import {
-  TravelogueSocialError,
-  useTravelogueSocialActions,
-} from '../../components/feed/useTravelogueSocialActions';
 import { PlaceReviewFormModal } from '../../components/review/modals/PlaceReviewFormModal';
 import { TravelogueComposeModal } from '../../components/review/modals/TravelogueComposeModal';
 import { BackButton } from '../../components/shared/buttons/BackButton';
 import { AppIcon } from '../../components/shared/icons/AppIcon';
 import { ResolvedRemoteImage } from '../../components/shared/media/ResolvedRemoteImage';
 import { ReviewVideoThumb } from '../../components/shared/media/ReviewVideoViews';
-import { useAppAlert } from '../../components/shared/modals';
 import { StarRating } from '../../components/shared/rating/StarRating';
-import { EVENT_ZONE_BY_ID } from '../../constants/eventZone/eventZone';
-import { ICON_COLOR_MUTED, ICON_COLOR_PRIMARY } from '../../constants/icons';
 import { getScheduleDayColor } from '../../constants/plan/scheduleDayColors';
-import type { CopyFor } from '../../i18n';
-import { useAppLanguage, useCopy } from '../../i18n';
-import type { RootStackParamList } from '../../navigation/types';
-import { deletePlaceReviewForTravel } from '../../services/travel/deletePlaceReviewForTravel';
-import { loadTravelRecordDetail } from '../../services/travel/loadTravelRecordDetail';
+import { ICON_COLOR_MUTED, ICON_COLOR_PRIMARY } from '../../constants/icons';
 import {
-  PlaceReviewSyncError,
-  savePlaceReviewForTravel,
-} from '../../services/travel/savePlaceReviewForTravel';
-import { updateTravelRecordForTravel } from '../../services/travel/updateTravelRecordForTravel';
-import { useAuthStore, usePlanStore } from '../../stores';
-import { selectReusableAccessToken } from '../../stores/useAuthStore';
-import type {
-  PlaceReview,
-  TravelRecord,
-  TravelRecordComment,
-  TravelRecordPlace,
-} from '../../types/travelReview';
-import type { DailyItinerary, RouteItem, TravelPlan } from '../../types/travelPlan';
-import type { AppLanguage } from '../../types/user';
-import { resolveEventZoneForRoute } from '../../utils/eventZone/zoneResolver';
+  isTravelRecordPlaceVisited,
+  TRAVELOGUE_MAP_HEIGHT,
+  useTravelogueDetailBody,
+  useTravelogueDetailScreen,
+  zoneBaseColorForRoute,
+  type Copy,
+} from '../../hooks/feed/useTravelogueDetailScreen';
+import type { RootStackParamList } from '../../navigation/types';
+import type { PlaceReview, TravelRecord } from '../../types/travelReview';
 import {
   authorInitial,
-  collectTravelRecordMedia,
   getReviewForTravelRecordPlace,
-  snapshotToRouteItems,
-  travelRecordDestinationLabel,
-  travelRecordOverallRating,
 } from '../../utils/review/travelReview';
-import { computeTripTotalMinutes, formatDurationMinutes } from '../../utils/geo/tripDuration';
 import { formatWeekdayDate } from '../../utils/geo/geo';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'TravelRecordDetail'>;
-type Copy = CopyFor<'travelReview'>;
-
-const TRAVELOGUE_MAP_HEIGHT = 200;
-
-function sortTravelRecordPlaces(places: TravelRecordPlace[]): TravelRecordPlace[] {
-  return [...places].sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0));
-}
-
-function zoneBaseColorForRoute(route: RouteItem): string {
-  return EVENT_ZONE_BY_ID[resolveEventZoneForRoute(route)].baseColor;
-}
-
-/**
- * 방문 여부는 여행기 API의 `visited`만 사용 (로컬 일정 스냅샷 병합 금지).
- */
-function isTravelRecordPlaceVisited(place: TravelRecordPlace): boolean {
-  return place.visited === true;
-}
-
-function buildApiPlanShell(travelRecord: TravelRecord): TravelPlan | null {
-  const travelId = travelRecord.travelId;
-  if (!travelId) {
-    return null;
-  }
-  const start =
-    travelRecord.travelStartDate ?? new Date().toISOString().slice(0, 10);
-  const end = travelRecord.travelEndDate ?? start;
-  return {
-    planId: travelId,
-    apiTravelId: travelId,
-    title: travelRecord.title ?? '',
-    startDate: start,
-    endDate: end,
-    status: 'COMPLETED',
-    travelStatus: 'COMPLETED',
-    constraints: {},
-    members: [],
-    itinerary: [],
-    createdAt: travelRecord.publishedAt ?? new Date().toISOString(),
-    source: 'api',
-  };
-}
 
 function PlaceReviewBlock({
   review,
@@ -173,398 +107,70 @@ function PlaceReviewBlock({
   );
 }
 
-function TravelRecordDetailBody({
+function TravelogueDetailBody({
   travelRecord,
   isOwner,
   onTravelRecordChange,
   onReloadTravelRecord,
   navigation,
-  language,
-  copy,
-  insets,
 }: {
   travelRecord: TravelRecord;
   isOwner: boolean;
   onTravelRecordChange: (next: TravelRecord) => void;
-  /** 후기/여행기 수정 후 서버 상태로 다시 맞춤 */
   onReloadTravelRecord: () => Promise<void>;
   navigation: Props['navigation'];
-  language: AppLanguage;
-  copy: Copy;
-  insets: { top: number; bottom: number };
 }) {
-  const { alert } = useAppAlert();
-  const accessToken = useAuthStore(selectReusableAccessToken);
-  const linkedPlan = usePlanStore(s => {
-    const id = travelRecord.travelId;
-    if (!id) {
-      return null;
-    }
-    return s.plans.find(p => p.planId === id || p.apiTravelId === id) ?? null;
-  });
   const {
+    insets,
+    language,
+    copy,
     social,
     userId,
     userName,
     commenting,
-    handleToggleLike,
-    handleToggleBookmark,
     bookmarkedByMe,
-    handleAddComment,
-    handleUpdateComment,
-    handleDeleteComment,
     handleImportPlan,
     importModalProps,
-  } = useTravelogueSocialActions(travelRecord, copy, navigation, {
-    onTravelRecordPatch: patch => {
-      onTravelRecordChange({ ...travelRecord, ...patch });
-    },
+    commentOpen,
+    setCommentOpen,
+    editingComment,
+    setEditingComment,
+    selectedRouteId,
+    setSelectedRouteId,
+    composeOpen,
+    setComposeOpen,
+    publishing,
+    reviewRoute,
+    setReviewRoute,
+    savingReview,
+    refreshing,
+    onPullRefresh,
+    onToggleBookmark,
+    onToggleLike,
+    onSubmitComment,
+    onDeleteComment,
+    days,
+    scheduleItinerary,
+    routesByPlaceId,
+    feedImages,
+    rating,
+    destinationLabel,
+    selectedDayNumber,
+    totalDurationLabel,
+    publishedDate,
+    tripPeriod,
+    existingReviewForModal,
+    openPlaceReviewEditor,
+    handleSaveTravelogue,
+    handleSavePlaceReview,
+    handleDeletePlaceReview,
+  } = useTravelogueDetailBody({
+    travelRecord,
+    isOwner,
+    onTravelRecordChange,
+    onReloadTravelRecord,
+    navigation,
   });
-
-  const [commentOpen, setCommentOpen] = useState(false);
-  const [editingComment, setEditingComment] = useState<TravelRecordComment | null>(
-    null,
-  );
-  const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
-  const [composeOpen, setComposeOpen] = useState(false);
-  const [publishing, setPublishing] = useState(false);
-  const [reviewRoute, setReviewRoute] = useState<RouteItem | null>(null);
-  const [savingReview, setSavingReview] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-
-  const reloadAfterEdit = async () => {
-    try {
-      await onReloadTravelRecord();
-    } catch {
-      // 저장은 성공했을 수 있음 — 새로고침 실패만 조용히 무시
-    }
-  };
-
-  const onPullRefresh = () => {
-    setRefreshing(true);
-    void onReloadTravelRecord()
-      .catch(() => undefined)
-      .finally(() => setRefreshing(false));
-  };
-
-  const onToggleBookmark = () => {
-    void handleToggleBookmark().catch(error => {
-      alert({
-        title:
-          error instanceof TravelogueSocialError
-            ? error.message
-            : copy.socialBookmarkFailed,
-      });
-    });
-  };
-
-  const onToggleLike = () => {
-    void handleToggleLike().catch(error => {
-      alert({
-        title:
-          error instanceof TravelogueSocialError
-            ? error.message
-            : copy.socialLikeFailed,
-      });
-    });
-  };
-
-  const onSubmitComment = async (text: string) => {
-    try {
-      if (editingComment) {
-        await handleUpdateComment(editingComment.commentId, text);
-      } else {
-        await handleAddComment(text);
-      }
-    } catch (error) {
-      alert({
-        title:
-          error instanceof TravelogueSocialError
-            ? error.message
-            : editingComment
-              ? copy.socialCommentUpdateFailed
-              : copy.socialCommentFailed,
-      });
-      throw error;
-    }
-  };
-
-  const onDeleteComment = (comment: TravelRecordComment) => {
-    alert({
-      title: copy.feedDeleteCommentConfirmTitle,
-      message: copy.feedDeleteCommentConfirmMessage,
-      buttons: [
-        { label: copy.cancel, variant: 'secondary', onPress: () => undefined },
-        {
-          label: copy.feedDeleteComment,
-          variant: 'danger',
-          onPress: () => {
-            void handleDeleteComment(comment.commentId).catch(error => {
-              alert({
-                title:
-                  error instanceof TravelogueSocialError
-                    ? error.message
-                    : copy.socialCommentDeleteFailed,
-              });
-            });
-          },
-        },
-      ],
-    });
-  };
-
-  const editPlan = useMemo(
-    () =>
-      linkedPlan?.source === 'api'
-        ? linkedPlan
-        : buildApiPlanShell(travelRecord),
-    [linkedPlan, travelRecord],
-  );
-
-  /** 일정은 여행기 API days만 사용 (로컬 plan 스냅샷 폴백 금지) */
-  const days = useMemo(() => {
-    return (travelRecord.days ?? []).map(day => ({
-      ...day,
-      places: sortTravelRecordPlaces(day.places),
-    }));
-  }, [travelRecord]);
-
-  const scheduleItinerary = useMemo((): DailyItinerary[] => {
-    return days.map(day => ({
-      dailyId: day.travelRecordDayId,
-      dayNumber: day.dayNumber,
-      date: day.visitDate,
-      routes: snapshotToRouteItems(day.places),
-    }));
-  }, [days]);
-
-  const mapRoutes = useMemo(
-    () => scheduleItinerary.flatMap(day => day.routes),
-    [scheduleItinerary],
-  );
-
-  const routesByPlaceId = useMemo(
-    () => new Map(mapRoutes.map(route => [route.itemId, route] as const)),
-    [mapRoutes],
-  );
-
-  const feedImages = useMemo(() => collectTravelRecordMedia(travelRecord), [travelRecord]);
-  const rating = travelRecordOverallRating(travelRecord);
-  const destinationLabel = travelRecordDestinationLabel(travelRecord);
-
-  const selectedDayNumber = useMemo(() => {
-    if (!selectedRouteId) {
-      return undefined;
-    }
-    const day = scheduleItinerary.find(item =>
-      item.routes.some(route => route.itemId === selectedRouteId),
-    );
-    return day?.dayNumber;
-  }, [scheduleItinerary, selectedRouteId]);
-
-  useEffect(() => {
-    if (mapRoutes.length === 0) {
-      setSelectedRouteId(null);
-      return;
-    }
-    setSelectedRouteId(prev =>
-      prev && mapRoutes.some(r => r.itemId === prev) ? prev : mapRoutes[0].itemId,
-    );
-  }, [mapRoutes]);
-
-  const totalDurationLabel = useMemo(() => {
-    if (scheduleItinerary.length === 0) {
-      return null;
-    }
-    const minutes = computeTripTotalMinutes(scheduleItinerary);
-    return copy.totalDuration(formatDurationMinutes(minutes, language));
-  }, [scheduleItinerary, copy, language]);
-
-  const publishedDate = travelRecord.publishedAt
-    ? new Date(travelRecord.publishedAt).toLocaleDateString()
-    : '';
-  const tripPeriod =
-    travelRecord.travelStartDate && travelRecord.travelEndDate
-      ? copy.tripPeriod(travelRecord.travelStartDate, travelRecord.travelEndDate)
-      : null;
-
-  const existingReviewForModal = reviewRoute
-    ? getReviewForTravelRecordPlace(travelRecord.placeReviews, {
-        travelRecordPlaceId: reviewRoute.itemId,
-        planPlaceId: reviewRoute.apiPlanPlaceId,
-      })
-    : undefined;
-
-  const openPlaceReviewEditor = (place: TravelRecordPlace) => {
-    const route =
-      routesByPlaceId.get(place.travelRecordPlaceId) ??
-      snapshotToRouteItems([place])[0];
-    if (!route?.apiPlanPlaceId && place.planPlaceId) {
-      setReviewRoute({ ...route, apiPlanPlaceId: place.planPlaceId });
-      return;
-    }
-    setReviewRoute(route);
-  };
-
-  const handleSaveTravelogue = async (payload: {
-    title: string;
-    content: string;
-    overallRating: number;
-    status: 'PUBLISHED' | 'HIDDEN';
-  }) => {
-    if (!accessToken?.trim() || !travelRecord.travelId) {
-      alert({
-        title:
-          language === 'ko' ? '로그인이 필요합니다.' : 'Please sign in to edit.',
-      });
-      throw new Error('login required');
-    }
-    setPublishing(true);
-    try {
-      const updated = await updateTravelRecordForTravel({
-        accessToken,
-        travelRecordId: travelRecord.travelRecordId,
-        travelId: travelRecord.travelId,
-        authorNickname: travelRecord.authorNickname || userName,
-        title: payload.title,
-        content: payload.content,
-        status: payload.status,
-        currentStatus: travelRecord.status,
-        coverImageUrl: travelRecord.coverImageUrl,
-        overallRating: payload.overallRating,
-      });
-      onTravelRecordChange({
-        ...updated,
-        placeReviews: travelRecord.placeReviews,
-        days: updated.days.length > 0 ? updated.days : travelRecord.days,
-      });
-      await reloadAfterEdit();
-    } catch (error) {
-      alert({
-        title:
-          error instanceof Error
-            ? error.message
-            : language === 'ko'
-              ? '여행기 수정에 실패했습니다.'
-              : 'Failed to update travelogue.',
-      });
-      throw error;
-    } finally {
-      setPublishing(false);
-    }
-  };
-
-  const handleSavePlaceReview = async (
-    payload: Omit<PlaceReview, 'placeReviewId' | 'createdAt' | 'updatedAt'> & {
-      placeReviewId?: string;
-    },
-  ) => {
-    if (!editPlan || !reviewRoute) {
-      return;
-    }
-    setSavingReview(true);
-    try {
-      const saved = await savePlaceReviewForTravel({
-        accessToken,
-        plan: editPlan,
-        route: reviewRoute,
-        authorNickname: travelRecord.authorNickname || userName,
-        payload: {
-          placeReviewId: payload.placeReviewId,
-          rating: payload.rating,
-          content: payload.content,
-          tags: payload.tags,
-          media: payload.media,
-        },
-      });
-      const nextReviews = [
-        ...travelRecord.placeReviews.filter(
-          r =>
-            r.placeReviewId !== saved.placeReviewId &&
-            !(
-              saved.planPlaceId &&
-              r.planPlaceId &&
-              r.planPlaceId === saved.planPlaceId
-            ),
-        ),
-        saved,
-      ];
-      onTravelRecordChange({ ...travelRecord, placeReviews: nextReviews });
-      await reloadAfterEdit();
-    } catch (error) {
-      alert({
-        title:
-          error instanceof PlaceReviewSyncError
-            ? error.message
-            : error instanceof Error
-              ? error.message
-              : 'Failed to save review.',
-      });
-      throw error;
-    } finally {
-      setSavingReview(false);
-    }
-  };
-
-  const handleDeletePlaceReview = () =>
-    new Promise<void>((resolve, reject) => {
-      if (!editPlan || !reviewRoute) {
-        reject(new Error('no route'));
-        return;
-      }
-      alert({
-        title: copy.deleteReviewConfirmTitle,
-        message: copy.deleteReviewConfirmMessage,
-        buttons: [
-          {
-            label: copy.cancel,
-            variant: 'secondary',
-            onPress: () => reject(new Error('cancelled')),
-          },
-          {
-            label: copy.deleteReviewConfirm,
-            variant: 'danger',
-            onPress: () => {
-              void (async () => {
-                setSavingReview(true);
-                try {
-                  await deletePlaceReviewForTravel({
-                    accessToken,
-                    plan: editPlan,
-                    route: reviewRoute,
-                    placeReviewId: existingReviewForModal?.placeReviewId,
-                  });
-                  if (existingReviewForModal) {
-                    onTravelRecordChange({
-                      ...travelRecord,
-                      placeReviews: travelRecord.placeReviews.filter(
-                        r =>
-                          r.placeReviewId !==
-                          existingReviewForModal.placeReviewId,
-                      ),
-                    });
-                  }
-                  await reloadAfterEdit();
-                  resolve();
-                } catch (error) {
-                  alert({
-                    title:
-                      error instanceof PlaceReviewSyncError
-                        ? error.message
-                        : error instanceof Error
-                          ? error.message
-                          : 'Failed to delete review.',
-                  });
-                  reject(error);
-                } finally {
-                  setSavingReview(false);
-                }
-              })();
-            },
-          },
-        ],
-      });
-    });
 
   return (
     <View className="flex-1 bg-brand-background" style={{ paddingTop: insets.top }}>
@@ -947,72 +553,11 @@ function TravelRecordDetailBody({
 }
 
 export function TravelogueDetailScreen({ navigation, route }: Props) {
-  const insets = useSafeAreaInsets();
-  const language = useAppLanguage();
-  const copy = useCopy('travelReview');
-  const accessToken = useAuthStore(selectReusableAccessToken);
-  const authUserId = useAuthStore(s => s.user?.userId ?? null);
-  const travelRecordId = route.params.travelRecordId;
-  const [travelRecord, setTravelRecord] = useState<TravelRecord | null>(null);
-  const [loadedAsOwner, setLoadedAsOwner] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
-
-  const reloadTravelRecord = useCallback(async () => {
-    const { record, loadedAsOwner: asOwner } = await loadTravelRecordDetail({
-      travelRecordId,
-      accessToken,
+  const { language, loading, loadError, travelRecord, isOwner, setTravelRecord, reloadTravelRecord } =
+    useTravelogueDetailScreen({
+      navigation,
+      travelRecordId: route.params.travelRecordId,
     });
-    setTravelRecord(record);
-    setLoadedAsOwner(asOwner);
-    setLoadError(false);
-  }, [travelRecordId, accessToken]);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoadError(false);
-    setLoading(true);
-    setTravelRecord(null);
-    setLoadedAsOwner(false);
-    void loadTravelRecordDetail({
-      travelRecordId,
-      accessToken,
-    })
-      .then(({ record, loadedAsOwner: asOwner }) => {
-        if (!cancelled) {
-          setTravelRecord(record);
-          setLoadedAsOwner(asOwner);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setLoadError(true);
-          setTravelRecord(null);
-          setLoadedAsOwner(false);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [travelRecordId, accessToken]);
-
-  const isOwner = useMemo(() => {
-    if (loadedAsOwner) {
-      return true;
-    }
-    if (!authUserId || !travelRecord?.authorId) {
-      return false;
-    }
-    return (
-      String(authUserId).toLowerCase() ===
-      String(travelRecord.authorId).toLowerCase()
-    );
-  }, [loadedAsOwner, authUserId, travelRecord?.authorId]);
 
   if (loading) {
     return (
@@ -1043,15 +588,12 @@ export function TravelogueDetailScreen({ navigation, route }: Props) {
   }
 
   return (
-    <TravelRecordDetailBody
+    <TravelogueDetailBody
       travelRecord={travelRecord}
       isOwner={isOwner}
       onTravelRecordChange={setTravelRecord}
       onReloadTravelRecord={reloadTravelRecord}
       navigation={navigation}
-      language={language}
-      copy={copy}
-      insets={insets}
     />
   );
 }
