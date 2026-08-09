@@ -1,9 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Dimensions,
   FlatList,
-  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -11,137 +8,35 @@ import {
   Text,
   TextInput,
   View,
-  type KeyboardEvent,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ChatMessageBubble } from '../../components/helpdesk/ChatMessageBubble';
 import { SuggestedQuestions } from '../../components/helpdesk/SuggestedQuestions';
 import { BackButton } from '../../components/shared/buttons/BackButton';
-import {
-  SUGGESTED_QUESTIONS,
-  type HelpDeskIntent,
-} from '../../constants/helpdesk/helpDesk';
-import { useAppLanguage, useCopy } from '../../i18n';
+import { useHelpDeskChatScreen } from '../../hooks/helpdesk/useHelpDeskChatScreen';
 import type { RootStackParamList } from '../../navigation/types';
-import {
-  matchHelpDeskIntent,
-  requestHelpDeskReply,
-} from '../../services/helpdesk/helpDeskAiService';
-import { selectActivePlan, useAppStore, usePlanStore } from '../../stores';
-import { getNearestUpcomingStop } from '../../utils/plan/planSchedule';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'HelpDeskChat'>;
 
-type ChatMessage = {
-  id: string;
-  role: 'user' | 'assistant';
-  text: string;
-};
-
-let messageCounter = 0;
-
-function nextMessageId(): string {
-  messageCounter += 1;
-  return `msg-${messageCounter}-${Date.now()}`;
-}
-
-function readKeyboardInset(event: KeyboardEvent): number {
-  const windowHeight = Dimensions.get('window').height;
-  const { screenY, height } = event.endCoordinates;
-  return Math.max(height, windowHeight - screenY);
-}
-
 export function HelpDeskChatScreen({ navigation }: Props) {
-  const insets = useSafeAreaInsets();
-  const language = useAppLanguage();
-  const copy = useCopy('helpdesk');
-  const activePlan = usePlanStore(selectActivePlan);
-
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [keyboardInset, setKeyboardInset] = useState(0);
-  const listRef = useRef<FlatList<ChatMessage>>(null);
-
-  useEffect(() => {
-    if (Platform.OS !== 'ios') {
-      return;
-    }
-
-    const onShow = (event: KeyboardEvent) => setKeyboardInset(readKeyboardInset(event));
-    const onHide = () => setKeyboardInset(0);
-
-    const showSub = Keyboard.addListener('keyboardWillShow', onShow);
-    const hideSub = Keyboard.addListener('keyboardWillHide', onHide);
-
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, []);
-
-  const anchor = useMemo(() => {
-    if (!activePlan) {
-      return undefined;
-    }
-    const upcoming = getNearestUpcomingStop(activePlan);
-    return upcoming?.route.location;
-  }, [activePlan]);
-
-  const showSuggestions = messages.length === 0;
-
-  const scrollToEnd = useCallback(() => {
-    requestAnimationFrame(() => {
-      listRef.current?.scrollToEnd({ animated: true });
-    });
-  }, []);
-
-  const sendMessage = useCallback(
-    async (text: string, intent?: HelpDeskIntent) => {
-      const trimmed = text.trim();
-      if (!trimmed || loading) {
-        return;
-      }
-
-      const userMsg: ChatMessage = {
-        id: nextMessageId(),
-        role: 'user',
-        text: trimmed,
-      };
-
-      setMessages(prev => [...prev, userMsg]);
-      setInput('');
-      setLoading(true);
-      scrollToEnd();
-
-      try {
-        const resolvedIntent = intent ?? matchHelpDeskIntent(trimmed);
-        const reply = await requestHelpDeskReply(trimmed, resolvedIntent, {
-          language,
-          activePlan,
-          anchor,
-        });
-
-        setMessages(prev => [
-          ...prev,
-          { id: nextMessageId(), role: 'assistant', text: reply },
-        ]);
-      } finally {
-        setLoading(false);
-        scrollToEnd();
-      }
-    },
-    [activePlan, anchor, language, loading, scrollToEnd],
-  );
-
-  const handleSuggestedSelect = useCallback(
-    (intent: HelpDeskIntent, label: string) => {
-      sendMessage(label, intent);
-    },
-    [sendMessage],
-  );
+  const {
+    copy,
+    language,
+    messages,
+    input,
+    setInput,
+    loading,
+    keyboardInset,
+    listRef,
+    showSuggestions,
+    scrollToEnd,
+    sendMessage,
+    handleSuggestedSelect,
+    inputBottomPad,
+    suggestedQuestions,
+    insets,
+  } = useHelpDeskChatScreen();
 
   const listHeader = showSuggestions ? (
     <View className="px-4 pt-2">
@@ -150,7 +45,7 @@ export function HelpDeskChatScreen({ navigation }: Props) {
         <Text className="text-sm leading-5 text-brand-muted">{copy.welcomeSub}</Text>
       </View>
       <SuggestedQuestions
-        questions={SUGGESTED_QUESTIONS}
+        questions={suggestedQuestions}
         language={language}
         title={copy.suggestedTitle}
         disabled={loading}
@@ -165,8 +60,6 @@ export function HelpDeskChatScreen({ navigation }: Props) {
       <Text className="ml-2 text-sm text-brand-muted">{copy.typing}</Text>
     </View>
   ) : null;
-
-  const inputBottomPad = Math.max(insets.bottom, 12);
 
   const body = (
     <>
@@ -304,4 +197,3 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
   },
 });
-

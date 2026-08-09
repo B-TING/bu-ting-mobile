@@ -1,9 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   FlatList,
   KeyboardAvoidingView,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
   Platform,
   Pressable,
   Text,
@@ -18,156 +15,36 @@ import { BackButton } from '../../components/shared/buttons/BackButton';
 import {
   chatRoomTitle,
   chatRoomTopic,
-  getChatRoomById,
 } from '../../constants/eventZone/eventZone';
-import { useAppLanguage, useCopy } from '../../i18n';
-import { isZoneChatWebSocketEnabled, ZONE_CHAT_WS_CONFIG } from '../../constants/chat/zoneChatConfig';
-import { useZoneChatWebSocket } from '../../hooks/useZoneChatWebSocket';
-import { zoneChatConnectionStatusLabel } from '../../utils/chat/zoneChatConnectionStatus';
+import { useEventZoneChatScreen } from '../../hooks/eventZone/useEventZoneChatScreen';
 import type { RootStackParamList } from '../../navigation/types';
-import { selectReusableAccessToken, useAuthStore } from '../../stores/useAuthStore';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EventZoneChat'>;
 
-const LOAD_MORE_SCROLL_THRESHOLD = 72;
-const STICK_TO_BOTTOM_THRESHOLD = 96;
 const INITIAL_RENDER_BATCH = 40;
 
 export function EventZoneChatScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
-  const language = useAppLanguage();
-  const copy = useCopy('zoneChat');
-  const room = getChatRoomById(route.params.roomId);
-  const wsEnabled = isZoneChatWebSocketEnabled();
-  const accessToken = useAuthStore(selectReusableAccessToken);
-  const needsLogin = wsEnabled && !accessToken;
-
   const {
+    language,
+    copy,
+    room,
+    accessToken,
     messages,
-    sendMessage,
-    enabled: chatEnabled,
-    status: wsStatus,
-    isRealtime,
+    input,
+    setInput,
+    listRef,
     isLoadingHistory,
     isLoadingMoreHistory,
-    historyLoaded,
     hasMoreHistory,
-    loadMoreHistory,
+    isRealtime,
     memberCount,
-  } = useZoneChatWebSocket({
-    roomId: route.params.roomId,
-    zoneId: room?.zoneId,
-    guestDisplayNickname: language === 'ko' ? '나' : 'Me',
-    wsEnabled: wsEnabled && !needsLogin,
-  });
-
-  const [input, setInput] = useState('');
-  const listRef = useRef<FlatList<(typeof messages)[number]>>(null);
-  const lastMessageIdRef = useRef<string | null>(null);
-  const loadMoreArmedRef = useRef(true);
-  const stickToBottomRef = useRef(true);
-  const canLoadMoreRef = useRef(false);
-  const initialScrollDoneRef = useRef(false);
-
-  useEffect(() => {
-    lastMessageIdRef.current = null;
-    loadMoreArmedRef.current = true;
-    stickToBottomRef.current = true;
-    canLoadMoreRef.current = false;
-    initialScrollDoneRef.current = false;
-  }, [route.params.roomId]);
-
-  useEffect(() => {
-    if (!historyLoaded) {
-      canLoadMoreRef.current = false;
-      return undefined;
-    }
-
-    const timer = setTimeout(() => {
-      canLoadMoreRef.current = true;
-    }, ZONE_CHAT_WS_CONFIG.memberCountSyncDelayMs);
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [historyLoaded, route.params.roomId]);
-
-  const scrollToLatest = useCallback((animated = false) => {
-    const list = listRef.current;
-    if (!list || messages.length === 0) {
-      return;
-    }
-    list.scrollToEnd({ animated });
-  }, [messages.length]);
-
-  useEffect(() => {
-    if (!historyLoaded || messages.length === 0) {
-      return;
-    }
-
-    if (!initialScrollDoneRef.current) {
-      requestAnimationFrame(() => {
-        scrollToLatest(false);
-        initialScrollDoneRef.current = true;
-      });
-      return;
-    }
-
-    const lastMessageId = messages[messages.length - 1]?.id ?? null;
-    if (!lastMessageId) {
-      return;
-    }
-
-    const previousLastId = lastMessageIdRef.current;
-    lastMessageIdRef.current = lastMessageId;
-
-    if (previousLastId !== lastMessageId && stickToBottomRef.current) {
-      scrollToLatest(true);
-    }
-  }, [historyLoaded, messages, scrollToLatest]);
-
-  const handleScroll = useCallback(
-    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-      const distanceFromBottom =
-        contentSize.height - layoutMeasurement.height - contentOffset.y;
-      stickToBottomRef.current = distanceFromBottom < STICK_TO_BOTTOM_THRESHOLD;
-
-      if (contentOffset.y > LOAD_MORE_SCROLL_THRESHOLD) {
-        loadMoreArmedRef.current = true;
-        return;
-      }
-
-      if (
-        canLoadMoreRef.current &&
-        loadMoreArmedRef.current &&
-        hasMoreHistory &&
-        !isLoadingMoreHistory
-      ) {
-        loadMoreArmedRef.current = false;
-        loadMoreHistory();
-      }
-    },
-    [hasMoreHistory, isLoadingMoreHistory, loadMoreHistory],
-  );
-
-  const sendMessageFromInput = useCallback(() => {
-    const trimmed = input.trim();
-    if (!trimmed) {
-      return;
-    }
-
-    stickToBottomRef.current = true;
-    sendMessage(trimmed);
-    setInput('');
-    scrollToLatest(true);
-  }, [input, scrollToLatest, sendMessage]);
-
-  const statusHint = chatEnabled
-    ? zoneChatConnectionStatusLabel(wsStatus, language, { needsLogin })
-    : needsLogin
-      ? zoneChatConnectionStatusLabel(wsStatus, language, { needsLogin: true })
-      : copy.localOnlyHint;
+    statusHint,
+    initialNumToRender,
+    handleScroll,
+    sendMessageFromInput,
+    handleContentSizeChange,
+  } = useEventZoneChatScreen({ roomId: route.params.roomId });
 
   if (!room) {
     return (
@@ -231,7 +108,7 @@ export function EventZoneChatScreen({ navigation, route }: Props) {
             keyExtractor={item => item.id}
             className="flex-1 px-4 pt-4"
             contentContainerClassName="grow pb-4"
-            initialNumToRender={Math.min(messages.length || INITIAL_RENDER_BATCH, INITIAL_RENDER_BATCH)}
+            initialNumToRender={initialNumToRender}
             maxToRenderPerBatch={INITIAL_RENDER_BATCH}
             windowSize={11}
             removeClippedSubviews={false}
@@ -243,16 +120,7 @@ export function EventZoneChatScreen({ navigation, route }: Props) {
                   }
                 : undefined
             }
-            onContentSizeChange={() => {
-              if (!initialScrollDoneRef.current && messages.length > 0) {
-                scrollToLatest(false);
-                initialScrollDoneRef.current = true;
-                return;
-              }
-              if (stickToBottomRef.current) {
-                scrollToLatest(false);
-              }
-            }}
+            onContentSizeChange={handleContentSizeChange}
             ListEmptyComponent={
               <View className="flex-1 items-center justify-center py-12">
                 <Text className="text-center text-sm text-brand-muted">{copy.emptyMessages}</Text>
