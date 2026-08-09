@@ -17,8 +17,8 @@ export type PlaceContentTypeId =
   | typeof PLACE_CONTENT_TYPE.festival;
 
 export const PLACE_MAP_SEARCH_TYPES: PlaceContentTypeId[] = [
-  PLACE_CONTENT_TYPE.attraction,
   PLACE_CONTENT_TYPE.accommodation,
+  PLACE_CONTENT_TYPE.attraction,
   PLACE_CONTENT_TYPE.restaurant,
   PLACE_CONTENT_TYPE.festival,
 ];
@@ -43,8 +43,8 @@ export type TourApiDistrictCode =
 
 /** GET /api/v1/places 목록 항목 (백엔드 표시용 필드) */
 export type PlaceSearchItemDto = {
-  contentId: string;
-  contentTypeId: string;
+  contentId: string | number;
+  contentTypeId: string | number;
   title: string;
   address?: string;
   lat?: number;
@@ -73,6 +73,9 @@ export type PlaceSearchResponseDto = {
   totalCount?: number;
   total?: number;
 };
+
+/** GET /api/v1/places/search arrange (searchKeyword2) */
+export type PlaceKeywordArrange = 'A' | 'C' | 'D' | 'O' | 'Q' | 'R';
 
 /** GET /api/v1/places/festivals 목록 항목 */
 export type FestivalSearchItemDto = {

@@ -72,9 +72,13 @@ export const USER_ENDPOINTS = {
 } as const;
 
 export const PLACES_ENDPOINTS = {
-  search: '/api/v1/places',
+  /** GET /api/v1/places — 장소 목록 조회 */
+  list: '/api/v1/places',
+  /** GET /api/v1/places/search — 키워드 검색 (searchKeyword2) */
+  keywordSearch: '/api/v1/places/search',
   location: '/api/v1/places/location',
   festivals: '/api/v1/places/festivals',
+  /** GET /api/v1/places/{contentId}/detail — 목록·키워드 검색 공통 상세 */
   detail: (contentId: string) => \`/api/v1/places/\${contentId}/detail\`,
 } as const;
 

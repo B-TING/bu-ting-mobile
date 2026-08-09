@@ -5,6 +5,7 @@ import type {
   FestivalSearchResponseDto,
   PlaceContentTypeId,
   PlaceDetailResponseDto,
+  PlaceKeywordArrange,
   PlaceSearchResponseDto,
   TourApiDistrictCode,
 } from '../../types/placesApi';
@@ -66,8 +67,25 @@ type SearchFestivalsParams = {
   arrange?: 'A' | 'C' | 'D' | 'O' | 'Q' | 'R';
 };
 
+/** GET /api/v1/places/search — 키워드 기반 장소 검색 */
+export type SearchPlacesByKeywordParams = {
+  keyword: string;
+  page?: number;
+  size?: number;
+  districtCode?: TourApiDistrictCode;
+  contentTypeId?: PlaceContentTypeId | string;
+  arrange?: PlaceKeywordArrange;
+};
+
 export type FestivalSearchResult = {
   festivals: BusanFestival[];
+  totalCount: number;
+  page: number;
+  size: number;
+};
+
+export type PlaceKeywordSearchResult = {
+  places: BusanPlace[];
   totalCount: number;
   page: number;
   size: number;
@@ -118,6 +136,29 @@ function buildFestivalsUrl(params: SearchFestivalsParams): string {
     query.set('districtCode', params.districtCode);
   }
   return `${API_BASE_URL}${PLACES_ENDPOINTS.festivals}?${query.toString()}`;
+}
+
+function buildKeywordSearchUrl(params: SearchPlacesByKeywordParams): string {
+  const keyword = params.keyword.trim();
+  if (!keyword) {
+    throw new PlacesApiServiceError('Places keyword search requires a keyword', {
+      status: 400,
+    });
+  }
+
+  const query = new URLSearchParams({
+    keyword,
+    page: String(params.page ?? 1),
+    size: String(params.size ?? 20),
+    arrange: params.arrange ?? 'A',
+  });
+  if (params.districtCode) {
+    query.set('districtCode', params.districtCode);
+  }
+  if (params.contentTypeId) {
+    query.set('contentTypeId', params.contentTypeId);
+  }
+  return `${API_BASE_URL}${PLACES_ENDPOINTS.keywordSearch}?${query.toString()}`;
 }
 
 async function fetchPlaceList(
@@ -226,7 +267,8 @@ export async function searchFestivals(
 }
 
 export async function fetchFestivalDetail(festival: BusanFestival): Promise<BusanFestival> {
-  const googleSearchText = [festival.titleKo, festival.addressKo].filter(Boolean).join(' ');
+  const googleSearchText =
+    [festival.titleKo, festival.addressKo].filter(Boolean).join(' ').trim() || undefined;
   const url = buildDetailUrl(festival.id, {
     contentTypeId: PLACE_CONTENT_TYPE.festival,
     googleSearchText,
@@ -295,35 +337,47 @@ export async function searchPlacesByLocation(
   });
 }
 
-export async function fetchPlaceDetail(params: FetchPlaceDetailParams): Promise<PlaceDetailVO | null> {
-  logPlacesApi('detail.start', 'place detail requested', {
+/**
+ * GET /api/v1/places/search — 키워드 기반 장소 검색 (부산, searchKeyword2).
+ * 검색 결과 없음(404)은 빈 목록으로 반환합니다.
+ */
+export async function searchPlacesByKeyword(
+  params: SearchPlacesByKeywordParams,
+): Promise<PlaceKeywordSearchResult> {
+  const page = params.page ?? 1;
+  const size = params.size ?? 20;
+  const keyword = params.keyword.trim();
+
+  logPlacesApi('keyword.start', 'keyword search', {
     detail: {
-      contentId: params.contentId,
+      keyword,
+      page,
+      size,
+      districtCode: params.districtCode,
       contentTypeId: params.contentTypeId,
-      googleSearchText: params.googleSearchText,
+      arrange: params.arrange ?? 'A',
     },
   });
 
   let url: string;
   try {
-    url = buildDetailUrl(params.contentId, params);
+    url = buildKeywordSearchUrl(params);
   } catch (error) {
-    logPlacesApiError('GET', '(detail-url-build)', error, {
-      contentId: params.contentId,
-      contentTypeId: params.contentTypeId,
-    });
+    logPlacesApiError('GET', '(keyword-url-build)', error, { keyword });
     throw error;
   }
 
   const logContext = {
-    contentId: params.contentId,
+    keyword,
+    page,
+    size,
+    districtCode: params.districtCode,
     contentTypeId: params.contentTypeId,
-    googleSearchText: params.googleSearchText,
   };
 
-  const payload = await apiGet<PlaceDetailResponseDto>(url, {
+  const payload = await apiGet<PlaceSearchResponseDto>(url, {
     headers: { Accept: 'application/json' },
-    errorMessagePrefix: 'Places request failed',
+    errorMessagePrefix: 'Places keyword search failed',
     mapError: mapPlacesError,
     onRequest: () => {
       logPlacesApiRequest('GET', url, logContext);
@@ -336,18 +390,120 @@ export async function fetchPlaceDetail(params: FetchPlaceDetailParams): Promise<
     },
   });
 
-  if (!payload?.contentId) {
-    logPlacesApiError('GET', url, new Error('Place detail response missing contentId'), {
-      ...logContext,
-    });
-    return null;
+  if (!payload) {
+    return { places: [], totalCount: 0, page, size };
   }
 
-  return mapPlaceDetailToPlaceDetailVO(payload, {
-    name: params.fallbackName,
-    address: params.fallbackAddress,
-    imageUrl: params.fallbackImageUrl,
-  });
+  const mapped = extractPlaceSearchItems(payload)
+    .map(mapPlaceSearchItemToBusanPlace)
+    .filter((place): place is BusanPlace => place != null);
+
+  if (mapped.length === 0 && extractPlaceSearchItems(payload).length > 0) {
+    logPlacesApiError('GET', url, new Error('All place items failed coordinate mapping'), {
+      ...logContext,
+      rawItemCount: extractPlaceSearchItems(payload).length,
+    });
+  }
+
+  return {
+    places: mapped,
+    totalCount: payload.totalCount ?? payload.total ?? mapped.length,
+    page: payload.page ?? page,
+    size: payload.size ?? size,
+  };
+}
+
+export async function fetchPlaceDetail(params: FetchPlaceDetailParams): Promise<PlaceDetailVO | null> {
+  const attempts: Array<string | undefined> = [];
+  const searchText = params.googleSearchText?.trim();
+  if (searchText) {
+    attempts.push(searchText);
+  }
+  attempts.push(undefined);
+
+  let lastError: unknown;
+
+  for (let i = 0; i < attempts.length; i += 1) {
+    const googleSearchText = attempts[i];
+    logPlacesApi('detail.start', 'place detail requested', {
+      detail: {
+        contentId: params.contentId,
+        contentTypeId: params.contentTypeId,
+        googleSearchText: googleSearchText ?? null,
+        attempt: i + 1,
+      },
+    });
+
+    let url: string;
+    try {
+      url = buildDetailUrl(params.contentId, { ...params, googleSearchText });
+    } catch (error) {
+      logPlacesApiError('GET', '(detail-url-build)', error, {
+        contentId: params.contentId,
+        contentTypeId: params.contentTypeId,
+      });
+      throw error;
+    }
+
+    const logContext = {
+      contentId: params.contentId,
+      contentTypeId: params.contentTypeId,
+      googleSearchText: googleSearchText ?? null,
+    };
+
+    try {
+      const payload = await apiGet<PlaceDetailResponseDto>(url, {
+        headers: { Accept: 'application/json' },
+        errorMessagePrefix: 'Places request failed',
+        mapError: mapPlacesError,
+        onRequest: () => {
+          logPlacesApiRequest('GET', url, logContext);
+        },
+        onResponse: ({ status, body }) => {
+          logPlacesApiResponse('GET', url, status, body, logContext);
+        },
+        onError: error => {
+          logPlacesApiError('GET', url, error, logContext);
+        },
+      });
+
+      if (!payload?.contentId) {
+        logPlacesApiError('GET', url, new Error('Place detail response missing contentId'), {
+          ...logContext,
+        });
+        return null;
+      }
+
+      return mapPlaceDetailToPlaceDetailVO(payload, {
+        name: params.fallbackName,
+        address: params.fallbackAddress,
+        imageUrl: params.fallbackImageUrl,
+      });
+    } catch (error) {
+      lastError = error;
+      const status =
+        error && typeof error === 'object' && 'status' in error
+          ? Number((error as { status: unknown }).status)
+          : undefined;
+      const canRetryWithoutGoogle =
+        status != null && status >= 500 && googleSearchText != null && i < attempts.length - 1;
+      if (canRetryWithoutGoogle) {
+        logPlacesApi('detail.retry', 'detail 5xx — retry without googleSearchText', {
+          detail: logContext,
+        });
+        continue;
+      }
+      if (status != null && status >= 500) {
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  if (lastError) {
+    throw lastError;
+  }
+  return null;
 }
 
 export async function fetchPlaceDetailsForList(
@@ -363,7 +519,7 @@ export async function fetchPlaceDetailsForList(
 
   const entries = await Promise.all(
     places.map(async place => {
-      const googleSearchText = [place.name, place.address].filter(Boolean).join(' ');
+      const googleSearchText = [place.name, place.address].filter(Boolean).join(' ').trim() || undefined;
       try {
         const detail = await fetchPlaceDetail({
           contentId: place.contentId,

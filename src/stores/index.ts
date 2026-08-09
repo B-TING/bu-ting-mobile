@@ -37,6 +37,8 @@ export { usePlaceBookmarkStore } from './usePlaceBookmarkStore';
 export {
   isPlaceSearchNoResultsError,
   isPlaceSearchNoResultsMessage,
+  isPlaceSearchServerError,
+  placeSearchCatchMessage,
   searchCenterKey,
   usePlaceSearchStore,
   type PlaceSearchCacheEntry,

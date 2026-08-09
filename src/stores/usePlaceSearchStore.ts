@@ -15,12 +15,13 @@ import { mapFestivalToBusanPlace } from '../utils/places/festivalApiMapper';
 import { logPlacesApiError } from '../utils/places/placesApiLogger';
 import { usePlaceDetailCacheStore } from './usePlaceDetailCacheStore';
 
-/** 검색 완료 후 UI에서 토스트 등을 분기하기 위한 결과 */
+/** 검색 완료 후 UI에서 결과/에러를 분기하기 위한 결과 */
 export type PlaceSearchOutcome = 'success' | 'empty' | 'cooldown' | 'error' | 'stale';
 
-const NO_RESULTS_MESSAGE_RE = /400\s*\(\s*null\s*\)|Places request failed\s*\(\s*400\s*\)|Festivals request failed\s*\(\s*400\s*\)|검색\s*결과.*400/i;
+const NO_RESULTS_MESSAGE_RE =
+  /400\s*\(\s*null\s*\)|Places request failed\s*\(\s*400\s*\)|Festivals request failed\s*\(\s*400\s*\)|검색\s*결과.*400|Places request failed\s*\(\s*404\s*\)|Festivals request failed\s*\(\s*404\s*\)/i;
 
-/** UI에 남은 400/empty 응답 메시지 — 빨간 에러 대신 토스트로 처리 */
+/** UI에 남은 400/404 empty 응답 메시지 */
 export function isPlaceSearchNoResultsMessage(message: string): boolean {
   return NO_RESULTS_MESSAGE_RE.test(message);
 }
@@ -33,13 +34,30 @@ function readErrorStatus(error: unknown): number | undefined {
   return Number.isFinite(status) ? status : undefined;
 }
 
-/** HTTP 400(결과 없음) → 검색 결과 없음으로 취급 */
+/** HTTP 400/404(결과 없음) → 검색 결과 없음으로 취급 */
 export function isPlaceSearchNoResultsError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : '';
   if (message && isPlaceSearchNoResultsMessage(message)) {
     return true;
   }
-  return readErrorStatus(error) === 400;
+  const status = readErrorStatus(error);
+  return status === 400 || status === 404;
+}
+
+export function isPlaceSearchServerError(error: unknown): boolean {
+  const status = readErrorStatus(error);
+  return typeof status === 'number' && status >= 500;
+}
+
+/** catch 분기용 사용자 문구 (토스트 없이 인라인 표시) */
+export function placeSearchCatchMessage(
+  error: unknown,
+  messages: { noResults: string; serverError: string },
+): string {
+  if (isPlaceSearchNoResultsError(error)) {
+    return messages.noResults;
+  }
+  return messages.serverError;
 }
 
 export type PlaceSearchCacheEntry = {
@@ -55,7 +73,7 @@ type SearchByLocationParams = {
   contentTypeId: PlaceContentTypeId;
   searchCenter: EventZoneCoordinate;
   mapCenter?: EventZoneCoordinate;
-  emptyErrorFallback: string;
+  serverErrorMessage: string;
   refreshTooSoonMessage: string;
 };
 
@@ -63,7 +81,7 @@ type SearchFestivalsParams = {
   eventStartDate: string;
   eventEndDate: string;
   mapCenter: EventZoneCoordinate;
-  emptyErrorFallback: string;
+  serverErrorMessage: string;
   refreshTooSoonMessage: string;
 };
 
@@ -189,7 +207,7 @@ export const usePlaceSearchStore = create<PlaceSearchState>()((set, get) => ({
     contentTypeId,
     searchCenter,
     mapCenter,
-    emptyErrorFallback,
+    serverErrorMessage,
     refreshTooSoonMessage,
   }) => {
     const resolvedMapCenter = mapCenter ?? searchCenter;
@@ -283,19 +301,15 @@ export const usePlaceSearchStore = create<PlaceSearchState>()((set, get) => ({
         return 'empty';
       }
 
-      const message =
-        fetchError instanceof Error ? fetchError.message : emptyErrorFallback;
-
-      const previous = get().cacheByType[contentTypeId];
       set(state => ({
         cacheByType: {
           ...state.cacheByType,
           [contentTypeId]: {
-            places: previous?.places ?? [],
-            placeDetailsById: previous?.placeDetailsById ?? {},
+            places: [],
+            placeDetailsById: {},
             searchCenter,
             mapCenter: resolvedMapCenter,
-            error: message,
+            error: serverErrorMessage,
           },
         },
         loadingByType: { ...state.loadingByType, [contentTypeId]: false },
@@ -308,7 +322,7 @@ export const usePlaceSearchStore = create<PlaceSearchState>()((set, get) => ({
     eventStartDate,
     eventEndDate,
     mapCenter,
-    emptyErrorFallback,
+    serverErrorMessage,
     refreshTooSoonMessage,
   }) => {
     const contentTypeId = PLACE_CONTENT_TYPE.festival;
@@ -406,19 +420,15 @@ export const usePlaceSearchStore = create<PlaceSearchState>()((set, get) => ({
         return 'empty';
       }
 
-      const message =
-        fetchError instanceof Error ? fetchError.message : emptyErrorFallback;
-
-      const previous = get().cacheByType[contentTypeId];
       set(state => ({
         cacheByType: {
           ...state.cacheByType,
           [contentTypeId]: {
-            places: previous?.places ?? [],
-            placeDetailsById: previous?.placeDetailsById ?? {},
+            places: [],
+            placeDetailsById: {},
             searchCenter: mapCenter,
             mapCenter,
-            error: message,
+            error: serverErrorMessage,
             festivalDateRange: { eventStartDate, eventEndDate },
           },
         },
