@@ -118,7 +118,8 @@ export async function fetchRoutePlaceDetail(
     return null;
   }
 
-  const googleSearchText = [options?.placeName, options?.address].filter(Boolean).join(' ');
+  const googleSearchText =
+    [options?.placeName, options?.address].filter(Boolean).join(' ').trim() || undefined;
 
   return fetchPlaceDetail({
     contentId: placeId,

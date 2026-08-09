@@ -32,6 +32,7 @@ import { useTransientBottomToast } from '../../hooks/useTransientBottomToast';
 import type { RootStackParamList } from '../../navigation/types';
 import {
   fetchPlaceDetail,
+  fetchPlaceDetailsForList,
   searchPlacesByKeyword,
 } from '../../services/places/placesApiService';
 import { usePlaceBookmarkStore, usePlaceDetailCacheStore, usePlaceSearchStore } from '../../stores';
@@ -362,7 +363,8 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
       }
 
       setDetailLoading(true);
-      const googleSearchText = [place.name, place.address].filter(Boolean).join(' ');
+      const googleSearchText =
+        [place.name, place.address].filter(Boolean).join(' ').trim() || undefined;
       void fetchPlaceDetail({
         contentId: place.contentId,
         contentTypeId: place.contentTypeId,
@@ -464,10 +466,34 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
         }
 
         setKeywordPlaces(result.places);
-        // detail/Google 일괄 호출하지 않음 — 선택 시에만 단건 조회
+        setKeywordLoading(false);
+
         const first = result.places[0];
         if (first) {
           setMapCenter(first.location);
+        }
+
+        try {
+          const detailsById = await fetchPlaceDetailsForList(result.places);
+          if (requestId !== keywordRequestIdRef.current) {
+            return;
+          }
+          const enriched = result.places.map(place =>
+            enrichBusanPlaceFromDetail(place, detailsById[place.contentId]),
+          );
+          setKeywordPlaces(enriched);
+          setKeywordDetailsById(detailsById);
+          mergePlaceDetails(detailsById);
+        } catch (detailError) {
+          if (requestId !== keywordRequestIdRef.current) {
+            return;
+          }
+          logPlacesApiError('GET', '(keyword-details)', detailError, {
+            keyword,
+            contentTypeId: typeId,
+            count: result.places.length,
+          });
+          setKeywordDetailsById({});
         }
       } catch (searchError) {
         if (requestId !== keywordRequestIdRef.current) {
@@ -486,7 +512,7 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
         }
       }
     },
-    [copy.searchNoResults, showToast],
+    [copy.searchNoResults, mergePlaceDetails, showToast],
   );
 
   const handleSubmitKeyword = useCallback(() => {

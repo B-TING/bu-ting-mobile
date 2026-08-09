@@ -267,7 +267,8 @@ export async function searchFestivals(
 }
 
 export async function fetchFestivalDetail(festival: BusanFestival): Promise<BusanFestival> {
-  const googleSearchText = [festival.titleKo, festival.addressKo].filter(Boolean).join(' ');
+  const googleSearchText =
+    [festival.titleKo, festival.addressKo].filter(Boolean).join(' ').trim() || undefined;
   const url = buildDetailUrl(festival.id, {
     contentTypeId: PLACE_CONTENT_TYPE.festival,
     googleSearchText,
@@ -415,58 +416,96 @@ export async function searchPlacesByKeyword(
 }
 
 export async function fetchPlaceDetail(params: FetchPlaceDetailParams): Promise<PlaceDetailVO | null> {
-  logPlacesApi('detail.start', 'place detail requested', {
-    detail: {
+  const attempts: Array<string | undefined> = [];
+  const searchText = params.googleSearchText?.trim();
+  if (searchText) {
+    attempts.push(searchText);
+  }
+  attempts.push(undefined);
+
+  let lastError: unknown;
+
+  for (let i = 0; i < attempts.length; i += 1) {
+    const googleSearchText = attempts[i];
+    logPlacesApi('detail.start', 'place detail requested', {
+      detail: {
+        contentId: params.contentId,
+        contentTypeId: params.contentTypeId,
+        googleSearchText: googleSearchText ?? null,
+        attempt: i + 1,
+      },
+    });
+
+    let url: string;
+    try {
+      url = buildDetailUrl(params.contentId, { ...params, googleSearchText });
+    } catch (error) {
+      logPlacesApiError('GET', '(detail-url-build)', error, {
+        contentId: params.contentId,
+        contentTypeId: params.contentTypeId,
+      });
+      throw error;
+    }
+
+    const logContext = {
       contentId: params.contentId,
       contentTypeId: params.contentTypeId,
-      googleSearchText: params.googleSearchText,
-    },
-  });
+      googleSearchText: googleSearchText ?? null,
+    };
 
-  let url: string;
-  try {
-    url = buildDetailUrl(params.contentId, params);
-  } catch (error) {
-    logPlacesApiError('GET', '(detail-url-build)', error, {
-      contentId: params.contentId,
-      contentTypeId: params.contentTypeId,
-    });
-    throw error;
+    try {
+      const payload = await apiGet<PlaceDetailResponseDto>(url, {
+        headers: { Accept: 'application/json' },
+        errorMessagePrefix: 'Places request failed',
+        mapError: mapPlacesError,
+        onRequest: () => {
+          logPlacesApiRequest('GET', url, logContext);
+        },
+        onResponse: ({ status, body }) => {
+          logPlacesApiResponse('GET', url, status, body, logContext);
+        },
+        onError: error => {
+          logPlacesApiError('GET', url, error, logContext);
+        },
+      });
+
+      if (!payload?.contentId) {
+        logPlacesApiError('GET', url, new Error('Place detail response missing contentId'), {
+          ...logContext,
+        });
+        return null;
+      }
+
+      return mapPlaceDetailToPlaceDetailVO(payload, {
+        name: params.fallbackName,
+        address: params.fallbackAddress,
+        imageUrl: params.fallbackImageUrl,
+      });
+    } catch (error) {
+      lastError = error;
+      const status =
+        error && typeof error === 'object' && 'status' in error
+          ? Number((error as { status: unknown }).status)
+          : undefined;
+      const canRetryWithoutGoogle =
+        status != null && status >= 500 && googleSearchText != null && i < attempts.length - 1;
+      if (canRetryWithoutGoogle) {
+        logPlacesApi('detail.retry', 'detail 5xx — retry without googleSearchText', {
+          detail: logContext,
+        });
+        continue;
+      }
+      if (status != null && status >= 500) {
+        return null;
+      }
+      throw error;
+    }
   }
 
-  const logContext = {
-    contentId: params.contentId,
-    contentTypeId: params.contentTypeId,
-    googleSearchText: params.googleSearchText,
-  };
-
-  const payload = await apiGet<PlaceDetailResponseDto>(url, {
-    headers: { Accept: 'application/json' },
-    errorMessagePrefix: 'Places request failed',
-    mapError: mapPlacesError,
-    onRequest: () => {
-      logPlacesApiRequest('GET', url, logContext);
-    },
-    onResponse: ({ status, body }) => {
-      logPlacesApiResponse('GET', url, status, body, logContext);
-    },
-    onError: error => {
-      logPlacesApiError('GET', url, error, logContext);
-    },
-  });
-
-  if (!payload?.contentId) {
-    logPlacesApiError('GET', url, new Error('Place detail response missing contentId'), {
-      ...logContext,
-    });
-    return null;
+  if (lastError) {
+    throw lastError;
   }
-
-  return mapPlaceDetailToPlaceDetailVO(payload, {
-    name: params.fallbackName,
-    address: params.fallbackAddress,
-    imageUrl: params.fallbackImageUrl,
-  });
+  return null;
 }
 
 export async function fetchPlaceDetailsForList(
@@ -482,7 +521,7 @@ export async function fetchPlaceDetailsForList(
 
   const entries = await Promise.all(
     places.map(async place => {
-      const googleSearchText = [place.name, place.address].filter(Boolean).join(' ');
+      const googleSearchText = [place.name, place.address].filter(Boolean).join(' ').trim() || undefined;
       try {
         const detail = await fetchPlaceDetail({
           contentId: place.contentId,

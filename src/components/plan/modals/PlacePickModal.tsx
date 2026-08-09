@@ -10,8 +10,11 @@ import {
 
 import { buildPlaceListMetaLine } from '../../../constants/places/placeSearch';
 import { useCopy } from '../../../i18n';
-import { searchPlacesByKeyword } from '../../../services/places/placesApiService';
-import { usePlaceSearchStore } from '../../../stores';
+import {
+  fetchPlaceDetailsForList,
+  searchPlacesByKeyword,
+} from '../../../services/places/placesApiService';
+import { usePlaceDetailCacheStore, usePlaceSearchStore } from '../../../stores';
 import { TransportModePicker } from '../schedule/TransportModePicker';
 import type { BusanPlace } from '../../../types/placeSearch';
 import type { AppLanguage } from '../../../types/user';
@@ -28,6 +31,7 @@ import {
   busanPlaceToRebootCandidate,
 } from '../../../utils/places/placeModelBridge';
 import { haversineKm } from '../../../utils/geo/geo';
+import { enrichBusanPlaceFromDetail } from '../../../utils/places/placesApiMapper';
 import { logPlacesApiError } from '../../../utils/places/placesApiLogger';
 import { AppModal, AppModalPrimaryFooter } from '../../shared/modals';
 import { PlaceSearchListItem } from '../../places/PlaceSearchListItem';
@@ -114,6 +118,7 @@ export function PlacePickModal({
   const nearbyLoading = usePlaceSearchStore(s => s.isLoading(PLAN_PICK_CONTENT_TYPE));
   const searchByLocation = usePlaceSearchStore(s => s.searchByLocation);
   const hasCacheForCenter = usePlaceSearchStore(s => s.hasCacheForCenter);
+  const mergePlaceDetails = usePlaceDetailCacheStore(s => s.mergeDetails);
 
   const isKeywordMode = useTourApiNearby && activeKeyword != null && activeKeyword.length > 0;
 
@@ -212,8 +217,32 @@ export function PlacePickModal({
         result.places.filter(place => !exclude.has(place.contentId)),
         anchor,
       );
-      // 목록만 — detail/Google 일괄 호출 안 함
       setKeywordPlaces(places);
+      setKeywordLoading(false);
+
+      if (places.length === 0) {
+        return;
+      }
+
+      try {
+        const detailsById = await fetchPlaceDetailsForList(places);
+        if (requestId !== keywordRequestIdRef.current) {
+          return;
+        }
+        const enriched = places.map(place =>
+          enrichBusanPlaceFromDetail(place, detailsById[place.contentId]),
+        );
+        setKeywordPlaces(enriched);
+        mergePlaceDetails(detailsById);
+      } catch (detailError) {
+        if (requestId !== keywordRequestIdRef.current) {
+          return;
+        }
+        logPlacesApiError('GET', '(place-pick-keyword-details)', detailError, {
+          keyword,
+          count: places.length,
+        });
+      }
     } catch (searchError) {
       if (requestId !== keywordRequestIdRef.current) {
         return;
@@ -223,12 +252,13 @@ export function PlacePickModal({
         contentTypeId: PLAN_PICK_CONTENT_TYPE,
       });
       setKeywordPlaces([]);
+      setKeywordLoading(false);
     } finally {
       if (requestId === keywordRequestIdRef.current) {
         setKeywordLoading(false);
       }
     }
-  }, [anchor, excludePlaceIds, keywordLoading, queryDraft, useTourApiNearby]);
+  }, [anchor, excludePlaceIds, keywordLoading, mergePlaceDetails, queryDraft, useTourApiNearby]);
 
   const handleClearKeyword = useCallback(() => {
     keywordRequestIdRef.current += 1;
