@@ -1,4 +1,3 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -14,545 +13,53 @@ import { PlaceDetailSheet } from '../../components/places/PlaceDetailSheet';
 import { PlaceMapView } from '../../components/places/PlaceMapView';
 import { PlaceSearchListItem } from '../../components/places/PlaceSearchListItem';
 import { BackButton } from '../../components/shared/buttons/BackButton';
-import {
-  defaultPlaceContentTypeId,
-  isFestivalPlaceSearch,
-  PLACE_SEARCH_CENTER_THRESHOLD_M,
-  PLACE_SEARCH_RADIUS_M,
-  PLACE_SEARCH_REFRESH_COOLDOWN_MS,
-  buildPlaceListMetaLine,
-} from '../../constants/places/placeSearch';
-import { useAppLanguage, useCopy } from '../../i18n';
-import { usePlaceMapUserLocation } from '../../hooks/usePlaceMapUserLocation';
+import { buildPlaceListMetaLine } from '../../constants/places/placeSearch';
+import { usePlaceMapSearchScreen } from '../../hooks/places/usePlaceMapSearchScreen';
+import { useAppLanguage } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
-import {
-  fetchPlaceDetail,
-  fetchPlaceDetailsForList,
-  searchPlacesByKeyword,
-} from '../../services/places/placesApiService';
-import { usePlaceBookmarkStore, usePlaceDetailCacheStore, usePlaceSearchStore } from '../../stores';
-import { placeSearchCatchMessage } from '../../stores';
-import type { EventZoneCoordinate } from '../../types/eventZone';
-import type { PlaceDetailVO } from '../../types/googlePlaces';
-import type { BusanPlace } from '../../types/placeSearch';
 import { PLACE_MAP_SEARCH_TYPES } from '../../types/placesApi';
-import type { PlaceContentTypeId } from '../../types/placesApi';
-import { sortBookmarkedFirst } from '../../utils/bookmark/sortBookmarkedFirst';
-import {
-  currentMonthDateRangeYyyymmdd,
-  upcomingFestivalDateRangeYyyymmdd,
-} from '../../utils/places/festivalApiMapper';
 import { haversineKm } from '../../utils/geo/geo';
-import { enrichBusanPlaceFromDetail } from '../../utils/places/placesApiMapper';
-import { logPlacesApiError } from '../../utils/places/placesApiLogger';
 import { formatDistanceKm } from '../../utils/places/rebootPlaces';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PlaceMapSearch'>;
 
-function centersDifferBeyondThreshold(
-  a: EventZoneCoordinate,
-  b: EventZoneCoordinate,
-  thresholdM: number,
-): boolean {
-  const distanceM = haversineKm(a.lat, a.lng, b.lat, b.lng) * 1000;
-  return distanceM > thresholdM;
-}
-
-function resolveFestivalDateRange(
-  params: RootStackParamList['PlaceMapSearch'],
-): { eventStartDate: string; eventEndDate: string } {
-  if (params?.festivalEventStartDate) {
-    return {
-      eventStartDate: params.festivalEventStartDate,
-      eventEndDate: params.festivalEventEndDate ?? params.festivalEventStartDate,
-    };
-  }
-  if (params?.selectedContentId) {
-    return upcomingFestivalDateRangeYyyymmdd();
-  }
-  return currentMonthDateRangeYyyymmdd();
-}
-
 export function PlaceMapSearchScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const language = useAppLanguage();
-  const copy = useCopy('placeSearch');
-  const radiusKm = PLACE_SEARCH_RADIUS_M / 1000;
-
-  const initialType = defaultPlaceContentTypeId(route.params?.contentTypeId);
-  const [contentTypeId, setContentTypeId] = useState<PlaceContentTypeId>(initialType);
-  const [selectedPlace, setSelectedPlace] = useState<BusanPlace | null>(null);
-  const [detailOpen, setDetailOpen] = useState(false);
-  const [searchCenter, setSearchCenter] = useState<EventZoneCoordinate | null>(null);
-  const [mapCenter, setMapCenter] = useState<EventZoneCoordinate | null>(null);
-  const [festivalDateRange, setFestivalDateRange] = useState(() =>
-    resolveFestivalDateRange(route.params),
-  );
-  const selectedContentHandledRef = useRef<string | null>(null);
-
-  const [keywordDraft, setKeywordDraft] = useState('');
-  const [activeKeyword, setActiveKeyword] = useState<string | null>(null);
-  const [keywordPlaces, setKeywordPlaces] = useState<BusanPlace[]>([]);
-  const [keywordDetailsById, setKeywordDetailsById] = useState<
-    Record<string, PlaceDetailVO | null>
-  >({});
-  const [keywordLoading, setKeywordLoading] = useState(false);
-  const [keywordErrorMessage, setKeywordErrorMessage] = useState<string | null>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
-  const keywordRequestIdRef = useRef(0);
-
-  const isFestivalMode = isFestivalPlaceSearch(contentTypeId);
-  const isKeywordMode = activeKeyword != null && activeKeyword.length > 0;
-  const { location } = usePlaceMapUserLocation();
-  const mergePlaceDetails = usePlaceDetailCacheStore(s => s.mergeDetails);
-
-  const cacheEntry = usePlaceSearchStore(s => s.cacheByType[contentTypeId]);
-  const locationLoading = usePlaceSearchStore(s => s.isLoading(contentTypeId));
-  const hasCacheForCenter = usePlaceSearchStore(s => s.hasCacheForCenter);
-  const hasCacheForFestivalRange = usePlaceSearchStore(s => s.hasCacheForFestivalRange);
-  const searchByLocation = usePlaceSearchStore(s => s.searchByLocation);
-  const searchFestivalsByDateRange = usePlaceSearchStore(s => s.searchFestivalsByDateRange);
-  const updateMapCenterInCache = usePlaceSearchStore(s => s.updateMapCenter);
-  const getCacheEntry = usePlaceSearchStore(s => s.getEntry);
-  const lastSearchRequestedAt = usePlaceSearchStore(
-    s => s.lastSearchRequestedAtByType[contentTypeId] ?? null,
-  );
-
-  const [nowMs, setNowMs] = useState(() => Date.now());
-  const searchCooldownRemainingMs = Math.max(
-    0,
-    lastSearchRequestedAt == null
-      ? 0
-      : PLACE_SEARCH_REFRESH_COOLDOWN_MS - (nowMs - lastSearchRequestedAt),
-  );
-  const searchCooldownSeconds = Math.max(1, Math.ceil(searchCooldownRemainingMs / 1000));
-  const isSearchCooldownActive = searchCooldownRemainingMs > 0;
-
-  useEffect(() => {
-    if (!isSearchCooldownActive) {
-      return;
-    }
-    setNowMs(Date.now());
-    const timer = setInterval(() => {
-      setNowMs(Date.now());
-    }, 250);
-    return () => clearInterval(timer);
-  }, [isSearchCooldownActive, lastSearchRequestedAt]);
-
-  const bookmarkedIds = usePlaceBookmarkStore(s => s.getBookmarkedIdsForType(contentTypeId));
-  const togglePlaceBookmark = usePlaceBookmarkStore(s => s.togglePlaceBookmark);
-  const isPlaceBookmarked = usePlaceBookmarkStore(s => s.isPlaceBookmarked);
-
-  const locationPlaces = useMemo(() => cacheEntry?.places ?? [], [cacheEntry]);
-  const places = isKeywordMode ? keywordPlaces : locationPlaces;
-  const placeDetailsById = isKeywordMode
-    ? keywordDetailsById
-    : (cacheEntry?.placeDetailsById ?? {});
-  const globalPlaceDetails = usePlaceDetailCacheStore(s => s.detailsByPlaceId);
-  const rawError = isKeywordMode ? null : (cacheEntry?.error ?? null);
-  const error = rawError;
-  const loading = isKeywordMode ? keywordLoading : locationLoading;
-
-  const emptyMessage = isKeywordMode
-    ? (keywordErrorMessage ?? copy.keywordEmptySub)
-    : (error ?? copy.searchNoResults);
-
-  useEffect(() => {
-    if (route.params?.contentTypeId) {
-      setContentTypeId(defaultPlaceContentTypeId(route.params.contentTypeId));
-    }
-    if (route.params?.festivalEventStartDate || route.params?.festivalEventEndDate) {
-      setFestivalDateRange(resolveFestivalDateRange(route.params));
-    }
-    selectedContentHandledRef.current = null;
-    // Quick로 카테고리를 바꿔 다시 들어오면 이전 검색 중심이 남지 않게 함
-    setSearchCenter(null);
-    setMapCenter(null);
-  }, [
-    route.params?.contentTypeId,
-    route.params?.festivalEventStartDate,
-    route.params?.festivalEventEndDate,
-    route.params?.selectedContentId,
-  ]);
-
-  const applyCachedCenters = useCallback((typeId: PlaceContentTypeId) => {
-    const cached = getCacheEntry(typeId);
-    if (!cached) {
-      return false;
-    }
-    setSearchCenter(cached.searchCenter);
-    setMapCenter(cached.mapCenter);
-    if (cached.festivalDateRange) {
-      setFestivalDateRange(cached.festivalDateRange);
-    }
-    return true;
-  }, [getCacheEntry]);
-
-  // Quick 진입: GPS/동의 완료를 기다리지 않음.
-  // usePlaceMapUserLocation 초기값이 부산역이라 status=loading 이어도 바로 검색 가능.
-  useEffect(() => {
-    if (applyCachedCenters(contentTypeId)) {
-      return;
-    }
-    setSearchCenter(prev => prev ?? location);
-    setMapCenter(prev => prev ?? location);
-  }, [contentTypeId, location, applyCachedCenters]);
-
-  useEffect(() => {
-    if (isKeywordMode) {
-      return;
-    }
-
-    if (isFestivalMode) {
-      if (!mapCenter) {
-        return;
-      }
-      if (
-        hasCacheForFestivalRange(
-          festivalDateRange.eventStartDate,
-          festivalDateRange.eventEndDate,
-        )
-      ) {
-        return;
-      }
-
-      setSelectedPlace(null);
-      setDetailOpen(false);
-
-      void searchFestivalsByDateRange({
-        eventStartDate: festivalDateRange.eventStartDate,
-        eventEndDate: festivalDateRange.eventEndDate,
-        mapCenter,
-        serverErrorMessage: copy.searchServerError,
-        refreshTooSoonMessage: copy.searchRefreshTooSoon,
-      });
-      return;
-    }
-
-    if (!searchCenter) {
-      return;
-    }
-    if (hasCacheForCenter(contentTypeId, searchCenter)) {
-      return;
-    }
-
-    setSelectedPlace(null);
-    setDetailOpen(false);
-
-    void searchByLocation({
-      contentTypeId,
-      searchCenter,
-      mapCenter: mapCenter ?? searchCenter,
-      serverErrorMessage: copy.searchServerError,
-      refreshTooSoonMessage: copy.searchRefreshTooSoon,
-    });
-  }, [
-    isKeywordMode,
-    isFestivalMode,
+  const {
+    copy,
     contentTypeId,
-    searchCenter,
+    selectedPlace,
+    detailOpen,
+    detailLoading,
     mapCenter,
-    festivalDateRange,
-    hasCacheForCenter,
-    hasCacheForFestivalRange,
-    searchByLocation,
-    searchFestivalsByDateRange,
-    copy.searchServerError,
-    copy.searchRefreshTooSoon,
-  ]);
-
-  useEffect(() => {
-    const selectedContentId = route.params?.selectedContentId;
-    if (!selectedContentId || places.length === 0) {
-      return;
-    }
-    const handleKey = `${selectedContentId}:${places.length}`;
-    if (selectedContentHandledRef.current === handleKey) {
-      return;
-    }
-
-    const place = places.find(item => item.contentId === selectedContentId);
-    if (!place) {
-      return;
-    }
-
-    selectedContentHandledRef.current = handleKey;
-    setSelectedPlace(place);
-    setDetailOpen(true);
-    setMapCenter(place.location);
-  }, [route.params?.selectedContentId, places]);
-
-  const showSearchHere = useMemo(() => {
-    if (isKeywordMode || isFestivalMode) {
-      return false;
-    }
-    if (!searchCenter || !mapCenter) {
-      return false;
-    }
-    return centersDifferBeyondThreshold(
-      searchCenter,
-      mapCenter,
-      PLACE_SEARCH_CENTER_THRESHOLD_M,
-    );
-  }, [isFestivalMode, isKeywordMode, searchCenter, mapCenter]);
-
-  const sortedPlaces = useMemo(
-    () => sortBookmarkedFirst(places, bookmarkedIds, (a, b) => a.name.localeCompare(b.name, 'ko')),
-    [places, bookmarkedIds],
-  );
-
-  const distanceOrigin = searchCenter ?? mapCenter ?? location;
-
-  const summaryText = isKeywordMode && activeKeyword
-    ? copy.keywordSummary(activeKeyword, places.length)
-    : isFestivalMode
-      ? copy.festivalSummary(places.length)
-      : copy.summary(places.length, radiusKm);
-
-  const mapSubtitle = isFestivalMode ? copy.festivalMapSubtitle : copy.mapSubtitle;
-
-  const handleSelectPlace = useCallback(
-    (place: BusanPlace) => {
-      setSelectedPlace(place);
-      setDetailOpen(true);
-      setMapCenter(place.location);
-
-      const cached =
-        (isKeywordMode ? keywordDetailsById[place.contentId] : undefined) ??
-        usePlaceSearchStore.getState().getEntry(contentTypeId)?.placeDetailsById[place.contentId] ??
-        usePlaceDetailCacheStore.getState().detailsByPlaceId[place.contentId];
-
-      if (cached) {
-        return;
-      }
-
-      setDetailLoading(true);
-      const googleSearchText =
-        [place.name, place.address].filter(Boolean).join(' ').trim() || undefined;
-      void fetchPlaceDetail({
-        contentId: place.contentId,
-        contentTypeId: place.contentTypeId,
-        googleSearchText,
-        fallbackName: place.name,
-        fallbackAddress: place.address,
-        fallbackImageUrl: place.imageUrl,
-      })
-        .then(detail => {
-          if (!detail) {
-            return;
-          }
-          mergePlaceDetails({ [place.contentId]: detail });
-          if (isKeywordMode) {
-            setKeywordDetailsById(prev => ({ ...prev, [place.contentId]: detail }));
-            setKeywordPlaces(prev =>
-              prev.map(item =>
-                item.contentId === place.contentId
-                  ? enrichBusanPlaceFromDetail(item, detail)
-                  : item,
-              ),
-            );
-          }
-        })
-        .catch(detailError => {
-          logPlacesApiError('GET', `/api/v1/places/${place.contentId}/detail`, detailError, {
-            contentId: place.contentId,
-            contentTypeId: place.contentTypeId,
-          });
-        })
-        .finally(() => {
-          setDetailLoading(false);
-        });
-    },
-    [contentTypeId, isKeywordMode, keywordDetailsById, mergePlaceDetails],
-  );
-
-  const handleCloseDetail = useCallback(() => {
-    setDetailOpen(false);
-  }, []);
-
-  const handleToggleBookmark = useCallback(() => {
-    if (!selectedPlace) {
-      return;
-    }
-    togglePlaceBookmark(selectedPlace.contentTypeId, selectedPlace.contentId);
-  }, [selectedPlace, togglePlaceBookmark]);
-
-  const handleMapCenterChange = useCallback(
-    (center: EventZoneCoordinate) => {
-      setMapCenter(center);
-      updateMapCenterInCache(contentTypeId, center);
-    },
-    [contentTypeId, updateMapCenterInCache],
-  );
-
-  const clearTypeCache = usePlaceSearchStore(s => s.clearTypeCache);
-
-  const handleSearchHere = useCallback(() => {
-    if (!mapCenter || isSearchCooldownActive || isKeywordMode) {
-      return;
-    }
-    // 같은 중심이라도 사용자가 명시적으로 누르면 다시 검색
-    clearTypeCache(contentTypeId);
-    setSearchCenter({ lat: mapCenter.lat, lng: mapCenter.lng });
-  }, [clearTypeCache, contentTypeId, isKeywordMode, isSearchCooldownActive, mapCenter]);
-
-  const runKeywordSearch = useCallback(
-    async (rawKeyword: string, typeId: PlaceContentTypeId) => {
-      const keyword = rawKeyword.trim();
-      if (!keyword) {
-        return;
-      }
-
-      const requestId = ++keywordRequestIdRef.current;
-      setActiveKeyword(keyword);
-      setKeywordDraft(keyword);
-      setKeywordLoading(true);
-      setKeywordErrorMessage(null);
-      setSelectedPlace(null);
-      setDetailOpen(false);
-
-      try {
-        const result = await searchPlacesByKeyword({
-          keyword,
-          contentTypeId: typeId,
-          page: 1,
-          size: 20,
-        });
-
-        if (requestId !== keywordRequestIdRef.current) {
-          return;
-        }
-
-        if (result.places.length === 0) {
-          setKeywordPlaces([]);
-          setKeywordDetailsById({});
-          setKeywordErrorMessage(copy.searchNoResults);
-          return;
-        }
-
-        setKeywordPlaces(result.places);
-        setKeywordErrorMessage(null);
-        setKeywordLoading(false);
-
-        const first = result.places[0];
-        if (first) {
-          setMapCenter(first.location);
-        }
-
-        try {
-          const detailsById = await fetchPlaceDetailsForList(result.places);
-          if (requestId !== keywordRequestIdRef.current) {
-            return;
-          }
-          const enriched = result.places.map(place =>
-            enrichBusanPlaceFromDetail(place, detailsById[place.contentId]),
-          );
-          setKeywordPlaces(enriched);
-          setKeywordDetailsById(detailsById);
-          mergePlaceDetails(detailsById);
-        } catch (detailError) {
-          if (requestId !== keywordRequestIdRef.current) {
-            return;
-          }
-          logPlacesApiError('GET', '(keyword-details)', detailError, {
-            keyword,
-            contentTypeId: typeId,
-            count: result.places.length,
-          });
-          setKeywordDetailsById({});
-        }
-      } catch (searchError) {
-        if (requestId !== keywordRequestIdRef.current) {
-          return;
-        }
-        logPlacesApiError('GET', '/api/v1/places/search', searchError, {
-          keyword,
-          contentTypeId: typeId,
-        });
-        setKeywordPlaces([]);
-        setKeywordDetailsById({});
-        setKeywordErrorMessage(
-          placeSearchCatchMessage(searchError, {
-            noResults: copy.searchNoResults,
-            serverError: copy.searchServerError,
-          }),
-        );
-      } finally {
-        if (requestId === keywordRequestIdRef.current) {
-          setKeywordLoading(false);
-        }
-      }
-    },
-    [
-      copy.searchNoResults,
-      copy.searchServerError,
-      mergePlaceDetails,
-    ],
-  );
-
-  const handleSubmitKeyword = useCallback(() => {
-    void runKeywordSearch(keywordDraft, contentTypeId);
-  }, [contentTypeId, keywordDraft, runKeywordSearch]);
-
-  const handleClearKeyword = useCallback(() => {
-    keywordRequestIdRef.current += 1;
-    setActiveKeyword(null);
-    setKeywordDraft('');
-    setKeywordPlaces([]);
-    setKeywordDetailsById({});
-    setKeywordLoading(false);
-    setKeywordErrorMessage(null);
-    setSelectedPlace(null);
-    setDetailOpen(false);
-  }, []);
-
-  const handleChangeContentType = useCallback(
-    (typeId: PlaceContentTypeId) => {
-      if (typeId === contentTypeId) {
-        return;
-      }
-
-      setContentTypeId(typeId);
-      setSelectedPlace(null);
-      setDetailOpen(false);
-      selectedContentHandledRef.current = null;
-
-      if (isFestivalPlaceSearch(typeId)) {
-        setFestivalDateRange(currentMonthDateRangeYyyymmdd());
-      }
-
-      if (isKeywordMode && activeKeyword) {
-        void runKeywordSearch(activeKeyword, typeId);
-        return;
-      }
-
-      if (applyCachedCenters(typeId)) {
-        return;
-      }
-
-      const center = mapCenter ?? searchCenter ?? location;
-      if (center) {
-        // 탭 전환 시 항상 새 중심으로 검색 effect가 돌도록 참조 갱신
-        setSearchCenter({ lat: center.lat, lng: center.lng });
-        setMapCenter({ lat: center.lat, lng: center.lng });
-      }
-    },
-    [
-      activeKeyword,
-      applyCachedCenters,
-      contentTypeId,
-      isKeywordMode,
-      location,
-      mapCenter,
-      runKeywordSearch,
-      searchCenter,
-    ],
-  );
-
-  const captionSuffix = useCallback(
-    (place: BusanPlace) => copy.subtitleLabel(copy.categoryLabels[place.contentTypeId]),
-    [copy],
-  );
+    location,
+    isKeywordMode,
+    keywordDraft,
+    setKeywordDraft,
+    keywordLoading,
+    loading,
+    emptyMessage,
+    showSearchHere,
+    sortedPlaces,
+    distanceOrigin,
+    summaryText,
+    mapSubtitle,
+    selectedDetail,
+    selectedBookmarked,
+    bookmarkedIds,
+    isSearchCooldownActive,
+    searchCooldownSeconds,
+    captionSuffix,
+    handleSelectPlace,
+    handleCloseDetail,
+    handleToggleBookmark,
+    handleMapCenterChange,
+    handleSearchHere,
+    handleSubmitKeyword,
+    handleClearKeyword,
+    handleChangeContentType,
+  } = usePlaceMapSearchScreen(route.params);
 
   return (
     <View
@@ -730,21 +237,11 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
       <PlaceDetailSheet
         visible={detailOpen}
         place={selectedPlace}
-        detail={
-          selectedPlace
-            ? (placeDetailsById[selectedPlace.contentId] ??
-              globalPlaceDetails[selectedPlace.contentId] ??
-              null)
-            : null
-        }
+        detail={selectedDetail}
         language={language}
         copy={copy}
         loading={detailLoading}
-        bookmarked={
-          selectedPlace
-            ? isPlaceBookmarked(selectedPlace.contentTypeId, selectedPlace.contentId)
-            : false
-        }
+        bookmarked={selectedBookmarked}
         onToggleBookmark={handleToggleBookmark}
         onClose={handleCloseDetail}
       />
