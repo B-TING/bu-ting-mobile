@@ -379,8 +379,6 @@ export async function searchPlacesByKeyword(
     headers: { Accept: 'application/json' },
     errorMessagePrefix: 'Places keyword search failed',
     mapError: mapPlacesError,
-    /** 스펙: 검색 결과 없음 → 404 */
-    emptyOnStatus: [404],
     onRequest: () => {
       logPlacesApiRequest('GET', url, logContext);
     },

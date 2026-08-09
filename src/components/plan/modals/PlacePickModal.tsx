@@ -15,6 +15,7 @@ import {
   searchPlacesByKeyword,
 } from '../../../services/places/placesApiService';
 import { usePlaceDetailCacheStore, usePlaceSearchStore } from '../../../stores';
+import { placeSearchCatchMessage } from '../../../stores';
 import { TransportModePicker } from '../schedule/TransportModePicker';
 import type { BusanPlace } from '../../../types/placeSearch';
 import type { AppLanguage } from '../../../types/user';
@@ -109,6 +110,7 @@ export function PlacePickModal({
   const [activeKeyword, setActiveKeyword] = useState<string | null>(null);
   const [keywordPlaces, setKeywordPlaces] = useState<BusanPlace[]>([]);
   const [keywordLoading, setKeywordLoading] = useState(false);
+  const [keywordErrorMessage, setKeywordErrorMessage] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [legMode, setLegMode] = useState<TravelLegMode>(defaultLegMode);
   const keywordRequestIdRef = useRef(0);
@@ -135,7 +137,7 @@ export function PlacePickModal({
       contentTypeId: PLAN_PICK_CONTENT_TYPE,
       searchCenter: anchor,
       mapCenter: anchor,
-      emptyErrorFallback: copy.searchEmpty,
+      serverErrorMessage: searchCopy.searchServerError,
       refreshTooSoonMessage: searchCopy.searchRefreshTooSoon,
     });
   }, [
@@ -145,7 +147,7 @@ export function PlacePickModal({
     isKeywordMode,
     hasCacheForCenter,
     searchByLocation,
-    copy.searchEmpty,
+    searchCopy.searchServerError,
     searchCopy.searchRefreshTooSoon,
   ]);
 
@@ -198,6 +200,7 @@ export function PlacePickModal({
     const requestId = ++keywordRequestIdRef.current;
     setActiveKeyword(keyword);
     setKeywordLoading(true);
+    setKeywordErrorMessage(null);
     setSelectedId(null);
 
     try {
@@ -218,6 +221,9 @@ export function PlacePickModal({
         anchor,
       );
       setKeywordPlaces(places);
+      setKeywordErrorMessage(
+        places.length === 0 ? searchCopy.searchNoResults : null,
+      );
       setKeywordLoading(false);
 
       if (places.length === 0) {
@@ -252,13 +258,28 @@ export function PlacePickModal({
         contentTypeId: PLAN_PICK_CONTENT_TYPE,
       });
       setKeywordPlaces([]);
+      setKeywordErrorMessage(
+        placeSearchCatchMessage(searchError, {
+          noResults: searchCopy.searchNoResults,
+          serverError: searchCopy.searchServerError,
+        }),
+      );
       setKeywordLoading(false);
     } finally {
       if (requestId === keywordRequestIdRef.current) {
         setKeywordLoading(false);
       }
     }
-  }, [anchor, excludePlaceIds, keywordLoading, mergePlaceDetails, queryDraft, useTourApiNearby]);
+  }, [
+    anchor,
+    excludePlaceIds,
+    keywordLoading,
+    mergePlaceDetails,
+    queryDraft,
+    searchCopy.searchNoResults,
+    searchCopy.searchServerError,
+    useTourApiNearby,
+  ]);
 
   const handleClearKeyword = useCallback(() => {
     keywordRequestIdRef.current += 1;
@@ -266,6 +287,7 @@ export function PlacePickModal({
     setActiveKeyword(null);
     setKeywordPlaces([]);
     setKeywordLoading(false);
+    setKeywordErrorMessage(null);
     setSelectedId(null);
   }, []);
 
@@ -275,6 +297,7 @@ export function PlacePickModal({
     setActiveKeyword(null);
     setKeywordPlaces([]);
     setKeywordLoading(false);
+    setKeywordErrorMessage(null);
     setSelectedId(null);
     setLegMode(defaultLegMode);
     onClose();
@@ -397,12 +420,16 @@ export function PlacePickModal({
 
         {!listLoading && listPlaces.length === 0 ? (
           <Text className="mb-6 text-center text-sm text-brand-muted">
-            {isKeywordMode ? searchCopy.keywordEmptySub : copy.searchEmpty}
+            {isKeywordMode
+              ? (keywordErrorMessage ?? searchCopy.keywordEmptySub)
+              : useTourApiNearby
+                ? (cacheEntry?.error ?? searchCopy.searchNoResults)
+                : copy.searchEmpty}
           </Text>
         ) : (
           listPlaces.map(place => {
             const selected = selectedId === place.contentId;
-            const dist =
+            const distLabel =
               anchor && useTourApiNearby
                 ? copy.distance(
                     formatDistanceKm(
@@ -416,7 +443,7 @@ export function PlacePickModal({
                     ),
                   )
                 : undefined;
-            const meta = buildPlaceListMetaLine(place, searchCopy, dist);
+            const meta = buildPlaceListMetaLine(place, searchCopy, distLabel);
 
             return (
               <PlaceSearchListItem

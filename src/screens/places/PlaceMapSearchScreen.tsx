@@ -1,12 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Platform,
   Pressable,
   ScrollView,
   Text,
   TextInput,
-  ToastAndroid,
   View,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -14,9 +12,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PlaceDetailSheet } from '../../components/places/PlaceDetailSheet';
 import { PlaceMapView } from '../../components/places/PlaceMapView';
-import { TransientBottomToast } from '../../components/shared/feedback/TransientBottomToast';
+import { PlaceSearchListItem } from '../../components/places/PlaceSearchListItem';
 import { BackButton } from '../../components/shared/buttons/BackButton';
-import { AppIcon } from '../../components/shared/icons/AppIcon';
 import {
   defaultPlaceContentTypeId,
   isFestivalPlaceSearch,
@@ -25,10 +22,8 @@ import {
   PLACE_SEARCH_REFRESH_COOLDOWN_MS,
   buildPlaceListMetaLine,
 } from '../../constants/places/placeSearch';
-import { ICON_COLOR_PRIMARY } from '../../constants/icons';
 import { useAppLanguage, useCopy } from '../../i18n';
 import { usePlaceMapUserLocation } from '../../hooks/usePlaceMapUserLocation';
-import { useTransientBottomToast } from '../../hooks/useTransientBottomToast';
 import type { RootStackParamList } from '../../navigation/types';
 import {
   fetchPlaceDetail,
@@ -36,7 +31,7 @@ import {
   searchPlacesByKeyword,
 } from '../../services/places/placesApiService';
 import { usePlaceBookmarkStore, usePlaceDetailCacheStore, usePlaceSearchStore } from '../../stores';
-import { isPlaceSearchNoResultsMessage } from '../../stores';
+import { placeSearchCatchMessage } from '../../stores';
 import type { EventZoneCoordinate } from '../../types/eventZone';
 import type { PlaceDetailVO } from '../../types/googlePlaces';
 import type { BusanPlace } from '../../types/placeSearch';
@@ -50,6 +45,7 @@ import {
 import { haversineKm } from '../../utils/geo/geo';
 import { enrichBusanPlaceFromDetail } from '../../utils/places/placesApiMapper';
 import { logPlacesApiError } from '../../utils/places/placesApiLogger';
+import { formatDistanceKm } from '../../utils/places/rebootPlaces';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PlaceMapSearch'>;
 
@@ -77,21 +73,11 @@ function resolveFestivalDateRange(
   return currentMonthDateRangeYyyymmdd();
 }
 
-function notifyNoSearchResults(message: string, showToast: (text: string) => void) {
-  // 지도 WebView가 RN absolute 뷰를 가리므로 Android는 시스템 토스트 사용
-  if (Platform.OS === 'android') {
-    ToastAndroid.show(message, ToastAndroid.SHORT);
-    return;
-  }
-  showToast(message);
-}
-
 export function PlaceMapSearchScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const language = useAppLanguage();
   const copy = useCopy('placeSearch');
   const radiusKm = PLACE_SEARCH_RADIUS_M / 1000;
-  const { text: toastText, opacity: toastOpacity, showToast } = useTransientBottomToast();
 
   const initialType = defaultPlaceContentTypeId(route.params?.contentTypeId);
   const [contentTypeId, setContentTypeId] = useState<PlaceContentTypeId>(initialType);
@@ -111,6 +97,7 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
     Record<string, PlaceDetailVO | null>
   >({});
   const [keywordLoading, setKeywordLoading] = useState(false);
+  const [keywordErrorMessage, setKeywordErrorMessage] = useState<string | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const keywordRequestIdRef = useRef(0);
 
@@ -163,26 +150,12 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
     : (cacheEntry?.placeDetailsById ?? {});
   const globalPlaceDetails = usePlaceDetailCacheStore(s => s.detailsByPlaceId);
   const rawError = isKeywordMode ? null : (cacheEntry?.error ?? null);
-  const isNoResultsError = rawError != null && isPlaceSearchNoResultsMessage(rawError);
-  const error = isNoResultsError ? null : rawError;
+  const error = rawError;
   const loading = isKeywordMode ? keywordLoading : locationLoading;
 
-  useEffect(() => {
-    if (!isNoResultsError || !rawError) {
-      return;
-    }
-    notifyNoSearchResults(copy.searchNoResults, showToast);
-    const entry = usePlaceSearchStore.getState().getEntry(contentTypeId);
-    if (!entry?.error) {
-      return;
-    }
-    usePlaceSearchStore.setState(state => ({
-      cacheByType: {
-        ...state.cacheByType,
-        [contentTypeId]: { ...entry, error: null },
-      },
-    }));
-  }, [isNoResultsError, rawError, contentTypeId, showToast, copy.searchNoResults]);
+  const emptyMessage = isKeywordMode
+    ? (keywordErrorMessage ?? copy.keywordEmptySub)
+    : (error ?? copy.searchNoResults);
 
   useEffect(() => {
     if (route.params?.contentTypeId) {
@@ -250,12 +223,8 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
         eventStartDate: festivalDateRange.eventStartDate,
         eventEndDate: festivalDateRange.eventEndDate,
         mapCenter,
-        emptyErrorFallback: copy.festivalEmptySub,
+        serverErrorMessage: copy.searchServerError,
         refreshTooSoonMessage: copy.searchRefreshTooSoon,
-      }).then(outcome => {
-        if (outcome === 'empty') {
-          notifyNoSearchResults(copy.searchNoResults, showToast);
-        }
       });
       return;
     }
@@ -274,12 +243,8 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
       contentTypeId,
       searchCenter,
       mapCenter: mapCenter ?? searchCenter,
-      emptyErrorFallback: copy.emptySub,
+      serverErrorMessage: copy.searchServerError,
       refreshTooSoonMessage: copy.searchRefreshTooSoon,
-    }).then(outcome => {
-      if (outcome === 'empty') {
-        notifyNoSearchResults(copy.searchNoResults, showToast);
-      }
     });
   }, [
     isKeywordMode,
@@ -292,10 +257,7 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
     hasCacheForFestivalRange,
     searchByLocation,
     searchFestivalsByDateRange,
-    showToast,
-    copy.emptySub,
-    copy.festivalEmptySub,
-    copy.searchNoResults,
+    copy.searchServerError,
     copy.searchRefreshTooSoon,
   ]);
 
@@ -338,6 +300,8 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
     () => sortBookmarkedFirst(places, bookmarkedIds, (a, b) => a.name.localeCompare(b.name, 'ko')),
     [places, bookmarkedIds],
   );
+
+  const distanceOrigin = searchCenter ?? mapCenter ?? location;
 
   const summaryText = isKeywordMode && activeKeyword
     ? copy.keywordSummary(activeKeyword, places.length)
@@ -443,6 +407,7 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
       setActiveKeyword(keyword);
       setKeywordDraft(keyword);
       setKeywordLoading(true);
+      setKeywordErrorMessage(null);
       setSelectedPlace(null);
       setDetailOpen(false);
 
@@ -461,11 +426,12 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
         if (result.places.length === 0) {
           setKeywordPlaces([]);
           setKeywordDetailsById({});
-          notifyNoSearchResults(copy.searchNoResults, showToast);
+          setKeywordErrorMessage(copy.searchNoResults);
           return;
         }
 
         setKeywordPlaces(result.places);
+        setKeywordErrorMessage(null);
         setKeywordLoading(false);
 
         const first = result.places[0];
@@ -505,14 +471,23 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
         });
         setKeywordPlaces([]);
         setKeywordDetailsById({});
-        notifyNoSearchResults(copy.searchNoResults, showToast);
+        setKeywordErrorMessage(
+          placeSearchCatchMessage(searchError, {
+            noResults: copy.searchNoResults,
+            serverError: copy.searchServerError,
+          }),
+        );
       } finally {
         if (requestId === keywordRequestIdRef.current) {
           setKeywordLoading(false);
         }
       }
     },
-    [copy.searchNoResults, mergePlaceDetails, showToast],
+    [
+      copy.searchNoResults,
+      copy.searchServerError,
+      mergePlaceDetails,
+    ],
   );
 
   const handleSubmitKeyword = useCallback(() => {
@@ -526,6 +501,7 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
     setKeywordPlaces([]);
     setKeywordDetailsById({});
     setKeywordLoading(false);
+    setKeywordErrorMessage(null);
     setSelectedPlace(null);
     setDetailOpen(false);
   }, []);
@@ -618,7 +594,6 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
         </ScrollView>
         <Text className="mt-2 text-sm font-semibold text-brand-text">{summaryText}</Text>
         <Text className="mt-0.5 text-[11px] text-brand-muted">{copy.dataHint}</Text>
-        {error ? <Text className="mt-1 text-xs text-red-500">{error}</Text> : null}
         {isSearchCooldownActive ? (
           <Text className="mt-1 text-xs text-brand-muted">
             {copy.searchCooldown(searchCooldownSeconds)}
@@ -713,50 +688,36 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
 
             {sortedPlaces.length === 0 ? (
               <View className="px-4 py-4">
-                <Text className="text-center text-sm font-semibold text-brand-text">
-                  {copy.empty}
-                </Text>
-                <Text className="mt-1 text-center text-xs text-brand-muted">
-                  {isKeywordMode
-                    ? copy.keywordEmptySub
-                    : isFestivalMode
-                      ? copy.festivalEmptySub
-                      : copy.emptySub}
-                </Text>
+                <Text className="text-center text-sm text-brand-muted">{emptyMessage}</Text>
               </View>
             ) : (
               <>
                 <Text className="px-4 pt-3 text-xs text-brand-muted">{copy.selectHint}</Text>
                 <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  className="max-h-40"
-                  contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12, gap: 8 }}>
+                  className="max-h-56"
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12 }}>
                   {sortedPlaces.map(place => {
-                    const bookmarked = isPlaceBookmarked(place.contentTypeId, place.contentId);
                     const selected = selectedPlace?.id === place.id;
+                    const distanceLabel = formatDistanceKm(
+                      haversineKm(
+                        distanceOrigin.lat,
+                        distanceOrigin.lng,
+                        place.location.lat,
+                        place.location.lng,
+                      ),
+                      language,
+                    );
+                    const meta = buildPlaceListMetaLine(place, copy, distanceLabel);
 
                     return (
-                      <Pressable
+                      <PlaceSearchListItem
                         key={place.id}
+                        place={place}
+                        selected={selected}
+                        meta={meta}
                         onPress={() => handleSelectPlace(place)}
-                        className={`rounded-2xl border px-4 py-3 active:opacity-80 ${
-                          selected
-                            ? 'border-brand-primary bg-brand-selected'
-                            : bookmarked
-                              ? 'border-amber-300 bg-amber-50'
-                              : 'border-brand-border bg-brand-background'
-                        }`}>
-                        <View className="flex-row items-center gap-1">
-                          {bookmarked ? (
-                            <AppIcon name="mapPin" size={12} color={ICON_COLOR_PRIMARY} filled />
-                          ) : null}
-                          <Text className="text-sm font-bold text-brand-text">{place.name}</Text>
-                        </View>
-                        <Text className="mt-0.5 text-xs text-brand-muted">
-                          {buildPlaceListMetaLine(place, copy)}
-                        </Text>
-                      </Pressable>
+                      />
                     );
                   })}
                 </ScrollView>
@@ -786,12 +747,6 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
         }
         onToggleBookmark={handleToggleBookmark}
         onClose={handleCloseDetail}
-      />
-
-      <TransientBottomToast
-        text={toastText}
-        opacity={toastOpacity}
-        bottom={Math.max(insets.bottom, 12) + 96}
       />
     </View>
   );

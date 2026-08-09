@@ -31,6 +31,8 @@ export const PLACE_SEARCH_COPY: Record<
     keywordSearchButton: string;
     keywordSummary: (keyword: string, count: number) => string;
     keywordEmptySub: string;
+    /** 장소 검색 서버 5xx */
+    searchServerError: string;
     summary: (count: number, radiusKm: number) => string;
     searchHere: string;
     /** 짧은 간격 재검색으로 서버 오류가 났을 때·쿨다운 안내 */
@@ -88,6 +90,7 @@ export const PLACE_SEARCH_COPY: Record<
     keywordSearchButton: '검색',
     keywordSummary: (keyword, count) => `"${keyword}" · ${count}곳`,
     keywordEmptySub: '다른 키워드로 검색해 보세요',
+    searchServerError: '서버에 문제가 있어요. 잠시 후 다시 시도해 주세요.',
     summary: (count, radiusKm) => `주변 ${radiusKm}km · ${count}곳`,
     searchHere: '이곳에서 검색하기',
     searchRefreshTooSoon:
@@ -153,6 +156,7 @@ export const PLACE_SEARCH_COPY: Record<
     keywordSearchButton: 'Search',
     keywordSummary: (keyword, count) => `"${keyword}" · ${count} places`,
     keywordEmptySub: 'Try a different keyword',
+    searchServerError: 'Something went wrong on the server. Please try again later.',
     summary: (count, radiusKm) => `Within ${radiusKm} km · ${count} places`,
     searchHere: 'Search this area',
     searchRefreshTooSoon:
@@ -218,6 +222,7 @@ export const PLACE_SEARCH_COPY: Record<
     keywordSearchButton: '検索',
     keywordSummary: (keyword, count) => `"${keyword}" · ${count}件`,
     keywordEmptySub: '別のキーワードで検索してください',
+    searchServerError: 'サーバーで問題が発生しました。しばらくしてから再試行してください。',
     summary: (count, radiusKm) => `周辺${radiusKm}km · ${count}件`,
     searchHere: 'このエリアで検索',
     searchRefreshTooSoon:
@@ -283,6 +288,7 @@ export const PLACE_SEARCH_COPY: Record<
     keywordSearchButton: '搜索',
     keywordSummary: (keyword, count) => `"${keyword}" · ${count} 个`,
     keywordEmptySub: '请尝试其他关键词',
+    searchServerError: '服务器出现问题，请稍后再试。',
     summary: (count, radiusKm) => `周边 ${radiusKm} km · ${count} 个`,
     searchHere: '在此区域搜索',
     searchRefreshTooSoon: '短时间内无法多次刷新，请稍后再试。',
@@ -347,17 +353,19 @@ export function isFestivalPlaceSearch(contentTypeId: PlaceContentTypeId): boolea
 
 type PlaceSearchCopy = (typeof PLACE_SEARCH_COPY)['ko'];
 
-/** 지도·리스트 공통 — `관광지 · ★ 4.5` 형식 */
+/** 지도·리스트 공통 — `관광지 · ★ 4.5 · 리뷰 12개 · 1.2km` 형식 */
 export function buildPlaceListMetaLine(
   place: BusanPlace,
   copy: PlaceSearchCopy,
-  secondary?: string,
+  distanceLabel?: string,
 ): string {
-  const category = copy.categoryLabels[place.contentTypeId];
-  const tail =
-    secondary ??
-    (isFestivalPlaceSearch(place.contentTypeId)
-      ? copy.festivalListMeta(place.address)
-      : copy.ratingSummary(place.rating, place.userRatingsTotal));
-  return `${category} · ${tail}`;
+  const ratingOrFestival = isFestivalPlaceSearch(place.contentTypeId)
+    ? copy.festivalListMeta(place.address)
+    : copy.ratingSummary(place.rating, place.userRatingsTotal);
+
+  const parts = [copy.categoryLabels[place.contentTypeId], ratingOrFestival];
+  if (distanceLabel) {
+    parts.push(distanceLabel);
+  }
+  return parts.join(' · ');
 }

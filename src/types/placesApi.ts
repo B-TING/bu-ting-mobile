@@ -17,8 +17,8 @@ export type PlaceContentTypeId =
   | typeof PLACE_CONTENT_TYPE.festival;
 
 export const PLACE_MAP_SEARCH_TYPES: PlaceContentTypeId[] = [
-  PLACE_CONTENT_TYPE.attraction,
   PLACE_CONTENT_TYPE.accommodation,
+  PLACE_CONTENT_TYPE.attraction,
   PLACE_CONTENT_TYPE.restaurant,
   PLACE_CONTENT_TYPE.festival,
 ];
