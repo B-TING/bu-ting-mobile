@@ -13,7 +13,6 @@ import type {
 } from '../../types/travelPlan';
 import type { OnboardingProfile } from '../../types/user';
 import { createId } from '../../utils/common/id';
-import { buildPlanRequestPrompt } from './planPromptBuilder';
 
 const LOCKER_SPOT: RouteItem = {
   itemId: createId('r'),
@@ -243,7 +242,6 @@ function buildPlan(
     members,
     itinerary: buildItinerary(wizard, dayCount, variant, pace),
     createdAt: new Date().toISOString(),
-    aiPromptContext: buildPlanRequestPrompt(wizard, onboarding),
   };
 }
 
