@@ -1,6 +1,8 @@
 import type { RebootPlaceCandidate } from '../../utils/places/rebootPlaces';
+import type { WizardPickedPlace } from '../../types/planWizard';
 import type { PlanPlaceCreateRequest, PlanPlaceResponse, PlanPlaceUpdatePlaceRequest, PlaceProviderDto } from '../../types/travelApi';
 import type { RouteItem, TravelPlan } from '../../types/travelPlan';
+import type { ManualDayPlaceSlot } from '../../utils/plan/manualPlanPlaceSlots';
 import { sortedRoutes } from '../../utils/plan/planItinerary';
 import {
   createPlanPlace,
@@ -110,14 +112,65 @@ function inferPlaceProvider(placeId: string): PlaceProviderDto {
 export function rebootCandidateToPlanPlaceRequest(
   candidate: RebootPlaceCandidate,
 ): PlanPlaceCreateRequest {
-  return {
+  return wizardPickedPlaceToPlanPlaceRequest({
+    placeId: candidate.placeId,
     placeName: candidate.placeName,
-    address: candidate.address?.trim() || candidate.placeName,
-    latitude: candidate.location.lat,
-    longitude: candidate.location.lng,
-    provider: inferPlaceProvider(candidate.placeId),
-    providerPlaceId: candidate.placeId,
+    location: candidate.location,
+    address: candidate.address,
+  });
+}
+
+export function wizardPickedPlaceToPlanPlaceRequest(
+  place: WizardPickedPlace,
+  sequence?: number,
+): PlanPlaceCreateRequest {
+  return {
+    placeName: place.placeName,
+    address: place.address?.trim() || place.placeName,
+    latitude: place.location.lat,
+    longitude: place.location.lng,
+    provider: inferPlaceProvider(place.placeId),
+    providerPlaceId: place.placeId,
     visited: false,
+    ...(sequence == null ? {} : { sequence }),
+  };
+}
+
+export async function seedManualWizardPlaces(
+  accessToken: string,
+  dayPlanIds: string[],
+  slotsByDay: ManualDayPlaceSlot[][],
+): Promise<void> {
+  for (let dayIndex = 0; dayIndex < dayPlanIds.length; dayIndex += 1) {
+    const slots = slotsByDay[dayIndex] ?? [];
+    const planId = dayPlanIds[dayIndex];
+    for (let sequence = 0; sequence < slots.length; sequence += 1) {
+      await createPlanPlace(
+        accessToken,
+        planId,
+        wizardPickedPlaceToPlanPlaceRequest(slots[sequence].place, sequence),
+      );
+    }
+  }
+}
+
+export function applyWizardPlaceTypes(
+  plan: TravelPlan,
+  stayPlaceId?: string | null,
+): TravelPlan {
+  if (!stayPlaceId) {
+    return plan;
+  }
+  return {
+    ...plan,
+    itinerary: plan.itinerary.map(day => ({
+      ...day,
+      routes: day.routes.map(route =>
+        route.placeId === stayPlaceId
+          ? { ...route, type: 'ACCOMMODATION' as const }
+          : route,
+      ),
+    })),
   };
 }
 

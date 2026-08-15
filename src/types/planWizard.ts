@@ -21,6 +21,7 @@ export type WizardPickedPlace = {
 };
 
 export type PlanWizardAnswers = {
+  title: string;
   startDate: string;
   endDate: string;
   companionCount: number;
@@ -43,6 +44,7 @@ export type PlanWizardAnswers = {
 };
 
 export type PlanWizardStepId =
+  | 'title'
   | 'dates'
   | 'companions'
   | 'companionType'

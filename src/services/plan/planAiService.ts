@@ -234,7 +234,7 @@ function buildPlan(
 
   return {
     planId: createId('plan-'),
-    title: titles[variant % titles.length],
+    title: wizard.title.trim() || titles[variant % titles.length],
     startDate: wizard.startDate,
     endDate: wizard.endDate,
     status,

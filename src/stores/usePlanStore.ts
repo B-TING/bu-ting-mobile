@@ -438,6 +438,7 @@ export function hydrateRoutePlaceInfo(
 }
 
 export const emptyWizardAnswers = (): PlanWizardAnswers => ({
+  title: '',
   startDate: '',
   endDate: '',
   companionCount: 1,

@@ -21,7 +21,7 @@ import type {
 } from '../../types/travelPlan';
 import { getCurrentApiServerOrigin } from '../../utils/api/apiServerOrigin';
 import { createId } from '../../utils/common/id';
-import { dayCountBetween } from '../../constants/plan/planWizard';
+import { dayCountBetween, TRAVEL_TITLE_MAX_LENGTH } from '../../constants/plan/planWizard';
 
 const COMPANION_MAP: Record<CompanionGroupType, CompanionTypeDto> = {
   solo: 'SOLO',
@@ -52,17 +52,47 @@ export function enumerateVisitDates(startDate: string, endDate: string): string[
   return dates;
 }
 
+const DEFAULT_TRAVEL_TITLE = '부산 여행';
+export { TRAVEL_TITLE_MAX_LENGTH };
+
+function normalizeTitlePart(value: string | null | undefined): string {
+  return value?.replace(/\s+/g, ' ').trim() ?? '';
+}
+
+function clipTravelTitle(value: string): string {
+  if (value.length <= TRAVEL_TITLE_MAX_LENGTH) {
+    return value;
+  }
+  return value.slice(0, TRAVEL_TITLE_MAX_LENGTH);
+}
+
+export function buildTravelTitle(placeName?: string | null): string {
+  const name = normalizeTitlePart(placeName);
+  if (!name) {
+    return DEFAULT_TRAVEL_TITLE;
+  }
+  const withSuffix = `${name} 여행`;
+  if (withSuffix.length <= TRAVEL_TITLE_MAX_LENGTH) {
+    return withSuffix;
+  }
+  if (name.length <= TRAVEL_TITLE_MAX_LENGTH) {
+    return name;
+  }
+  return name.slice(0, TRAVEL_TITLE_MAX_LENGTH);
+}
+
 export function toTravelCreateRequest(input: ManualTravelInput): TravelCreateRequest {
   const primaryCompanion = input.companionTypes[0];
   const primaryStyle = input.travelStyleIds[0];
+  const customTitle = clipTravelTitle(normalizeTitlePart(input.title));
   return {
-    title: input.accommodationName?.trim() || '부산 여행',
+    title: customTitle || null,
     startDate: input.startDate,
     endDate: input.endDate,
     companionCount: input.companionCount,
     hasHeavyBaggage: input.hasHeavyBaggage,
     hasPets: input.hasPets,
-    companionType: primaryCompanion ? COMPANION_MAP[primaryCompanion] : 'SOLO',
+    companionType: primaryCompanion ? COMPANION_MAP[primaryCompanion] : null,
     travelStyle: primaryStyle ? STYLE_MAP[primaryStyle] ?? 'TOURISM' : null,
     preferredFoods: input.foodIds.length ? input.foodIds.join(',') : null,
     accommodationArea: input.accommodationAreaIds[0] ?? null,

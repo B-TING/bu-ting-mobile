@@ -1,18 +1,10 @@
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { WizardStepLayout } from '../../components/shared/layout/WizardStepLayout';
 import { OptionCard } from '../../components/shared/cards/OptionCard';
 import { PrimaryButton } from '../../components/shared/buttons/PrimaryButton';
 import { AppIcon } from '../../components/shared/icons/AppIcon';
-import { PlacePickModal } from '../../components/plan/modals/PlacePickModal';
 import { PlaceSearchListItem } from '../../components/places/PlaceSearchListItem';
 import { ICON_COLOR_WHITE } from '../../constants/icons';
 import {
@@ -22,6 +14,7 @@ import {
   BUSAN_FOODS,
   COMPANION_TYPE_OPTIONS,
   PLAN_WIZARD_STEP_COUNT,
+  TRAVEL_TITLE_MAX_LENGTH,
 } from '../../constants/plan/planWizard';
 import { usePlanWizardScreen } from '../../hooks/plan/usePlanWizardScreen';
 import type { RootStackParamList } from '../../navigation/types';
@@ -29,9 +22,7 @@ import { PLACE_CONTENT_TYPE } from '../../types/placesApi';
 import type { WizardPickedPlace } from '../../types/planWizard';
 import type { BusanPlace } from '../../types/placeSearch';
 
-type Props = {
-  navigation: NativeStackNavigationProp<RootStackParamList>;
-};
+type Props = NativeStackScreenProps<RootStackParamList, 'PlanWizard'>;
 
 function pickedToBusanPlace(
   place: WizardPickedPlace,
@@ -50,7 +41,7 @@ function pickedToBusanPlace(
   };
 }
 
-export function PlanWizardScreen({ navigation }: Props) {
+export function PlanWizardScreen(props: Props) {
   const {
     language,
     copy,
@@ -61,14 +52,8 @@ export function PlanWizardScreen({ navigation }: Props) {
     answers,
     setAnswers,
     loading,
-    location,
-    placePickKind,
-    setPlacePickKind,
-    placePickContentTypeId,
-    placePickExcludeIds,
-    addPickedAttraction,
+    openPlaceMapPick,
     removePickedAttraction,
-    selectBookedAccommodation,
     canProceed,
     toggleId,
     toggleCompanionType,
@@ -78,10 +63,29 @@ export function PlanWizardScreen({ navigation }: Props) {
     selectGenerationMode,
     goNext,
     goBack,
-  } = usePlanWizardScreen(navigation);
+  } = usePlanWizardScreen(props);
 
   const renderStep = () => {
     switch (stepConfig.id) {
+      case 'title':
+        return (
+          <View>
+            <TextInput
+              className="rounded-2xl border-2 border-brand-border bg-brand-surface px-4 py-3.5 text-base text-brand-text"
+              value={answers.title}
+              onChangeText={title => setAnswers(p => ({ ...p, title }))}
+              placeholder={copy.travelTitlePlaceholder}
+              placeholderTextColor="#94A3B8"
+              maxLength={TRAVEL_TITLE_MAX_LENGTH}
+              autoCapitalize="sentences"
+              autoCorrect={false}
+              accessibilityLabel={stepConfig.title[language]}
+            />
+            <Text className="mt-2 text-right text-xs text-brand-muted">
+              {copy.travelTitleCount(answers.title.length, TRAVEL_TITLE_MAX_LENGTH)}
+            </Text>
+          </View>
+        );
       case 'dates':
         return (
           <View>
@@ -195,7 +199,7 @@ export function PlanWizardScreen({ navigation }: Props) {
               ))
             )}
             <Pressable
-              onPress={() => setPlacePickKind('attractions')}
+              onPress={() => openPlaceMapPick('attractions')}
               accessibilityRole="button"
               accessibilityLabel={copy.pickPlace}
               className="mt-2 items-center rounded-2xl border-2 border-brand-primary bg-brand-surface px-4 py-3.5 active:opacity-90">
@@ -254,13 +258,13 @@ export function PlanWizardScreen({ navigation }: Props) {
                     )}
                     meta={answers.bookedAccommodation.address}
                     selected
-                    onPress={() => setPlacePickKind('accommodation')}
+                    onPress={() => openPlaceMapPick('accommodation')}
                   />
                 ) : (
                   <Text className="mb-3 text-sm text-brand-muted">{copy.accSearchPlaceholder}</Text>
                 )}
                 <Pressable
-                  onPress={() => setPlacePickKind('accommodation')}
+                  onPress={() => openPlaceMapPick('accommodation')}
                   accessibilityRole="button"
                   accessibilityLabel={copy.pickStay}
                   className="mt-2 items-center rounded-2xl border-2 border-brand-primary bg-brand-surface px-4 py-3.5 active:opacity-90">
@@ -328,7 +332,6 @@ export function PlanWizardScreen({ navigation }: Props) {
   }
 
   return (
-    <>
     <WizardStepLayout
       stepIndex={step}
       totalSteps={PLAN_WIZARD_STEP_COUNT}
@@ -346,30 +349,5 @@ export function PlanWizardScreen({ navigation }: Props) {
       }>
       {renderStep()}
     </WizardStepLayout>
-      <PlacePickModal
-        visible={placePickKind != null}
-        anchor={location}
-        language={language}
-        useTourApiNearby
-        contentTypeId={placePickContentTypeId}
-        copy={{
-          title: placePickKind === 'accommodation' ? copy.pickStay : copy.pickPlace,
-          nearbyTitle: copy.pickNearbyTitle,
-          searchPlaceholder:
-            placePickKind === 'accommodation'
-              ? copy.accSearchPlaceholder
-              : copy.pickSearchPlaceholder,
-          searchEmpty: copy.pickSearchEmpty,
-          applyLabel: copy.pickApply,
-          cancelLabel: copy.pickCancel,
-          distance: copy.pickDistance,
-        }}
-        excludePlaceIds={placePickExcludeIds}
-        onClose={() => setPlacePickKind(null)}
-        onSelect={
-          placePickKind === 'accommodation' ? selectBookedAccommodation : addPickedAttraction
-        }
-      />
-    </>
   );
 }

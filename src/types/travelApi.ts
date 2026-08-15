@@ -168,6 +168,8 @@ export type ManualTravelInput = Pick<
   | 'foodIds'
   | 'accommodationAreaIds'
   | 'accommodationName'
+  | 'selectedAttractions'
+  | 'title'
 >;
 
 /** 여행 가계부 (TravelExpense) API DTO */

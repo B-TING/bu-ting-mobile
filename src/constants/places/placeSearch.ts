@@ -42,6 +42,8 @@ export const PLACE_SEARCH_COPY: Record<
     mapTitle: string;
     mapSubtitle: string;
     selectHint: string;
+    /** 위저드 장소 선택 모드에서 상세 시트 확인 */
+    pickConfirm: string;
     close: string;
     ratingSummary: (rating: number, count: number) => string;
     reviewsTitle: string;
@@ -100,6 +102,7 @@ export const PLACE_SEARCH_COPY: Record<
     mapTitle: '카카오맵',
     mapSubtitle: '지도를 움직이면 다른 위치를 검색할 수 있어요',
     selectHint: '지도에서 장소를 선택하면 상세 정보를 볼 수 있어요',
+    pickConfirm: '이 장소 선택',
     close: '닫기',
     ratingSummary: (rating, count) => {
       const r = Number(rating) || 0;
@@ -166,6 +169,7 @@ export const PLACE_SEARCH_COPY: Record<
     mapTitle: 'Kakao Map',
     mapSubtitle: 'Pan the map to search a different area',
     selectHint: 'Select a place on the map to see details',
+    pickConfirm: 'Select this place',
     close: 'Close',
     ratingSummary: (rating, count) => {
       const r = Number(rating) || 0;
@@ -232,6 +236,7 @@ export const PLACE_SEARCH_COPY: Record<
     mapTitle: 'カカオマップ',
     mapSubtitle: '地図を動かすと別のエリアを検索できます',
     selectHint: '地図で場所を選ぶと詳細が表示されます',
+    pickConfirm: 'この場所を選択',
     close: '閉じる',
     ratingSummary: (rating, count) => {
       const r = Number(rating) || 0;
@@ -297,6 +302,7 @@ export const PLACE_SEARCH_COPY: Record<
     mapTitle: 'Kakao地图',
     mapSubtitle: '移动地图可搜索其他区域',
     selectHint: '在地图上选择地点查看详情',
+    pickConfirm: '选择此地点',
     close: '关闭',
     ratingSummary: (rating, count) => {
       const r = Number(rating) || 0;

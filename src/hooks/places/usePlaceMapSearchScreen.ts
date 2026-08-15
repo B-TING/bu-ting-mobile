@@ -368,9 +368,11 @@ export function usePlaceMapSearchScreen(routeParams: RouteParams) {
     setDetailOpen(false);
   }, [clearKeyword]);
 
+  const pickFor = routeParams?.pickFor ?? null;
+
   const handleChangeContentType = useCallback(
     (typeId: PlaceContentTypeId) => {
-      if (typeId === contentTypeId) {
+      if (pickFor || typeId === contentTypeId) {
         return;
       }
 
@@ -405,6 +407,7 @@ export function usePlaceMapSearchScreen(routeParams: RouteParams) {
       isKeywordMode,
       location,
       mapCenter,
+      pickFor,
       runKeywordSearch,
       searchCenter,
     ],
@@ -417,6 +420,7 @@ export function usePlaceMapSearchScreen(routeParams: RouteParams) {
 
   return {
     copy,
+    pickFor,
     contentTypeId,
     selectedPlace,
     detailOpen,

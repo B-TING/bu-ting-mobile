@@ -1,12 +1,20 @@
 import type { NavbarTab } from '../components/shared/navigation/Navbar';
 import type { PlaceContentTypeId } from '../types/placesApi';
+import type { WizardPickedPlace } from '../types/planWizard';
+
+export type WizardPlacePickKind = 'attractions' | 'accommodation';
 
 export type RootStackParamList = {
   LanguageSelection: undefined;
   Login: undefined;
   Onboarding: { mode?: 'setup' | 'edit' | 'account' } | undefined;
   MainTabs: { tab?: NavbarTab } | undefined;
-  PlanWizard: undefined;
+  PlanWizard:
+    | {
+        pickedPlace?: WizardPickedPlace;
+        pickKind?: WizardPlacePickKind;
+      }
+    | undefined;
   PlanCandidates: undefined;
   /** planId 생략 시 진행 중(active) 플랜 사용 */
   PlanDetail: { planId?: string; openReboot?: boolean; tab?: 'overview' | 'schedule' | 'budget' | 'records' } | undefined;
@@ -21,6 +29,8 @@ export type RootStackParamList = {
     selectedContentId?: string;
     festivalEventStartDate?: string;
     festivalEventEndDate?: string;
+    /** 일정 위저드에서 장소 고를 때 — 카테고리 고정 + 선택 후 위저드로 복귀 */
+    pickFor?: WizardPlacePickKind;
   } | undefined;
   HelpDeskChat: undefined;
   EventZone: undefined;

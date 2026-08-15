@@ -1,7 +1,8 @@
 import type { AppLanguage } from '../../types/user';
 import type { LocalizedLabel, PlanWizardStepId } from '../../types/planWizard';
 
-export const PLAN_WIZARD_STEP_COUNT = 9;
+export const PLAN_WIZARD_STEP_COUNT = 10;
+export const TRAVEL_TITLE_MAX_LENGTH = 15;
 
 export type PlanWizardStepConfig = {
   id: PlanWizardStepId;
@@ -10,6 +11,21 @@ export type PlanWizardStepConfig = {
 };
 
 export const PLAN_WIZARD_STEPS: PlanWizardStepConfig[] = [
+  {
+    id: 'title',
+    title: {
+      ko: '여행 제목은?',
+      en: 'Name your trip',
+      ja: '旅行のタイトルは？',
+      zh: '旅行标题是？',
+    },
+    subtitle: {
+      ko: '일정 목록에 표시될 이름',
+      en: 'Shown on your itinerary list',
+      ja: '行程一覧に表示される名前',
+      zh: '将显示在行程列表中',
+    },
+  },
   {
     id: 'dates',
     title: {
@@ -261,6 +277,8 @@ export const PLAN_WIZARD_COPY: Record<
     statusDraft: string;
     startDate: string;
     endDate: string;
+    travelTitlePlaceholder: string;
+    travelTitleCount: (used: number, max: number) => string;
   }
 > = {
   ko: {
@@ -304,6 +322,8 @@ export const PLAN_WIZARD_COPY: Record<
     statusDraft: '생성 중',
     startDate: '시작일',
     endDate: '종료일',
+    travelTitlePlaceholder: '예: 해운대 주말 여행',
+    travelTitleCount: (used, max) => `${used} / ${max}`,
   },
   en: {
     next: 'Next',
@@ -346,6 +366,8 @@ export const PLAN_WIZARD_COPY: Record<
     statusDraft: 'Draft',
     startDate: 'Start',
     endDate: 'End',
+    travelTitlePlaceholder: 'e.g. Haeundae weekend trip',
+    travelTitleCount: (used, max) => `${used} / ${max}`,
   },
   ja: {
     next: '次へ',
@@ -388,6 +410,8 @@ export const PLAN_WIZARD_COPY: Record<
     statusDraft: '作成中',
     startDate: '開始',
     endDate: '終了',
+    travelTitlePlaceholder: '例: 海雲台の週末旅行',
+    travelTitleCount: (used, max) => `${used} / ${max}`,
   },
   zh: {
     next: '下一步',
@@ -430,6 +454,8 @@ export const PLAN_WIZARD_COPY: Record<
     statusDraft: '草稿',
     startDate: '开始',
     endDate: '结束',
+    travelTitlePlaceholder: '例如：海云台周末之旅',
+    travelTitleCount: (used, max) => `${used} / ${max}`,
   },
 };
 

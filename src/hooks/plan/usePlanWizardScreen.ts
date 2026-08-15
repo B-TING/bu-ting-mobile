@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { useFeatureUnavailableAlert } from '../../components/shared/modals';
 import {
@@ -9,15 +9,14 @@ import {
   isValidIsoDate,
   PLAN_WIZARD_STEP_COUNT,
   PLAN_WIZARD_STEPS,
+  TRAVEL_TITLE_MAX_LENGTH,
 } from '../../constants/plan/planWizard';
 import {
   ALPHA_FEATURE_LABELS,
   isAlphaFeatureBlocked,
 } from '../../constants/common/alphaFeatureBlocks';
-import { DEFAULT_USER_LOCATION_BUSAN } from '../../constants/eventZone/eventZone';
-import { useBusanSearchLocationWhen } from '../usePlaceMapUserLocation';
 import { useAppLanguage, useCopy } from '../../i18n';
-import type { RootStackParamList } from '../../navigation/types';
+import type { RootStackParamList, WizardPlacePickKind } from '../../navigation/types';
 import { navigateToMainTab } from '../../navigation/navigateToMainTab';
 import { requestAutoPlan, requestPlanCandidates } from '../../services/plan/planAiService';
 import { createManualTravelPlan } from '../../services/travel/createManualTravelPlan';
@@ -30,20 +29,7 @@ import {
 } from '../../stores';
 import { selectAuthUser, selectReusableAccessToken } from '../../stores/useAuthStore';
 import { PLACE_CONTENT_TYPE } from '../../types/placesApi';
-import type { CompanionGroupType, WizardPickedPlace } from '../../types/planWizard';
-import type { RebootPlaceCandidate } from '../../utils/places/rebootPlaces';
-
-type PlacePickKind = 'attractions' | 'accommodation' | null;
-
-function candidateToPickedPlace(candidate: RebootPlaceCandidate): WizardPickedPlace {
-  return {
-    placeId: candidate.placeId,
-    placeName: candidate.placeName,
-    location: candidate.location,
-    address: candidate.address,
-    imageUrl: candidate.imageUrl,
-  };
-}
+import type { CompanionGroupType } from '../../types/planWizard';
 
 function defaultDates() {
   const start = new Date();
@@ -56,9 +42,10 @@ function defaultDates() {
   };
 }
 
-export function usePlanWizardScreen(
-  navigation: NativeStackNavigationProp<RootStackParamList>,
-) {
+export function usePlanWizardScreen({
+  navigation,
+  route,
+}: NativeStackScreenProps<RootStackParamList, 'PlanWizard'>) {
   const language = useAppLanguage();
   const copy = useCopy('planWizard');
   const { showUnavailable } = useFeatureUnavailableAlert();
@@ -73,12 +60,37 @@ export function usePlanWizardScreen(
     ...emptyWizardAnswers(),
     ...defaultDates(),
   }));
-  const [placePickKind, setPlacePickKind] = useState<PlacePickKind>(null);
   const [loading, setLoading] = useState(false);
-  const { location } = useBusanSearchLocationWhen(placePickKind != null);
-  const pickAnchor = location ?? DEFAULT_USER_LOCATION_BUSAN;
-
   const stepConfig = PLAN_WIZARD_STEPS[step];
+
+  useEffect(() => {
+    const place = route.params?.pickedPlace;
+    const kind = route.params?.pickKind;
+    if (!place || !kind) {
+      return;
+    }
+    if (kind === 'accommodation') {
+      setAnswers(prev => ({
+        ...prev,
+        bookedAccommodation: place,
+        accommodationPlaceId: place.placeId,
+        accommodationName: place.placeName,
+      }));
+    } else {
+      setAnswers(prev => {
+        if (prev.selectedAttractions.some(item => item.placeId === place.placeId)) {
+          return prev;
+        }
+        const selectedAttractions = [...prev.selectedAttractions, place];
+        return {
+          ...prev,
+          selectedAttractions,
+          attractionIds: selectedAttractions.map(item => item.placeId),
+        };
+      });
+    }
+    navigation.setParams({ pickedPlace: undefined, pickKind: undefined });
+  }, [navigation, route.params?.pickedPlace, route.params?.pickKind]);
 
   const canProceed = (): boolean => {
     switch (stepConfig.id) {
@@ -88,23 +100,16 @@ export function usePlanWizardScreen(
           isValidIsoDate(answers.endDate) &&
           dayCountBetween(answers.startDate, answers.endDate) > 0
         );
+      case 'title':
+        return answers.title.trim().length <= TRAVEL_TITLE_MAX_LENGTH;
       case 'companions':
         return answers.companionCount >= 1 && answers.companionCount <= 20;
       case 'companionType':
-        return answers.companionTypes.length > 0;
       case 'travelStyle':
-        return answers.travelStyleIds.length > 0;
       case 'constraints':
-        return true;
       case 'attractions':
-        return answers.selectedAttractions.length > 0;
       case 'foods':
-        return answers.foodIds.length > 0;
       case 'accommodation':
-        if (answers.accommodationMode === 'booked') {
-          return !!answers.accommodationPlaceId;
-        }
-        return answers.accommodationAreaIds.length > 0;
       case 'generationMode':
         return true;
       default:
@@ -205,22 +210,6 @@ export function usePlanWizardScreen(
     });
   };
 
-  const addPickedAttraction = (candidate: RebootPlaceCandidate) => {
-    const place = candidateToPickedPlace(candidate);
-    setAnswers(prev => {
-      if (prev.selectedAttractions.some(item => item.placeId === place.placeId)) {
-        return prev;
-      }
-      const selectedAttractions = [...prev.selectedAttractions, place];
-      return {
-        ...prev,
-        selectedAttractions,
-        attractionIds: selectedAttractions.map(item => item.placeId),
-      };
-    });
-    setPlacePickKind(null);
-  };
-
   const removePickedAttraction = (placeId: string) => {
     setAnswers(prev => {
       const selectedAttractions = prev.selectedAttractions.filter(item => item.placeId !== placeId);
@@ -232,28 +221,15 @@ export function usePlanWizardScreen(
     });
   };
 
-  const selectBookedAccommodation = (candidate: RebootPlaceCandidate) => {
-    const place = candidateToPickedPlace(candidate);
-    setAnswers(prev => ({
-      ...prev,
-      bookedAccommodation: place,
-      accommodationPlaceId: place.placeId,
-      accommodationName: place.placeName,
-    }));
-    setPlacePickKind(null);
+  const openPlaceMapPick = (kind: WizardPlacePickKind) => {
+    navigation.navigate('PlaceMapSearch', {
+      contentTypeId:
+        kind === 'accommodation'
+          ? PLACE_CONTENT_TYPE.accommodation
+          : PLACE_CONTENT_TYPE.attraction,
+      pickFor: kind,
+    });
   };
-
-  const placePickContentTypeId =
-    placePickKind === 'accommodation'
-      ? PLACE_CONTENT_TYPE.accommodation
-      : PLACE_CONTENT_TYPE.attraction;
-
-  const placePickExcludeIds =
-    placePickKind === 'accommodation'
-      ? answers.bookedAccommodation
-        ? [answers.bookedAccommodation.placeId]
-        : []
-      : answers.selectedAttractions.map(item => item.placeId);
 
   const selectGenerationMode = (mode: 'auto' | 'candidates' | 'manual') => {
     if (mode !== 'manual' && isAlphaFeatureBlocked('planAi')) {
@@ -352,14 +328,8 @@ export function usePlanWizardScreen(
     answers,
     setAnswers,
     loading,
-    location: pickAnchor,
-    placePickKind,
-    setPlacePickKind,
-    placePickContentTypeId,
-    placePickExcludeIds,
-    addPickedAttraction,
+    openPlaceMapPick,
     removePickedAttraction,
-    selectBookedAccommodation,
     canProceed,
     toggleId,
     toggleCompanionType,
