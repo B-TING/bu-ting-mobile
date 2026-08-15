@@ -12,22 +12,43 @@ import { WizardStepLayout } from '../../components/shared/layout/WizardStepLayou
 import { OptionCard } from '../../components/shared/cards/OptionCard';
 import { PrimaryButton } from '../../components/shared/buttons/PrimaryButton';
 import { AppIcon } from '../../components/shared/icons/AppIcon';
+import { PlacePickModal } from '../../components/plan/modals/PlacePickModal';
+import { PlaceSearchListItem } from '../../components/places/PlaceSearchListItem';
 import { ICON_COLOR_WHITE } from '../../constants/icons';
 import {
   TRAVEL_CONSTRAINT_OPTIONS,
   TRAVEL_STYLE_OPTIONS,
   ACCOMMODATION_AREAS,
-  BUSAN_ATTRACTIONS,
   BUSAN_FOODS,
   COMPANION_TYPE_OPTIONS,
   PLAN_WIZARD_STEP_COUNT,
 } from '../../constants/plan/planWizard';
 import { usePlanWizardScreen } from '../../hooks/plan/usePlanWizardScreen';
 import type { RootStackParamList } from '../../navigation/types';
+import { PLACE_CONTENT_TYPE } from '../../types/placesApi';
+import type { WizardPickedPlace } from '../../types/planWizard';
+import type { BusanPlace } from '../../types/placeSearch';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList>;
 };
+
+function pickedToBusanPlace(
+  place: WizardPickedPlace,
+  contentTypeId: BusanPlace['contentTypeId'],
+): BusanPlace {
+  return {
+    id: place.placeId,
+    contentId: place.placeId,
+    contentTypeId,
+    name: place.placeName,
+    address: place.address ?? '',
+    location: place.location,
+    rating: 0,
+    userRatingsTotal: 0,
+    imageUrl: place.imageUrl,
+  };
+}
 
 export function PlanWizardScreen({ navigation }: Props) {
   const {
@@ -39,10 +60,15 @@ export function PlanWizardScreen({ navigation }: Props) {
     isLast,
     answers,
     setAnswers,
-    accQuery,
-    setAccQuery,
     loading,
-    filteredStays,
+    location,
+    placePickKind,
+    setPlacePickKind,
+    placePickContentTypeId,
+    placePickExcludeIds,
+    addPickedAttraction,
+    removePickedAttraction,
+    selectBookedAccommodation,
     canProceed,
     toggleId,
     toggleCompanionType,
@@ -155,15 +181,26 @@ export function PlanWizardScreen({ navigation }: Props) {
       case 'attractions':
         return (
           <ScrollView showsVerticalScrollIndicator={false}>
-            {BUSAN_ATTRACTIONS.map(opt => (
-              <OptionCard
-                key={opt.id}
-                label={opt.label[language]}
-                selected={answers.attractionIds.includes(opt.id)}
-                compact
-                onPress={() => toggleId('attractionIds', opt.id)}
-              />
-            ))}
+            {answers.selectedAttractions.length === 0 ? (
+              <Text className="mb-3 text-sm text-brand-muted">{copy.selectedPlacesEmpty}</Text>
+            ) : (
+              answers.selectedAttractions.map(place => (
+                <PlaceSearchListItem
+                  key={place.placeId}
+                  place={pickedToBusanPlace(place, PLACE_CONTENT_TYPE.attraction)}
+                  selected
+                  meta={place.address}
+                  onPress={() => removePickedAttraction(place.placeId)}
+                />
+              ))
+            )}
+            <Pressable
+              onPress={() => setPlacePickKind('attractions')}
+              accessibilityRole="button"
+              accessibilityLabel={copy.pickPlace}
+              className="mt-2 items-center rounded-2xl border-2 border-brand-primary bg-brand-surface px-4 py-3.5 active:opacity-90">
+              <Text className="text-base font-bold text-brand-primary">{copy.pickPlace}</Text>
+            </Pressable>
           </ScrollView>
         );
       case 'foods':
@@ -203,35 +240,32 @@ export function PlanWizardScreen({ navigation }: Props) {
                   accommodationMode: 'area_only',
                   accommodationPlaceId: null,
                   accommodationName: null,
+                  bookedAccommodation: null,
                 }))
               }
             />
             {answers.accommodationMode === 'booked' ? (
               <View className="mt-2">
-                <Text className="mb-2 text-sm font-semibold text-brand-muted">
-                  {copy.accSearch}
-                </Text>
-                <TextInput
-                  className="mb-3 rounded-2xl border-2 border-brand-border bg-brand-surface px-4 py-3 text-base text-brand-text"
-                  placeholder={copy.accSearchPlaceholder}
-                  value={accQuery}
-                  onChangeText={setAccQuery}
-                />
-                {filteredStays.map(stay => (
-                  <OptionCard
-                    key={stay.id}
-                    label={stay.label[language]}
-                    selected={answers.accommodationPlaceId === stay.id}
-                    compact
-                    onPress={() =>
-                      setAnswers(p => ({
-                        ...p,
-                        accommodationPlaceId: stay.id,
-                        accommodationName: stay.label[language],
-                      }))
-                    }
+                {answers.bookedAccommodation ? (
+                  <PlaceSearchListItem
+                    place={pickedToBusanPlace(
+                      answers.bookedAccommodation,
+                      PLACE_CONTENT_TYPE.accommodation,
+                    )}
+                    meta={answers.bookedAccommodation.address}
+                    selected
+                    onPress={() => setPlacePickKind('accommodation')}
                   />
-                ))}
+                ) : (
+                  <Text className="mb-3 text-sm text-brand-muted">{copy.accSearchPlaceholder}</Text>
+                )}
+                <Pressable
+                  onPress={() => setPlacePickKind('accommodation')}
+                  accessibilityRole="button"
+                  accessibilityLabel={copy.pickStay}
+                  className="mt-2 items-center rounded-2xl border-2 border-brand-primary bg-brand-surface px-4 py-3.5 active:opacity-90">
+                  <Text className="text-base font-bold text-brand-primary">{copy.pickStay}</Text>
+                </Pressable>
               </View>
             ) : (
               <View className="mt-2">
@@ -294,6 +328,7 @@ export function PlanWizardScreen({ navigation }: Props) {
   }
 
   return (
+    <>
     <WizardStepLayout
       stepIndex={step}
       totalSteps={PLAN_WIZARD_STEP_COUNT}
@@ -311,5 +346,30 @@ export function PlanWizardScreen({ navigation }: Props) {
       }>
       {renderStep()}
     </WizardStepLayout>
+      <PlacePickModal
+        visible={placePickKind != null}
+        anchor={location}
+        language={language}
+        useTourApiNearby
+        contentTypeId={placePickContentTypeId}
+        copy={{
+          title: placePickKind === 'accommodation' ? copy.pickStay : copy.pickPlace,
+          nearbyTitle: copy.pickNearbyTitle,
+          searchPlaceholder:
+            placePickKind === 'accommodation'
+              ? copy.accSearchPlaceholder
+              : copy.pickSearchPlaceholder,
+          searchEmpty: copy.pickSearchEmpty,
+          applyLabel: copy.pickApply,
+          cancelLabel: copy.pickCancel,
+          distance: copy.pickDistance,
+        }}
+        excludePlaceIds={placePickExcludeIds}
+        onClose={() => setPlacePickKind(null)}
+        onSelect={
+          placePickKind === 'accommodation' ? selectBookedAccommodation : addPickedAttraction
+        }
+      />
+    </>
   );
 }

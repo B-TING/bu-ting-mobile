@@ -18,6 +18,7 @@ import { usePlaceDetailCacheStore, usePlaceSearchStore } from '../../../stores';
 import { placeSearchCatchMessage } from '../../../stores';
 import { TransportModePicker } from '../schedule/TransportModePicker';
 import type { BusanPlace } from '../../../types/placeSearch';
+import type { PlaceContentTypeId } from '../../../types/placesApi';
 import type { AppLanguage } from '../../../types/user';
 import type { TravelLegMode } from '../../../types/travelPlan';
 import {
@@ -62,6 +63,7 @@ type PlacePickModalProps = {
   defaultLegMode?: TravelLegMode;
   /** true면 관광지 검색과 동일한 location + detail API */
   useTourApiNearby?: boolean;
+  contentTypeId?: PlaceContentTypeId;
   onClose: () => void;
   onSelect: (candidate: RebootPlaceCandidate, legMode?: TravelLegMode) => void;
 };
@@ -103,6 +105,7 @@ export function PlacePickModal({
   showTransportMode = false,
   defaultLegMode = 'walk',
   useTourApiNearby = false,
+  contentTypeId = PLAN_PICK_CONTENT_TYPE,
   onClose,
   onSelect,
 }: PlacePickModalProps) {
@@ -116,8 +119,8 @@ export function PlacePickModal({
   const keywordRequestIdRef = useRef(0);
 
   const searchCopy = useCopy('placeSearch');
-  const cacheEntry = usePlaceSearchStore(s => s.cacheByType[PLAN_PICK_CONTENT_TYPE]);
-  const nearbyLoading = usePlaceSearchStore(s => s.isLoading(PLAN_PICK_CONTENT_TYPE));
+  const cacheEntry = usePlaceSearchStore(s => s.cacheByType[contentTypeId]);
+  const nearbyLoading = usePlaceSearchStore(s => s.isLoading(contentTypeId));
   const searchByLocation = usePlaceSearchStore(s => s.searchByLocation);
   const hasCacheForCenter = usePlaceSearchStore(s => s.hasCacheForCenter);
   const mergePlaceDetails = usePlaceDetailCacheStore(s => s.mergeDetails);
@@ -129,12 +132,12 @@ export function PlacePickModal({
       return;
     }
 
-    if (hasCacheForCenter(PLAN_PICK_CONTENT_TYPE, anchor)) {
+    if (hasCacheForCenter(contentTypeId, anchor)) {
       return;
     }
 
     void searchByLocation({
-      contentTypeId: PLAN_PICK_CONTENT_TYPE,
+      contentTypeId,
       searchCenter: anchor,
       mapCenter: anchor,
       serverErrorMessage: searchCopy.searchServerError,
@@ -143,6 +146,7 @@ export function PlacePickModal({
   }, [
     visible,
     useTourApiNearby,
+    contentTypeId,
     anchor,
     isKeywordMode,
     hasCacheForCenter,
@@ -204,12 +208,12 @@ export function PlacePickModal({
     setSelectedId(null);
 
     try {
-      const result = await searchPlacesByKeyword({
-        keyword,
-        contentTypeId: PLAN_PICK_CONTENT_TYPE,
-        page: 1,
-        size: 20,
-      });
+        const result = await searchPlacesByKeyword({
+          keyword,
+          contentTypeId,
+          page: 1,
+          size: 20,
+        });
 
       if (requestId !== keywordRequestIdRef.current) {
         return;
@@ -255,7 +259,7 @@ export function PlacePickModal({
       }
       logPlacesApiError('GET', '/api/v1/places/search', searchError, {
         keyword,
-        contentTypeId: PLAN_PICK_CONTENT_TYPE,
+        contentTypeId,
       });
       setKeywordPlaces([]);
       setKeywordErrorMessage(
@@ -278,6 +282,7 @@ export function PlacePickModal({
     queryDraft,
     searchCopy.searchNoResults,
     searchCopy.searchServerError,
+    contentTypeId,
     useTourApiNearby,
   ]);
 

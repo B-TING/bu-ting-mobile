@@ -447,10 +447,12 @@ export const emptyWizardAnswers = (): PlanWizardAnswers => ({
   hasPets: false,
   otherConstraintIds: [],
   attractionIds: [],
+  selectedAttractions: [],
   foodIds: [],
   accommodationMode: 'area_only',
   accommodationPlaceId: null,
   accommodationName: null,
+  bookedAccommodation: null,
   accommodationAreaIds: [],
   generationMode: 'manual',
 });

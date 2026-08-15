@@ -94,10 +94,10 @@ export const PLAN_WIZARD_STEPS: PlanWizardStepConfig[] = [
       zh: '想去的景点',
     },
     subtitle: {
-      ko: '부산 대표 스팟 · 복수 선택',
-      en: 'Famous Busan spots · multi-select',
-      ja: '釜山の名所 · 複数選択',
-      zh: '釜山地标 · 多选',
+      ko: '검색·지도에서 복수 선택',
+      en: 'Search or pick on the map',
+      ja: '検索・地図から複数選択',
+      zh: '从搜索或地图多选',
     },
   },
   {
@@ -237,6 +237,16 @@ export const PLAN_WIZARD_COPY: Record<
     accArea: string;
     accSearch: string;
     accSearchPlaceholder: string;
+    pickPlace: string;
+    pickStay: string;
+    selectedPlacesEmpty: string;
+    removePlace: string;
+    pickApply: string;
+    pickCancel: string;
+    pickNearbyTitle: string;
+    pickSearchPlaceholder: string;
+    pickSearchEmpty: string;
+    pickDistance: (d: string) => string;
     modeAuto: string;
     modeAutoSub: string;
     modeCandidates: string;
@@ -270,6 +280,16 @@ export const PLAN_WIZARD_COPY: Record<
     accArea: '숙소 후보 지역만',
     accSearch: '숙소 검색',
     accSearchPlaceholder: '호텔·게스트하우스 이름',
+    pickPlace: '장소 추가',
+    pickStay: '숙소 검색',
+    selectedPlacesEmpty: '검색해서 가고 싶은 장소를 추가하세요',
+    removePlace: '삭제',
+    pickApply: '선택',
+    pickCancel: '취소',
+    pickNearbyTitle: '근처 장소',
+    pickSearchPlaceholder: '장소 이름 검색',
+    pickSearchEmpty: '검색 결과가 없어요',
+    pickDistance: d => `약 ${d}`,
     modeAuto: 'AI가 일정 생성',
     modeAutoSub: '입력한 정보로 바로 플랜 생성',
     modeCandidates: '후보에서 직접 선택',
@@ -302,6 +322,16 @@ export const PLAN_WIZARD_COPY: Record<
     accArea: 'Pick stay areas only',
     accSearch: 'Search stay',
     accSearchPlaceholder: 'Hotel or guesthouse name',
+    pickPlace: 'Add place',
+    pickStay: 'Search stay',
+    selectedPlacesEmpty: 'Search and add places you want to visit',
+    removePlace: 'Remove',
+    pickApply: 'Select',
+    pickCancel: 'Cancel',
+    pickNearbyTitle: 'Nearby places',
+    pickSearchPlaceholder: 'Search by name',
+    pickSearchEmpty: 'No results',
+    pickDistance: d => `~${d}`,
     modeAuto: 'AI builds my plan',
     modeAutoSub: 'Generate from your answers',
     modeCandidates: 'Choose from options',
@@ -334,6 +364,16 @@ export const PLAN_WIZARD_COPY: Record<
     accArea: 'エリア候補のみ',
     accSearch: '宿を検索',
     accSearchPlaceholder: 'ホテル名',
+    pickPlace: '場所を追加',
+    pickStay: '宿を検索',
+    selectedPlacesEmpty: '検索して行きたい場所を追加してください',
+    removePlace: '削除',
+    pickApply: '選択',
+    pickCancel: 'キャンセル',
+    pickNearbyTitle: '近くの場所',
+    pickSearchPlaceholder: '名前で検索',
+    pickSearchEmpty: '該当なし',
+    pickDistance: d => `約${d}`,
     modeAuto: 'AIが行程作成',
     modeAutoSub: '回答からすぐ生成',
     modeCandidates: '候補から選択',
@@ -366,6 +406,16 @@ export const PLAN_WIZARD_COPY: Record<
     accArea: '仅选住宿区域',
     accSearch: '搜索住宿',
     accSearchPlaceholder: '酒店或旅馆名称',
+    pickPlace: '添加地点',
+    pickStay: '搜索住宿',
+    selectedPlacesEmpty: '请搜索并添加想去的地点',
+    removePlace: '删除',
+    pickApply: '选择',
+    pickCancel: '取消',
+    pickNearbyTitle: '附近地点',
+    pickSearchPlaceholder: '按名称搜索',
+    pickSearchEmpty: '无搜索结果',
+    pickDistance: d => `约 ${d}`,
     modeAuto: 'AI 生成行程',
     modeAutoSub: '根据回答立即生成',
     modeCandidates: '从候选中选择',

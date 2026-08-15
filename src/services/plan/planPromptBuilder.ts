@@ -1,6 +1,5 @@
 import {
   ACCOMMODATION_AREAS,
-  BUSAN_ATTRACTIONS,
   BUSAN_FOODS,
   COMPANION_TYPE_OPTIONS,
 } from '../../constants/plan/planWizard';
@@ -27,7 +26,9 @@ export function buildPlanRequestPrompt(
     `Travelers: ${wizard.companionCount}`,
     `Companion types: ${labelsForIds(wizard.companionTypes, COMPANION_TYPE_OPTIONS, lang).join(', ') || 'unspecified'}`,
     `Heavy baggage: ${wizard.hasHeavyBaggage}`,
-    `Preferred attractions: ${labelsForIds(wizard.attractionIds, BUSAN_ATTRACTIONS, lang).join(', ') || 'open'}`,
+    `Preferred attractions: ${
+      wizard.selectedAttractions.map(place => place.placeName).join(', ') || 'open'
+    }`,
     `Preferred foods: ${labelsForIds(wizard.foodIds, BUSAN_FOODS, lang).join(', ') || 'open'}`,
   ];
 

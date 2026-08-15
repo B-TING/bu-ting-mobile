@@ -25,7 +25,24 @@ const LOCKER_SPOT: RouteItem = {
   isVisited: false,
 };
 
-function attractionToRoute(attractionId: string, sequence: number): RouteItem | null {
+function attractionToRoute(
+  wizard: PlanWizardAnswers,
+  attractionId: string,
+  sequence: number,
+): RouteItem | null {
+  const picked = wizard.selectedAttractions.find(place => place.placeId === attractionId);
+  if (picked) {
+    return {
+      itemId: createId('r'),
+      sequence,
+      placeId: picked.placeId,
+      placeName: picked.placeName,
+      type: 'ATTRACTION',
+      location: picked.location,
+      isVisited: false,
+      placeInfo: enrichPlaceInfo(picked.placeId, picked.placeName, 'ATTRACTION', 'ko'),
+    };
+  }
   const spot = BUSAN_ATTRACTIONS.find(a => a.id === attractionId);
   if (!spot?.meta) {
     return null;
@@ -74,7 +91,10 @@ function buildItinerary(
   variant: number,
   pace: PlanConstraints['pace'],
 ): DailyItinerary[] {
-  const attractionIds = [...wizard.attractionIds];
+  const attractionIds =
+    wizard.selectedAttractions.length > 0
+      ? wizard.selectedAttractions.map(place => place.placeId)
+      : [...wizard.attractionIds];
   if (attractionIds.length === 0) {
     attractionIds.push('gamcheon', 'haeundae', 'gwangan');
   }
@@ -104,27 +124,41 @@ function buildItinerary(
 
     const perDay = placesPerDay(pace, rotated.length, dayCount);
     for (let i = 0; i < perDay && cursor < rotated.length; i++) {
-      const route = attractionToRoute(rotated[cursor], routes.length);
+      const route = attractionToRoute(wizard, rotated[cursor], routes.length);
       if (route) {
         routes.push(route);
       }
       cursor++;
     }
 
-    if (wizard.accommodationMode === 'booked' && wizard.accommodationPlaceId && d === dayCount - 1) {
-      const stay = ACCOMMODATION_SEARCH.find(s => s.id === wizard.accommodationPlaceId);
-      if (stay?.meta) {
-        const placeId = stay.meta.placeId ?? stay.id;
+    if (wizard.accommodationMode === 'booked' && d === dayCount - 1) {
+      const stay = wizard.bookedAccommodation;
+      if (stay) {
         routes.push({
           itemId: createId('r'),
           sequence: routes.length,
-          placeId,
-          placeName: stay.label.ko,
+          placeId: stay.placeId,
+          placeName: stay.placeName,
           type: 'ACCOMMODATION',
-          location: { lat: stay.meta.lat, lng: stay.meta.lng },
+          location: stay.location,
           isVisited: false,
-          placeInfo: enrichPlaceInfo(placeId, stay.label.ko, 'ACCOMMODATION', 'ko'),
+          placeInfo: enrichPlaceInfo(stay.placeId, stay.placeName, 'ACCOMMODATION', 'ko'),
         });
+      } else if (wizard.accommodationPlaceId) {
+        const localStay = ACCOMMODATION_SEARCH.find(s => s.id === wizard.accommodationPlaceId);
+        if (localStay?.meta) {
+          const placeId = localStay.meta.placeId ?? localStay.id;
+          routes.push({
+            itemId: createId('r'),
+            sequence: routes.length,
+            placeId,
+            placeName: localStay.label.ko,
+            type: 'ACCOMMODATION',
+            location: { lat: localStay.meta.lat, lng: localStay.meta.lng },
+            isVisited: false,
+            placeInfo: enrichPlaceInfo(placeId, localStay.label.ko, 'ACCOMMODATION', 'ko'),
+          });
+        }
       }
     }
 
