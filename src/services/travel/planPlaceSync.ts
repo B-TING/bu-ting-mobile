@@ -144,11 +144,11 @@ export async function seedManualWizardPlaces(
   for (let dayIndex = 0; dayIndex < dayPlanIds.length; dayIndex += 1) {
     const slots = slotsByDay[dayIndex] ?? [];
     const planId = dayPlanIds[dayIndex];
-    for (let sequence = 0; sequence < slots.length; sequence += 1) {
+    for (let index = 0; index < slots.length; index += 1) {
       await createPlanPlace(
         accessToken,
         planId,
-        wizardPickedPlaceToPlanPlaceRequest(slots[sequence].place, sequence),
+        wizardPickedPlaceToPlanPlaceRequest(slots[index].place, index + 1),
       );
     }
   }

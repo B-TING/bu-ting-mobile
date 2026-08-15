@@ -26,11 +26,11 @@ function sanitizeDetail(detail: unknown): string | undefined {
 
   for (const [key, value] of Object.entries(record)) {
     if (
-      key === 'accessToken' ||
-      key === 'idToken' ||
-      key === 'refreshToken' ||
-      key === 'providerToken' ||
-      key === 'codeVerifier' ||
+      // key === 'accessToken' ||
+      // key === 'idToken' ||
+      // key === 'refreshToken' ||
+      // key === 'providerToken' ||
+      // key === 'codeVerifier' ||
       key === 'idToken'
     ) {
       safe[key] = maskToken(typeof value === 'string' ? value : undefined);
