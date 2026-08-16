@@ -49,6 +49,12 @@ export const MAIN_HOME_COPY: Record<
     eventsTitle: string;
     eventsViewAll: string;
     trendingTitle: string;
+    switchPlanCount: (n: number) => string;
+    switchPlanA11y: string;
+    pickPlanTitle: string;
+    pickPlanSubtitle: string;
+    pickPlanClose: string;
+    pickPlanSelected: string;
   }
 > = {
   ko: {
@@ -68,6 +74,12 @@ export const MAIN_HOME_COPY: Record<
     eventsTitle: '이 달의 부산 축제',
     eventsViewAll: '전체 >',
     trendingTitle: '지금 뜨는 여행 & 투어',
+    switchPlanCount: n => `일정 ${n}개`,
+    switchPlanA11y: '다른 여행 일정 선택',
+    pickPlanTitle: '여행 일정 선택',
+    pickPlanSubtitle: '홈과 일정 탭에 보여줄 여행을 골라 주세요',
+    pickPlanClose: '닫기',
+    pickPlanSelected: '선택됨',
   },
   en: {
     heroTitle: 'Start your new Busan trip with BU-TING!',
@@ -86,6 +98,12 @@ export const MAIN_HOME_COPY: Record<
     eventsTitle: 'Busan festivals this month',
     eventsViewAll: 'See all >',
     trendingTitle: 'Trending travel & tours',
+    switchPlanCount: n => `${n} trips`,
+    switchPlanA11y: 'Choose another itinerary',
+    pickPlanTitle: 'Choose a trip',
+    pickPlanSubtitle: 'Pick which trip to show on Home and Route',
+    pickPlanClose: 'Close',
+    pickPlanSelected: 'Selected',
   },
   ja: {
     heroTitle: '新しい釜山旅行をBU-TINGしよう！',
@@ -104,6 +122,12 @@ export const MAIN_HOME_COPY: Record<
     eventsTitle: '今月の釜山フェスティバル',
     eventsViewAll: 'すべて >',
     trendingTitle: '今話題の旅行＆ツアー',
+    switchPlanCount: n => `旅程${n}件`,
+    switchPlanA11y: '別の旅程を選ぶ',
+    pickPlanTitle: '旅程を選択',
+    pickPlanSubtitle: 'ホームと行程タブに表示する旅行を選んでください',
+    pickPlanClose: '閉じる',
+    pickPlanSelected: '選択中',
   },
   zh: {
     heroTitle: '用 BU-TING 开启全新釜山之旅！',
@@ -122,6 +146,12 @@ export const MAIN_HOME_COPY: Record<
     eventsTitle: '本月釜山节日',
     eventsViewAll: '全部 >',
     trendingTitle: '热门旅行与游览',
+    switchPlanCount: n => `${n}个行程`,
+    switchPlanA11y: '选择其他行程',
+    pickPlanTitle: '选择行程',
+    pickPlanSubtitle: '选择要在首页和行程页显示的旅行',
+    pickPlanClose: '关闭',
+    pickPlanSelected: '已选择',
   },
 };
 

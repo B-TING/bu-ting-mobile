@@ -12,6 +12,7 @@ import { isPlanForCurrentApiServer } from '../utils/api/apiServerOrigin';
 import { createId } from '../utils/common/id';
 import { buildPlanFromTravelRecord } from '../utils/review/travelReview';
 import { optimizeRouteOrder } from '../utils/plan/routeOptimize';
+import { getSelectableHomePlans } from '../utils/plan/selectableHomePlans';
 import { isServerBackedPlan } from '../utils/plan/serverBackedPlan';
 
 type PlanState = {
@@ -322,13 +323,18 @@ export const usePlanStore = create<PlanState>()(
         })),
       getBudgetForPlan: planId => get().budgetByPlan[planId] ?? [],
       completePlan: planId =>
-        set(state => ({
-          plans: state.plans.map(p =>
+        set(state => {
+          const plans = state.plans.map(p =>
             p.planId === planId
-              ? { ...p, status: 'COMPLETED', travelStatus: 'COMPLETED' }
+              ? { ...p, status: 'COMPLETED' as const, travelStatus: 'COMPLETED' as const }
               : p,
-          ),
-        })),
+          );
+          if (state.activePlanId !== planId) {
+            return { plans };
+          }
+          const next = getSelectableHomePlans(plans)[0];
+          return { plans, activePlanId: next?.planId ?? null };
+        }),
       importPlanFromTravelRecord: (travelRecord, member) => {
         const linked = travelRecord.travelId
           ? (get().plans.find(p => p.planId === travelRecord.travelId) ?? null)
@@ -365,6 +371,7 @@ export function selectActivePlan(state: PlanState): TravelPlan | null {
   if (
     !active ||
     active.status === 'COMPLETED' ||
+    active.travelStatus === 'COMPLETED' ||
     !isServerBackedPlan(active) ||
     !isPlanForCurrentApiServer(active)
   ) {
@@ -373,16 +380,18 @@ export function selectActivePlan(state: PlanState): TravelPlan | null {
   return active;
 }
 
-/** 메인 홈 히어로 배너용 — 완료 여행 포함 */
+/** 메인 홈 히어로·일정 탭용 — 예정·진행 중만. 완료된 활성 플랜이면 다음 여행으로 넘깁니다. */
 export function selectHomeFeaturedPlan(state: PlanState): TravelPlan | null {
+  const selectable = getSelectableHomePlans(state.plans);
   if (!state.activePlanId) {
     return null;
   }
-  const plan = state.plans.find(p => p.planId === state.activePlanId);
-  if (!plan || !isServerBackedPlan(plan) || !isPlanForCurrentApiServer(plan)) {
-    return null;
-  }
-  return plan;
+  return selectable.find(p => p.planId === state.activePlanId) ?? selectable[0] ?? null;
+}
+
+/** 홈에서 바꿀 수 있는 예정·진행 중 서버 연동 여행 */
+export function selectSelectableHomePlans(state: PlanState): TravelPlan[] {
+  return getSelectableHomePlans(state.plans);
 }
 
 /** 오프라인 열람용 — 활성 일정 우선, 없으면 가장 최근 생성 일정 */

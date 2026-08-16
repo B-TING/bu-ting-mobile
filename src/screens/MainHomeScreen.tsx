@@ -4,6 +4,7 @@ import type { NavigationProp } from '@react-navigation/native';
 import { TransientBottomToast } from '../components/shared/feedback/TransientBottomToast';
 import { ActivePlanHeroBanner } from '../components/home/banners/ActivePlanHeroBanner';
 import { HeroBanner } from '../components/home/banners/HeroBanner';
+import { HomePlanPickerModal } from '../components/home/modals/HomePlanPickerModal';
 import { EventsSectionMock } from '../components/home/sections/EventsSectionMock';
 import { HomeEventZoneSection } from '../components/home/sections/HomeEventZoneSection';
 import { QuickAccessRow } from '../components/home/sections/QuickAccessRow';
@@ -38,6 +39,9 @@ export function MainHomeScreen({
     helpCopy,
     featuredPlan,
     featuredTravelStatus,
+    pickerPlans,
+    canSwitchPlans,
+    planPickerOpen,
     showTripRebootFab,
     toastText,
     toastOpacity,
@@ -49,6 +53,9 @@ export function MainHomeScreen({
     scrollPaddingBottom,
     activePlanHeroCopy,
     goToPlan,
+    openPlanPicker,
+    closePlanPicker,
+    selectHomePlan,
     goToReboot,
     goToHelpDesk,
     goToEventZone,
@@ -80,7 +87,10 @@ export function MainHomeScreen({
             upcoming={upcomingStop}
             language={language}
             copy={activePlanHeroCopy}
+            canSwitchPlans={canSwitchPlans}
+            planCount={pickerPlans.length}
             onPress={goToPlan}
+            onSwitchPress={openPlanPicker}
           />
         ) : (
           <HeroBanner
@@ -138,6 +148,16 @@ export function MainHomeScreen({
         text={toastText}
         opacity={toastOpacity}
         bottom={fabBottom}
+      />
+
+      <HomePlanPickerModal
+        visible={planPickerOpen}
+        plans={pickerPlans}
+        selectedPlanId={featuredPlan?.planId ?? null}
+        language={language}
+        copy={copy}
+        onClose={closePlanPicker}
+        onSelect={selectHomePlan}
       />
     </View>
   );

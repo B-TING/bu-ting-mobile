@@ -54,6 +54,18 @@ jest.mock('../src/hooks/useApiTravelPlanSync', () => ({
   useApiTravelPlanSync: () => ({ syncFromServer: jest.fn() }),
 }));
 
+jest.mock('../src/hooks/plan/usePlanPicker', () => ({
+  usePlanPicker: () => ({
+    pickerPlans: [],
+    canSwitchPlans: false,
+    planPickerOpen: false,
+    selectedPlanId: null,
+    openPlanPicker: jest.fn(),
+    closePlanPicker: jest.fn(),
+    selectPlan: jest.fn(),
+  }),
+}));
+
 jest.mock('../src/hooks/usePlanOfflineSyncFeedback', () => ({
   usePlanOfflineSyncFeedback: () => ({
     toastText: null,

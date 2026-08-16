@@ -1,4 +1,4 @@
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { PlanSyncStatusDot } from '../../components/plan/PlanSyncStatusDot';
@@ -7,6 +7,7 @@ import { BackButton } from '../../components/shared/buttons/BackButton';
 import { BudgetEntryModal } from '../../components/plan/modals/BudgetEntryModal';
 import { PlacePickModal } from '../../components/plan/modals/PlacePickModal';
 import { TravelInviteLinkModal } from '../../components/plan/modals/TravelInviteLinkModal';
+import { HomePlanPickerModal } from '../../components/home/modals/HomePlanPickerModal';
 import { RouteOptimizeFab } from '../../components/plan/fab/RouteOptimizeFab';
 import { PlanBudgetTab } from '../../components/plan/tabs/PlanBudgetTab';
 import { PlanOverviewTab } from '../../components/plan/tabs/PlanOverviewTab';
@@ -14,6 +15,8 @@ import { PlanRecordsTab } from '../../components/plan/tabs/PlanRecordsTab';
 import { PlanScheduleTab } from '../../components/plan/tabs/PlanScheduleTab';
 import { PlanTabPager } from '../../components/plan/tabs/PlanTabPager';
 import { PlaceReviewFormModal } from '../../components/review/modals/PlaceReviewFormModal';
+import { AppIcon } from '../../components/shared/icons/AppIcon';
+import { ICON_COLOR_DEFAULT } from '../../constants/icons';
 import { canRemovePlanDay } from '../../services/travel/planDaySync';
 import { usePlanDetailScreen } from '../../hooks/plan/usePlanDetailScreen';
 import type { RootStackParamList } from '../../navigation/types';
@@ -27,6 +30,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     language,
     offlineMode,
     copy,
+    pickerCopy,
     reviewCopy,
     enrichedPlan,
     planId,
@@ -107,6 +111,12 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     handleViewTravelRecord,
     handleWriteReview,
     handleScheduleModalChange,
+    pickerPlans,
+    canSwitchPlans,
+    planPickerOpen,
+    openPlanPicker,
+    closePlanPicker,
+    selectPlan,
   } = usePlanDetailScreen({
     navigation,
     paramPlanId: route.params?.planId,
@@ -136,9 +146,24 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
             onPress={handleBackPress}
           />
         ) : null}
-        <Text className="flex-1 text-lg font-bold text-brand-text" numberOfLines={1}>
-          {enrichedPlan.title}
-        </Text>
+        {canSwitchPlans ? (
+          <Pressable
+            onPress={openPlanPicker}
+            className="min-w-0 flex-1 flex-row items-center active:opacity-80"
+            accessibilityRole="button"
+            accessibilityLabel={pickerCopy.switchPlanA11y}>
+            <Text
+              className="mr-1 flex-1 text-lg font-bold text-brand-text"
+              numberOfLines={1}>
+              {enrichedPlan.title}
+            </Text>
+            <AppIcon name="chevronDown" size={18} color={ICON_COLOR_DEFAULT} />
+          </Pressable>
+        ) : (
+          <Text className="flex-1 text-lg font-bold text-brand-text" numberOfLines={1}>
+            {enrichedPlan.title}
+          </Text>
+        )}
         {isApiPlan && !offlineMode ? (
           <PlanSyncStatusDot offline={isPlanOfflineSync} />
         ) : null}
@@ -360,6 +385,16 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
         text={toastText}
         opacity={toastOpacity}
         bottom={toastBottom}
+      />
+
+      <HomePlanPickerModal
+        visible={planPickerOpen}
+        plans={pickerPlans}
+        selectedPlanId={enrichedPlan.planId}
+        language={language}
+        copy={pickerCopy}
+        onClose={closePlanPicker}
+        onSelect={selectPlan}
       />
     </View>
   );

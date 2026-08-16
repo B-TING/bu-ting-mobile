@@ -66,6 +66,7 @@ import { selectIsPlanOfflineSync } from '../../stores/usePlanStore';
 import { selectReusableAccessToken } from '../../stores/useAuthStore';
 import { useApiTravelPlanSync } from '../useApiTravelPlanSync';
 import { usePlanOfflineSyncFeedback } from '../usePlanOfflineSyncFeedback';
+import { usePlanPicker } from './usePlanPicker';
 import type { BudgetEntry, RouteItem, TravelLegMode } from '../../types/travelPlan';
 import type { PlaceReview } from '../../types/travelReview';
 import { sortedRoutes } from '../../utils/plan/planItinerary';
@@ -144,6 +145,7 @@ export function usePlanDetailScreen({
   const travelId = plan?.apiTravelId ?? plan?.planId;
 
   const copy = useCopy('planDetail');
+  const pickerCopy = useCopy('mainHome');
   const { toastText, toastOpacity, showToast } = usePlanOfflineSyncFeedback({
     planId,
     enabled: isApiPlan,
@@ -257,6 +259,39 @@ export function usePlanDetailScreen({
   const [inviteExpiredAt, setInviteExpiredAt] = useState<string | null>(null);
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
+
+  const {
+    pickerPlans,
+    canSwitchPlans,
+    planPickerOpen,
+    openPlanPicker,
+    closePlanPicker,
+    selectPlan: applySelectedPlan,
+  } = usePlanPicker(plan);
+
+  const selectPlan = useCallback(
+    (nextPlanId: string) => {
+      applySelectedPlan(nextPlanId);
+      if (!embeddedInMainTabs) {
+        navigation.setParams({ planId: nextPlanId });
+      }
+    },
+    [applySelectedPlan, embeddedInMainTabs, navigation],
+  );
+
+  const viewedPlanIdRef = useRef(planId);
+  useEffect(() => {
+    if (viewedPlanIdRef.current === planId) {
+      return;
+    }
+    viewedPlanIdRef.current = planId;
+    setSelectedDay(1);
+    setScheduleModal({ kind: 'none' });
+    setScheduleReorderActive(false);
+    setReviewFormRoute(null);
+    setBudgetModalOpen(false);
+    setInviteModalOpen(false);
+  }, [planId]);
 
   const canInvite = useMemo(() => {
     if (!isApiPlan || !authUser?.userId || !plan) {
@@ -1318,6 +1353,7 @@ export function usePlanDetailScreen({
     language,
     offlineMode,
     copy,
+    pickerCopy,
     reviewCopy,
     enrichedPlan,
     planId,
@@ -1398,5 +1434,11 @@ export function usePlanDetailScreen({
     handleViewTravelRecord,
     handleWriteReview,
     handleScheduleModalChange,
+    pickerPlans,
+    canSwitchPlans,
+    planPickerOpen,
+    openPlanPicker,
+    closePlanPicker,
+    selectPlan,
   };
 }

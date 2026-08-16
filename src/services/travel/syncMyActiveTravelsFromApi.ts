@@ -30,9 +30,13 @@ function pickActiveTravelId(
     const activePlan = filterPlansForCurrentApiServer(usePlanStore.getState().plans).find(
       p => p.planId === currentActivePlanId,
     );
+    const stillActive =
+      activePlan &&
+      activePlan.status !== 'COMPLETED' &&
+      activePlan.travelStatus !== 'COMPLETED';
     const activeTravelId = activePlan?.apiTravelId ?? activePlan?.planId;
-    if (activeTravelId && travelIds.has(activeTravelId)) {
-      return activePlan?.planId ?? activeTravelId;
+    if (stillActive && activeTravelId && travelIds.has(activeTravelId)) {
+      return activePlan.planId;
     }
   }
 
