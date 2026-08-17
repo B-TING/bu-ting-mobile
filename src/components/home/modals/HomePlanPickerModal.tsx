@@ -1,7 +1,7 @@
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { dayCountBetween } from '../../../constants/plan/planWizard';
-import { ICON_COLOR_PRIMARY } from '../../../constants/icons';
+import { ICON_COLOR_PRIMARY, ICON_COLOR_WHITE } from '../../../constants/icons';
 import type { CopyFor } from '../../../i18n';
 import type { TravelStatusDto } from '../../../types/travelApi';
 import type { TravelPlan } from '../../../types/travelPlan';
@@ -21,6 +21,7 @@ type HomePlanPickerModalProps = {
   copy: Copy;
   onClose: () => void;
   onSelect: (planId: string) => void;
+  onCreatePress?: () => void;
 };
 
 const STATUS_BADGE_CLASS: Record<TravelStatusDto, string> = {
@@ -59,6 +60,7 @@ export function HomePlanPickerModal({
   copy,
   onClose,
   onSelect,
+  onCreatePress,
 }: HomePlanPickerModalProps) {
   return (
     <AppModal
@@ -116,6 +118,20 @@ export function HomePlanPickerModal({
             </Pressable>
           );
         })}
+        {onCreatePress ? (
+          <Pressable
+            onPress={onCreatePress}
+            className="mb-2 flex-row items-center rounded-2xl border border-dashed border-brand-primary bg-brand-selected p-3.5 active:opacity-90"
+            accessibilityRole="button"
+            accessibilityLabel={copy.createNewPlanA11y}>
+            <View className="mr-3 h-9 w-9 items-center justify-center rounded-full bg-brand-primary">
+              <AppIcon name="plus" size={18} color={ICON_COLOR_WHITE} strokeWidth={2.5} />
+            </View>
+            <Text className="flex-1 text-base font-bold text-brand-primary">
+              {copy.createNewPlan}
+            </Text>
+          </Pressable>
+        ) : null}
       </ScrollView>
     </AppModal>
   );

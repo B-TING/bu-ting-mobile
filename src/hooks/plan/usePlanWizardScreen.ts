@@ -18,8 +18,11 @@ import {
 import { useAppLanguage, useCopy } from '../../i18n';
 import type { RootStackParamList, WizardPlacePickKind } from '../../navigation/types';
 import { navigateToMainTab } from '../../navigation/navigateToMainTab';
+import { createAiTravelPlan } from '../../services/travel/createAiTravelPlan';
 import { createManualTravelPlan } from '../../services/travel/createManualTravelPlan';
 import {
+  selectOnboardingForUser,
+  useAppStore,
   useAuthStore,
   usePlanStore,
   emptyWizardAnswers,
@@ -27,6 +30,7 @@ import {
 import { selectAuthUser, selectReusableAccessToken } from '../../stores/useAuthStore';
 import { PLACE_CONTENT_TYPE } from '../../types/placesApi';
 import type { CompanionGroupType } from '../../types/planWizard';
+import type { PlanMember, TravelPlan } from '../../types/travelPlan';
 
 function defaultDates() {
   const start = new Date();
@@ -48,6 +52,7 @@ export function usePlanWizardScreen({
   const { showUnavailable } = useFeatureUnavailableAlert();
   const user = useAuthStore(selectAuthUser);
   const accessToken = useAuthStore(selectReusableAccessToken);
+  const onboarding = useAppStore(selectOnboardingForUser(user?.userId));
   const addPlan = usePlanStore(s => s.addPlan);
   const confirmPlan = usePlanStore(s => s.confirmPlan);
   const [step, setStep] = useState(0);
@@ -105,7 +110,11 @@ export function usePlanWizardScreen({
       case 'attractions':
       case 'foods':
       case 'accommodation':
+        return true;
       case 'generationMode':
+        if (answers.generationMode === 'auto') {
+          return answers.selectedAttractions.length >= 1;
+        }
         return true;
       default:
         return false;
@@ -234,44 +243,58 @@ export function usePlanWizardScreen({
     setAnswers(p => ({ ...p, generationMode: mode }));
   };
 
+  const persistPlanAndGo = (plan: TravelPlan) => {
+    addPlan(plan);
+    confirmPlan(plan.planId);
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'MainTabs', params: { tab: 'route' } }],
+    });
+  };
+
+  const wizardMembers = (): PlanMember[] => [
+    {
+      userId: user?.userId ?? 'local-user',
+      nickname: user?.nickname ?? 'Traveler',
+      role: 'LEADER',
+    },
+  ];
+
   const finish = async () => {
     if (answers.generationMode === 'candidates') {
       showUnavailable(ALPHA_FEATURE_LABELS.planAiCandidates);
       return;
     }
 
+    if (answers.generationMode === 'auto' && answers.selectedAttractions.length < 1) {
+      Alert.alert(copy.createAiNeedPlaces);
+      return;
+    }
+
     setLoading(true);
     try {
-      if (answers.generationMode === 'manual') {
-        if (!accessToken) {
-          Alert.alert(copy.createManualError);
-          return;
-        }
-        const plan = await createManualTravelPlan({
-          accessToken,
-          answers,
-          members: [
-            {
-              userId: user?.userId ?? 'local-user',
-              nickname: user?.nickname ?? 'Traveler',
-              role: 'LEADER',
-            },
-          ],
-        });
-        addPlan(plan);
-        confirmPlan(plan.planId);
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'MainTabs', params: { tab: 'route' } }],
-        });
-        return;
-      }
-
       if (!accessToken) {
         Alert.alert(copy.createManualError);
         return;
       }
-      Alert.alert(copy.createAiPending);
+
+      if (answers.generationMode === 'manual') {
+        const plan = await createManualTravelPlan({
+          accessToken,
+          answers,
+          members: wizardMembers(),
+        });
+        persistPlanAndGo(plan);
+        return;
+      }
+
+      const plan = await createAiTravelPlan({
+        accessToken,
+        answers,
+        members: wizardMembers(),
+        onboarding,
+      });
+      persistPlanAndGo(plan);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : copy.createManualError;

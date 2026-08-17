@@ -51,6 +51,9 @@ export const MAIN_HOME_COPY: Record<
     trendingTitle: string;
     switchPlanCount: (n: number) => string;
     switchPlanA11y: string;
+    createNewPlan: string;
+    createNewPlanChip: string;
+    createNewPlanA11y: string;
     pickPlanTitle: string;
     pickPlanSubtitle: string;
     pickPlanClose: string;
@@ -76,6 +79,9 @@ export const MAIN_HOME_COPY: Record<
     trendingTitle: '지금 뜨는 여행 & 투어',
     switchPlanCount: n => `일정 ${n}개`,
     switchPlanA11y: '다른 여행 일정 선택',
+    createNewPlan: '새 여행 만들기',
+    createNewPlanChip: '새 여행',
+    createNewPlanA11y: '새 여행 일정 만들기',
     pickPlanTitle: '여행 일정 선택',
     pickPlanSubtitle: '홈과 일정 탭에 보여줄 여행을 골라 주세요',
     pickPlanClose: '닫기',
@@ -100,6 +106,9 @@ export const MAIN_HOME_COPY: Record<
     trendingTitle: 'Trending travel & tours',
     switchPlanCount: n => `${n} trips`,
     switchPlanA11y: 'Choose another itinerary',
+    createNewPlan: 'Create a new trip',
+    createNewPlanChip: 'New trip',
+    createNewPlanA11y: 'Create a new itinerary',
     pickPlanTitle: 'Choose a trip',
     pickPlanSubtitle: 'Pick which trip to show on Home and Route',
     pickPlanClose: 'Close',
@@ -124,6 +133,9 @@ export const MAIN_HOME_COPY: Record<
     trendingTitle: '今話題の旅行＆ツアー',
     switchPlanCount: n => `旅程${n}件`,
     switchPlanA11y: '別の旅程を選ぶ',
+    createNewPlan: '新しい旅行を作る',
+    createNewPlanChip: '新規',
+    createNewPlanA11y: '新しい旅程を作成',
     pickPlanTitle: '旅程を選択',
     pickPlanSubtitle: 'ホームと行程タブに表示する旅行を選んでください',
     pickPlanClose: '閉じる',
@@ -148,6 +160,9 @@ export const MAIN_HOME_COPY: Record<
     trendingTitle: '热门旅行与游览',
     switchPlanCount: n => `${n}个行程`,
     switchPlanA11y: '选择其他行程',
+    createNewPlan: '创建新旅行',
+    createNewPlanChip: '新建',
+    createNewPlanA11y: '创建新行程',
     pickPlanTitle: '选择行程',
     pickPlanSubtitle: '选择要在首页和行程页显示的旅行',
     pickPlanClose: '关闭',

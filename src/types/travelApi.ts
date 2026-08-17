@@ -12,10 +12,33 @@ export type CompanionTypeDto = 'SOLO' | 'FRIEND' | 'COUPLE' | 'FAMILY' | 'GROUP'
 
 export type PlaceProviderDto = 'KAKAO' | 'NAVER' | 'GOOGLE';
 
+export type AiSchedulePaceDto = TravelPaceDto;
+
+/** OpenAPI WizardPickedPlace — 앱 위저드 `WizardPickedPlace`와 필드가 다름 */
+export type AiWizardPickedPlaceRequest = {
+  provider: PlaceProviderDto;
+  providerPlaceId: string;
+  placeName: string;
+  address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  type?: string | null;
+};
+
+export type AiTravelPlanGenerateRequest = {
+  selectedPlaces: AiWizardPickedPlaceRequest[];
+  foodIds?: string[];
+  schedulePace?: AiSchedulePaceDto;
+  purposes?: string[];
+  bookedAccommodation?: string | null;
+  accommodationAreaIds?: string[];
+};
+
 export type TravelCreateRequest = {
   title?: string | null;
   startDate: string;
   endDate: string;
+  destination: string;
   hasHeavyBaggage?: boolean | null;
   hasPets?: boolean | null;
   travelStyle?: TravelStyleDto | null;

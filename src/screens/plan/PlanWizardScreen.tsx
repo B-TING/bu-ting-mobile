@@ -297,6 +297,12 @@ export function PlanWizardScreen(props: Props) {
             <Text className="-mt-1 mb-3 ml-1 text-xs text-brand-muted">
               {copy.modeAutoSub}
             </Text>
+            {answers.generationMode === 'auto' &&
+            answers.selectedAttractions.length < 1 ? (
+              <Text className="-mt-2 mb-3 ml-1 text-xs text-red-500">
+                {copy.createAiNeedPlaces}
+              </Text>
+            ) : null}
             <OptionCard
               label={copy.modeManual}
               selected={answers.generationMode === 'manual'}

@@ -279,6 +279,11 @@ export function usePlanDetailScreen({
     [applySelectedPlan, embeddedInMainTabs, navigation],
   );
 
+  const createNewPlan = useCallback(() => {
+    closePlanPicker();
+    navigation.navigate('PlanWizard');
+  }, [closePlanPicker, navigation]);
+
   const viewedPlanIdRef = useRef(planId);
   useEffect(() => {
     if (viewedPlanIdRef.current === planId) {
@@ -1440,5 +1445,6 @@ export function usePlanDetailScreen({
     openPlanPicker,
     closePlanPicker,
     selectPlan,
+    createNewPlan,
   };
 }

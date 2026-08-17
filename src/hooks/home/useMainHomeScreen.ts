@@ -194,6 +194,11 @@ export function useMainHomeScreen({
     openItineraryOrWizard(navigation);
   }, [navigation]);
 
+  const goToCreatePlan = useCallback(() => {
+    closePlanPicker();
+    navigation.navigate('PlanWizard');
+  }, [closePlanPicker, navigation]);
+
   const goToReboot = useCallback(() => {
     if (isAlphaFeatureBlocked('reboot')) {
       showUnavailable(ALPHA_FEATURE_LABELS.reboot);
@@ -331,6 +336,9 @@ export function useMainHomeScreen({
       dayLabel: copy.dayLabel,
       switchPlanCount: copy.switchPlanCount,
       switchPlanA11y: copy.switchPlanA11y,
+      createNewPlan: copy.createNewPlan,
+      createNewPlanChip: copy.createNewPlanChip,
+      createNewPlanA11y: copy.createNewPlanA11y,
     }),
     [copy],
   );
@@ -359,6 +367,7 @@ export function useMainHomeScreen({
     openPlanPicker,
     closePlanPicker,
     selectHomePlan,
+    goToCreatePlan,
     goToReboot,
     goToHelpDesk,
     goToEventZone,

@@ -16,7 +16,7 @@ import { PlanScheduleTab } from '../../components/plan/tabs/PlanScheduleTab';
 import { PlanTabPager } from '../../components/plan/tabs/PlanTabPager';
 import { PlaceReviewFormModal } from '../../components/review/modals/PlaceReviewFormModal';
 import { AppIcon } from '../../components/shared/icons/AppIcon';
-import { ICON_COLOR_DEFAULT } from '../../constants/icons';
+import { ICON_COLOR_DEFAULT, ICON_COLOR_PRIMARY } from '../../constants/icons';
 import { canRemovePlanDay } from '../../services/travel/planDaySync';
 import { usePlanDetailScreen } from '../../hooks/plan/usePlanDetailScreen';
 import type { RootStackParamList } from '../../navigation/types';
@@ -117,6 +117,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     openPlanPicker,
     closePlanPicker,
     selectPlan,
+    createNewPlan,
   } = usePlanDetailScreen({
     navigation,
     paramPlanId: route.params?.planId,
@@ -164,6 +165,14 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
             {enrichedPlan.title}
           </Text>
         )}
+        <Pressable
+          onPress={createNewPlan}
+          hitSlop={8}
+          className="ml-2 h-9 w-9 items-center justify-center rounded-full active:opacity-80"
+          accessibilityRole="button"
+          accessibilityLabel={pickerCopy.createNewPlanA11y}>
+          <AppIcon name="plus" size={20} color={ICON_COLOR_PRIMARY} strokeWidth={2.5} />
+        </Pressable>
         {isApiPlan && !offlineMode ? (
           <PlanSyncStatusDot offline={isPlanOfflineSync} />
         ) : null}
@@ -395,6 +404,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
         copy={pickerCopy}
         onClose={closePlanPicker}
         onSelect={selectPlan}
+        onCreatePress={createNewPlan}
       />
     </View>
   );

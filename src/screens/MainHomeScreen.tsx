@@ -56,6 +56,7 @@ export function MainHomeScreen({
     openPlanPicker,
     closePlanPicker,
     selectHomePlan,
+    goToCreatePlan,
     goToReboot,
     goToHelpDesk,
     goToEventZone,
@@ -91,6 +92,7 @@ export function MainHomeScreen({
             planCount={pickerPlans.length}
             onPress={goToPlan}
             onSwitchPress={openPlanPicker}
+            onCreatePress={goToCreatePlan}
           />
         ) : (
           <HeroBanner
@@ -158,6 +160,7 @@ export function MainHomeScreen({
         copy={copy}
         onClose={closePlanPicker}
         onSelect={selectHomePlan}
+        onCreatePress={goToCreatePlan}
       />
     </View>
   );

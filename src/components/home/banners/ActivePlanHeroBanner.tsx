@@ -39,11 +39,15 @@ type ActivePlanHeroBannerProps = {
     dayLabel: (n: number) => string;
     switchPlanCount: (n: number) => string;
     switchPlanA11y: string;
+    createNewPlan: string;
+    createNewPlanChip: string;
+    createNewPlanA11y: string;
   };
   canSwitchPlans?: boolean;
   planCount?: number;
   onPress: () => void;
   onSwitchPress?: () => void;
+  onCreatePress?: () => void;
 };
 
 const STATUS_BADGE_CLASS: Record<TravelStatusDto, string> = {
@@ -108,10 +112,12 @@ export function ActivePlanHeroBanner({
   planCount = 1,
   onPress,
   onSwitchPress,
+  onCreatePress,
 }: ActivePlanHeroBannerProps) {
   const showNextStop = travelStatus === 'IN_PROGRESS' && upcoming != null;
   const ctaLabel =
     travelStatus === 'COMPLETED' ? copy.viewCompletedItinerary : copy.viewItinerary;
+  const showHeaderActions = Boolean(onCreatePress) || (canSwitchPlans && onSwitchPress);
 
   return (
     <GuideTarget id={GUIDE_TARGET.plannerHeroCta} className="mb-5 mt-5">
@@ -136,7 +142,7 @@ export function ActivePlanHeroBanner({
               <Text
                 className={cn(
                   'mb-1 text-lg font-bold leading-snug text-white',
-                  canSwitchPlans && 'pr-24',
+                  showHeaderActions && 'pr-28',
                 )}
                 numberOfLines={2}>
                 {plan.title}
@@ -165,18 +171,35 @@ export function ActivePlanHeroBanner({
             </View>
           </ImageBackground>
         </Pressable>
-        {canSwitchPlans && onSwitchPress ? (
-          <Pressable
-            onPress={onSwitchPress}
-            hitSlop={8}
-            className="absolute right-4 top-4 flex-row items-center rounded-full bg-white/20 px-2.5 py-1 active:opacity-80"
-            accessibilityRole="button"
-            accessibilityLabel={copy.switchPlanA11y}>
-            <Text className="mr-0.5 text-[11px] font-bold text-white">
-              {copy.switchPlanCount(planCount)}
-            </Text>
-            <AppIcon name="chevronDown" size={14} color={ICON_COLOR_WHITE} strokeWidth={2.5} />
-          </Pressable>
+        {showHeaderActions ? (
+          <View className="absolute right-4 top-4 flex-row items-center">
+            {canSwitchPlans && onSwitchPress ? (
+              <Pressable
+                onPress={onSwitchPress}
+                hitSlop={8}
+                className="mr-1.5 flex-row items-center rounded-full bg-white/20 px-2.5 py-1 active:opacity-80"
+                accessibilityRole="button"
+                accessibilityLabel={copy.switchPlanA11y}>
+                <Text className="mr-0.5 text-[11px] font-bold text-white">
+                  {copy.switchPlanCount(planCount)}
+                </Text>
+                <AppIcon name="chevronDown" size={14} color={ICON_COLOR_WHITE} strokeWidth={2.5} />
+              </Pressable>
+            ) : null}
+            {onCreatePress ? (
+              <Pressable
+                onPress={onCreatePress}
+                hitSlop={8}
+                className="flex-row items-center rounded-full bg-white/20 px-2.5 py-1 active:opacity-80"
+                accessibilityRole="button"
+                accessibilityLabel={copy.createNewPlanA11y}>
+                <AppIcon name="plus" size={14} color={ICON_COLOR_WHITE} strokeWidth={2.5} />
+                <Text className="ml-0.5 text-[11px] font-bold text-white">
+                  {copy.createNewPlanChip}
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
         ) : null}
       </View>
     </GuideTarget>
