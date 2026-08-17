@@ -272,6 +272,7 @@ export const PLAN_WIZARD_COPY: Record<
     generating: string;
     creatingManual: string;
     createManualError: string;
+    createAiPending: string;
     pickPlan: string;
     days: (n: number) => string;
     statusDraft: string;
@@ -317,6 +318,7 @@ export const PLAN_WIZARD_COPY: Record<
     generating: 'AI에게 일정 요청 중…',
     creatingManual: '여행 일정 생성 중…',
     createManualError: '여행 생성에 실패했습니다. 로그인 상태와 API 서버를 확인해 주세요.',
+    createAiPending: 'AI 일정 생성 API가 아직 연결되지 않았습니다.',
     pickPlan: '이 일정으로 시작',
     days: n => `${n}일`,
     statusDraft: '생성 중',
@@ -361,6 +363,7 @@ export const PLAN_WIZARD_COPY: Record<
     generating: 'Requesting plan from AI…',
     creatingManual: 'Creating your trip…',
     createManualError: 'Could not create the trip. Check login and API server.',
+    createAiPending: 'AI itinerary API is not connected yet.',
     pickPlan: 'Start with this plan',
     days: n => `${n} days`,
     statusDraft: 'Draft',
@@ -405,6 +408,7 @@ export const PLAN_WIZARD_COPY: Record<
     generating: 'AIにリクエスト中…',
     creatingManual: '旅行を作成中…',
     createManualError: '旅行の作成に失敗しました。ログインとAPIを確認してください。',
+    createAiPending: 'AI行程APIはまだ接続されていません。',
     pickPlan: 'このプランで開始',
     days: n => `${n}日`,
     statusDraft: '作成中',
@@ -449,6 +453,7 @@ export const PLAN_WIZARD_COPY: Record<
     generating: '正在向 AI 请求行程…',
     creatingManual: '正在创建旅行…',
     createManualError: '创建旅行失败。请检查登录和 API 服务器。',
+    createAiPending: 'AI 行程接口尚未连接。',
     pickPlan: '使用此行程',
     days: n => `${n}天`,
     statusDraft: '草稿',

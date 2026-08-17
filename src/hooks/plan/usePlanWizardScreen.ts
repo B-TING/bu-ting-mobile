@@ -18,11 +18,8 @@ import {
 import { useAppLanguage, useCopy } from '../../i18n';
 import type { RootStackParamList, WizardPlacePickKind } from '../../navigation/types';
 import { navigateToMainTab } from '../../navigation/navigateToMainTab';
-import { requestAutoPlan, requestPlanCandidates } from '../../services/plan/planAiService';
 import { createManualTravelPlan } from '../../services/travel/createManualTravelPlan';
 import {
-  selectOnboardingForUser,
-  useAppStore,
   useAuthStore,
   usePlanStore,
   emptyWizardAnswers,
@@ -51,10 +48,8 @@ export function usePlanWizardScreen({
   const { showUnavailable } = useFeatureUnavailableAlert();
   const user = useAuthStore(selectAuthUser);
   const accessToken = useAuthStore(selectReusableAccessToken);
-  const onboarding = useAppStore(selectOnboardingForUser(user?.userId));
   const addPlan = usePlanStore(s => s.addPlan);
   const confirmPlan = usePlanStore(s => s.confirmPlan);
-  const setPlanCandidates = usePlanStore(s => s.setPlanCandidates);
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState(() => ({
     ...emptyWizardAnswers(),
@@ -232,19 +227,16 @@ export function usePlanWizardScreen({
   };
 
   const selectGenerationMode = (mode: 'auto' | 'candidates' | 'manual') => {
-    if (mode !== 'manual' && isAlphaFeatureBlocked('planAi')) {
-      showUnavailable(ALPHA_FEATURE_LABELS.planAi);
+    if (mode === 'candidates' && isAlphaFeatureBlocked('planAiCandidates')) {
+      showUnavailable(ALPHA_FEATURE_LABELS.planAiCandidates);
       return;
     }
     setAnswers(p => ({ ...p, generationMode: mode }));
   };
 
   const finish = async () => {
-    if (
-      isAlphaFeatureBlocked('planAi') &&
-      answers.generationMode !== 'manual'
-    ) {
-      showUnavailable(ALPHA_FEATURE_LABELS.planAi);
+    if (answers.generationMode === 'candidates') {
+      showUnavailable(ALPHA_FEATURE_LABELS.planAiCandidates);
       return;
     }
 
@@ -275,19 +267,11 @@ export function usePlanWizardScreen({
         return;
       }
 
-      if (answers.generationMode === 'auto') {
-        const plan = await requestAutoPlan(answers, onboarding);
-        addPlan(plan);
-        confirmPlan(plan.planId);
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'MainTabs', params: { tab: 'route' } }],
-        });
-      } else {
-        const candidates = await requestPlanCandidates(answers, onboarding);
-        setPlanCandidates(candidates);
-        navigation.replace('PlanCandidates');
+      if (!accessToken) {
+        Alert.alert(copy.createManualError);
+        return;
       }
+      Alert.alert(copy.createAiPending);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : copy.createManualError;

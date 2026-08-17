@@ -298,14 +298,6 @@ export function PlanWizardScreen(props: Props) {
               {copy.modeAutoSub}
             </Text>
             <OptionCard
-              label={copy.modeCandidates}
-              selected={answers.generationMode === 'candidates'}
-              onPress={() => selectGenerationMode('candidates')}
-            />
-            <Text className="-mt-1 mb-3 ml-1 text-xs text-brand-muted">
-              {copy.modeCandidatesSub}
-            </Text>
-            <OptionCard
               label={copy.modeManual}
               selected={answers.generationMode === 'manual'}
               onPress={() => selectGenerationMode('manual')}

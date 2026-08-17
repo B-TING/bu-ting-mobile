@@ -13,8 +13,10 @@ export const ALPHA_FEATURE_BLOCKS = {
   invite: true,
   /** 구역 이벤트 (구역 채팅방은 유지) */
   zoneEvent: true,
-  /** 일정 AI 추천·생성 (직접 생성은 유지) */
-  planAi: true,
+  /** 일정 AI 생성 (`auto`) — API 연동 작업 중 */
+  planAi: false,
+  /** 일정 후보 선택. API가 플랜 1개만 반환해 막음 */
+  planAiCandidates: true,
   /** AI 헬프데스크 */
   helpdesk: true,
   /** 리부트 */
@@ -30,6 +32,7 @@ export const ALPHA_FEATURE_LABELS: Record<AlphaBlockedFeature, string> = {
   invite: '일행 초대',
   zoneEvent: '구역 이벤트',
   planAi: 'AI 일정 생성',
+  planAiCandidates: '일정 후보 선택',
   helpdesk: 'AI 헬프데스크',
   reboot: '리부트',
 };
