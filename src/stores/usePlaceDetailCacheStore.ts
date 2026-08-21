@@ -10,13 +10,13 @@ import {
 } from '../utils/places/routePlaceDetail';
 
 type PlaceDetailCacheState = {
-  detailsByPlaceId: Record<string, PlaceDetailVO | null>;
+  detailsByPlaceId: Record<string, PlaceDetailVO>;
   loadingIds: Record<string, boolean>;
   hasDetail: (placeId: string) => boolean;
-  getDetail: (placeId: string) => PlaceDetailVO | null | undefined;
+  getDetail: (placeId: string) => PlaceDetailVO | undefined;
   isLoading: (placeId: string) => boolean;
   isRouteDetailPending: (route: RouteItem) => boolean;
-  mergeDetails: (details: Record<string, PlaceDetailVO | null>) => void;
+  mergeDetails: (details: Record<string, PlaceDetailVO | null | undefined>) => void;
   prefetchRoutes: (routes: RouteItem[]) => void;
   fetchForRoute: (
     placeId: string,
@@ -26,6 +26,10 @@ type PlaceDetailCacheState = {
 };
 
 const pendingFetches = new Map<string, Promise<PlaceDetailVO | null>>();
+
+/** 실패 직후 프리패치 폭주 방지 (명시적 fetchForRoute는 재시도 가능) */
+const PREFETCH_FAILURE_COOLDOWN_MS = 30_000;
+const prefetchFailedAtByPlaceId = new Map<string, number>();
 
 function uniquePrefetchRoutes(routes: RouteItem[]): RouteItem[] {
   const seen = new Set<string>();
@@ -45,13 +49,33 @@ function uniquePrefetchRoutes(routes: RouteItem[]): RouteItem[] {
   return result;
 }
 
+function isPrefetchCoolingDown(placeId: string): boolean {
+  const failedAt = prefetchFailedAtByPlaceId.get(placeId);
+  if (failedAt == null) {
+    return false;
+  }
+  return Date.now() - failedAt < PREFETCH_FAILURE_COOLDOWN_MS;
+}
+
+function stripNullDetails(
+  details: Record<string, PlaceDetailVO | null | undefined>,
+): Record<string, PlaceDetailVO> {
+  const next: Record<string, PlaceDetailVO> = {};
+  for (const [placeId, detail] of Object.entries(details)) {
+    if (detail != null) {
+      next[placeId] = detail;
+    }
+  }
+  return next;
+}
+
 export const usePlaceDetailCacheStore = create<PlaceDetailCacheState>()(
   persist(
     (set, get) => ({
       detailsByPlaceId: {},
       loadingIds: {},
 
-      hasDetail: placeId => placeId in get().detailsByPlaceId,
+      hasDetail: placeId => get().detailsByPlaceId[placeId] != null,
 
       getDetail: placeId => get().detailsByPlaceId[placeId],
 
@@ -61,21 +85,43 @@ export const usePlaceDetailCacheStore = create<PlaceDetailCacheState>()(
         if (!shouldPrefetchRouteDetail(route)) {
           return false;
         }
-        return !get().hasDetail(route.placeId);
+        if (get().hasDetail(route.placeId)) {
+          return false;
+        }
+        return get().isLoading(route.placeId) || pendingFetches.has(route.placeId);
       },
 
       mergeDetails: details => {
         if (Object.keys(details).length === 0) {
           return;
         }
-        set(state => ({
-          detailsByPlaceId: { ...state.detailsByPlaceId, ...details },
-        }));
+        set(state => {
+          const next = { ...state.detailsByPlaceId };
+          let changed = false;
+          for (const [placeId, detail] of Object.entries(details)) {
+            if (detail == null) {
+              if (placeId in next) {
+                delete next[placeId];
+                changed = true;
+              }
+              continue;
+            }
+            if (next[placeId] !== detail) {
+              next[placeId] = detail;
+              changed = true;
+            }
+          }
+          return changed ? { detailsByPlaceId: next } : state;
+        });
       },
 
       prefetchRoutes: routes => {
         for (const route of uniquePrefetchRoutes(routes)) {
-          if (get().hasDetail(route.placeId) || pendingFetches.has(route.placeId)) {
+          if (
+            get().hasDetail(route.placeId) ||
+            pendingFetches.has(route.placeId) ||
+            isPrefetchCoolingDown(route.placeId)
+          ) {
             continue;
           }
           void get().fetchForRoute(route.placeId, route.type, {
@@ -102,7 +148,14 @@ export const usePlaceDetailCacheStore = create<PlaceDetailCacheState>()(
 
         const promise = fetchRoutePlaceDetail(placeId, type, options)
           .then(result => {
-            get().mergeDetails({ [placeId]: result });
+            if (result != null) {
+              prefetchFailedAtByPlaceId.delete(placeId);
+              get().mergeDetails({ [placeId]: result });
+            } else {
+              prefetchFailedAtByPlaceId.set(placeId, Date.now());
+              // 과거 null poison 캐시가 있으면 제거해 재시도 가능하게 한다.
+              get().mergeDetails({ [placeId]: null });
+            }
             return result;
           })
           .finally(() => {
@@ -121,7 +174,20 @@ export const usePlaceDetailCacheStore = create<PlaceDetailCacheState>()(
     {
       name: 'buting-place-detail-cache',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: state => ({ detailsByPlaceId: state.detailsByPlaceId }),
+      partialize: state => ({
+        detailsByPlaceId: stripNullDetails(state.detailsByPlaceId),
+      }),
+      merge: (persisted, current) => {
+        const persistedState = (persisted ?? {}) as Partial<PlaceDetailCacheState>;
+        return {
+          ...current,
+          ...persistedState,
+          detailsByPlaceId: stripNullDetails({
+            ...current.detailsByPlaceId,
+            ...(persistedState.detailsByPlaceId ?? {}),
+          }),
+        };
+      },
     },
   ),
 );
