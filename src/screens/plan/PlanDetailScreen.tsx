@@ -271,7 +271,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
                 budgetTotal={budgetTotal}
                 members={enrichedPlan.members}
                 onAddExpense={
-                  offlineMode || settlementConfirmed
+                  viewOnly || settlementConfirmed
                     ? undefined
                     : () => setBudgetModalOpen(true)
                 }
@@ -317,7 +317,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
       ) : null}
 
       <BudgetEntryModal
-        visible={!offlineMode && budgetModalOpen}
+        visible={!viewOnly && budgetModalOpen}
         copy={copy}
         language={language}
         members={enrichedPlan.members}
@@ -328,7 +328,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
       />
 
       <PlacePickModal
-        visible={!offlineMode && scheduleModal.kind === 'pick' && !!pickRoute}
+        visible={!viewOnly && scheduleModal.kind === 'pick' && !!pickRoute}
         anchor={pickRoute?.location}
         language={language}
         showTransportMode
@@ -351,7 +351,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
       />
 
       <PlacePickModal
-        visible={!offlineMode && scheduleModal.kind === 'add'}
+        visible={!viewOnly && scheduleModal.kind === 'add'}
         anchor={addPlaceAnchor}
         language={language}
         showTransportMode
@@ -374,7 +374,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
       />
 
       <PlaceReviewFormModal
-        visible={!offlineMode && !!reviewFormRoute}
+        visible={!viewOnly && !!reviewFormRoute}
         route={reviewFormRoute}
         existing={reviewFormExisting}
         copy={reviewCopy}

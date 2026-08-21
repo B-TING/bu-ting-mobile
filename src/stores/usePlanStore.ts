@@ -363,6 +363,7 @@ export const usePlanStore = create<PlanState>()(
         plans: state.plans,
         activePlanId: state.activePlanId,
         budgetByPlan: state.budgetByPlan,
+        offlineSyncPlanIds: state.offlineSyncPlanIds,
       }),
       onRehydrateStorage: () => (_state, error) => {
         if (error) {

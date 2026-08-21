@@ -438,8 +438,18 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
             onModalChangeRef.current({ kind: 'none' });
             onToggleVisited(r.itemId);
           }}
-          onWriteReview={() => onWriteReview(r)}
-          onQuickRating={rating => onQuickRating(r, rating)}
+          onWriteReview={() => {
+            if (guardReadOnly()) {
+              return;
+            }
+            onWriteReview(r);
+          }}
+          onQuickRating={rating => {
+            if (guardReadOnly()) {
+              return;
+            }
+            onQuickRating(r, rating);
+          }}
           onLegModeChange={
             readOnly ? undefined : mode => updateLegMode(planId, r.itemId, mode)
           }
@@ -466,7 +476,12 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
           }
           onToggleVisited(focusedRoute.itemId);
         }}
-        onWriteReview={() => onWriteReview(focusedRoute)}
+        onWriteReview={() => {
+          if (guardReadOnly()) {
+            return;
+          }
+          onWriteReview(focusedRoute);
+        }}
         onSaveMemo={readOnly ? undefined : memo => onSaveRouteMemo?.(focusedRoute, memo)}
       />
     ) : null;

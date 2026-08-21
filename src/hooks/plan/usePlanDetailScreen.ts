@@ -313,7 +313,7 @@ export function usePlanDetailScreen({
   }, [authUser?.userId, isApiPlan, plan]);
 
   const settlementConfirmed = settlement?.confirmed === true;
-  const canConfirmSettlement = canInvite && !settlementConfirmed && !offlineMode;
+  const canConfirmSettlement = canInvite && !settlementConfirmed && !viewOnly;
 
   const settlementMemberSummaries = useMemo(() => {
     const fromApi = pickCurrencyMemberSummaries(summary?.currencySummaries);
@@ -393,6 +393,13 @@ export function usePlanDetailScreen({
 
   const handleSaveBudgetEntry = useCallback(
     async (entry: BudgetEntryDraft) => {
+      if (viewOnly) {
+        if (scheduleReadOnly) {
+          notifyScheduleReadOnly();
+        }
+        return;
+      }
+
       if (!isApiPlan || !accessToken || !travelId) {
         addBudgetEntry(entry);
         return;
@@ -428,11 +435,14 @@ export function usePlanDetailScreen({
       copy.budgetAdd,
       copy.budgetSettlementLocked,
       isApiPlan,
+      notifyScheduleReadOnly,
       planId,
       refreshSettlementPreview,
+      scheduleReadOnly,
       settlementConfirmed,
       syncExpenses,
       travelId,
+      viewOnly,
     ],
   );
 
@@ -1087,7 +1097,10 @@ export function usePlanDetailScreen({
 
   const handleQuickRating = useCallback(
     (routeItem: RouteItem, rating: number) => {
-      if (offlineMode || !plan) {
+      if (viewOnly || !plan) {
+        if (scheduleReadOnly) {
+          notifyScheduleReadOnly();
+        }
         return;
       }
       void savePlaceReviewForTravel({
@@ -1103,7 +1116,14 @@ export function usePlanDetailScreen({
         },
       });
     },
-    [accessToken, plan, displayName, offlineMode],
+    [
+      accessToken,
+      plan,
+      displayName,
+      notifyScheduleReadOnly,
+      scheduleReadOnly,
+      viewOnly,
+    ],
   );
 
   const handleSavePlaceReview = useCallback(
@@ -1112,7 +1132,10 @@ export function usePlanDetailScreen({
         placeReviewId?: string;
       },
     ) => {
-      if (!plan || !reviewFormRoute) {
+      if (viewOnly || !plan || !reviewFormRoute) {
+        if (scheduleReadOnly) {
+          notifyScheduleReadOnly();
+        }
         return;
       }
       setSavingReview(true);
@@ -1144,12 +1167,24 @@ export function usePlanDetailScreen({
         setSavingReview(false);
       }
     },
-    [accessToken, plan, reviewFormRoute, displayName, alert],
+    [
+      accessToken,
+      plan,
+      reviewFormRoute,
+      displayName,
+      alert,
+      notifyScheduleReadOnly,
+      scheduleReadOnly,
+      viewOnly,
+    ],
   );
 
   const handleDeletePlaceReview = useCallback(() => {
     return new Promise<void>((resolve, reject) => {
-      if (!plan || !reviewFormRoute) {
+      if (viewOnly || !plan || !reviewFormRoute) {
+        if (scheduleReadOnly) {
+          notifyScheduleReadOnly();
+        }
         reject(new Error('no route'));
         return;
       }
@@ -1206,6 +1241,9 @@ export function usePlanDetailScreen({
     planReviews,
     alert,
     reviewCopy,
+    viewOnly,
+    scheduleReadOnly,
+    notifyScheduleReadOnly,
   ]);
 
   const exitOffline = useCallback(() => {
@@ -1360,22 +1398,28 @@ export function usePlanDetailScreen({
 
   const handleWriteReview = useCallback(
     (routeItem: RouteItem) => {
-      if (offlineMode) {
+      if (viewOnly) {
+        if (scheduleReadOnly) {
+          notifyScheduleReadOnly();
+        }
         return;
       }
       setReviewFormRoute(routeItem);
     },
-    [offlineMode],
+    [notifyScheduleReadOnly, scheduleReadOnly, viewOnly],
   );
 
   const handleScheduleModalChange = useCallback(
     (modal: ScheduleModalState) => {
-      if (offlineMode) {
+      if (viewOnly) {
+        if (scheduleReadOnly) {
+          notifyScheduleReadOnly();
+        }
         return;
       }
       setScheduleModal(modal);
     },
-    [offlineMode],
+    [notifyScheduleReadOnly, scheduleReadOnly, viewOnly],
   );
 
   const reviewFormExisting = reviewFormRoute

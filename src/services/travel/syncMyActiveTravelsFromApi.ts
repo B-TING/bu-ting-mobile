@@ -109,15 +109,15 @@ export async function syncMyActiveTravelsFromApi(
     const { plan, scheduleLocked } = await trySyncTravelPlanFromApi(accessToken, shell);
     if (scheduleLocked) {
       const existingPlan = findLocalPlanForTravel(usePlanStore.getState().plans, travel.travelId);
-      const offlinePlanId = existingPlan?.planId ?? plan.planId;
-      usePlanStore.getState().setPlanOfflineSync(offlinePlanId, true);
-      if (existingPlan) {
-        syncedPlans.push(existingPlan);
+      if (!existingPlan) {
+        // 로컬 캐시 없는 locked shell은 빈 일정 UX를 만들지 않도록 건너뛴다.
         continue;
       }
-    } else {
-      usePlanStore.getState().setPlanOfflineSync(plan.planId, false);
+      usePlanStore.getState().setPlanOfflineSync(existingPlan.planId, true);
+      syncedPlans.push(existingPlan);
+      continue;
     }
+    usePlanStore.getState().setPlanOfflineSync(plan.planId, false);
     usePlanStore.getState().upsertPlan(plan);
     syncedPlans.push(plan);
   }

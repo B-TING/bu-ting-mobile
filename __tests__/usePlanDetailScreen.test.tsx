@@ -177,8 +177,10 @@ jest.mock('../src/stores', () => ({
     selector({ reviewsByTravelId: {} }),
 }));
 
+let mockIsPlanOfflineSync = false;
+
 jest.mock('../src/stores/usePlanStore', () => ({
-  selectIsPlanOfflineSync: () => () => false,
+  selectIsPlanOfflineSync: () => () => mockIsPlanOfflineSync,
 }));
 
 jest.mock('../src/stores/useAuthStore', () => ({
@@ -229,6 +231,7 @@ function makeNavigation() {
 describe('usePlanDetailScreen', () => {
   beforeEach(() => {
     mockAppState.offlineMode = false;
+    mockIsPlanOfflineSync = false;
     mockPlanStoreState.plans = [];
     mockPlanStoreState.activePlanId = null;
     mockPlanStoreState.budgetByPlan = {};
@@ -362,5 +365,27 @@ describe('usePlanDetailScreen', () => {
     });
 
     expect(navigation.navigate).not.toHaveBeenCalled();
+  });
+
+  it('blocks write review when schedule is offline-sync locked', () => {
+    mockIsPlanOfflineSync = true;
+    mockPlanStoreState.plans = [{ ...mockPlan, source: 'api' }];
+
+    const navigation = makeNavigation();
+    const { result } = renderHook(() =>
+      usePlanDetailScreen({
+        navigation: navigation as never,
+        paramPlanId: 'plan-1',
+      }),
+    );
+
+    expect(result.current.scheduleReadOnly).toBe(true);
+    expect(result.current.viewOnly).toBe(true);
+
+    act(() => {
+      result.current.handleWriteReview(result.current.allRoutes[0] as never);
+    });
+
+    expect(result.current.reviewFormRoute).toBeNull();
   });
 });
