@@ -108,6 +108,7 @@ export function usePlanDetailScreen({
   const setOfflineMode = useAppStore(s => s.setOfflineMode);
 
   const plans = usePlanStore(s => s.plans);
+  const plansHydrated = usePlanStore(s => s._hasHydrated);
   const activePlanId = usePlanStore(s => s.activePlanId);
   const budgetByPlan = usePlanStore(s => s.budgetByPlan);
   const toggleVisited = usePlanStore(s => s.toggleRouteVisited);
@@ -146,6 +147,7 @@ export function usePlanDetailScreen({
 
   const copy = useCopy('planDetail');
   const pickerCopy = useCopy('mainHome');
+  const setupCopy = useCopy('setup');
   const { toastText, toastOpacity, showToast } = usePlanOfflineSyncFeedback({
     planId,
     enabled: isApiPlan,
@@ -280,9 +282,12 @@ export function usePlanDetailScreen({
   );
 
   const createNewPlan = useCallback(() => {
+    if (offlineMode) {
+      return;
+    }
     closePlanPicker();
     navigation.navigate('PlanWizard');
-  }, [closePlanPicker, navigation]);
+  }, [closePlanPicker, navigation, offlineMode]);
 
   const viewedPlanIdRef = useRef(planId);
   useEffect(() => {
@@ -1211,6 +1216,8 @@ export function usePlanDetailScreen({
     });
   }, [navigation, setOfflineMode]);
 
+  const offlineExitNotifiedRef = useRef(false);
+
   useEffect(() => {
     openRebootPendingRef.current = openReboot === true;
   }, [openReboot]);
@@ -1244,14 +1251,38 @@ export function usePlanDetailScreen({
   }, [scheduleModal.kind, pickRoute, closeScheduleModal]);
 
   useEffect(() => {
-    if (!enrichedPlan) {
-      if (offlineMode) {
-        exitOffline();
-      } else {
-        navigation.replace('PlanWizard');
-      }
+    if (enrichedPlan) {
+      offlineExitNotifiedRef.current = false;
+      return;
     }
-  }, [enrichedPlan, navigation, offlineMode, exitOffline]);
+
+    if (offlineMode) {
+      if (!plansHydrated) {
+        return;
+      }
+      if (offlineExitNotifiedRef.current) {
+        return;
+      }
+      offlineExitNotifiedRef.current = true;
+      alert({
+        title: setupCopy.offlineMode,
+        message: setupCopy.offlineModeEmpty,
+      });
+      exitOffline();
+      return;
+    }
+
+    navigation.replace('PlanWizard');
+  }, [
+    alert,
+    enrichedPlan,
+    exitOffline,
+    navigation,
+    offlineMode,
+    plansHydrated,
+    setupCopy.offlineMode,
+    setupCopy.offlineModeEmpty,
+  ]);
 
   const roleLabels = {
     LEADER: copy.roleLeader,
@@ -1357,6 +1388,7 @@ export function usePlanDetailScreen({
   return {
     language,
     offlineMode,
+    plansHydrated,
     copy,
     pickerCopy,
     reviewCopy,

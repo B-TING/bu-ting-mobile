@@ -13,6 +13,7 @@ import { createId } from '../utils/common/id';
 import { buildPlanFromTravelRecord } from '../utils/review/travelReview';
 import { optimizeRouteOrder } from '../utils/plan/routeOptimize';
 import { getSelectableHomePlans } from '../utils/plan/selectableHomePlans';
+import { selectLatestLocalPlan as pickLatestLocalPlan } from '../utils/plan/selectLatestLocalPlan';
 import { isServerBackedPlan } from '../utils/plan/serverBackedPlan';
 
 type PlanState = {
@@ -22,6 +23,8 @@ type PlanState = {
   budgetByPlan: Record<string, BudgetEntry[]>;
   /** GET 동기화 실패로 오프라인 캐시를 쓰는 플랜 ID */
   offlineSyncPlanIds: Record<string, true>;
+  _hasHydrated: boolean;
+  setHasHydrated: (value: boolean) => void;
   setPlanOfflineSync: (planId: string, offline: boolean) => void;
   addPlan: (plan: TravelPlan) => void;
   upsertPlan: (plan: TravelPlan) => void;
@@ -59,6 +62,8 @@ export const usePlanStore = create<PlanState>()(
       planCandidates: null,
       budgetByPlan: {},
       offlineSyncPlanIds: {},
+      _hasHydrated: false,
+      setHasHydrated: value => set({ _hasHydrated: value }),
       setPlanOfflineSync: (planId, offline) =>
         set(state => {
           const offlineSyncPlanIds = state.offlineSyncPlanIds ?? {};
@@ -359,6 +364,12 @@ export const usePlanStore = create<PlanState>()(
         activePlanId: state.activePlanId,
         budgetByPlan: state.budgetByPlan,
       }),
+      onRehydrateStorage: () => (_state, error) => {
+        if (error) {
+          console.warn('[Bu-Ting] plans persist rehydrate error', error);
+        }
+        usePlanStore.getState().setHasHydrated(true);
+      },
     },
   ),
 );
@@ -394,20 +405,9 @@ export function selectSelectableHomePlans(state: PlanState): TravelPlan[] {
   return getSelectableHomePlans(state.plans);
 }
 
-/** 오프라인 열람용 — 활성 일정 우선, 없으면 가장 최근 생성 일정 */
+/** 오프라인 열람용 — 현재 API origin · 일정 내용 우선, 활성 일정, 최근 생성 순 */
 export function selectLatestLocalPlan(state: PlanState): TravelPlan | null {
-  if (state.plans.length === 0) {
-    return null;
-  }
-  if (state.activePlanId) {
-    const active = state.plans.find(p => p.planId === state.activePlanId);
-    if (active) {
-      return active;
-    }
-  }
-  return [...state.plans].sort((a, b) =>
-    (b.createdAt || '').localeCompare(a.createdAt || ''),
-  )[0];
+  return pickLatestLocalPlan(state);
 }
 
 export function selectPlanById(planId: string) {

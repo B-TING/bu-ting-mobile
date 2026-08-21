@@ -36,12 +36,14 @@ export function LoginScreen({ navigation }: Props) {
   const language = useAppLanguage();
   const copy = useCopy('setup');
   const setOfflineMode = useAppStore(state => state.setOfflineMode);
+  const plansHydrated = usePlanStore(state => state._hasHydrated);
   const [rememberMe, setRememberMe] = useState(true);
   const [loadingProvider, setLoadingProvider] = useState<OAuthProvider | null>(
     null,
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const isLoading = loadingProvider !== null;
+  const offlineEntryDisabled = isLoading || !plansHydrated;
   const heroHeight = Math.max(240, Math.round(windowHeight * 0.38));
 
   const onProviderLogin = useCallback(
@@ -94,6 +96,9 @@ export function LoginScreen({ navigation }: Props) {
   );
 
   const onEnterOfflineMode = useCallback(() => {
+    if (!usePlanStore.getState()._hasHydrated) {
+      return;
+    }
     const plan = selectLatestLocalPlan(usePlanStore.getState());
     if (!plan) {
       setErrorMessage(copy.offlineModeEmpty);
@@ -176,13 +181,13 @@ export function LoginScreen({ navigation }: Props) {
         </View>
 
         <Pressable
-          disabled={isLoading}
+          disabled={offlineEntryDisabled}
           onPress={onEnterOfflineMode}
           accessibilityRole="button"
           accessibilityLabel={copy.offlineMode}
           className={cn(
             'mb-auto items-center rounded-xl border border-brand-border bg-white py-3.5 active:opacity-80',
-            isLoading && 'opacity-50',
+            offlineEntryDisabled && 'opacity-50',
           )}>
           <Text className="text-base font-semibold text-brand-text">{copy.offlineMode}</Text>
         </Pressable>

@@ -1,4 +1,4 @@
-import { Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { PlanSyncStatusDot } from '../../components/plan/PlanSyncStatusDot';
@@ -29,6 +29,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
   const {
     language,
     offlineMode,
+    plansHydrated,
     copy,
     pickerCopy,
     reviewCopy,
@@ -127,6 +128,13 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
   });
 
   if (!enrichedPlan) {
+    if (offlineMode && !plansHydrated) {
+      return (
+        <View className="flex-1 items-center justify-center bg-brand-background">
+          <ActivityIndicator size="large" color="#0077B6" />
+        </View>
+      );
+    }
     return null;
   }
 
@@ -165,14 +173,16 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
             {enrichedPlan.title}
           </Text>
         )}
-        <Pressable
-          onPress={createNewPlan}
-          hitSlop={8}
-          className="ml-2 h-9 w-9 items-center justify-center rounded-full active:opacity-80"
-          accessibilityRole="button"
-          accessibilityLabel={pickerCopy.createNewPlanA11y}>
-          <AppIcon name="plus" size={20} color={ICON_COLOR_PRIMARY} strokeWidth={2.5} />
-        </Pressable>
+        {!offlineMode ? (
+          <Pressable
+            onPress={createNewPlan}
+            hitSlop={8}
+            className="ml-2 h-9 w-9 items-center justify-center rounded-full active:opacity-80"
+            accessibilityRole="button"
+            accessibilityLabel={pickerCopy.createNewPlanA11y}>
+            <AppIcon name="plus" size={20} color={ICON_COLOR_PRIMARY} strokeWidth={2.5} />
+          </Pressable>
+        ) : null}
         {isApiPlan && !offlineMode ? (
           <PlanSyncStatusDot offline={isPlanOfflineSync} />
         ) : null}
@@ -404,7 +414,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
         copy={pickerCopy}
         onClose={closePlanPicker}
         onSelect={selectPlan}
-        onCreatePress={createNewPlan}
+        onCreatePress={offlineMode ? undefined : createNewPlan}
       />
     </View>
   );
