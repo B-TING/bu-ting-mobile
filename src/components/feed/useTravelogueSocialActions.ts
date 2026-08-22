@@ -9,6 +9,7 @@ import { isValidIsoDate } from '../../constants/plan/planWizard';
 import type { CopyFor } from '../../i18n';
 import { useFeatureUnavailableAlert } from '../shared/modals';
 import type { RootStackParamList } from '../../navigation/types';
+import { cloneTravelFromRecord } from '../../services/travel/cloneTravelFromRecord';
 import {
   createTravelRecordComment,
   deleteTravelRecordComment,
@@ -143,13 +144,15 @@ export function useTravelogueSocialActions(
     [likedByMe, userId, comments, likeCount],
   );
 
-  const importPlanFromTravelRecord = usePlanStore(s => s.importPlanFromTravelRecord);
+  const addPlan = usePlanStore(s => s.addPlan);
   const activePlan = usePlanStore(selectActivePlan);
 
   const [importModalPhase, setImportModalPhase] = useState<ImportPlanModalPhase | null>(null);
   const [importedPlanId, setImportedPlanId] = useState<string | null>(null);
   const [importStartDate, setImportStartDate] = useState('');
   const [importPlanTitle, setImportPlanTitle] = useState('');
+  const [importing, setImporting] = useState(false);
+  const [importErrorMessage, setImportErrorMessage] = useState<string | null>(null);
 
   const importDayCount = useMemo(() => {
     const days = resolveTravelRecordDays(travelRecord, null);
@@ -183,35 +186,85 @@ export function useTravelogueSocialActions(
   }, []);
 
   const closeImportModal = useCallback(() => {
+    if (importing) {
+      return;
+    }
     setImportModalPhase(null);
     setImportedPlanId(null);
     setImportStartDate('');
     setImportPlanTitle('');
-  }, []);
+    setImportErrorMessage(null);
+  }, [importing]);
 
-  const performImport = useCallback(() => {
-    const plan = importPlanFromTravelRecord(travelRecord, {
-      userId: userId || 'guest',
-      displayName: userName,
-    });
-    if (!plan) {
+  const performImport = useCallback(async () => {
+    if (importing) {
+      return;
+    }
+    if (!importStartDateValid) {
+      return;
+    }
+    if (!accessToken?.trim() || !userId) {
+      setImportErrorMessage(copy.socialLoginRequired);
       setImportModalPhase('error');
       return;
     }
-    setImportedPlanId(plan.planId);
-    setImportModalPhase('success');
-  }, [importPlanFromTravelRecord, travelRecord, userId, userName]);
+
+    setImporting(true);
+    setImportErrorMessage(null);
+    try {
+      const title = importPlanTitle.trim();
+      const plan = await cloneTravelFromRecord({
+        accessToken,
+        travelRecordId: travelRecord.travelRecordId,
+        members: [
+          {
+            userId,
+            nickname: userName,
+            role: 'LEADER',
+          },
+        ],
+        request: {
+          startDate: importStartDate,
+          title: title.length > 0 ? title : null,
+        },
+      });
+      addPlan(plan);
+      setImportedPlanId(plan.planId);
+      setImportModalPhase('success');
+    } catch (error) {
+      const message =
+        error instanceof Error && error.message.trim()
+          ? error.message
+          : copy.importPlanFailed;
+      setImportErrorMessage(message);
+      setImportModalPhase('error');
+    } finally {
+      setImporting(false);
+    }
+  }, [
+    importing,
+    importStartDateValid,
+    accessToken,
+    userId,
+    userName,
+    importPlanTitle,
+    importStartDate,
+    travelRecord.travelRecordId,
+    addPlan,
+    copy.socialLoginRequired,
+    copy.importPlanFailed,
+  ]);
 
   const beginImportAfterDate = useCallback(() => {
-    if (!importStartDateValid) {
+    if (!importStartDateValid || importing) {
       return;
     }
     if (activePlan && activePlan.status !== 'COMPLETED') {
       setImportModalPhase('activePlanWarning');
       return;
     }
-    performImport();
-  }, [importStartDateValid, activePlan, performImport]);
+    void performImport();
+  }, [importStartDateValid, importing, activePlan, performImport]);
 
   const requireLogin = useCallback(() => {
     throw new TravelogueSocialError(copy.socialLoginRequired);
@@ -472,9 +525,11 @@ export function useTravelogueSocialActions(
       return;
     }
     if (importDayCount < 1) {
+      setImportErrorMessage(null);
       setImportModalPhase('error');
       return;
     }
+    setImportErrorMessage(null);
     setImportPlanTitle((travelRecord.title ?? '').slice(0, 15));
     setImportStartDate(defaultImportStartDate());
     setImportModalPhase('confirm');
@@ -489,7 +544,7 @@ export function useTravelogueSocialActions(
   };
 
   const handleConfirmActivePlanImport = () => {
-    performImport();
+    void performImport();
   };
 
   const handleGoToImportedPlan = () => {
@@ -511,6 +566,8 @@ export function useTravelogueSocialActions(
     planTitle: importPlanTitle,
     computedEndDate: importComputedEndDate,
     startDateValid: importStartDateValid,
+    importing,
+    errorMessage: importErrorMessage,
     onChangeStartDate: setImportStartDate,
     onChangePlanTitle: setImportPlanTitle,
     onClose: closeImportModal,

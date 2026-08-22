@@ -33,6 +33,8 @@ export type ImportPlanModalProps = {
   computedEndDate: string | null;
   startDateValid: boolean;
   importing?: boolean;
+  /** error 단계 커스텀 메시지 (없으면 일정 없음 문구) */
+  errorMessage?: string | null;
   onChangeStartDate: (value: string) => void;
   onChangePlanTitle: (value: string) => void;
   onClose: () => void;
@@ -62,6 +64,7 @@ export function ImportPlanModal({
   computedEndDate,
   startDateValid,
   importing = false,
+  errorMessage = null,
   onChangeStartDate,
   onChangePlanTitle,
   onClose,
@@ -102,7 +105,7 @@ export function ImportPlanModal({
     phase === 'success'
       ? copy.importPlanSuccessSub
       : phase === 'error'
-        ? copy.importPlanNoItinerary
+        ? errorMessage?.trim() || copy.importPlanNoItinerary
         : phase === 'activePlanWarning' && activePlanTitle
           ? copy.importPlanActivePlanMessage(activePlanTitle)
           : phase === 'datePick'
