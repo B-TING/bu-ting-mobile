@@ -5,6 +5,7 @@ import {
   ALPHA_FEATURE_LABELS,
   isAlphaFeatureBlocked,
 } from '../../constants/common/alphaFeatureBlocks';
+import { isValidIsoDate } from '../../constants/plan/planWizard';
 import type { CopyFor } from '../../i18n';
 import { useFeatureUnavailableAlert } from '../shared/modals';
 import type { RootStackParamList } from '../../navigation/types';
@@ -33,6 +34,7 @@ import type {
   TravelRecordSocial,
 } from '../../types/travelReview';
 import type { AppLanguage } from '../../types/user';
+import { resolveTravelRecordDays } from '../../utils/review/travelReview';
 
 type Copy = CopyFor<'travelReview'>;
 
@@ -146,10 +148,45 @@ export function useTravelogueSocialActions(
 
   const [importModalPhase, setImportModalPhase] = useState<ImportPlanModalPhase | null>(null);
   const [importedPlanId, setImportedPlanId] = useState<string | null>(null);
+  const [importStartDate, setImportStartDate] = useState('');
+  const [importPlanTitle, setImportPlanTitle] = useState('');
+
+  const importDayCount = useMemo(() => {
+    const days = resolveTravelRecordDays(travelRecord, null);
+    if (days.length === 0) {
+      return 0;
+    }
+    return Math.max(...days.map(d => d.dayNumber), days.length);
+  }, [travelRecord]);
+
+  const importStartDateValid = isValidIsoDate(importStartDate);
+
+  const importComputedEndDate = useMemo(() => {
+    if (!importStartDateValid || importDayCount < 1) {
+      return null;
+    }
+    const start = new Date(`${importStartDate}T12:00:00`);
+    start.setDate(start.getDate() + (importDayCount - 1));
+    const y = start.getFullYear();
+    const m = String(start.getMonth() + 1).padStart(2, '0');
+    const d = String(start.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }, [importStartDate, importStartDateValid, importDayCount]);
+
+  const defaultImportStartDate = useCallback(() => {
+    const start = new Date();
+    start.setDate(start.getDate() + 7);
+    const y = start.getFullYear();
+    const m = String(start.getMonth() + 1).padStart(2, '0');
+    const d = String(start.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }, []);
 
   const closeImportModal = useCallback(() => {
     setImportModalPhase(null);
     setImportedPlanId(null);
+    setImportStartDate('');
+    setImportPlanTitle('');
   }, []);
 
   const performImport = useCallback(() => {
@@ -164,6 +201,17 @@ export function useTravelogueSocialActions(
     setImportedPlanId(plan.planId);
     setImportModalPhase('success');
   }, [importPlanFromTravelRecord, travelRecord, userId, userName]);
+
+  const beginImportAfterDate = useCallback(() => {
+    if (!importStartDateValid) {
+      return;
+    }
+    if (activePlan && activePlan.status !== 'COMPLETED') {
+      setImportModalPhase('activePlanWarning');
+      return;
+    }
+    performImport();
+  }, [importStartDateValid, activePlan, performImport]);
 
   const requireLogin = useCallback(() => {
     throw new TravelogueSocialError(copy.socialLoginRequired);
@@ -423,15 +471,21 @@ export function useTravelogueSocialActions(
       showUnavailable(ALPHA_FEATURE_LABELS.importPlan);
       return;
     }
+    if (importDayCount < 1) {
+      setImportModalPhase('error');
+      return;
+    }
+    setImportPlanTitle((travelRecord.title ?? '').slice(0, 15));
+    setImportStartDate(defaultImportStartDate());
     setImportModalPhase('confirm');
   };
 
   const handleConfirmImport = () => {
-    if (activePlan && activePlan.status !== 'COMPLETED') {
-      setImportModalPhase('activePlanWarning');
-      return;
-    }
-    performImport();
+    setImportModalPhase('datePick');
+  };
+
+  const handleConfirmDate = () => {
+    beginImportAfterDate();
   };
 
   const handleConfirmActivePlanImport = () => {
@@ -452,8 +506,16 @@ export function useTravelogueSocialActions(
     language: language as AppLanguage,
     travelRecordTitle: travelRecord.title ?? '',
     activePlanTitle: activePlan?.title,
+    dayCount: importDayCount,
+    startDate: importStartDate,
+    planTitle: importPlanTitle,
+    computedEndDate: importComputedEndDate,
+    startDateValid: importStartDateValid,
+    onChangeStartDate: setImportStartDate,
+    onChangePlanTitle: setImportPlanTitle,
     onClose: closeImportModal,
     onConfirm: handleConfirmImport,
+    onConfirmDate: handleConfirmDate,
     onConfirmActivePlan: handleConfirmActivePlanImport,
     onGoToPlan: handleGoToImportedPlan,
   };
