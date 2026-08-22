@@ -8,7 +8,7 @@ export const ALPHA_FEATURE_BLOCKS = {
   /** 여행기 작성·조회·게시 */
   travelogue: false,
   /** 다른 사용자 여행기 → 내 일정으로 가져오기 */
-  importPlan: true,
+  importPlan: false,
   /** 팀원(일행) 초대 */
   invite: true,
   /** 구역 이벤트 (구역 채팅방은 유지) */
