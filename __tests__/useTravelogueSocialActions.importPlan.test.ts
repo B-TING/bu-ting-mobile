@@ -25,6 +25,10 @@ jest.mock('../src/services/travel/travelRecordService', () => ({
   updateTravelRecordComment: jest.fn(),
 }));
 
+jest.mock('../src/navigation/navigateToMainTab', () => ({
+  navigateToMainTab: jest.fn(),
+}));
+
 jest.mock('../src/stores/useTravelRecordBookmarkStore', () => ({
   useTravelRecordBookmarkStore: (selector: (s: Record<string, unknown>) => unknown) =>
     selector({
@@ -52,6 +56,20 @@ const mockPlanState = {
   activePlanId: null as string | null,
   addPlan: mockAddPlan,
 };
+
+jest.mock('../src/stores/usePlanStore', () => ({
+  usePlanStore: Object.assign(
+    (selector: (s: typeof mockPlanState) => unknown) => selector(mockPlanState),
+    { getState: () => mockPlanState },
+  ),
+  selectActivePlan: (state: typeof mockPlanState) => {
+    if (!state.activePlanId) {
+      return null;
+    }
+    return state.plans.find(p => p.planId === state.activePlanId) ?? null;
+  },
+  selectHomeFeaturedPlan: () => null,
+}));
 
 jest.mock('../src/stores', () => ({
   selectActivePlan: (state: typeof mockPlanState) => {

@@ -11,7 +11,10 @@ import { isPlanForCurrentApiServer } from '../utils/api/apiServerOrigin';
 import { createId } from '../utils/common/id';
 import { optimizeRouteOrder } from '../utils/plan/routeOptimize';
 import { getSelectableHomePlans } from '../utils/plan/selectableHomePlans';
-import { selectLatestLocalPlan as pickLatestLocalPlan } from '../utils/plan/selectLatestLocalPlan';
+import {
+  listCompletedLocalPlanIds,
+  selectLatestLocalPlan as pickLatestLocalPlan,
+} from '../utils/plan/selectLatestLocalPlan';
 import { isServerBackedPlan } from '../utils/plan/serverBackedPlan';
 
 type PlanState = {
@@ -45,6 +48,8 @@ type PlanState = {
   setBudgetEntries: (planId: string, entries: BudgetEntry[]) => void;
   getBudgetForPlan: (planId: string) => BudgetEntry[];
   completePlan: (planId: string) => void;
+  /** 완료된 여행을 로컬 캐시에서 제거 (오프라인 목록용) */
+  purgeCompletedLocalPlans: () => void;
   replacePlan: (plan: TravelPlan) => void;
 };
 
@@ -323,16 +328,36 @@ export const usePlanStore = create<PlanState>()(
       getBudgetForPlan: planId => get().budgetByPlan[planId] ?? [],
       completePlan: planId =>
         set(state => {
-          const plans = state.plans.map(p =>
-            p.planId === planId
-              ? { ...p, status: 'COMPLETED' as const, travelStatus: 'COMPLETED' as const }
-              : p,
-          );
-          if (state.activePlanId !== planId) {
-            return { plans };
+          // 완료 여행은 로컬(오프라인) 목록에서 제거
+          const plans = state.plans.filter(p => p.planId !== planId);
+          const budgetByPlan = { ...state.budgetByPlan };
+          delete budgetByPlan[planId];
+          const offlineSyncPlanIds = { ...(state.offlineSyncPlanIds ?? {}) };
+          delete offlineSyncPlanIds[planId];
+          const activePlanId =
+            state.activePlanId === planId
+              ? (getSelectableHomePlans(plans)[0]?.planId ?? null)
+              : state.activePlanId;
+          return { plans, budgetByPlan, offlineSyncPlanIds, activePlanId };
+        }),
+      purgeCompletedLocalPlans: () =>
+        set(state => {
+          const completedIds = new Set(listCompletedLocalPlanIds(state.plans));
+          if (completedIds.size === 0) {
+            return state;
           }
-          const next = getSelectableHomePlans(plans)[0];
-          return { plans, activePlanId: next?.planId ?? null };
+          const plans = state.plans.filter(p => !completedIds.has(p.planId));
+          const budgetByPlan = { ...state.budgetByPlan };
+          const offlineSyncPlanIds = { ...(state.offlineSyncPlanIds ?? {}) };
+          for (const id of completedIds) {
+            delete budgetByPlan[id];
+            delete offlineSyncPlanIds[id];
+          }
+          const activePlanId =
+            state.activePlanId && completedIds.has(state.activePlanId)
+              ? (getSelectableHomePlans(plans)[0]?.planId ?? null)
+              : state.activePlanId;
+          return { plans, budgetByPlan, offlineSyncPlanIds, activePlanId };
         }),
       replacePlan: plan =>
         set(state => ({
@@ -352,7 +377,18 @@ export const usePlanStore = create<PlanState>()(
         if (error) {
           console.warn('[Bu-Ting] plans persist rehydrate error', error);
         }
-        usePlanStore.getState().setHasHydrated(true);
+        try {
+          const store = usePlanStore.getState();
+          store.setHasHydrated(true);
+          store.purgeCompletedLocalPlans();
+        } catch (cleanupError) {
+          console.warn('[Bu-Ting] plans post-rehydrate cleanup failed', cleanupError);
+          try {
+            usePlanStore.setState({ _hasHydrated: true });
+          } catch {
+            // Jest 등 AsyncStorage 없는 환경
+          }
+        }
       },
     },
   ),

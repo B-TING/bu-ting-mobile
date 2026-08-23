@@ -1435,6 +1435,7 @@ export function usePlanDetailScreen({
     plansHydrated,
     copy,
     pickerCopy,
+    setupCopy,
     reviewCopy,
     enrichedPlan,
     planId,

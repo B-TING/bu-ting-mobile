@@ -19,6 +19,8 @@ type HomePlanPickerModalProps = {
   selectedPlanId: string | null;
   language: AppLanguage;
   copy: Copy;
+  title?: string;
+  subtitle?: string;
   onClose: () => void;
   onSelect: (planId: string) => void;
   onCreatePress?: () => void;
@@ -58,6 +60,8 @@ export function HomePlanPickerModal({
   selectedPlanId,
   language,
   copy,
+  title,
+  subtitle,
   onClose,
   onSelect,
   onCreatePress,
@@ -66,8 +70,8 @@ export function HomePlanPickerModal({
     <AppModal
       visible={visible}
       onClose={onClose}
-      title={copy.pickPlanTitle}
-      subtitle={copy.pickPlanSubtitle}
+      title={title ?? copy.pickPlanTitle}
+      subtitle={subtitle ?? copy.pickPlanSubtitle}
       maxHeight="75%"
       showHandle
       closeAccessibilityLabel={copy.pickPlanClose}>

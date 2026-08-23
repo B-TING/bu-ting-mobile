@@ -34,6 +34,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     plansHydrated,
     copy,
     pickerCopy,
+    setupCopy,
     reviewCopy,
     enrichedPlan,
     planId,
@@ -419,6 +420,8 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
         selectedPlanId={enrichedPlan.planId}
         language={language}
         copy={pickerCopy}
+        title={offlineMode ? setupCopy.offlinePickTitle : undefined}
+        subtitle={offlineMode ? setupCopy.offlinePickSubtitle : undefined}
         onClose={closePlanPicker}
         onSelect={selectPlan}
         onCreatePress={offlineMode ? undefined : createNewPlan}
