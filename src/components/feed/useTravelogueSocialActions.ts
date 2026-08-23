@@ -5,9 +5,10 @@ import {
   ALPHA_FEATURE_LABELS,
   isAlphaFeatureBlocked,
 } from '../../constants/common/alphaFeatureBlocks';
-import { isValidIsoDate } from '../../constants/plan/planWizard';
+import { dayCountBetween, isValidIsoDate } from '../../constants/plan/planWizard';
 import type { CopyFor } from '../../i18n';
 import { useFeatureUnavailableAlert } from '../shared/modals';
+import { navigateToMainTab } from '../../navigation/navigateToMainTab';
 import type { RootStackParamList } from '../../navigation/types';
 import { cloneTravelFromRecord } from '../../services/travel/cloneTravelFromRecord';
 import {
@@ -36,15 +37,14 @@ import type {
 } from '../../types/travelReview';
 import type { AppLanguage } from '../../types/user';
 import { resolveTravelRecordDays } from '../../utils/review/travelReview';
+import type { NavigationProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 type Copy = CopyFor<'travelReview'>;
 
-type TravelRecordNavigation = {
-  navigate: (
-    screen: 'PlanDetail',
-    params: RootStackParamList['PlanDetail'],
-  ) => void;
-};
+type TravelRecordNavigation =
+  | NavigationProp<RootStackParamList>
+  | NativeStackNavigationProp<RootStackParamList>;
 
 export class TravelogueSocialError extends Error {
   constructor(message: string) {
@@ -154,12 +154,22 @@ export function useTravelogueSocialActions(
   const [importing, setImporting] = useState(false);
   const [importErrorMessage, setImportErrorMessage] = useState<string | null>(null);
 
+  /**
+   * 상세는 `days`로 일수 계산. 피드/북마크 목록은 days=[] 이므로
+   * travelStartDate~travelEndDate로 폴백한다. (clone API는 서버 스냅샷 사용)
+   */
   const importDayCount = useMemo(() => {
     const days = resolveTravelRecordDays(travelRecord, null);
-    if (days.length === 0) {
-      return 0;
+    if (days.length > 0) {
+      return Math.max(...days.map(d => d.dayNumber), days.length);
     }
-    return Math.max(...days.map(d => d.dayNumber), days.length);
+    const start = travelRecord.travelStartDate;
+    const end = travelRecord.travelEndDate;
+    if (start && end && isValidIsoDate(start) && isValidIsoDate(end)) {
+      return dayCountBetween(start, end);
+    }
+    // 목록에 기간·일차가 없어도 서버에 일정이 있을 수 있음 → 가져오기 허용
+    return 1;
   }, [travelRecord]);
 
   const importStartDateValid = isValidIsoDate(importStartDate);
@@ -524,11 +534,8 @@ export function useTravelogueSocialActions(
       showUnavailable(ALPHA_FEATURE_LABELS.importPlan);
       return;
     }
-    if (importDayCount < 1) {
-      setImportErrorMessage(null);
-      setImportModalPhase('error');
-      return;
-    }
+    // 피드 아이템은 days가 비어 있어도 travelRecordId만으로 서버 clone 가능.
+    // 실제 일정 없음은 API 에러로 처리한다.
     setImportErrorMessage(null);
     setImportPlanTitle((travelRecord.title ?? '').slice(0, 15));
     setImportStartDate(defaultImportStartDate());
@@ -552,7 +559,8 @@ export function useTravelogueSocialActions(
       return;
     }
     closeImportModal();
-    navigation.navigate('PlanDetail', { planId: importedPlanId });
+    // 스택 PlanDetail이 아니라 메인 탭의 일정(route)으로 전환
+    navigateToMainTab(navigation, 'route');
   };
 
   const importModalProps: ImportPlanModalProps = {

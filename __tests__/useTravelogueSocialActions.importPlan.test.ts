@@ -175,19 +175,25 @@ describe('useTravelogueSocialActions import plan', () => {
     expect(result.current.importModalProps.computedEndDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 
-  it('shows error when travel record has no itinerary days', async () => {
+  it('allows import from feed items even when days are empty (API has snapshot)', async () => {
     const { result } = renderHook(() =>
-      useTravelogueSocialActions(makeRecord({ days: [] }), copy, {
-        navigate: mockNavigate,
-      }),
+      useTravelogueSocialActions(
+        makeRecord({
+          days: [],
+          travelStartDate: '2026-08-01',
+          travelEndDate: '2026-08-03',
+        }),
+        copy,
+        { navigate: mockNavigate },
+      ),
     );
     await flushAsync();
 
     act(() => {
       result.current.handleImportPlan();
     });
-    expect(result.current.importModalProps.phase).toBe('error');
-    expect(result.current.importModalProps.errorMessage).toBeNull();
+    expect(result.current.importModalProps.phase).toBe('confirm');
+    expect(result.current.importModalProps.dayCount).toBe(3);
     expect(mockCloneTravelFromRecord).not.toHaveBeenCalled();
   });
 
