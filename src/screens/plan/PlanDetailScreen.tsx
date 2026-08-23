@@ -16,6 +16,7 @@ import { PlanScheduleTab } from '../../components/plan/tabs/PlanScheduleTab';
 import { PlanTabPager } from '../../components/plan/tabs/PlanTabPager';
 import { PlaceReviewFormModal } from '../../components/review/modals/PlaceReviewFormModal';
 import { AppIcon } from '../../components/shared/icons/AppIcon';
+import { useAppBarTopInset } from '../../components/shared/navigation/AppBar';
 import { ICON_COLOR_DEFAULT, ICON_COLOR_PRIMARY } from '../../constants/icons';
 import { canRemovePlanDay } from '../../services/travel/planDaySync';
 import { usePlanDetailScreen } from '../../hooks/plan/usePlanDetailScreen';
@@ -26,6 +27,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'PlanDetail'> & {
 };
 
 export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false }: Props) {
+  const headerTopInset = useAppBarTopInset();
   const {
     language,
     offlineMode,
@@ -140,7 +142,12 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
 
   return (
     <View className="flex-1 bg-brand-background">
-      <View className="flex-row items-center border-b border-brand-border bg-brand-surface px-4 py-3">
+      <View
+        className="flex-row items-center border-b border-brand-border bg-brand-surface px-4 pb-3"
+        style={{
+          // 메인 탭은 AppBar가 safe area를 담당. 스택(오프라인 등)은 헤더에 inset 필요.
+          paddingTop: embeddedInMainTabs ? 12 : headerTopInset,
+        }}>
         {!embeddedInMainTabs ? (
           <BackButton
             accessibilityLabel={
