@@ -18,16 +18,29 @@ import { usePlaceMapSearchScreen } from '../../hooks/places/usePlaceMapSearchScr
 import { useAppLanguage } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
 import { PLACE_MAP_SEARCH_TYPES } from '../../types/placesApi';
+import type { BusanPlace } from '../../types/placeSearch';
+import type { WizardPickedPlace } from '../../types/planWizard';
 import { haversineKm } from '../../utils/geo/geo';
 import { formatDistanceKm } from '../../utils/places/rebootPlaces';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PlaceMapSearch'>;
+
+function busanPlaceToPicked(place: BusanPlace): WizardPickedPlace {
+  return {
+    placeId: place.contentId || place.id,
+    placeName: place.name,
+    location: place.location,
+    address: place.address || undefined,
+    imageUrl: place.imageUrl,
+  };
+}
 
 export function PlaceMapSearchScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const language = useAppLanguage();
   const {
     copy,
+    pickFor,
     contentTypeId,
     selectedPlace,
     detailOpen,
@@ -61,6 +74,16 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
     handleChangeContentType,
   } = usePlaceMapSearchScreen(route.params);
 
+  const confirmWizardPick = () => {
+    if (!pickFor || !selectedPlace) {
+      return;
+    }
+    navigation.popTo('PlanWizard', {
+      pickedPlace: busanPlaceToPicked(selectedPlace),
+      pickKind: pickFor,
+    });
+  };
+
   return (
     <View
       className="flex-1 bg-brand-background"
@@ -76,30 +99,39 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
       </View>
 
       <View className="border-b border-brand-border bg-brand-surface px-4 py-2">
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {PLACE_MAP_SEARCH_TYPES.map(typeId => {
-            const selected = contentTypeId === typeId;
-            const label = copy.categoryLabels[typeId];
-            return (
-              <Pressable
-                key={typeId}
-                onPress={() => handleChangeContentType(typeId)}
-                accessibilityRole="button"
-                accessibilityLabel={copy.categoryTabA11y(label)}
-                className={`mr-2 rounded-full px-3 py-1.5 ${
-                  selected ? 'bg-brand-primary' : 'bg-brand-background'
-                }`}>
-                <Text
-                  className={`text-xs font-semibold ${
-                    selected ? 'text-white' : 'text-brand-text'
+        {pickFor ? null : (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {PLACE_MAP_SEARCH_TYPES.map(typeId => {
+              const selected = contentTypeId === typeId;
+              const label = copy.categoryLabels[typeId];
+              return (
+                <Pressable
+                  key={typeId}
+                  onPress={() => handleChangeContentType(typeId)}
+                  accessibilityRole="button"
+                  accessibilityLabel={copy.categoryTabA11y(label)}
+                  className={`mr-2 rounded-full px-3 py-1.5 ${
+                    selected ? 'bg-brand-primary' : 'bg-brand-background'
                   }`}>
-                  {label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-        <Text className="mt-2 text-sm font-semibold text-brand-text">{summaryText}</Text>
+                  <Text
+                    className={`text-xs font-semibold ${
+                      selected ? 'text-white' : 'text-brand-text'
+                    }`}>
+                    {label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        )}
+        <Text
+          className={
+            pickFor
+              ? 'text-sm font-semibold text-brand-text'
+              : 'mt-2 text-sm font-semibold text-brand-text'
+          }>
+          {summaryText}
+        </Text>
         <Text className="mt-0.5 text-[11px] text-brand-muted">{copy.dataHint}</Text>
         {isSearchCooldownActive ? (
           <Text className="mt-1 text-xs text-brand-muted">
@@ -244,6 +276,11 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
         bookmarked={selectedBookmarked}
         onToggleBookmark={handleToggleBookmark}
         onClose={handleCloseDetail}
+        primaryAction={
+          pickFor
+            ? { label: copy.pickConfirm, onPress: confirmWizardPick }
+            : null
+        }
       />
     </View>
   );

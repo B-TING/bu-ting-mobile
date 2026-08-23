@@ -13,7 +13,6 @@ import {
 import { useAppLanguage, useCopy } from '../../i18n';
 import type { OnboardingFlowStep, OnboardingStepId } from '../../constants/setup/onboarding';
 import type { RootStackParamList } from '../../navigation/types';
-import { buildUserPromptContext } from '../../services/setup/promptBuilder';
 import { hasAnsweredSurvey } from '../../services/setup/travelSurveyMapper';
 import { persistTravelSurveyForUser } from '../../services/setup/travelSurveySync';
 import { selectOnboardingForUser, useAppStore } from '../../stores';
@@ -172,7 +171,6 @@ export function useOnboardingScreen({ navigation, mode }: UseOnboardingScreenPar
         completedAt,
         aiPromptContext: '',
       };
-      profile.aiPromptContext = buildUserPromptContext(profile);
 
       // 계정 취향은 userId 기준으로 저장. 게스트 분기는 로그인 전 플로우만.
       if (userId) {

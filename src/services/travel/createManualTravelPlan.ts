@@ -1,14 +1,21 @@
 import type { PlanWizardAnswers } from '../../types/planWizard';
+import type { PlanResponse } from '../../types/travelApi';
 import type { PlanMember, TravelPlan } from '../../types/travelPlan';
 import { resolveInitialPlanAnchor } from '../../utils/plan/planAnchor';
+import { buildManualPlanPlaceSlots } from '../../utils/plan/manualPlanPlaceSlots';
+import {
+  applyWizardPlaceTypes,
+  seedManualWizardPlaces,
+} from './planPlaceSync';
 import {
   toPlanCreateRequests,
   toTravelCreateRequest,
+  travelPlansResponseToPlan,
   travelResponseToPlan,
   wizardAnswersToConstraints,
 } from './travelMapper';
 import { createTravelRecordDraft } from './travelRecordService';
-import { createTravel, createTravelPlan } from './travelService';
+import { createTravel, createTravelPlan, fetchTravelPlans } from './travelService';
 
 export class ManualTravelPlanError extends Error {
   cause?: unknown;
@@ -48,12 +55,19 @@ export async function createManualTravelPlan(
   try {
     const travel = await createTravel(accessToken, travelBody);
     const planRequests = toPlanCreateRequests(answers.startDate, answers.endDate);
-    const dayPlans = [];
+    const dayPlans: PlanResponse[] = [];
 
     for (const planBody of planRequests) {
       const plan = await createTravelPlan(accessToken, travel.travelId, planBody);
       dayPlans.push(plan);
     }
+
+    const slotsByDay = buildManualPlanPlaceSlots(answers, dayPlans.length);
+    await seedManualWizardPlaces(
+      accessToken,
+      dayPlans.map(plan => plan.planId),
+      slotsByDay,
+    );
 
     try {
       await createTravelRecordDraft(accessToken, travel.travelId, {
@@ -68,7 +82,23 @@ export async function createManualTravelPlan(
       }
     }
 
-    return travelResponseToPlan(travel, dayPlans, members, constraints);
+    try {
+      const plans = await fetchTravelPlans(accessToken, travel.travelId);
+      return applyWizardPlaceTypes(
+        travelPlansResponseToPlan(
+          plans,
+          members,
+          constraints,
+          travel.startDate,
+          travel.endDate,
+        ),
+        answers.accommodationMode === 'booked'
+          ? answers.bookedAccommodation?.placeId
+          : null,
+      );
+    } catch {
+      return travelResponseToPlan(travel, dayPlans, members, constraints);
+    }
   } catch (error) {
     const message =
       error instanceof Error ? error.message : '여행 생성에 실패했습니다.';

@@ -110,6 +110,18 @@ export const TRAVEL_REVIEW_COPY: Record<
     importPlan: string;
     importPlanConfirmTitle: string;
     importPlanConfirmMessage: (title: string) => string;
+    importPlanDateTitle: string;
+    importPlanDateMessage: (dayCount: number) => string;
+    importPlanTitleLabel: string;
+    importPlanTitlePlaceholder: string;
+    importPlanStartDateLabel: string;
+    importPlanEndDateLabel: string;
+    importPlanEndDateHint: string;
+    importPlanDayCountLabel: string;
+    importPlanDayCount: (n: number) => string;
+    importPlanInvalidDate: string;
+    importPlanImporting: string;
+    importPlanFailed: string;
     importPlanSuccess: string;
     importPlanSuccessSub: string;
     importPlanGo: string;
@@ -247,6 +259,19 @@ export const TRAVEL_REVIEW_COPY: Record<
     importPlanConfirmTitle: '여행 계획 가져오기',
     importPlanConfirmMessage: title =>
       `"${title}" 일정을 내 여행 계획으로 추가할까요?`,
+    importPlanDateTitle: '여행 날짜 설정',
+    importPlanDateMessage: dayCount =>
+      `${dayCount}일 일정이에요. 출발일을 정하면 종료일은 자동으로 맞춰져요.`,
+    importPlanTitleLabel: '여행 제목 (선택)',
+    importPlanTitlePlaceholder: '여행 제목을 입력하세요',
+    importPlanStartDateLabel: '출발일',
+    importPlanEndDateLabel: '종료일',
+    importPlanEndDateHint: '여행기 일수에 맞춰 자동 계산돼요',
+    importPlanDayCountLabel: '일정',
+    importPlanDayCount: n => `${n}일`,
+    importPlanInvalidDate: '날짜는 YYYY-MM-DD 형식으로 입력해 주세요.',
+    importPlanImporting: '가져오는 중…',
+    importPlanFailed: '여행 계획 가져오기에 실패했습니다.',
     importPlanSuccess: '여행 계획을 가져왔어요!',
     importPlanSuccessSub: '내 여행 계획 목록에 추가됐어요. 바로 확인해 보세요.',
     importPlanGo: '계획 보기',
@@ -384,6 +409,19 @@ export const TRAVEL_REVIEW_COPY: Record<
     importPlanConfirmTitle: 'Import trip plan',
     importPlanConfirmMessage: title =>
       `Add the itinerary from "${title}" to your plans?`,
+    importPlanDateTitle: 'Set trip dates',
+    importPlanDateMessage: dayCount =>
+      `This itinerary is ${dayCount} day(s). Pick a start date and the end date is calculated for you.`,
+    importPlanTitleLabel: 'Trip title (optional)',
+    importPlanTitlePlaceholder: 'Enter a trip title',
+    importPlanStartDateLabel: 'Start date',
+    importPlanEndDateLabel: 'End date',
+    importPlanEndDateHint: 'Auto-calculated from the travelogue length',
+    importPlanDayCountLabel: 'Length',
+    importPlanDayCount: n => `${n} day(s)`,
+    importPlanInvalidDate: 'Use YYYY-MM-DD format.',
+    importPlanImporting: 'Importing…',
+    importPlanFailed: 'Could not import the trip plan.',
     importPlanSuccess: 'Trip plan imported!',
     importPlanSuccessSub: 'It has been added to your plans. Take a look anytime.',
     importPlanGo: 'View plan',
@@ -521,6 +559,19 @@ export const TRAVEL_REVIEW_COPY: Record<
     importPlanConfirmTitle: '旅行プランを取り込む',
     importPlanConfirmMessage: title =>
       `「${title}」の日程を自分の旅行プランに追加しますか？`,
+    importPlanDateTitle: '旅行日を設定',
+    importPlanDateMessage: dayCount =>
+      `${dayCount}日の日程です。出発日を決めると終了日は自動で決まります。`,
+    importPlanTitleLabel: '旅行タイトル（任意）',
+    importPlanTitlePlaceholder: '旅行タイトルを入力',
+    importPlanStartDateLabel: '出発日',
+    importPlanEndDateLabel: '終了日',
+    importPlanEndDateHint: '旅行記の日数に合わせて自動計算されます',
+    importPlanDayCountLabel: '日程',
+    importPlanDayCount: n => `${n}日`,
+    importPlanInvalidDate: '日付は YYYY-MM-DD 形式で入力してください。',
+    importPlanImporting: '取り込み中…',
+    importPlanFailed: '旅行プランの取り込みに失敗しました。',
     importPlanSuccess: '旅行プランを取り込みました！',
     importPlanSuccessSub: 'マイ旅行プランに追加されました。すぐに確認できます。',
     importPlanGo: 'プランを見る',
@@ -652,6 +703,19 @@ export const TRAVEL_REVIEW_COPY: Record<
     importPlan: '导入旅行计划',
     importPlanConfirmTitle: '导入旅行计划',
     importPlanConfirmMessage: title => `将「${title}」的行程添加到我的旅行计划？`,
+    importPlanDateTitle: '设置旅行日期',
+    importPlanDateMessage: dayCount =>
+      `共 ${dayCount} 天行程。选择出发日后，结束日会自动计算。`,
+    importPlanTitleLabel: '旅行标题（可选）',
+    importPlanTitlePlaceholder: '输入旅行标题',
+    importPlanStartDateLabel: '出发日',
+    importPlanEndDateLabel: '结束日',
+    importPlanEndDateHint: '根据游记天数自动计算',
+    importPlanDayCountLabel: '行程',
+    importPlanDayCount: n => `${n}天`,
+    importPlanInvalidDate: '请使用 YYYY-MM-DD 格式。',
+    importPlanImporting: '导入中…',
+    importPlanFailed: '导入旅行计划失败。',
     importPlanSuccess: '已导入旅行计划！',
     importPlanSuccessSub: '已添加到你的旅行计划，可随时查看。',
     importPlanGo: '查看计划',

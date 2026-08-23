@@ -1,4 +1,9 @@
-import type { PlaceProviderDto } from './travelApi';
+import type {
+  CompanionTypeDto,
+  PlaceProviderDto,
+  TravelPaceDto,
+  TravelStyleDto,
+} from './travelApi';
 import type {
   PlaceReview,
   TravelRecord,
@@ -46,6 +51,21 @@ export type TravelRecordCommentCreateRequest = {
 
 export type TravelRecordCommentUpdateRequest = {
   content: string;
+};
+
+/** POST /api/v1/travel-records/{travelRecordId}/clone-to-travel */
+export type TravelRecordCloneToTravelRequest = {
+  title?: string | null;
+  startDate: string;
+  hasHeavyBaggage?: boolean | null;
+  hasPets?: boolean | null;
+  travelStyle?: TravelStyleDto | null;
+  preferFlatTerrain?: boolean | null;
+  pace?: TravelPaceDto | null;
+  companionCount?: number | null;
+  preferredFoods?: string | null;
+  companionType?: CompanionTypeDto | null;
+  accommodationArea?: string | null;
 };
 
 export type TravelRecordRouteDto = {

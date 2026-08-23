@@ -6,6 +6,8 @@ jest.mock('../src/i18n', () => ({
   useAppLanguage: () => 'ko',
   useCopy: () => ({
     offlineSyncNotice: 'offline',
+    offlineMode: '오프라인으로 일정 보기',
+    offlineModeEmpty: '열람할 저장된 일정이 없습니다.',
     inviteLinkError: 'invite error',
     roleLabels: { LEADER: '방장', MEMBER: '일행' },
     transport: {},
@@ -52,6 +54,18 @@ jest.mock('../src/hooks/useTravelMembersSync', () => ({
 
 jest.mock('../src/hooks/useApiTravelPlanSync', () => ({
   useApiTravelPlanSync: () => ({ syncFromServer: jest.fn() }),
+}));
+
+jest.mock('../src/hooks/plan/usePlanPicker', () => ({
+  usePlanPicker: () => ({
+    pickerPlans: [],
+    canSwitchPlans: false,
+    planPickerOpen: false,
+    selectedPlanId: null,
+    openPlanPicker: jest.fn(),
+    closePlanPicker: jest.fn(),
+    selectPlan: jest.fn(),
+  }),
 }));
 
 jest.mock('../src/hooks/usePlanOfflineSyncFeedback', () => ({
@@ -135,6 +149,7 @@ const mockPlanStoreState = {
   plans: [] as Array<Record<string, unknown>>,
   activePlanId: null as string | null,
   budgetByPlan: {} as Record<string, unknown[]>,
+  _hasHydrated: true,
   toggleRouteVisited: jest.fn(),
   replaceRouteInPlan: jest.fn(),
   addRouteToPlan: jest.fn(),
@@ -162,8 +177,10 @@ jest.mock('../src/stores', () => ({
     selector({ reviewsByTravelId: {} }),
 }));
 
+let mockIsPlanOfflineSync = false;
+
 jest.mock('../src/stores/usePlanStore', () => ({
-  selectIsPlanOfflineSync: () => () => false,
+  selectIsPlanOfflineSync: () => () => mockIsPlanOfflineSync,
 }));
 
 jest.mock('../src/stores/useAuthStore', () => ({
@@ -205,6 +222,7 @@ function makeNavigation() {
     goBack: jest.fn(),
     navigate: jest.fn(),
     replace: jest.fn(),
+    reset: jest.fn(),
     setParams: jest.fn(),
     canGoBack: () => true,
   };
@@ -213,9 +231,11 @@ function makeNavigation() {
 describe('usePlanDetailScreen', () => {
   beforeEach(() => {
     mockAppState.offlineMode = false;
+    mockIsPlanOfflineSync = false;
     mockPlanStoreState.plans = [];
     mockPlanStoreState.activePlanId = null;
     mockPlanStoreState.budgetByPlan = {};
+    mockPlanStoreState._hasHydrated = true;
     jest.clearAllMocks();
   });
 
@@ -232,6 +252,43 @@ describe('usePlanDetailScreen', () => {
     expect(result.current.planId).toBe('');
     expect(result.current.allRoutes).toEqual([]);
     expect(navigation.replace).toHaveBeenCalledWith('PlanWizard');
+  });
+
+  it('does not exit offline mode before plans hydrate', () => {
+    mockAppState.offlineMode = true;
+    mockPlanStoreState._hasHydrated = false;
+
+    const navigation = makeNavigation();
+    const { result } = renderHook(() =>
+      usePlanDetailScreen({
+        navigation: navigation as never,
+        paramPlanId: 'missing',
+      }),
+    );
+
+    expect(result.current.enrichedPlan).toBeNull();
+    expect(result.current.plansHydrated).toBe(false);
+    expect(navigation.reset).not.toHaveBeenCalled();
+    expect(mockAppState.setOfflineMode).not.toHaveBeenCalled();
+  });
+
+  it('exits offline mode after hydrate when plan is missing', () => {
+    mockAppState.offlineMode = true;
+    mockPlanStoreState._hasHydrated = true;
+
+    const navigation = makeNavigation();
+    renderHook(() =>
+      usePlanDetailScreen({
+        navigation: navigation as never,
+        paramPlanId: 'missing',
+      }),
+    );
+
+    expect(navigation.reset).toHaveBeenCalledWith({
+      index: 0,
+      routes: [{ name: 'Login' }],
+    });
+    expect(mockAppState.setOfflineMode).toHaveBeenCalledWith(false);
   });
 
   it('resolves plan by paramPlanId and exposes itinerary routes', () => {
@@ -289,5 +346,46 @@ describe('usePlanDetailScreen', () => {
     });
 
     expect(result.current.scheduleModal).toEqual({ kind: 'none' });
+  });
+
+  it('does not navigate to PlanWizard when createNewPlan is called offline', () => {
+    mockAppState.offlineMode = true;
+    mockPlanStoreState.plans = [mockPlan];
+
+    const navigation = makeNavigation();
+    const { result } = renderHook(() =>
+      usePlanDetailScreen({
+        navigation: navigation as never,
+        paramPlanId: 'plan-1',
+      }),
+    );
+
+    act(() => {
+      result.current.createNewPlan();
+    });
+
+    expect(navigation.navigate).not.toHaveBeenCalled();
+  });
+
+  it('blocks write review when schedule is offline-sync locked', () => {
+    mockIsPlanOfflineSync = true;
+    mockPlanStoreState.plans = [{ ...mockPlan, source: 'api' }];
+
+    const navigation = makeNavigation();
+    const { result } = renderHook(() =>
+      usePlanDetailScreen({
+        navigation: navigation as never,
+        paramPlanId: 'plan-1',
+      }),
+    );
+
+    expect(result.current.scheduleReadOnly).toBe(true);
+    expect(result.current.viewOnly).toBe(true);
+
+    act(() => {
+      result.current.handleWriteReview(result.current.allRoutes[0] as never);
+    });
+
+    expect(result.current.reviewFormRoute).toBeNull();
   });
 });

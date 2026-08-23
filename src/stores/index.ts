@@ -16,6 +16,7 @@ export {
   hydrateRoutePlaceInfo,
   selectActivePlan,
   selectHomeFeaturedPlan,
+  selectSelectableHomePlans,
   selectLatestLocalPlan,
   selectPlanById,
   usePlanStore,

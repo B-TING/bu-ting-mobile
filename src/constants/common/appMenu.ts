@@ -35,6 +35,13 @@ export const APP_MENU_ITEMS: AppMenuItem[] = [
     target: { kind: 'screen', route: 'MainTabs', params: { tab: 'route' } },
   },
   {
+    id: 'newPlan',
+    labelKo: '새 여행 만들기',
+    labelEn: 'Create a new trip',
+    icon: 'plus',
+    target: { kind: 'screen', route: 'PlanWizard' },
+  },
+  {
     id: 'places',
     labelKo: '장소 탐색',
     labelEn: 'Explore places',

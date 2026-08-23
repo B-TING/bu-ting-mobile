@@ -15,6 +15,7 @@ import type { CopyFor } from '../../i18n';
 import type { BusanPlace } from '../../types/placeSearch';
 import type { PlaceDetailVO } from '../../types/googlePlaces';
 import type { AppLanguage } from '../../types/user';
+import { PrimaryButton } from '../shared/buttons/PrimaryButton';
 import { AppIcon } from '../shared/icons/AppIcon';
 import { appModalStyles } from '../shared/modals/appModalStyles';
 import { PlaceDetailPanel } from './PlaceDetailPanel';
@@ -37,6 +38,7 @@ type PlaceDetailSheetProps = {
   loading?: boolean;
   onToggleBookmark?: () => void;
   onClose: () => void;
+  primaryAction?: { label: string; onPress: () => void } | null;
 };
 
 function snapSheetHeight(
@@ -75,6 +77,7 @@ export function PlaceDetailSheet({
   loading = false,
   onToggleBookmark,
   onClose,
+  primaryAction = null,
 }: PlaceDetailSheetProps) {
   const { height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -199,6 +202,14 @@ export function PlaceDetailSheet({
               layout="sheetHeader"
             />
           </ScrollView>
+          {primaryAction ? (
+            <View style={styles.primaryAction}>
+              <PrimaryButton
+                label={primaryAction.label}
+                onPress={primaryAction.onPress}
+              />
+            </View>
+          ) : null}
         </View>
       </View>
     </Modal>
@@ -237,5 +248,9 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 8,
+  },
+  primaryAction: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
   },
 });

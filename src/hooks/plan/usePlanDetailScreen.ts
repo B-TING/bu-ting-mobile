@@ -66,6 +66,7 @@ import { selectIsPlanOfflineSync } from '../../stores/usePlanStore';
 import { selectReusableAccessToken } from '../../stores/useAuthStore';
 import { useApiTravelPlanSync } from '../useApiTravelPlanSync';
 import { usePlanOfflineSyncFeedback } from '../usePlanOfflineSyncFeedback';
+import { usePlanPicker } from './usePlanPicker';
 import type { BudgetEntry, RouteItem, TravelLegMode } from '../../types/travelPlan';
 import type { PlaceReview } from '../../types/travelReview';
 import { sortedRoutes } from '../../utils/plan/planItinerary';
@@ -107,6 +108,7 @@ export function usePlanDetailScreen({
   const setOfflineMode = useAppStore(s => s.setOfflineMode);
 
   const plans = usePlanStore(s => s.plans);
+  const plansHydrated = usePlanStore(s => s._hasHydrated);
   const activePlanId = usePlanStore(s => s.activePlanId);
   const budgetByPlan = usePlanStore(s => s.budgetByPlan);
   const toggleVisited = usePlanStore(s => s.toggleRouteVisited);
@@ -144,6 +146,8 @@ export function usePlanDetailScreen({
   const travelId = plan?.apiTravelId ?? plan?.planId;
 
   const copy = useCopy('planDetail');
+  const pickerCopy = useCopy('mainHome');
+  const setupCopy = useCopy('setup');
   const { toastText, toastOpacity, showToast } = usePlanOfflineSyncFeedback({
     planId,
     enabled: isApiPlan,
@@ -258,6 +262,47 @@ export function usePlanDetailScreen({
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
 
+  const {
+    pickerPlans,
+    canSwitchPlans,
+    planPickerOpen,
+    openPlanPicker,
+    closePlanPicker,
+    selectPlan: applySelectedPlan,
+  } = usePlanPicker(plan);
+
+  const selectPlan = useCallback(
+    (nextPlanId: string) => {
+      applySelectedPlan(nextPlanId);
+      if (!embeddedInMainTabs) {
+        navigation.setParams({ planId: nextPlanId });
+      }
+    },
+    [applySelectedPlan, embeddedInMainTabs, navigation],
+  );
+
+  const createNewPlan = useCallback(() => {
+    if (offlineMode) {
+      return;
+    }
+    closePlanPicker();
+    navigation.navigate('PlanWizard');
+  }, [closePlanPicker, navigation, offlineMode]);
+
+  const viewedPlanIdRef = useRef(planId);
+  useEffect(() => {
+    if (viewedPlanIdRef.current === planId) {
+      return;
+    }
+    viewedPlanIdRef.current = planId;
+    setSelectedDay(1);
+    setScheduleModal({ kind: 'none' });
+    setScheduleReorderActive(false);
+    setReviewFormRoute(null);
+    setBudgetModalOpen(false);
+    setInviteModalOpen(false);
+  }, [planId]);
+
   const canInvite = useMemo(() => {
     if (!isApiPlan || !authUser?.userId || !plan) {
       return false;
@@ -268,7 +313,7 @@ export function usePlanDetailScreen({
   }, [authUser?.userId, isApiPlan, plan]);
 
   const settlementConfirmed = settlement?.confirmed === true;
-  const canConfirmSettlement = canInvite && !settlementConfirmed && !offlineMode;
+  const canConfirmSettlement = canInvite && !settlementConfirmed && !viewOnly;
 
   const settlementMemberSummaries = useMemo(() => {
     const fromApi = pickCurrencyMemberSummaries(summary?.currencySummaries);
@@ -348,6 +393,13 @@ export function usePlanDetailScreen({
 
   const handleSaveBudgetEntry = useCallback(
     async (entry: BudgetEntryDraft) => {
+      if (viewOnly) {
+        if (scheduleReadOnly) {
+          notifyScheduleReadOnly();
+        }
+        return;
+      }
+
       if (!isApiPlan || !accessToken || !travelId) {
         addBudgetEntry(entry);
         return;
@@ -383,11 +435,14 @@ export function usePlanDetailScreen({
       copy.budgetAdd,
       copy.budgetSettlementLocked,
       isApiPlan,
+      notifyScheduleReadOnly,
       planId,
       refreshSettlementPreview,
+      scheduleReadOnly,
       settlementConfirmed,
       syncExpenses,
       travelId,
+      viewOnly,
     ],
   );
 
@@ -1042,7 +1097,10 @@ export function usePlanDetailScreen({
 
   const handleQuickRating = useCallback(
     (routeItem: RouteItem, rating: number) => {
-      if (offlineMode || !plan) {
+      if (viewOnly || !plan) {
+        if (scheduleReadOnly) {
+          notifyScheduleReadOnly();
+        }
         return;
       }
       void savePlaceReviewForTravel({
@@ -1058,7 +1116,14 @@ export function usePlanDetailScreen({
         },
       });
     },
-    [accessToken, plan, displayName, offlineMode],
+    [
+      accessToken,
+      plan,
+      displayName,
+      notifyScheduleReadOnly,
+      scheduleReadOnly,
+      viewOnly,
+    ],
   );
 
   const handleSavePlaceReview = useCallback(
@@ -1067,7 +1132,10 @@ export function usePlanDetailScreen({
         placeReviewId?: string;
       },
     ) => {
-      if (!plan || !reviewFormRoute) {
+      if (viewOnly || !plan || !reviewFormRoute) {
+        if (scheduleReadOnly) {
+          notifyScheduleReadOnly();
+        }
         return;
       }
       setSavingReview(true);
@@ -1099,12 +1167,24 @@ export function usePlanDetailScreen({
         setSavingReview(false);
       }
     },
-    [accessToken, plan, reviewFormRoute, displayName, alert],
+    [
+      accessToken,
+      plan,
+      reviewFormRoute,
+      displayName,
+      alert,
+      notifyScheduleReadOnly,
+      scheduleReadOnly,
+      viewOnly,
+    ],
   );
 
   const handleDeletePlaceReview = useCallback(() => {
     return new Promise<void>((resolve, reject) => {
-      if (!plan || !reviewFormRoute) {
+      if (viewOnly || !plan || !reviewFormRoute) {
+        if (scheduleReadOnly) {
+          notifyScheduleReadOnly();
+        }
         reject(new Error('no route'));
         return;
       }
@@ -1161,6 +1241,9 @@ export function usePlanDetailScreen({
     planReviews,
     alert,
     reviewCopy,
+    viewOnly,
+    scheduleReadOnly,
+    notifyScheduleReadOnly,
   ]);
 
   const exitOffline = useCallback(() => {
@@ -1170,6 +1253,8 @@ export function usePlanDetailScreen({
       routes: [{ name: 'Login' }],
     });
   }, [navigation, setOfflineMode]);
+
+  const offlineExitNotifiedRef = useRef(false);
 
   useEffect(() => {
     openRebootPendingRef.current = openReboot === true;
@@ -1204,14 +1289,38 @@ export function usePlanDetailScreen({
   }, [scheduleModal.kind, pickRoute, closeScheduleModal]);
 
   useEffect(() => {
-    if (!enrichedPlan) {
-      if (offlineMode) {
-        exitOffline();
-      } else {
-        navigation.replace('PlanWizard');
-      }
+    if (enrichedPlan) {
+      offlineExitNotifiedRef.current = false;
+      return;
     }
-  }, [enrichedPlan, navigation, offlineMode, exitOffline]);
+
+    if (offlineMode) {
+      if (!plansHydrated) {
+        return;
+      }
+      if (offlineExitNotifiedRef.current) {
+        return;
+      }
+      offlineExitNotifiedRef.current = true;
+      alert({
+        title: setupCopy.offlineMode,
+        message: setupCopy.offlineModeEmpty,
+      });
+      exitOffline();
+      return;
+    }
+
+    navigation.replace('PlanWizard');
+  }, [
+    alert,
+    enrichedPlan,
+    exitOffline,
+    navigation,
+    offlineMode,
+    plansHydrated,
+    setupCopy.offlineMode,
+    setupCopy.offlineModeEmpty,
+  ]);
 
   const roleLabels = {
     LEADER: copy.roleLeader,
@@ -1289,22 +1398,28 @@ export function usePlanDetailScreen({
 
   const handleWriteReview = useCallback(
     (routeItem: RouteItem) => {
-      if (offlineMode) {
+      if (viewOnly) {
+        if (scheduleReadOnly) {
+          notifyScheduleReadOnly();
+        }
         return;
       }
       setReviewFormRoute(routeItem);
     },
-    [offlineMode],
+    [notifyScheduleReadOnly, scheduleReadOnly, viewOnly],
   );
 
   const handleScheduleModalChange = useCallback(
     (modal: ScheduleModalState) => {
-      if (offlineMode) {
+      if (viewOnly) {
+        if (scheduleReadOnly) {
+          notifyScheduleReadOnly();
+        }
         return;
       }
       setScheduleModal(modal);
     },
-    [offlineMode],
+    [notifyScheduleReadOnly, scheduleReadOnly, viewOnly],
   );
 
   const reviewFormExisting = reviewFormRoute
@@ -1317,7 +1432,10 @@ export function usePlanDetailScreen({
   return {
     language,
     offlineMode,
+    plansHydrated,
     copy,
+    pickerCopy,
+    setupCopy,
     reviewCopy,
     enrichedPlan,
     planId,
@@ -1398,5 +1516,12 @@ export function usePlanDetailScreen({
     handleViewTravelRecord,
     handleWriteReview,
     handleScheduleModalChange,
+    pickerPlans,
+    canSwitchPlans,
+    planPickerOpen,
+    openPlanPicker,
+    closePlanPicker,
+    selectPlan,
+    createNewPlan,
   };
 }

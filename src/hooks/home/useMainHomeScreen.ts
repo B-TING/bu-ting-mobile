@@ -31,15 +31,16 @@ import {
   useFestivalStore,
   usePlanStore,
 } from '../../stores';
+import { isServerBackedPlan } from '../../utils/plan/serverBackedPlan';
+import { getNearestUpcomingStop } from '../../utils/plan/planSchedule';
+import { resolvePlanTravelStatus } from '../../utils/plan/planTravelStatus';
+import { isTravelRecordPublic } from '../../utils/review/travelReview';
+import { usePlanPicker } from '../plan/usePlanPicker';
 import { selectReusableAccessToken } from '../../stores/useAuthStore';
 import { useSessionActiveTravelsSyncOnFocus } from '../useSessionActiveTravelsSync';
 import { usePlanOfflineSyncFeedback } from '../usePlanOfflineSyncFeedback';
 import { useAppLanguage, useCopy } from '../../i18n';
 import { upcomingFestivalDateRangeYyyymmdd } from '../../utils/places/festivalApiMapper';
-import { isServerBackedPlan } from '../../utils/plan/serverBackedPlan';
-import { getNearestUpcomingStop } from '../../utils/plan/planSchedule';
-import { resolvePlanTravelStatus } from '../../utils/plan/planTravelStatus';
-import { isTravelRecordPublic } from '../../utils/review/travelReview';
 
 type UseMainHomeScreenParams = {
   navigation: NavigationProp<RootStackParamList>;
@@ -71,6 +72,14 @@ export function useMainHomeScreen({
   const accessToken = useAuthStore(selectReusableAccessToken);
   const activePlan = usePlanStore(selectActivePlan);
   const featuredPlan = usePlanStore(selectHomeFeaturedPlan);
+  const {
+    pickerPlans,
+    canSwitchPlans,
+    planPickerOpen,
+    openPlanPicker,
+    closePlanPicker,
+    selectPlan: selectHomePlan,
+  } = usePlanPicker();
   const featuredTravelStatus = useMemo(
     () => (featuredPlan ? resolvePlanTravelStatus(featuredPlan) : null),
     [featuredPlan],
@@ -184,6 +193,11 @@ export function useMainHomeScreen({
   const goToPlan = useCallback(() => {
     openItineraryOrWizard(navigation);
   }, [navigation]);
+
+  const goToCreatePlan = useCallback(() => {
+    closePlanPicker();
+    navigation.navigate('PlanWizard');
+  }, [closePlanPicker, navigation]);
 
   const goToReboot = useCallback(() => {
     if (isAlphaFeatureBlocked('reboot')) {
@@ -320,6 +334,11 @@ export function useMainHomeScreen({
       dday: copy.dday,
       ddayToday: copy.ddayToday,
       dayLabel: copy.dayLabel,
+      switchPlanCount: copy.switchPlanCount,
+      switchPlanA11y: copy.switchPlanA11y,
+      createNewPlan: copy.createNewPlan,
+      createNewPlanChip: copy.createNewPlanChip,
+      createNewPlanA11y: copy.createNewPlanA11y,
     }),
     [copy],
   );
@@ -331,6 +350,9 @@ export function useMainHomeScreen({
     helpCopy,
     featuredPlan,
     featuredTravelStatus,
+    pickerPlans,
+    canSwitchPlans,
+    planPickerOpen,
     showTripRebootFab,
     toastText,
     toastOpacity,
@@ -342,6 +364,10 @@ export function useMainHomeScreen({
     scrollPaddingBottom,
     activePlanHeroCopy,
     goToPlan,
+    openPlanPicker,
+    closePlanPicker,
+    selectHomePlan,
+    goToCreatePlan,
     goToReboot,
     goToHelpDesk,
     goToEventZone,

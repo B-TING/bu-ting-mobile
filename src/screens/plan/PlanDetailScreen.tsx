@@ -1,4 +1,4 @@
-import { Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { PlanSyncStatusDot } from '../../components/plan/PlanSyncStatusDot';
@@ -7,6 +7,7 @@ import { BackButton } from '../../components/shared/buttons/BackButton';
 import { BudgetEntryModal } from '../../components/plan/modals/BudgetEntryModal';
 import { PlacePickModal } from '../../components/plan/modals/PlacePickModal';
 import { TravelInviteLinkModal } from '../../components/plan/modals/TravelInviteLinkModal';
+import { HomePlanPickerModal } from '../../components/home/modals/HomePlanPickerModal';
 import { RouteOptimizeFab } from '../../components/plan/fab/RouteOptimizeFab';
 import { PlanBudgetTab } from '../../components/plan/tabs/PlanBudgetTab';
 import { PlanOverviewTab } from '../../components/plan/tabs/PlanOverviewTab';
@@ -14,6 +15,9 @@ import { PlanRecordsTab } from '../../components/plan/tabs/PlanRecordsTab';
 import { PlanScheduleTab } from '../../components/plan/tabs/PlanScheduleTab';
 import { PlanTabPager } from '../../components/plan/tabs/PlanTabPager';
 import { PlaceReviewFormModal } from '../../components/review/modals/PlaceReviewFormModal';
+import { AppIcon } from '../../components/shared/icons/AppIcon';
+import { useAppBarTopInset } from '../../components/shared/navigation/AppBar';
+import { ICON_COLOR_DEFAULT, ICON_COLOR_PRIMARY } from '../../constants/icons';
 import { canRemovePlanDay } from '../../services/travel/planDaySync';
 import { usePlanDetailScreen } from '../../hooks/plan/usePlanDetailScreen';
 import type { RootStackParamList } from '../../navigation/types';
@@ -23,10 +27,14 @@ type Props = NativeStackScreenProps<RootStackParamList, 'PlanDetail'> & {
 };
 
 export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false }: Props) {
+  const headerTopInset = useAppBarTopInset();
   const {
     language,
     offlineMode,
+    plansHydrated,
     copy,
+    pickerCopy,
+    setupCopy,
     reviewCopy,
     enrichedPlan,
     planId,
@@ -107,6 +115,13 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     handleViewTravelRecord,
     handleWriteReview,
     handleScheduleModalChange,
+    pickerPlans,
+    canSwitchPlans,
+    planPickerOpen,
+    openPlanPicker,
+    closePlanPicker,
+    selectPlan,
+    createNewPlan,
   } = usePlanDetailScreen({
     navigation,
     paramPlanId: route.params?.planId,
@@ -116,12 +131,24 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
   });
 
   if (!enrichedPlan) {
+    if (offlineMode && !plansHydrated) {
+      return (
+        <View className="flex-1 items-center justify-center bg-brand-background">
+          <ActivityIndicator size="large" color="#0077B6" />
+        </View>
+      );
+    }
     return null;
   }
 
   return (
     <View className="flex-1 bg-brand-background">
-      <View className="flex-row items-center border-b border-brand-border bg-brand-surface px-4 py-3">
+      <View
+        className="flex-row items-center border-b border-brand-border bg-brand-surface px-4 pb-3"
+        style={{
+          // 메인 탭은 AppBar가 safe area를 담당. 스택(오프라인 등)은 헤더에 inset 필요.
+          paddingTop: embeddedInMainTabs ? 12 : headerTopInset,
+        }}>
         {!embeddedInMainTabs ? (
           <BackButton
             accessibilityLabel={
@@ -136,9 +163,34 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
             onPress={handleBackPress}
           />
         ) : null}
-        <Text className="flex-1 text-lg font-bold text-brand-text" numberOfLines={1}>
-          {enrichedPlan.title}
-        </Text>
+        {canSwitchPlans ? (
+          <Pressable
+            onPress={openPlanPicker}
+            className="min-w-0 flex-1 flex-row items-center active:opacity-80"
+            accessibilityRole="button"
+            accessibilityLabel={pickerCopy.switchPlanA11y}>
+            <Text
+              className="mr-1 flex-1 text-lg font-bold text-brand-text"
+              numberOfLines={1}>
+              {enrichedPlan.title}
+            </Text>
+            <AppIcon name="chevronDown" size={18} color={ICON_COLOR_DEFAULT} />
+          </Pressable>
+        ) : (
+          <Text className="flex-1 text-lg font-bold text-brand-text" numberOfLines={1}>
+            {enrichedPlan.title}
+          </Text>
+        )}
+        {!offlineMode ? (
+          <Pressable
+            onPress={createNewPlan}
+            hitSlop={8}
+            className="ml-2 h-9 w-9 items-center justify-center rounded-full active:opacity-80"
+            accessibilityRole="button"
+            accessibilityLabel={pickerCopy.createNewPlanA11y}>
+            <AppIcon name="plus" size={20} color={ICON_COLOR_PRIMARY} strokeWidth={2.5} />
+          </Pressable>
+        ) : null}
         {isApiPlan && !offlineMode ? (
           <PlanSyncStatusDot offline={isPlanOfflineSync} />
         ) : null}
@@ -227,7 +279,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
                 budgetTotal={budgetTotal}
                 members={enrichedPlan.members}
                 onAddExpense={
-                  offlineMode || settlementConfirmed
+                  viewOnly || settlementConfirmed
                     ? undefined
                     : () => setBudgetModalOpen(true)
                 }
@@ -273,7 +325,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
       ) : null}
 
       <BudgetEntryModal
-        visible={!offlineMode && budgetModalOpen}
+        visible={!viewOnly && budgetModalOpen}
         copy={copy}
         language={language}
         members={enrichedPlan.members}
@@ -284,7 +336,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
       />
 
       <PlacePickModal
-        visible={!offlineMode && scheduleModal.kind === 'pick' && !!pickRoute}
+        visible={!viewOnly && scheduleModal.kind === 'pick' && !!pickRoute}
         anchor={pickRoute?.location}
         language={language}
         showTransportMode
@@ -307,7 +359,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
       />
 
       <PlacePickModal
-        visible={!offlineMode && scheduleModal.kind === 'add'}
+        visible={!viewOnly && scheduleModal.kind === 'add'}
         anchor={addPlaceAnchor}
         language={language}
         showTransportMode
@@ -330,7 +382,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
       />
 
       <PlaceReviewFormModal
-        visible={!offlineMode && !!reviewFormRoute}
+        visible={!viewOnly && !!reviewFormRoute}
         route={reviewFormRoute}
         existing={reviewFormExisting}
         copy={reviewCopy}
@@ -360,6 +412,19 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
         text={toastText}
         opacity={toastOpacity}
         bottom={toastBottom}
+      />
+
+      <HomePlanPickerModal
+        visible={planPickerOpen}
+        plans={pickerPlans}
+        selectedPlanId={enrichedPlan.planId}
+        language={language}
+        copy={pickerCopy}
+        title={offlineMode ? setupCopy.offlinePickTitle : undefined}
+        subtitle={offlineMode ? setupCopy.offlinePickSubtitle : undefined}
+        onClose={closePlanPicker}
+        onSelect={selectPlan}
+        onCreatePress={offlineMode ? undefined : createNewPlan}
       />
     </View>
   );
