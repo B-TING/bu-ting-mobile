@@ -257,8 +257,9 @@ async function openCamera(
  * 사진 또는 영상을 하나 선택합니다.
  * 서버 허용: JPEG/PNG/WebP, MP4/MOV (≤50MB)
  *
- * UI(소스 선택·권한 안내)는 호출측 커스텀 모달에서 처리하고,
- * 여기서는 앨범/카메라 피커만 실행합니다.
+ * 앨범은 react-native-image-picker → Android Photo Picker / 시스템 선택 도구를
+ * 사용하며 READ_MEDIA_* 권한이 필요 없습니다.
+ * UI(소스 선택·카메라 권한 안내)는 호출측 커스텀 모달에서 처리합니다.
  */
 export async function pickReviewMedia(options: {
   mediaType: ReviewMediaType;

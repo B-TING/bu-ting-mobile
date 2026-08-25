@@ -3,10 +3,6 @@ import { PermissionsAndroid, Platform } from 'react-native';
 export type MediaPermissionKind = 'library' | 'camera';
 export type MediaPermissionResult = 'granted' | 'denied' | 'blocked' | 'unavailable';
 
-function androidSdkInt(): number {
-  return typeof Platform.Version === 'number' ? Platform.Version : 0;
-}
-
 async function checkAndroidPermission(
   permission: (typeof PermissionsAndroid.PERMISSIONS)[keyof typeof PermissionsAndroid.PERMISSIONS],
 ): Promise<boolean> {
@@ -34,22 +30,12 @@ async function requestAndroidPermission(
   }
 }
 
-/** 앨범(사진·동영상) 권한이 이미 있는지 */
+/**
+ * 앨범 접근 — Android Photo Picker / 시스템 선택 도구만 사용하므로
+ * READ_MEDIA_* 런타임 요청을 하지 않습니다. (Google Play 사진·동영상 권한 정책)
+ */
 export async function hasMediaLibraryPermission(): Promise<boolean> {
-  if (Platform.OS !== 'android') {
-    // iOS: 시스템 피커/Info.plist 흐름 — 사전 차단하지 않음
-    return true;
-  }
-  if (androidSdkInt() >= 33) {
-    const images = await checkAndroidPermission(
-      PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES,
-    );
-    const video = await checkAndroidPermission(
-      PermissionsAndroid.PERMISSIONS.READ_MEDIA_VIDEO,
-    );
-    return images || video;
-  }
-  return checkAndroidPermission(PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE);
+  return true;
 }
 
 /** 카메라 권한이 이미 있는지 */
@@ -61,41 +47,11 @@ export async function hasCameraPermission(): Promise<boolean> {
 }
 
 /**
- * Android 런타임 앨범 권한 요청.
- * iOS는 Info.plist + 시스템 피커가 처리하므로 granted 반환.
+ * 앨범은 시스템 피커가 권한을 대체하므로 항상 granted.
+ * iOS도 Info.plist + 시스템 피커 흐름.
  */
 export async function requestMediaLibraryPermission(): Promise<MediaPermissionResult> {
-  if (Platform.OS !== 'android') {
-    return 'granted';
-  }
-
-  if (androidSdkInt() >= 33) {
-    try {
-      const result = await PermissionsAndroid.requestMultiple([
-        PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES,
-        PermissionsAndroid.PERMISSIONS.READ_MEDIA_VIDEO,
-      ]);
-      const images = result[PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES];
-      const video = result[PermissionsAndroid.PERMISSIONS.READ_MEDIA_VIDEO];
-      if (
-        images === PermissionsAndroid.RESULTS.GRANTED ||
-        video === PermissionsAndroid.RESULTS.GRANTED
-      ) {
-        return 'granted';
-      }
-      if (
-        images === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN ||
-        video === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN
-      ) {
-        return 'blocked';
-      }
-      return 'denied';
-    } catch {
-      return 'unavailable';
-    }
-  }
-
-  return requestAndroidPermission(PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE);
+  return 'granted';
 }
 
 /** Android 런타임 카메라 권한 요청 */
