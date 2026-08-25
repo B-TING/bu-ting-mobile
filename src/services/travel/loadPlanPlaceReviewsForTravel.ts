@@ -1,6 +1,10 @@
 import { useTravelRecordStore } from '../../stores/useTravelRecordStore';
 import type { TravelPlan } from '../../types/travelPlan';
 import type { PlaceReview } from '../../types/travelReview';
+import {
+  mediaFromApiUrls,
+  resolveReviewMediaList,
+} from '../../utils/media/resolveMediaUrl';
 import { fetchPlaceReview } from './travelRecordService';
 
 function travelIdOf(plan: TravelPlan): string {
@@ -40,6 +44,10 @@ export async function loadPlanPlaceReviewsForTravel(options: {
       const route = routes.find(r => r.apiPlanPlaceId === planPlaceId);
       try {
         const dto = await fetchPlaceReview(accessToken, travelId, planPlaceId);
+        const media = await resolveReviewMediaList(
+          mediaFromApiUrls(dto.placeReviewId, dto.mediaUrls),
+          accessToken,
+        );
         return store.upsertPlaceReview(travelId, {
           placeReviewId: dto.placeReviewId,
           planPlaceId: dto.planPlaceId ?? planPlaceId,
@@ -49,14 +57,7 @@ export async function loadPlanPlaceReviewsForTravel(options: {
           content: dto.content,
           tags: dto.tags ?? [],
           placeName: route?.placeName ?? '',
-          media:
-            dto.mediaUrls?.map((uri, index) => ({
-              mediaId: `api-media-${dto.placeReviewId}-${index}`,
-              type: (uri.match(/\.(mp4|mov|webm)(\?|$)/i) ? 'video' : 'image') as
-                | 'image'
-                | 'video',
-              uri,
-            })) ?? [],
+          media,
           matchPlaceKeys: [planPlaceId],
         });
       } catch {

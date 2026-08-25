@@ -32,6 +32,13 @@ export const TRAVEL_REVIEW_COPY: Record<
     takeVideo: string;
     mediaHint: string;
     mediaPermissionDenied: string;
+    mediaPermissionTitle: string;
+    mediaPermissionLibraryDisclosure: string;
+    mediaPermissionCameraDisclosure: string;
+    mediaPermissionDetail: string;
+    mediaPermissionAllow: string;
+    mediaPermissionDeny: string;
+    mediaPermissionOpenSettings: string;
     mediaPickFailed: string;
     mediaUploadFailed: string;
     mediaLimitReached: string;
@@ -103,6 +110,18 @@ export const TRAVEL_REVIEW_COPY: Record<
     importPlan: string;
     importPlanConfirmTitle: string;
     importPlanConfirmMessage: (title: string) => string;
+    importPlanDateTitle: string;
+    importPlanDateMessage: (dayCount: number) => string;
+    importPlanTitleLabel: string;
+    importPlanTitlePlaceholder: string;
+    importPlanStartDateLabel: string;
+    importPlanEndDateLabel: string;
+    importPlanEndDateHint: string;
+    importPlanDayCountLabel: string;
+    importPlanDayCount: (n: number) => string;
+    importPlanInvalidDate: string;
+    importPlanImporting: string;
+    importPlanFailed: string;
     importPlanSuccess: string;
     importPlanSuccessSub: string;
     importPlanGo: string;
@@ -157,6 +176,16 @@ export const TRAVEL_REVIEW_COPY: Record<
     takeVideo: '영상 촬영',
     mediaHint: '탭하면 첨부 파일을 제거할 수 있어요. 영상은 MP4/MOV, 사진은 JPEG/PNG/WebP (최대 50MB).',
     mediaPermissionDenied: '사진·카메라 권한이 필요합니다. 설정에서 허용해 주세요.',
+    mediaPermissionTitle: '사진·카메라 접근',
+    mediaPermissionLibraryDisclosure:
+      '피드·후기에 사진과 영상을 첨부하려면 앨범 접근이 필요해요.',
+    mediaPermissionCameraDisclosure:
+      '피드·후기에 사진과 영상을 첨부하려면 카메라 접근이 필요해요.',
+    mediaPermissionDetail:
+      '허용을 누르면 기기 권한을 요청합니다. 거부해도 앱의 다른 기능은 계속 사용할 수 있어요.',
+    mediaPermissionAllow: '허용',
+    mediaPermissionDeny: '나중에',
+    mediaPermissionOpenSettings: '설정 열기',
     mediaPickFailed: '미디어를 가져오지 못했어요. 다시 시도해 주세요.',
     mediaUploadFailed: '미디어 업로드 또는 후기 저장에 실패했어요.',
     mediaLimitReached: '미디어는 최대 20개까지 첨부할 수 있어요.',
@@ -230,6 +259,19 @@ export const TRAVEL_REVIEW_COPY: Record<
     importPlanConfirmTitle: '여행 계획 가져오기',
     importPlanConfirmMessage: title =>
       `"${title}" 일정을 내 여행 계획으로 추가할까요?`,
+    importPlanDateTitle: '여행 날짜 설정',
+    importPlanDateMessage: dayCount =>
+      `${dayCount}일 일정이에요. 출발일을 정하면 종료일은 자동으로 맞춰져요.`,
+    importPlanTitleLabel: '여행 제목 (선택)',
+    importPlanTitlePlaceholder: '여행 제목을 입력하세요',
+    importPlanStartDateLabel: '출발일',
+    importPlanEndDateLabel: '종료일',
+    importPlanEndDateHint: '여행기 일수에 맞춰 자동 계산돼요',
+    importPlanDayCountLabel: '일정',
+    importPlanDayCount: n => `${n}일`,
+    importPlanInvalidDate: '날짜는 YYYY-MM-DD 형식으로 입력해 주세요.',
+    importPlanImporting: '가져오는 중…',
+    importPlanFailed: '여행 계획 가져오기에 실패했습니다.',
     importPlanSuccess: '여행 계획을 가져왔어요!',
     importPlanSuccessSub: '내 여행 계획 목록에 추가됐어요. 바로 확인해 보세요.',
     importPlanGo: '계획 보기',
@@ -284,6 +326,16 @@ export const TRAVEL_REVIEW_COPY: Record<
     takeVideo: 'Record video',
     mediaHint: 'Tap an attachment to remove it. Files upload when you save.',
     mediaPermissionDenied: 'Photo and camera access is required. Please enable it in Settings.',
+    mediaPermissionTitle: 'Photo & camera access',
+    mediaPermissionLibraryDisclosure:
+      'To attach photos and videos to your feed or review, album access is needed.',
+    mediaPermissionCameraDisclosure:
+      'To attach photos and videos to your feed or review, camera access is needed.',
+    mediaPermissionDetail:
+      'We’ll ask for device permission next. You can still use other app features if you decline.',
+    mediaPermissionAllow: 'Allow',
+    mediaPermissionDeny: 'Not now',
+    mediaPermissionOpenSettings: 'Open Settings',
     mediaPickFailed: 'Could not pick media. Please try again.',
     mediaUploadFailed: 'Could not upload media or save the review.',
     mediaLimitReached: 'You can attach up to 20 media files.',
@@ -357,6 +409,19 @@ export const TRAVEL_REVIEW_COPY: Record<
     importPlanConfirmTitle: 'Import trip plan',
     importPlanConfirmMessage: title =>
       `Add the itinerary from "${title}" to your plans?`,
+    importPlanDateTitle: 'Set trip dates',
+    importPlanDateMessage: dayCount =>
+      `This itinerary is ${dayCount} day(s). Pick a start date and the end date is calculated for you.`,
+    importPlanTitleLabel: 'Trip title (optional)',
+    importPlanTitlePlaceholder: 'Enter a trip title',
+    importPlanStartDateLabel: 'Start date',
+    importPlanEndDateLabel: 'End date',
+    importPlanEndDateHint: 'Auto-calculated from the travelogue length',
+    importPlanDayCountLabel: 'Length',
+    importPlanDayCount: n => `${n} day(s)`,
+    importPlanInvalidDate: 'Use YYYY-MM-DD format.',
+    importPlanImporting: 'Importing…',
+    importPlanFailed: 'Could not import the trip plan.',
     importPlanSuccess: 'Trip plan imported!',
     importPlanSuccessSub: 'It has been added to your plans. Take a look anytime.',
     importPlanGo: 'View plan',
@@ -411,6 +476,16 @@ export const TRAVEL_REVIEW_COPY: Record<
     takeVideo: '動画を撮影',
     mediaHint: 'タップで添付を削除できます。保存時にサーバーへアップロードされます。',
     mediaPermissionDenied: '写真・カメラの権限が必要です。設定で許可してください。',
+    mediaPermissionTitle: '写真・カメラへのアクセス',
+    mediaPermissionLibraryDisclosure:
+      'フィード・レビューに写真や動画を添付するには、アルバムへのアクセスが必要です。',
+    mediaPermissionCameraDisclosure:
+      'フィード・レビューに写真や動画を添付するには、カメラへのアクセスが必要です。',
+    mediaPermissionDetail:
+      '許可を押すと端末の権限を求めます。拒否しても他の機能は使えます。',
+    mediaPermissionAllow: '許可',
+    mediaPermissionDeny: 'あとで',
+    mediaPermissionOpenSettings: '設定を開く',
     mediaPickFailed: 'メディアを取得できませんでした。もう一度お試しください。',
     mediaUploadFailed: 'メディアのアップロードまたはレビュー保存に失敗しました。',
     mediaLimitReached: 'メディアは最大20件まで添付できます。',
@@ -484,6 +559,19 @@ export const TRAVEL_REVIEW_COPY: Record<
     importPlanConfirmTitle: '旅行プランを取り込む',
     importPlanConfirmMessage: title =>
       `「${title}」の日程を自分の旅行プランに追加しますか？`,
+    importPlanDateTitle: '旅行日を設定',
+    importPlanDateMessage: dayCount =>
+      `${dayCount}日の日程です。出発日を決めると終了日は自動で決まります。`,
+    importPlanTitleLabel: '旅行タイトル（任意）',
+    importPlanTitlePlaceholder: '旅行タイトルを入力',
+    importPlanStartDateLabel: '出発日',
+    importPlanEndDateLabel: '終了日',
+    importPlanEndDateHint: '旅行記の日数に合わせて自動計算されます',
+    importPlanDayCountLabel: '日程',
+    importPlanDayCount: n => `${n}日`,
+    importPlanInvalidDate: '日付は YYYY-MM-DD 形式で入力してください。',
+    importPlanImporting: '取り込み中…',
+    importPlanFailed: '旅行プランの取り込みに失敗しました。',
     importPlanSuccess: '旅行プランを取り込みました！',
     importPlanSuccessSub: 'マイ旅行プランに追加されました。すぐに確認できます。',
     importPlanGo: 'プランを見る',
@@ -537,6 +625,13 @@ export const TRAVEL_REVIEW_COPY: Record<
     takeVideo: '拍摄视频',
     mediaHint: '点按附件可移除。保存时会上传到服务器。',
     mediaPermissionDenied: '需要照片和相机权限，请在设置中允许。',
+    mediaPermissionTitle: '照片与相机访问',
+    mediaPermissionLibraryDisclosure: '要将照片和视频添加到动态或点评，需要访问相册。',
+    mediaPermissionCameraDisclosure: '要将照片和视频添加到动态或点评，需要使用相机。',
+    mediaPermissionDetail: '点击允许后将请求设备权限。即使拒绝，仍可使用应用的其他功能。',
+    mediaPermissionAllow: '允许',
+    mediaPermissionDeny: '稍后',
+    mediaPermissionOpenSettings: '打开设置',
     mediaPickFailed: '无法选择媒体，请重试。',
     mediaUploadFailed: '媒体上传或评价保存失败。',
     mediaLimitReached: '最多可附加 20 个媒体文件。',
@@ -608,6 +703,19 @@ export const TRAVEL_REVIEW_COPY: Record<
     importPlan: '导入旅行计划',
     importPlanConfirmTitle: '导入旅行计划',
     importPlanConfirmMessage: title => `将「${title}」的行程添加到我的旅行计划？`,
+    importPlanDateTitle: '设置旅行日期',
+    importPlanDateMessage: dayCount =>
+      `共 ${dayCount} 天行程。选择出发日后，结束日会自动计算。`,
+    importPlanTitleLabel: '旅行标题（可选）',
+    importPlanTitlePlaceholder: '输入旅行标题',
+    importPlanStartDateLabel: '出发日',
+    importPlanEndDateLabel: '结束日',
+    importPlanEndDateHint: '根据游记天数自动计算',
+    importPlanDayCountLabel: '行程',
+    importPlanDayCount: n => `${n}天`,
+    importPlanInvalidDate: '请使用 YYYY-MM-DD 格式。',
+    importPlanImporting: '导入中…',
+    importPlanFailed: '导入旅行计划失败。',
     importPlanSuccess: '已导入旅行计划！',
     importPlanSuccessSub: '已添加到你的旅行计划，可随时查看。',
     importPlanGo: '查看计划',

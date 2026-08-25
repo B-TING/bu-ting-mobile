@@ -5,6 +5,7 @@ export class ApiClientError extends Error {
   url?: string;
   responseBody?: unknown;
   cause?: unknown;
+  code?: 'TIMEOUT';
 
   constructor(
     message: string,
@@ -13,6 +14,7 @@ export class ApiClientError extends Error {
       url?: string;
       responseBody?: unknown;
       cause?: unknown;
+      code?: 'TIMEOUT';
     },
   ) {
     super(message);
@@ -21,6 +23,7 @@ export class ApiClientError extends Error {
     this.url = options?.url;
     this.responseBody = options?.responseBody;
     this.cause = options?.cause;
+    this.code = options?.code;
   }
 }
 
@@ -40,6 +43,8 @@ export type ApiRequestOptions = {
   allowEmptyBody?: boolean;
   /** 이 HTTP 상태는 throw 없이 undefined 반환 (예: 설문 400 = 미설정) */
   emptyOnStatus?: number[];
+  /** AbortController로 요청을 끊을 밀리초 (AI 플랜 등) */
+  timeoutMs?: number;
   errorMessagePrefix?: string;
   mapError?: (error: ApiClientError) => Error;
   onRequest?: (context: ApiRequestLogContext) => void;
@@ -111,6 +116,7 @@ export async function apiRequest<T>(
     unwrap = true,
     allowEmptyBody = true,
     emptyOnStatus = [],
+    timeoutMs,
     errorMessagePrefix = 'Request failed',
     mapError,
     onRequest,
@@ -130,11 +136,17 @@ export async function apiRequest<T>(
 
   let res: Response;
   let parsedBody: unknown = null;
+  const controller = timeoutMs && timeoutMs > 0 ? new AbortController() : null;
+  const timeoutId =
+    controller && timeoutMs
+      ? setTimeout(() => controller.abort(), timeoutMs)
+      : null;
 
   try {
     res = await fetch(url, {
       method,
       headers,
+      signal: controller?.signal,
       ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
     });
 
@@ -142,11 +154,22 @@ export async function apiRequest<T>(
       parsedBody = await res.json().catch(() => null);
     }
   } catch (cause) {
+    if (controller?.signal.aborted) {
+      const error = new ApiClientError(
+        `${errorMessagePrefix}: timed out after ${timeoutMs}ms`,
+        { url, cause, code: 'TIMEOUT' },
+      );
+      return notifyError(error, onError, mapError);
+    }
     const error = new ApiClientError(`${errorMessagePrefix}: network error`, {
       url,
       cause,
     });
     return notifyError(error, onError, mapError);
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
   }
 
   onResponse?.({ url, method, status: res.status, body: parsedBody });

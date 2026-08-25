@@ -6,28 +6,22 @@ import type {
 import { mapTravelRecordResponse } from '../../types/travelRecordApi';
 import type { PlaceReview, TravelRecord, TravelRecordPlace } from '../../types/travelReview';
 import {
+  mediaFromApiUrls,
+  resolveDisplayMediaUrl,
+  resolveReviewMediaList,
+} from '../../utils/media/resolveMediaUrl';
+import {
   fetchMyTravelRecord,
   fetchPlaceReview,
   fetchPlaceReviewSummary,
   fetchPublicTravelRecord,
 } from './travelRecordService';
 
-function mediaFromUrls(placeReviewId: string, mediaUrls?: string[]) {
-  return (
-    mediaUrls?.map((uri, index) => ({
-      mediaId: `api-media-${placeReviewId}-${index}`,
-      type: (uri.match(/\.(mp4|mov|webm)(\?|$)/i) ? 'video' : 'image') as
-        | 'image'
-        | 'video',
-      uri,
-    })) ?? []
-  );
-}
-
-function mapDtoToPlaceReview(
+async function mapDtoToPlaceReview(
   dto: PlaceReviewResponse,
   place: TravelRecordPlace,
-): PlaceReview {
+  accessToken?: string | null,
+): Promise<PlaceReview> {
   return {
     placeReviewId: dto.placeReviewId,
     planPlaceId: dto.planPlaceId ?? place.planPlaceId,
@@ -39,13 +33,17 @@ function mapDtoToPlaceReview(
     createdAt: dto.createdAt,
     updatedAt: dto.updatedAt,
     placeName: place.placeName,
-    media: mediaFromUrls(dto.placeReviewId, dto.mediaUrls),
+    media: await resolveReviewMediaList(
+      mediaFromApiUrls(dto.placeReviewId, dto.mediaUrls),
+      accessToken,
+    ),
   };
 }
 
-function mapSummaryItemToPlaceReview(
+async function mapSummaryItemToPlaceReview(
   item: PlaceReviewSummaryItemResponse,
-): PlaceReview {
+  accessToken?: string | null,
+): Promise<PlaceReview> {
   return {
     placeReviewId: item.placeReviewId,
     planPlaceId: null,
@@ -57,7 +55,10 @@ function mapSummaryItemToPlaceReview(
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
     placeName: item.placeName,
-    media: mediaFromUrls(item.placeReviewId, item.mediaUrls),
+    media: await resolveReviewMediaList(
+      mediaFromApiUrls(item.placeReviewId, item.mediaUrls),
+      accessToken,
+    ),
   };
 }
 
@@ -91,7 +92,7 @@ async function fetchPlaceReviewsForRecord(options: {
         }
         try {
           const dto = await fetchPlaceReview(accessToken!, travelId!, planPlaceId);
-          return mapDtoToPlaceReview(dto, place);
+          return mapDtoToPlaceReview(dto, place, accessToken);
         } catch {
           return null;
         }
@@ -121,13 +122,16 @@ async function fetchPlaceReviewsForRecord(options: {
   );
 
   const matched: PlaceReview[] = [];
-  summaries.forEach(summary => {
-    summary?.reviews?.forEach(item => {
+  for (const summary of summaries) {
+    if (!summary?.reviews) {
+      continue;
+    }
+    for (const item of summary.reviews) {
       if (item.travelRecordId === travelRecord.travelRecordId) {
-        matched.push(mapSummaryItemToPlaceReview(item));
+        matched.push(await mapSummaryItemToPlaceReview(item, accessToken));
       }
-    });
-  });
+    }
+  }
 
   if (matched.length > 0) {
     return matched;
@@ -173,6 +177,15 @@ export async function loadTravelRecordDetail(
   }
 
   let record = mapTravelRecordResponse(dto);
+
+  if (record.coverImageUrl) {
+    record = {
+      ...record,
+      coverImageUrl: await resolveDisplayMediaUrl(record.coverImageUrl, {
+        accessToken,
+      }),
+    };
+  }
 
   const placeReviews = await fetchPlaceReviewsForRecord({
     travelRecord: record,

@@ -22,6 +22,7 @@ export type {
   PlanWizardAnswers,
   PlanGenerationMode,
   CompanionGroupType,
+  WizardPickedPlace,
 } from './planWizard';
 export type {
   TravelPlan,

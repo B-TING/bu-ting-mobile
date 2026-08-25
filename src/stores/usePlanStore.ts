@@ -7,11 +7,14 @@ import { enrichPlaceInfo } from '../constants/places/placeCatalog';
 import { isTourApiContentId, routeTypeToContentTypeId } from '../utils/places/routePlaceDetail';
 import type { PlanWizardAnswers } from '../types/planWizard';
 import type { BudgetEntry, RouteItem, TravelLegMode, TravelPlan } from '../types/travelPlan';
-import type { TravelRecord } from '../types/travelReview';
 import { isPlanForCurrentApiServer } from '../utils/api/apiServerOrigin';
 import { createId } from '../utils/common/id';
-import { buildPlanFromTravelRecord } from '../utils/review/travelReview';
 import { optimizeRouteOrder } from '../utils/plan/routeOptimize';
+import { getSelectableHomePlans } from '../utils/plan/selectableHomePlans';
+import {
+  listCompletedLocalPlanIds,
+  selectLatestLocalPlan as pickLatestLocalPlan,
+} from '../utils/plan/selectLatestLocalPlan';
 import { isServerBackedPlan } from '../utils/plan/serverBackedPlan';
 
 type PlanState = {
@@ -21,6 +24,8 @@ type PlanState = {
   budgetByPlan: Record<string, BudgetEntry[]>;
   /** GET 동기화 실패로 오프라인 캐시를 쓰는 플랜 ID */
   offlineSyncPlanIds: Record<string, true>;
+  _hasHydrated: boolean;
+  setHasHydrated: (value: boolean) => void;
   setPlanOfflineSync: (planId: string, offline: boolean) => void;
   addPlan: (plan: TravelPlan) => void;
   upsertPlan: (plan: TravelPlan) => void;
@@ -43,10 +48,8 @@ type PlanState = {
   setBudgetEntries: (planId: string, entries: BudgetEntry[]) => void;
   getBudgetForPlan: (planId: string) => BudgetEntry[];
   completePlan: (planId: string) => void;
-  importPlanFromTravelRecord: (
-    travelRecord: TravelRecord,
-    member: { userId: string; displayName: string },
-  ) => TravelPlan | null;
+  /** 완료된 여행을 로컬 캐시에서 제거 (오프라인 목록용) */
+  purgeCompletedLocalPlans: () => void;
   replacePlan: (plan: TravelPlan) => void;
 };
 
@@ -58,6 +61,8 @@ export const usePlanStore = create<PlanState>()(
       planCandidates: null,
       budgetByPlan: {},
       offlineSyncPlanIds: {},
+      _hasHydrated: false,
+      setHasHydrated: value => set({ _hasHydrated: value }),
       setPlanOfflineSync: (planId, offline) =>
         set(state => {
           const offlineSyncPlanIds = state.offlineSyncPlanIds ?? {};
@@ -322,24 +327,38 @@ export const usePlanStore = create<PlanState>()(
         })),
       getBudgetForPlan: planId => get().budgetByPlan[planId] ?? [],
       completePlan: planId =>
-        set(state => ({
-          plans: state.plans.map(p =>
-            p.planId === planId
-              ? { ...p, status: 'COMPLETED', travelStatus: 'COMPLETED' }
-              : p,
-          ),
-        })),
-      importPlanFromTravelRecord: (travelRecord, member) => {
-        const linked = travelRecord.travelId
-          ? (get().plans.find(p => p.planId === travelRecord.travelId) ?? null)
-          : null;
-        const plan = buildPlanFromTravelRecord(travelRecord, linked, member, createId);
-        if (!plan) {
-          return null;
-        }
-        get().addPlan(plan);
-        return plan;
-      },
+        set(state => {
+          // 완료 여행은 로컬(오프라인) 목록에서 제거
+          const plans = state.plans.filter(p => p.planId !== planId);
+          const budgetByPlan = { ...state.budgetByPlan };
+          delete budgetByPlan[planId];
+          const offlineSyncPlanIds = { ...(state.offlineSyncPlanIds ?? {}) };
+          delete offlineSyncPlanIds[planId];
+          const activePlanId =
+            state.activePlanId === planId
+              ? (getSelectableHomePlans(plans)[0]?.planId ?? null)
+              : state.activePlanId;
+          return { plans, budgetByPlan, offlineSyncPlanIds, activePlanId };
+        }),
+      purgeCompletedLocalPlans: () =>
+        set(state => {
+          const completedIds = new Set(listCompletedLocalPlanIds(state.plans));
+          if (completedIds.size === 0) {
+            return state;
+          }
+          const plans = state.plans.filter(p => !completedIds.has(p.planId));
+          const budgetByPlan = { ...state.budgetByPlan };
+          const offlineSyncPlanIds = { ...(state.offlineSyncPlanIds ?? {}) };
+          for (const id of completedIds) {
+            delete budgetByPlan[id];
+            delete offlineSyncPlanIds[id];
+          }
+          const activePlanId =
+            state.activePlanId && completedIds.has(state.activePlanId)
+              ? (getSelectableHomePlans(plans)[0]?.planId ?? null)
+              : state.activePlanId;
+          return { plans, budgetByPlan, offlineSyncPlanIds, activePlanId };
+        }),
       replacePlan: plan =>
         set(state => ({
           plans: state.plans.map(p => (p.planId === plan.planId ? plan : p)),
@@ -352,7 +371,25 @@ export const usePlanStore = create<PlanState>()(
         plans: state.plans,
         activePlanId: state.activePlanId,
         budgetByPlan: state.budgetByPlan,
+        offlineSyncPlanIds: state.offlineSyncPlanIds,
       }),
+      onRehydrateStorage: () => (_state, error) => {
+        if (error) {
+          console.warn('[Bu-Ting] plans persist rehydrate error', error);
+        }
+        try {
+          const store = usePlanStore.getState();
+          store.setHasHydrated(true);
+          store.purgeCompletedLocalPlans();
+        } catch (cleanupError) {
+          console.warn('[Bu-Ting] plans post-rehydrate cleanup failed', cleanupError);
+          try {
+            usePlanStore.setState({ _hasHydrated: true });
+          } catch {
+            // Jest 등 AsyncStorage 없는 환경
+          }
+        }
+      },
     },
   ),
 );
@@ -365,6 +402,7 @@ export function selectActivePlan(state: PlanState): TravelPlan | null {
   if (
     !active ||
     active.status === 'COMPLETED' ||
+    active.travelStatus === 'COMPLETED' ||
     !isServerBackedPlan(active) ||
     !isPlanForCurrentApiServer(active)
   ) {
@@ -373,32 +411,23 @@ export function selectActivePlan(state: PlanState): TravelPlan | null {
   return active;
 }
 
-/** 메인 홈 히어로 배너용 — 완료 여행 포함 */
+/** 메인 홈 히어로·일정 탭용 — 예정·진행 중만. 완료된 활성 플랜이면 다음 여행으로 넘깁니다. */
 export function selectHomeFeaturedPlan(state: PlanState): TravelPlan | null {
+  const selectable = getSelectableHomePlans(state.plans);
   if (!state.activePlanId) {
     return null;
   }
-  const plan = state.plans.find(p => p.planId === state.activePlanId);
-  if (!plan || !isServerBackedPlan(plan) || !isPlanForCurrentApiServer(plan)) {
-    return null;
-  }
-  return plan;
+  return selectable.find(p => p.planId === state.activePlanId) ?? selectable[0] ?? null;
 }
 
-/** 오프라인 열람용 — 활성 일정 우선, 없으면 가장 최근 생성 일정 */
+/** 홈에서 바꿀 수 있는 예정·진행 중 서버 연동 여행 */
+export function selectSelectableHomePlans(state: PlanState): TravelPlan[] {
+  return getSelectableHomePlans(state.plans);
+}
+
+/** 오프라인 열람용 — 현재 API origin · 일정 내용 우선, 활성 일정, 최근 생성 순 */
 export function selectLatestLocalPlan(state: PlanState): TravelPlan | null {
-  if (state.plans.length === 0) {
-    return null;
-  }
-  if (state.activePlanId) {
-    const active = state.plans.find(p => p.planId === state.activePlanId);
-    if (active) {
-      return active;
-    }
-  }
-  return [...state.plans].sort((a, b) =>
-    (b.createdAt || '').localeCompare(a.createdAt || ''),
-  )[0];
+  return pickLatestLocalPlan(state);
 }
 
 export function selectPlanById(planId: string) {
@@ -438,6 +467,7 @@ export function hydrateRoutePlaceInfo(
 }
 
 export const emptyWizardAnswers = (): PlanWizardAnswers => ({
+  title: '',
   startDate: '',
   endDate: '',
   companionCount: 1,
@@ -447,10 +477,12 @@ export const emptyWizardAnswers = (): PlanWizardAnswers => ({
   hasPets: false,
   otherConstraintIds: [],
   attractionIds: [],
+  selectedAttractions: [],
   foodIds: [],
   accommodationMode: 'area_only',
   accommodationPlaceId: null,
   accommodationName: null,
+  bookedAccommodation: null,
   accommodationAreaIds: [],
   generationMode: 'manual',
 });

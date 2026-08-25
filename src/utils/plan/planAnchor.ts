@@ -1,8 +1,4 @@
-import {
-  ACCOMMODATION_AREAS,
-  ACCOMMODATION_SEARCH,
-  BUSAN_ATTRACTIONS,
-} from '../../constants/plan/planWizard';
+import { ACCOMMODATION_AREAS } from '../../constants/plan/planWizard';
 import type { PlanWizardAnswers } from '../../types/planWizard';
 
 /** 부산 해운대 기본 좌표 */
@@ -21,11 +17,8 @@ const AREA_ANCHORS: Record<string, { lat: number; lng: number }> = {
  * 숙소 예약 > 숙소 지역 > 위저드 관광지 선택 > 기본 해운대
  */
 export function resolveInitialPlanAnchor(answers: PlanWizardAnswers): { lat: number; lng: number } {
-  if (answers.accommodationMode === 'booked' && answers.accommodationPlaceId) {
-    const stay = ACCOMMODATION_SEARCH.find(s => s.id === answers.accommodationPlaceId);
-    if (stay?.meta) {
-      return { lat: stay.meta.lat, lng: stay.meta.lng };
-    }
+  if (answers.accommodationMode === 'booked' && answers.bookedAccommodation) {
+    return answers.bookedAccommodation.location;
   }
 
   const areaId = answers.accommodationAreaIds[0];
@@ -33,12 +26,9 @@ export function resolveInitialPlanAnchor(answers: PlanWizardAnswers): { lat: num
     return AREA_ANCHORS[areaId];
   }
 
-  const attractionId = answers.attractionIds[0];
-  if (attractionId) {
-    const spot = BUSAN_ATTRACTIONS.find(a => a.id === attractionId);
-    if (spot?.meta) {
-      return { lat: spot.meta.lat, lng: spot.meta.lng };
-    }
+  const firstAttraction = answers.selectedAttractions[0];
+  if (firstAttraction) {
+    return firstAttraction.location;
   }
 
   if (answers.accommodationAreaIds.length) {

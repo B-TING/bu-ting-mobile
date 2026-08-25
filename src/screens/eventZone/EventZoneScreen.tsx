@@ -1,4 +1,3 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Pressable, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,136 +12,61 @@ import { BackButton } from '../../components/shared/buttons/BackButton';
 import { AppIcon } from '../../components/shared/icons/AppIcon';
 import { ICON_COLOR_WHITE } from '../../constants/icons';
 import {
-  EVENT_ZONE_BY_ID,
-  allZoneChatRooms,
-  eventZoneName,
-  getChatRoomByZoneId,
-} from '../../constants/eventZone/eventZone';
-import { buildRandomMockZoneEvent } from '../../constants/eventZone/zoneEvents';
-import { useCurrentEventZone } from '../../hooks/useCurrentEventZone';
-import {
-  useAllZoneChatMemberCounts,
-} from '../../hooks/useZoneChatRoomSummary';
+  EVENT_MAP_BG,
+  EVENT_MAP_DIM_FILL,
+} from '../../constants/eventZone/mapChrome';
+import { useEventZoneScreen } from '../../hooks/eventZone/useEventZoneScreen';
 import type { RootStackParamList } from '../../navigation/types';
-import { useAppLanguage, useCopy } from '../../i18n';
-import { useZoneEventStore } from '../../stores';
-import type { EventZoneId } from '../../types/eventZone';
-import {
-  ALPHA_FEATURE_LABELS,
-  isAlphaFeatureBlocked,
-} from '../../constants/common/alphaFeatureBlocks';
-import { useFeatureUnavailableAlert } from '../../components/shared/modals';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EventZone'>;
 
-/** 리스트가 보일 때 지도가 차지하는 화면 비율 */
-const MAP_HEIGHT_RATIO = 0.5;
+const BOTTOM_SHEET_MARGIN = 12;
 
 export function EventZoneScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
-  const language = useAppLanguage();
-  const copy = useCopy('eventZone');
-  const { showUnavailable } = useFeatureUnavailableAlert();
-  const { zoneId: currentZoneId, usedFallback } = useCurrentEventZone();
-  const [selectedZoneId, setSelectedZoneId] = useState<EventZoneId | null>(null);
-  const isExpanded = selectedZoneId != null;
-
-  const activeEventsByZone = useZoneEventStore(s => s.activeEventsByZone);
-  const triggerEvent = useZoneEventStore(s => s.triggerEvent);
-  const eventZoneIds = useMemo(() => {
-    if (isAlphaFeatureBlocked('zoneEvent')) {
-      return [] as EventZoneId[];
-    }
-    return Object.keys(activeEventsByZone) as EventZoneId[];
-  }, [activeEventsByZone]);
-  const chatRooms = useMemo(() => allZoneChatRooms(), []);
-
-  const [toastText, setToastText] = useState<string | null>(null);
-  const toastOpacity = useRef(new Animated.Value(0)).current;
-  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const showToast = (text: string) => {
-    setToastText(text);
-    if (toastTimer.current) {
-      clearTimeout(toastTimer.current);
-    }
-    Animated.timing(toastOpacity, {
-      toValue: 1,
-      duration: 220,
-      useNativeDriver: true,
-    }).start();
-    toastTimer.current = setTimeout(() => {
-      Animated.timing(toastOpacity, {
-        toValue: 0,
-        duration: 220,
-        useNativeDriver: true,
-      }).start(() => setToastText(null));
-    }, 3000);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (toastTimer.current) {
-        clearTimeout(toastTimer.current);
-      }
-    };
-  }, []);
-
-  const handleTriggerEvent = () => {
-    if (isAlphaFeatureBlocked('zoneEvent')) {
-      showUnavailable(ALPHA_FEATURE_LABELS.zoneEvent);
-      return;
-    }
-    const event = buildRandomMockZoneEvent();
-    triggerEvent(event);
-    showToast(
-      copy.eventToast(
-        eventZoneName(EVENT_ZONE_BY_ID[event.zoneId], language),
-        event.titleKo,
-      ),
-    );
-  };
-
-  const currentZone = currentZoneId ? EVENT_ZONE_BY_ID[currentZoneId] : null;
-  const selectedZone = selectedZoneId ? EVENT_ZONE_BY_ID[selectedZoneId] : null;
-  const { memberCounts: liveMemberCounts } = useAllZoneChatMemberCounts();
-  const currentLiveMemberCount = currentZoneId
-    ? (liveMemberCounts[currentZoneId] ?? null)
-    : null;
-  const selectedLiveMemberCount = selectedZoneId
-    ? (liveMemberCounts[selectedZoneId] ?? null)
-    : null;
-  const currentZoneRoom = useMemo(
-    () => (currentZoneId ? getChatRoomByZoneId(currentZoneId) : undefined),
-    [currentZoneId],
-  );
-  const selectedZoneRoom = useMemo(
-    () => (selectedZoneId ? getChatRoomByZoneId(selectedZoneId) : undefined),
-    [selectedZoneId],
-  );
-
-  const handleEnterChat = (zoneId: EventZoneId) => {
-    const room = getChatRoomByZoneId(zoneId);
-    if (room) {
-      navigation.navigate('EventZoneChat', { roomId: room.id });
-    }
-  };
-
-  const handleCloseExpanded = () => {
-    setSelectedZoneId(null);
-  };
+  const {
+    language,
+    copy,
+    isFocused,
+    focusZoneId,
+    highlightZoneId,
+    isFocusedOnZone,
+    isSlotDimmed,
+    currentZoneId,
+    usedFallback,
+    currentZone,
+    selectedZone,
+    currentZoneRoom,
+    selectedZoneRoom,
+    currentLiveMemberCount,
+    selectedLiveMemberCount,
+    eventZoneIds,
+    chatRooms,
+    toastText,
+    toastOpacity,
+    liveMemberCounts,
+    selectedActiveEvent,
+    listActiveEventsByZone,
+    selectZone,
+    handleCloseExpanded,
+    handleTriggerEvent,
+    handleEnterChat,
+    handleJoinChat,
+  } = useEventZoneScreen({ navigation });
 
   return (
-    <View className="flex-1 bg-[#EAEAEA]">
-      <View
-        className="relative"
-        style={isExpanded ? { flex: 1 } : { height: `${MAP_HEIGHT_RATIO * 100}%`, paddingTop: MAP_HEIGHT_RATIO * 150 }}>
+    <View className="flex-1" style={{ backgroundColor: EVENT_MAP_BG }}>
+      {/* 상단 맵 — 선택 여부와 무관하게 항상 동일 높이(하단 리스트 슬롯 유지) */}
+      <View className="relative flex-1">
         <BusanZoneMap
-          selectedZoneId={selectedZoneId}
+          focusZoneId={focusZoneId}
+          selectedZoneId={highlightZoneId}
           currentZoneId={currentZoneId}
           language={language}
           eventZoneIds={eventZoneIds}
-          onZonePress={zoneId => setSelectedZoneId(zoneId)}
+          pulsesActive={isFocused}
+          onZonePress={selectZone}
+          onDismiss={handleCloseExpanded}
         />
 
         <View
@@ -157,7 +81,7 @@ export function EventZoneScreen({ navigation }: Props) {
               />
             </View>
 
-            {!isExpanded ? (
+            {!isFocusedOnZone ? (
               <EventZoneMapBadge
                 zone={currentZone}
                 room={currentZoneRoom}
@@ -206,62 +130,56 @@ export function EventZoneScreen({ navigation }: Props) {
             </View>
           </Animated.View>
         ) : null}
-
-        {selectedZone ? (
-          <View className="absolute inset-0" pointerEvents="box-none">
-            <View
-              className="absolute right-3"
-              style={{ bottom: insets.bottom + 16 }}
-              pointerEvents="auto">
-              <EventZoneZoneDetailPanel
-                zone={selectedZone}
-                room={selectedZoneRoom}
-                language={language}
-                landmarksTitle={copy.landmarksTitle}
-                memberCountLabel={copy.chatMemberCount}
-                enterLabel={copy.enterChat}
-                closeLabel={copy.closePanel}
-                currentZoneLabel={copy.currentZoneLabel}
-                isCurrentZone={selectedZoneId === currentZoneId}
-                activeEvent={
-                  isAlphaFeatureBlocked('zoneEvent')
-                    ? undefined
-                    : selectedZoneId
-                      ? activeEventsByZone[selectedZoneId]
-                      : undefined
-                }
-                eventEndsInLabel={copy.eventEndsIn}
-                eventEndedLabel={copy.eventEnded}
-                surpriseMissionBadge={copy.surpriseMissionBadge}
-                onClose={handleCloseExpanded}
-                onEnterChat={() => {
-                  if (selectedZoneId) {
-                    handleEnterChat(selectedZoneId);
-                  }
-                }}
-                liveMemberCount={selectedLiveMemberCount}
-              />
-            </View>
-          </View>
-        ) : null}
       </View>
 
-      {!isExpanded ? (
-        <EventZoneChatList
-          rooms={chatRooms}
-          language={language}
-          title={copy.chatRoomsTitle}
-          memberCountLabel={copy.chatMemberCount}
-          joinLabel={copy.enterChat}
-          activeEventsByZone={
-            isAlphaFeatureBlocked('zoneEvent') ? {} : activeEventsByZone
-          }
-          bottomInset={insets.bottom}
-          liveMemberCounts={liveMemberCounts}
-          onRoomPress={zoneId => setSelectedZoneId(zoneId)}
-          onJoinPress={roomId => navigation.navigate('EventZoneChat', { roomId })}
-        />
-      ) : null}
+      {/* 하단 슬롯 — 마진 밖 배경은 맵 BG / 선택 시 맵 dim 과 동일 */}
+      <View
+        className="flex-1"
+        style={{
+          backgroundColor: isSlotDimmed ? EVENT_MAP_DIM_FILL : EVENT_MAP_BG,
+          paddingHorizontal: BOTTOM_SHEET_MARGIN,
+          paddingBottom: Math.max(BOTTOM_SHEET_MARGIN, insets.bottom),
+          paddingTop: BOTTOM_SHEET_MARGIN,
+        }}>
+        {selectedZone ? (
+          <EventZoneZoneDetailPanel
+            zone={selectedZone}
+            room={selectedZoneRoom}
+            language={language}
+            landmarksTitle={copy.landmarksTitle}
+            memberCountLabel={copy.chatMemberCount}
+            enterLabel={copy.enterChat}
+            closeLabel={copy.closePanel}
+            currentZoneLabel={copy.currentZoneLabel}
+            isCurrentZone={focusZoneId === currentZoneId}
+            activeEvent={selectedActiveEvent}
+            eventEndsInLabel={copy.eventEndsIn}
+            eventEndedLabel={copy.eventEnded}
+            surpriseMissionBadge={copy.surpriseMissionBadge}
+            onClose={handleCloseExpanded}
+            onEnterChat={() => {
+              if (focusZoneId) {
+                handleEnterChat(focusZoneId);
+              }
+            }}
+            liveMemberCount={selectedLiveMemberCount}
+            bottomInset={12}
+          />
+        ) : (
+          <EventZoneChatList
+            rooms={chatRooms}
+            language={language}
+            title={copy.chatRoomsTitle}
+            memberCountLabel={copy.chatMemberCount}
+            joinLabel={copy.enterChat}
+            activeEventsByZone={listActiveEventsByZone}
+            bottomInset={12}
+            liveMemberCounts={liveMemberCounts}
+            onRoomPress={selectZone}
+            onJoinPress={handleJoinChat}
+          />
+        )}
+      </View>
     </View>
   );
 }

@@ -16,6 +16,7 @@ export {
   hydrateRoutePlaceInfo,
   selectActivePlan,
   selectHomeFeaturedPlan,
+  selectSelectableHomePlans,
   selectLatestLocalPlan,
   selectPlanById,
   usePlanStore,
@@ -35,9 +36,14 @@ export {
 } from './useZoneChatMemberStore';
 export { usePlaceBookmarkStore } from './usePlaceBookmarkStore';
 export {
+  isPlaceSearchNoResultsError,
+  isPlaceSearchNoResultsMessage,
+  isPlaceSearchServerError,
+  placeSearchCatchMessage,
   searchCenterKey,
   usePlaceSearchStore,
   type PlaceSearchCacheEntry,
+  type PlaceSearchOutcome,
 } from './usePlaceSearchStore';
 export { useFestivalStore } from './useFestivalStore';
 export { usePlaceDetailCacheStore } from './usePlaceDetailCacheStore';

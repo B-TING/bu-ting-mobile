@@ -1,296 +1,91 @@
-import { useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { WizardStepLayout } from '../../components/shared/layout/WizardStepLayout';
 import { OptionCard } from '../../components/shared/cards/OptionCard';
 import { PrimaryButton } from '../../components/shared/buttons/PrimaryButton';
 import { AppIcon } from '../../components/shared/icons/AppIcon';
+import { PlaceSearchListItem } from '../../components/places/PlaceSearchListItem';
 import { ICON_COLOR_WHITE } from '../../constants/icons';
 import {
   TRAVEL_CONSTRAINT_OPTIONS,
-  TRAVEL_CONSTRAINT_NONE_ID,
   TRAVEL_STYLE_OPTIONS,
   ACCOMMODATION_AREAS,
-  ACCOMMODATION_SEARCH,
-  BUSAN_ATTRACTIONS,
   BUSAN_FOODS,
   COMPANION_TYPE_OPTIONS,
-  dayCountBetween,
-  isValidIsoDate,
   PLAN_WIZARD_STEP_COUNT,
-  PLAN_WIZARD_STEPS,
+  TRAVEL_TITLE_MAX_LENGTH,
 } from '../../constants/plan/planWizard';
-import { useAppLanguage, useCopy } from '../../i18n';
-import { useFeatureUnavailableAlert } from '../../components/shared/modals';
-import {
-  ALPHA_FEATURE_LABELS,
-  isAlphaFeatureBlocked,
-} from '../../constants/common/alphaFeatureBlocks';
+import { usePlanWizardScreen } from '../../hooks/plan/usePlanWizardScreen';
 import type { RootStackParamList } from '../../navigation/types';
-import { navigateToMainTab } from '../../navigation/navigateToMainTab';
-import { requestAutoPlan, requestPlanCandidates } from '../../services/plan/planAiService';
-import { createManualTravelPlan } from '../../services/travel/createManualTravelPlan';
-import { selectOnboardingForUser, useAppStore, useAuthStore, usePlanStore, emptyWizardAnswers } from '../../stores';
-import { selectAuthUser, selectReusableAccessToken } from '../../stores/useAuthStore';
-import type { CompanionGroupType } from '../../types/planWizard';
+import { PLACE_CONTENT_TYPE } from '../../types/placesApi';
+import type { WizardPickedPlace } from '../../types/planWizard';
+import type { BusanPlace } from '../../types/placeSearch';
 
-type Props = {
-  navigation: NativeStackNavigationProp<RootStackParamList>;
-};
+type Props = NativeStackScreenProps<RootStackParamList, 'PlanWizard'>;
 
-function defaultDates() {
-  const start = new Date();
-  start.setDate(start.getDate() + 7);
-  const end = new Date(start);
-  end.setDate(end.getDate() + 1);
+function pickedToBusanPlace(
+  place: WizardPickedPlace,
+  contentTypeId: BusanPlace['contentTypeId'],
+): BusanPlace {
   return {
-    startDate: start.toISOString().slice(0, 10),
-    endDate: end.toISOString().slice(0, 10),
+    id: place.placeId,
+    contentId: place.placeId,
+    contentTypeId,
+    name: place.placeName,
+    address: place.address ?? '',
+    location: place.location,
+    rating: 0,
+    userRatingsTotal: 0,
+    imageUrl: place.imageUrl,
   };
 }
 
-export function PlanWizardScreen({ navigation }: Props) {
-  const language = useAppLanguage();
-  const copy = useCopy('planWizard');
-  const { showUnavailable } = useFeatureUnavailableAlert();
-  const user = useAuthStore(selectAuthUser);
-  const accessToken = useAuthStore(selectReusableAccessToken);
-  const onboarding = useAppStore(selectOnboardingForUser(user?.userId));
-  const addPlan = usePlanStore(s => s.addPlan);
-  const confirmPlan = usePlanStore(s => s.confirmPlan);
-  const setPlanCandidates = usePlanStore(s => s.setPlanCandidates);
-  const [step, setStep] = useState(0);
-  const [answers, setAnswers] = useState(() => ({
-    ...emptyWizardAnswers(),
-    ...defaultDates(),
-  }));
-  const [accQuery, setAccQuery] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const stepConfig = PLAN_WIZARD_STEPS[step];
-
-  const filteredStays = useMemo(() => {
-    const q = accQuery.trim().toLowerCase();
-    if (!q) {
-      return ACCOMMODATION_SEARCH;
-    }
-    return ACCOMMODATION_SEARCH.filter(s =>
-      s.label[language].toLowerCase().includes(q),
-    );
-  }, [accQuery, language]);
-
-  const canProceed = (): boolean => {
-    switch (stepConfig.id) {
-      case 'dates':
-        return (
-          isValidIsoDate(answers.startDate) &&
-          isValidIsoDate(answers.endDate) &&
-          dayCountBetween(answers.startDate, answers.endDate) > 0
-        );
-      case 'companions':
-        return answers.companionCount >= 1 && answers.companionCount <= 20;
-      case 'companionType':
-        return answers.companionTypes.length > 0;
-      case 'travelStyle':
-        return answers.travelStyleIds.length > 0;
-      case 'constraints':
-        return true;
-      case 'attractions':
-        return answers.attractionIds.length > 0;
-      case 'foods':
-        return answers.foodIds.length > 0;
-      case 'accommodation':
-        if (answers.accommodationMode === 'booked') {
-          return !!answers.accommodationPlaceId;
-        }
-        return answers.accommodationAreaIds.length > 0;
-      case 'generationMode':
-        return true;
-      default:
-        return false;
-    }
-  };
-
-  const toggleId = (key: 'attractionIds' | 'foodIds' | 'accommodationAreaIds', id: string) => {
-    setAnswers(prev => {
-      const list = prev[key];
-      const exists = list.includes(id);
-      return {
-        ...prev,
-        [key]: exists ? list.filter(x => x !== id) : [...list, id],
-      };
-    });
-  };
-
-  const toggleCompanionType = (type: CompanionGroupType) => {
-    setAnswers(prev => {
-      const exists = prev.companionTypes.includes(type);
-      return {
-        ...prev,
-        companionTypes: exists
-          ? prev.companionTypes.filter(t => t !== type)
-          : [...prev.companionTypes, type],
-      };
-    });
-  };
-
-  const toggleTravelStyle = (id: string) => {
-    setAnswers(prev => {
-      const exists = prev.travelStyleIds.includes(id);
-      return {
-        ...prev,
-        travelStyleIds: exists
-          ? prev.travelStyleIds.filter(x => x !== id)
-          : [...prev.travelStyleIds, id],
-      };
-    });
-  };
-
-  const isConstraintSelected = (id: string): boolean => {
-    if (answers.otherConstraintIds.includes(TRAVEL_CONSTRAINT_NONE_ID)) {
-      return id === TRAVEL_CONSTRAINT_NONE_ID;
-    }
-    if (id === TRAVEL_CONSTRAINT_NONE_ID) {
-      return false;
-    }
-    if (id === 'heavy_luggage') {
-      return answers.hasHeavyBaggage;
-    }
-    if (id === 'light_luggage') {
-      return !answers.hasHeavyBaggage;
-    }
-    if (id === 'pets') {
-      return answers.hasPets;
-    }
-    return answers.otherConstraintIds.includes(id);
-  };
-
-  const toggleConstraint = (id: string) => {
-    setAnswers(prev => {
-      if (id === TRAVEL_CONSTRAINT_NONE_ID) {
-        const isNone = prev.otherConstraintIds.includes(TRAVEL_CONSTRAINT_NONE_ID);
-        if (isNone) {
-          return { ...prev, otherConstraintIds: [] };
-        }
-        return {
-          ...prev,
-          hasHeavyBaggage: false,
-          hasPets: false,
-          otherConstraintIds: [TRAVEL_CONSTRAINT_NONE_ID],
-        };
-      }
-
-      const clearedNone = {
-        ...prev,
-        otherConstraintIds: prev.otherConstraintIds.filter(x => x !== TRAVEL_CONSTRAINT_NONE_ID),
-      };
-
-      if (id === 'heavy_luggage') {
-        return { ...clearedNone, hasHeavyBaggage: true };
-      }
-      if (id === 'light_luggage') {
-        return { ...clearedNone, hasHeavyBaggage: false };
-      }
-      if (id === 'pets') {
-        return { ...clearedNone, hasPets: !prev.hasPets };
-      }
-      const exists = clearedNone.otherConstraintIds.includes(id);
-      return {
-        ...clearedNone,
-        otherConstraintIds: exists
-          ? clearedNone.otherConstraintIds.filter(x => x !== id)
-          : [...clearedNone.otherConstraintIds, id],
-      };
-    });
-  };
-
-  const finish = async () => {
-    if (
-      isAlphaFeatureBlocked('planAi') &&
-      answers.generationMode !== 'manual'
-    ) {
-      showUnavailable(ALPHA_FEATURE_LABELS.planAi);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      if (answers.generationMode === 'manual') {
-        if (!accessToken) {
-          Alert.alert(copy.createManualError);
-          return;
-        }
-        const plan = await createManualTravelPlan({
-          accessToken,
-          answers,
-          members: [
-            {
-              userId: user?.userId ?? 'local-user',
-              nickname: user?.nickname ?? 'Traveler',
-              role: 'LEADER',
-            },
-          ],
-        });
-        addPlan(plan);
-        confirmPlan(plan.planId);
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'MainTabs', params: { tab: 'route' } }],
-        });
-        return;
-      }
-
-      if (answers.generationMode === 'auto') {
-        const plan = await requestAutoPlan(answers, onboarding);
-        addPlan(plan);
-        confirmPlan(plan.planId);
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'MainTabs', params: { tab: 'route' } }],
-        });
-      } else {
-        const candidates = await requestPlanCandidates(answers, onboarding);
-        setPlanCandidates(candidates);
-        navigation.replace('PlanCandidates');
-      }
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : copy.createManualError;
-      Alert.alert(copy.createManualError, message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const goNext = () => {
-    if (step < PLAN_WIZARD_STEP_COUNT - 1) {
-      setStep(s => s + 1);
-      return;
-    }
-    finish();
-  };
-
-  const goBack = () => {
-    if (step > 0) {
-      setStep(s => s - 1);
-    } else if (navigation.canGoBack()) {
-      navigation.goBack();
-    } else {
-      navigateToMainTab(navigation, 'home');
-    }
-  };
+export function PlanWizardScreen(props: Props) {
+  const {
+    language,
+    copy,
+    step,
+    stepConfig,
+    stepLabel,
+    isLast,
+    answers,
+    setAnswers,
+    loading,
+    openPlaceMapPick,
+    removePickedAttraction,
+    canProceed,
+    toggleId,
+    toggleCompanionType,
+    toggleTravelStyle,
+    isConstraintSelected,
+    toggleConstraint,
+    selectGenerationMode,
+    goNext,
+    goBack,
+  } = usePlanWizardScreen(props);
 
   const renderStep = () => {
     switch (stepConfig.id) {
+      case 'title':
+        return (
+          <View>
+            <TextInput
+              className="rounded-2xl border-2 border-brand-border bg-brand-surface px-4 py-3.5 text-base text-brand-text"
+              value={answers.title}
+              onChangeText={title => setAnswers(p => ({ ...p, title }))}
+              placeholder={copy.travelTitlePlaceholder}
+              placeholderTextColor="#94A3B8"
+              maxLength={TRAVEL_TITLE_MAX_LENGTH}
+              autoCapitalize="sentences"
+              autoCorrect={false}
+              accessibilityLabel={stepConfig.title[language]}
+            />
+            <Text className="mt-2 text-right text-xs text-brand-muted">
+              {copy.travelTitleCount(answers.title.length, TRAVEL_TITLE_MAX_LENGTH)}
+            </Text>
+          </View>
+        );
       case 'dates':
         return (
           <View>
@@ -390,15 +185,26 @@ export function PlanWizardScreen({ navigation }: Props) {
       case 'attractions':
         return (
           <ScrollView showsVerticalScrollIndicator={false}>
-            {BUSAN_ATTRACTIONS.map(opt => (
-              <OptionCard
-                key={opt.id}
-                label={opt.label[language]}
-                selected={answers.attractionIds.includes(opt.id)}
-                compact
-                onPress={() => toggleId('attractionIds', opt.id)}
-              />
-            ))}
+            {answers.selectedAttractions.length === 0 ? (
+              <Text className="mb-3 text-sm text-brand-muted">{copy.selectedPlacesEmpty}</Text>
+            ) : (
+              answers.selectedAttractions.map(place => (
+                <PlaceSearchListItem
+                  key={place.placeId}
+                  place={pickedToBusanPlace(place, PLACE_CONTENT_TYPE.attraction)}
+                  selected
+                  meta={place.address}
+                  onPress={() => removePickedAttraction(place.placeId)}
+                />
+              ))
+            )}
+            <Pressable
+              onPress={() => openPlaceMapPick('attractions')}
+              accessibilityRole="button"
+              accessibilityLabel={copy.pickPlace}
+              className="mt-2 items-center rounded-2xl border-2 border-brand-primary bg-brand-surface px-4 py-3.5 active:opacity-90">
+              <Text className="text-base font-bold text-brand-primary">{copy.pickPlace}</Text>
+            </Pressable>
           </ScrollView>
         );
       case 'foods':
@@ -438,35 +244,32 @@ export function PlanWizardScreen({ navigation }: Props) {
                   accommodationMode: 'area_only',
                   accommodationPlaceId: null,
                   accommodationName: null,
+                  bookedAccommodation: null,
                 }))
               }
             />
             {answers.accommodationMode === 'booked' ? (
               <View className="mt-2">
-                <Text className="mb-2 text-sm font-semibold text-brand-muted">
-                  {copy.accSearch}
-                </Text>
-                <TextInput
-                  className="mb-3 rounded-2xl border-2 border-brand-border bg-brand-surface px-4 py-3 text-base text-brand-text"
-                  placeholder={copy.accSearchPlaceholder}
-                  value={accQuery}
-                  onChangeText={setAccQuery}
-                />
-                {filteredStays.map(stay => (
-                  <OptionCard
-                    key={stay.id}
-                    label={stay.label[language]}
-                    selected={answers.accommodationPlaceId === stay.id}
-                    compact
-                    onPress={() =>
-                      setAnswers(p => ({
-                        ...p,
-                        accommodationPlaceId: stay.id,
-                        accommodationName: stay.label[language],
-                      }))
-                    }
+                {answers.bookedAccommodation ? (
+                  <PlaceSearchListItem
+                    place={pickedToBusanPlace(
+                      answers.bookedAccommodation,
+                      PLACE_CONTENT_TYPE.accommodation,
+                    )}
+                    meta={answers.bookedAccommodation.address}
+                    selected
+                    onPress={() => openPlaceMapPick('accommodation')}
                   />
-                ))}
+                ) : (
+                  <Text className="mb-3 text-sm text-brand-muted">{copy.accSearchPlaceholder}</Text>
+                )}
+                <Pressable
+                  onPress={() => openPlaceMapPick('accommodation')}
+                  accessibilityRole="button"
+                  accessibilityLabel={copy.pickStay}
+                  className="mt-2 items-center rounded-2xl border-2 border-brand-primary bg-brand-surface px-4 py-3.5 active:opacity-90">
+                  <Text className="text-base font-bold text-brand-primary">{copy.pickStay}</Text>
+                </Pressable>
               </View>
             ) : (
               <View className="mt-2">
@@ -489,35 +292,21 @@ export function PlanWizardScreen({ navigation }: Props) {
             <OptionCard
               label={copy.modeAuto}
               selected={answers.generationMode === 'auto'}
-              onPress={() => {
-                if (isAlphaFeatureBlocked('planAi')) {
-                  showUnavailable(ALPHA_FEATURE_LABELS.planAi);
-                  return;
-                }
-                setAnswers(p => ({ ...p, generationMode: 'auto' }));
-              }}
+              onPress={() => selectGenerationMode('auto')}
             />
             <Text className="-mt-1 mb-3 ml-1 text-xs text-brand-muted">
               {copy.modeAutoSub}
             </Text>
-            <OptionCard
-              label={copy.modeCandidates}
-              selected={answers.generationMode === 'candidates'}
-              onPress={() => {
-                if (isAlphaFeatureBlocked('planAi')) {
-                  showUnavailable(ALPHA_FEATURE_LABELS.planAi);
-                  return;
-                }
-                setAnswers(p => ({ ...p, generationMode: 'candidates' }));
-              }}
-            />
-            <Text className="-mt-1 mb-3 ml-1 text-xs text-brand-muted">
-              {copy.modeCandidatesSub}
-            </Text>
+            {answers.generationMode === 'auto' &&
+            answers.selectedAttractions.length < 1 ? (
+              <Text className="-mt-2 mb-3 ml-1 text-xs text-red-500">
+                {copy.createAiNeedPlaces}
+              </Text>
+            ) : null}
             <OptionCard
               label={copy.modeManual}
               selected={answers.generationMode === 'manual'}
-              onPress={() => setAnswers(p => ({ ...p, generationMode: 'manual' }))}
+              onPress={() => selectGenerationMode('manual')}
             />
             <Text className="-mt-1 mb-3 ml-1 text-xs text-brand-muted">
               {copy.modeManualSub}
@@ -539,9 +328,6 @@ export function PlanWizardScreen({ navigation }: Props) {
       </View>
     );
   }
-
-  const stepLabel = `${step + 1} / ${PLAN_WIZARD_STEP_COUNT}`;
-  const isLast = step === PLAN_WIZARD_STEP_COUNT - 1;
 
   return (
     <WizardStepLayout

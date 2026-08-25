@@ -1,9 +1,18 @@
-import type { CompanionGroupType, PlanWizardAnswers } from '../../types/planWizard';
+import {
+  dayCountBetween,
+  TRAVEL_STYLE_OPTIONS,
+  TRAVEL_TITLE_MAX_LENGTH,
+} from '../../constants/plan/planWizard';
+import type { CompanionGroupType, PlanWizardAnswers, WizardPickedPlace } from '../../types/planWizard';
 import type {
+  AiSchedulePaceDto,
+  AiTravelPlanGenerateRequest,
+  AiWizardPickedPlaceRequest,
   CompanionTypeDto,
   ManualTravelInput,
   PlanPlaceResponse,
   PlanResponse,
+  PlaceProviderDto,
   TravelCreateRequest,
   TravelPlansResponse,
   TravelResponse,
@@ -12,6 +21,7 @@ import type {
   TravelMemberResponse,
   TravelTeamRoleDto,
 } from '../../types/travelApi';
+import type { SchedulePace } from '../../types/user';
 import type {
   DailyItinerary,
   PlanConstraints,
@@ -21,7 +31,9 @@ import type {
 } from '../../types/travelPlan';
 import { getCurrentApiServerOrigin } from '../../utils/api/apiServerOrigin';
 import { createId } from '../../utils/common/id';
-import { dayCountBetween } from '../../constants/plan/planWizard';
+
+export const AI_PLACE_PROVIDER: PlaceProviderDto = 'GOOGLE';
+export const AI_ATTRACTION_PLACE_TYPE = 'TOURIST_SPOT';
 
 const COMPANION_MAP: Record<CompanionGroupType, CompanionTypeDto> = {
   solo: 'SOLO',
@@ -52,21 +64,112 @@ export function enumerateVisitDates(startDate: string, endDate: string): string[
   return dates;
 }
 
+const DEFAULT_TRAVEL_TITLE = '부산 여행';
+export const DEFAULT_TRAVEL_DESTINATION = '부산';
+export { TRAVEL_TITLE_MAX_LENGTH };
+
+function normalizeTitlePart(value: string | null | undefined): string {
+  return value?.replace(/\s+/g, ' ').trim() ?? '';
+}
+
+function clipTravelTitle(value: string): string {
+  if (value.length <= TRAVEL_TITLE_MAX_LENGTH) {
+    return value;
+  }
+  return value.slice(0, TRAVEL_TITLE_MAX_LENGTH);
+}
+
+export function buildTravelTitle(placeName?: string | null): string {
+  const name = normalizeTitlePart(placeName);
+  if (!name) {
+    return DEFAULT_TRAVEL_TITLE;
+  }
+  const withSuffix = `${name} 여행`;
+  if (withSuffix.length <= TRAVEL_TITLE_MAX_LENGTH) {
+    return withSuffix;
+  }
+  if (name.length <= TRAVEL_TITLE_MAX_LENGTH) {
+    return name;
+  }
+  return name.slice(0, TRAVEL_TITLE_MAX_LENGTH);
+}
+
 export function toTravelCreateRequest(input: ManualTravelInput): TravelCreateRequest {
   const primaryCompanion = input.companionTypes[0];
   const primaryStyle = input.travelStyleIds[0];
+  const customTitle = clipTravelTitle(normalizeTitlePart(input.title));
   return {
-    title: input.accommodationName?.trim() || '부산 여행',
+    title: customTitle || null,
     startDate: input.startDate,
     endDate: input.endDate,
+    destination: DEFAULT_TRAVEL_DESTINATION,
     companionCount: input.companionCount,
     hasHeavyBaggage: input.hasHeavyBaggage,
     hasPets: input.hasPets,
-    companionType: primaryCompanion ? COMPANION_MAP[primaryCompanion] : 'SOLO',
+    companionType: primaryCompanion ? COMPANION_MAP[primaryCompanion] : null,
     travelStyle: primaryStyle ? STYLE_MAP[primaryStyle] ?? 'TOURISM' : null,
     preferredFoods: input.foodIds.length ? input.foodIds.join(',') : null,
     accommodationArea: input.accommodationAreaIds[0] ?? null,
   };
+}
+
+export function wizardPlaceToAiSelectedPlace(
+  place: WizardPickedPlace,
+): AiWizardPickedPlaceRequest {
+  const address = place.address?.trim() || place.placeName;
+  return {
+    provider: AI_PLACE_PROVIDER,
+    providerPlaceId: place.placeId,
+    placeName: place.placeName,
+    address,
+    latitude: place.location.lat,
+    longitude: place.location.lng,
+    type: AI_ATTRACTION_PLACE_TYPE,
+  };
+}
+
+export function toAiSchedulePace(pace?: SchedulePace | null): AiSchedulePaceDto {
+  if (pace === 'relaxed') {
+    return 'RELAXED';
+  }
+  if (pace === 'packed') {
+    return 'TIGHT';
+  }
+  return 'BALANCED';
+}
+
+export function toAiTravelPlanGenerateRequest(
+  answers: PlanWizardAnswers,
+  options?: { schedulePace?: SchedulePace | null },
+): AiTravelPlanGenerateRequest {
+  const selectedPlaces = answers.selectedAttractions.map(wizardPlaceToAiSelectedPlace);
+  const request: AiTravelPlanGenerateRequest = {
+    selectedPlaces,
+    schedulePace: toAiSchedulePace(options?.schedulePace),
+  };
+
+  if (answers.foodIds.length) {
+    request.foodIds = answers.foodIds;
+  }
+
+  const purposes = answers.travelStyleIds
+    .map(id => TRAVEL_STYLE_OPTIONS.find(opt => opt.id === id)?.label.ko)
+    .filter((label): label is string => Boolean(label));
+  if (purposes.length) {
+    request.purposes = purposes;
+  }
+
+  if (answers.accommodationMode === 'booked') {
+    const name =
+      answers.bookedAccommodation?.placeName?.trim() ||
+      answers.accommodationName?.trim() ||
+      null;
+    request.bookedAccommodation = name;
+  } else if (answers.accommodationAreaIds.length) {
+    request.accommodationAreaIds = answers.accommodationAreaIds;
+  }
+
+  return request;
 }
 
 export function toPlanCreateRequests(startDate: string, endDate: string) {
@@ -245,6 +348,7 @@ export function travelPlansResponseToPlan(
         title: response.title,
         startDate,
         endDate,
+        destination: DEFAULT_TRAVEL_DESTINATION,
         status: 'PLANNED',
       },
       [],

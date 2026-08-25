@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   ImageBackground,
@@ -11,6 +11,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
+import { HomePlanPickerModal } from '../../components/home/modals/HomePlanPickerModal';
 import { OAuthProviderList } from '../../components/setup/OAuthProviderButton';
 import { BrandIcon } from '../../components/shared/brand/BrandIcon';
 import { BrandLogo } from '../../components/shared/brand/BrandLogo';
@@ -21,10 +22,11 @@ import type { RootStackParamList } from '../../navigation/types';
 import { completeProviderLogin } from '../../services/auth/authSession';
 import { AuthServiceError } from '../../services/auth/authService';
 import { OAuthSdkError, signInWithProvider } from '../../services/auth/oauthSdkService';
-import { selectLatestLocalPlan, useAppStore, usePlanStore } from '../../stores';
+import { useAppStore, usePlanStore } from '../../stores';
 import type { OAuthProvider } from '../../types/auth';
 import { logAuth } from '../../utils/auth/authLogger';
 import { cn } from '../../utils/common/cn';
+import { listOfflineViewablePlans } from '../../utils/plan/selectLatestLocalPlan';
 
 const heroImage = require('../../../assets/images/home-hero.jpg');
 
@@ -35,14 +37,36 @@ export function LoginScreen({ navigation }: Props) {
   const { height: windowHeight } = useWindowDimensions();
   const language = useAppLanguage();
   const copy = useCopy('setup');
+  const pickerCopy = useCopy('mainHome');
   const setOfflineMode = useAppStore(state => state.setOfflineMode);
+  const plansHydrated = usePlanStore(state => state._hasHydrated);
+  const plans = usePlanStore(state => state.plans);
+  const setActivePlan = usePlanStore(state => state.setActivePlan);
   const [rememberMe, setRememberMe] = useState(true);
   const [loadingProvider, setLoadingProvider] = useState<OAuthProvider | null>(
     null,
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [offlinePickerOpen, setOfflinePickerOpen] = useState(false);
   const isLoading = loadingProvider !== null;
+  const offlineEntryDisabled = isLoading || !plansHydrated;
   const heroHeight = Math.max(240, Math.round(windowHeight * 0.38));
+
+  const offlinePlans = useMemo(
+    () => listOfflineViewablePlans({ plans }),
+    [plans],
+  );
+
+  const openOfflinePlan = useCallback(
+    (planId: string) => {
+      setOfflinePickerOpen(false);
+      setErrorMessage(null);
+      setActivePlan(planId);
+      setOfflineMode(true);
+      navigation.replace('PlanDetail', { planId });
+    },
+    [navigation, setActivePlan, setOfflineMode],
+  );
 
   const onProviderLogin = useCallback(
     async (provider: OAuthProvider) => {
@@ -94,15 +118,22 @@ export function LoginScreen({ navigation }: Props) {
   );
 
   const onEnterOfflineMode = useCallback(() => {
-    const plan = selectLatestLocalPlan(usePlanStore.getState());
-    if (!plan) {
+    if (!usePlanStore.getState()._hasHydrated) {
+      return;
+    }
+    usePlanStore.getState().purgeCompletedLocalPlans();
+    const list = listOfflineViewablePlans(usePlanStore.getState());
+    if (list.length === 0) {
       setErrorMessage(copy.offlineModeEmpty);
       return;
     }
     setErrorMessage(null);
-    setOfflineMode(true);
-    navigation.replace('PlanDetail', { planId: plan.planId });
-  }, [copy.offlineModeEmpty, navigation, setOfflineMode]);
+    if (list.length === 1) {
+      openOfflinePlan(list[0].planId);
+      return;
+    }
+    setOfflinePickerOpen(true);
+  }, [copy.offlineModeEmpty, openOfflinePlan]);
 
   return (
     <View className="flex-1 bg-white">
@@ -176,15 +207,16 @@ export function LoginScreen({ navigation }: Props) {
         </View>
 
         <Pressable
-          disabled={isLoading}
+          disabled={offlineEntryDisabled}
           onPress={onEnterOfflineMode}
           accessibilityRole="button"
           accessibilityLabel={copy.offlineMode}
           className={cn(
             'mb-auto items-center rounded-xl border border-brand-border bg-white py-3.5 active:opacity-80',
-            isLoading && 'opacity-50',
+            offlineEntryDisabled && 'opacity-50',
           )}>
           <Text className="text-base font-semibold text-brand-text">{copy.offlineMode}</Text>
+          <Text className="mt-1 text-xs text-brand-muted">{copy.offlineModeHint}</Text>
         </Pressable>
 
         <Text className="mt-6 text-center text-xs leading-5 text-brand-muted">
@@ -195,6 +227,18 @@ export function LoginScreen({ navigation }: Props) {
           {copy.loginTermsSuffix}
         </Text>
       </View>
+
+      <HomePlanPickerModal
+        visible={offlinePickerOpen}
+        plans={offlinePlans}
+        selectedPlanId={null}
+        language={language}
+        copy={pickerCopy}
+        title={copy.offlinePickTitle}
+        subtitle={copy.offlinePickSubtitle}
+        onClose={() => setOfflinePickerOpen(false)}
+        onSelect={openOfflinePlan}
+      />
     </View>
   );
 }

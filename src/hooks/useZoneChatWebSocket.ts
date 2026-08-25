@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   buildZoneChatWebSocketUrl,
   isZoneChatWebSocketEnabled,
+  ZONE_CHAT_WS_CONFIG,
 } from '../constants/chat/zoneChatConfig';
 import {
   hasMoreChatHistory,
@@ -11,6 +12,7 @@ import {
 } from '../services/chat/zoneChatRoomService';
 import { buildZoneChatParticipant } from '../services/chat/zoneChatIdentity';
 import { ZoneChatWebSocketClient } from '../services/chat/zoneChatWebSocketClient';
+import { zoneChatRoomStatusHub } from '../services/chat/zoneChatRoomStatusHub';
 import { isBenignStompShutdownError } from '../services/chat/stompFrame';
 import { logZoneChat } from '../utils/chat/zoneChatLogger';
 import {
@@ -32,6 +34,12 @@ import type {
   ZoneChatConnectionStatus,
   ZoneChatIdentityField,
 } from '../types/zoneChatWebSocket';
+
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => {
+    setTimeout(resolve, ms);
+  });
+}
 
 const EMPTY_SEED_MESSAGES: EventZoneChatMessage[] = [];
 const NULL_MEMBER_COUNT_SELECTOR = (): number | null => null;
@@ -127,14 +135,20 @@ export function useZoneChatWebSocket(
 
   useEffect(() => {
     if (!realtimeEnabled || !zoneId || !activeRoomId) {
-      setChatActiveRoom(null, null);
+      if (!clientRef.current) {
+        setChatActiveRoom(null, null);
+      }
       return undefined;
     }
 
     activeRoomIdRef.current = activeRoomId;
     setChatActiveRoom(zoneId, activeRoomId);
     return () => {
-      setChatActiveRoom(null, null);
+      activeRoomIdRef.current = null;
+      // WS effect 가 연결 중이면 그쪽 cleanup 이 hub resume 담당
+      if (!clientRef.current) {
+        setChatActiveRoom(null, null);
+      }
     };
   }, [realtimeEnabled, zoneId, activeRoomId, setChatActiveRoom]);
 
@@ -274,12 +288,33 @@ export function useZoneChatWebSocket(
       },
     });
 
-    client.connect({
-      url: buildZoneChatWebSocketUrl(accessToken),
-      roomId: activeRoomId,
-      zoneId,
-      participant: participantRef.current,
-      accessToken,
+    const startSession = async () => {
+      // 목록용 status hub STOMP 세션을 먼저 내려 동일 사용자 Session already exists 방지
+      if (zoneId) {
+        setChatActiveRoom(zoneId, activeRoomId);
+      }
+      await zoneChatRoomStatusHub.suspend();
+      await delay(ZONE_CHAT_WS_CONFIG.sessionHandoffDelayMs);
+      if (cancelled) {
+        return;
+      }
+
+      client.connect({
+        url: buildZoneChatWebSocketUrl(accessToken),
+        roomId: activeRoomId,
+        zoneId,
+        participant: participantRef.current,
+        accessToken,
+      });
+    };
+
+    startSession().catch(error => {
+      if (!cancelled) {
+        logZoneChat('hook.connect.fail', 'Failed to start chat session', {
+          level: 'error',
+          detail: error,
+        });
+      }
     });
 
     return () => {
@@ -287,6 +322,17 @@ export function useZoneChatWebSocket(
       const leavingZoneId = zoneId;
       client.disconnect();
       clientRef.current = null;
+
+      void (async () => {
+        await client.waitUntilClosed();
+        await delay(ZONE_CHAT_WS_CONFIG.sessionHandoffDelayMs);
+        // 다른 채팅 세션이 이미 붙었으면 hub 는 suspend 유지
+        if (clientRef.current != null) {
+          return;
+        }
+        setChatActiveRoom(null, null);
+      })();
+
       if (leavingZoneId && sessionJoined) {
         adjustMemberCount(leavingZoneId, -1);
         reconcileMemberCountDelayed(leavingZoneId, {
@@ -306,6 +352,7 @@ export function useZoneChatWebSocket(
     applyRoomStatus,
     reconcileMemberCountDelayed,
     refreshZoneDelayed,
+    setChatActiveRoom,
   ]);
 
   const loadMoreHistory = useCallback(() => {

@@ -1,4 +1,4 @@
-import { Alert, Platform } from 'react-native';
+import { Platform } from 'react-native';
 import {
   launchCamera,
   launchImageLibrary,
@@ -254,44 +254,23 @@ async function openCamera(
 }
 
 /**
- * 갤러리/카메라 중 소스를 고른 뒤 사진 또는 영상을 하나 선택합니다.
+ * 사진 또는 영상을 하나 선택합니다.
  * 서버 허용: JPEG/PNG/WebP, MP4/MOV (≤50MB)
+ *
+ * 앨범은 react-native-image-picker → Android Photo Picker / 시스템 선택 도구를
+ * 사용하며 READ_MEDIA_* 권한이 필요 없습니다.
+ * UI(소스 선택·카메라 권한 안내)는 호출측 커스텀 모달에서 처리합니다.
  */
-export function pickReviewMedia(options: {
+export async function pickReviewMedia(options: {
   mediaType: ReviewMediaType;
   labels: PickLabels;
+  source: 'library' | 'camera';
 }): Promise<MediaPickResult> {
-  const { mediaType, labels } = options;
-  const libraryLabel = labels.chooseFromLibrary;
-  const cameraLabel = mediaType === 'video' ? labels.takeVideo : labels.takePhoto;
+  const { mediaType, labels, source } = options;
   const pickerMediaType = mediaType === 'video' ? 'video' : 'photo';
-
-  return new Promise(resolve => {
-    Alert.alert(
-      labels.title,
-      undefined,
-      [
-        {
-          text: libraryLabel,
-          onPress: () => {
-            void openLibrary(pickerMediaType, labels).then(resolve);
-          },
-        },
-        {
-          text: cameraLabel,
-          onPress: () => {
-            void openCamera(pickerMediaType, labels).then(resolve);
-          },
-        },
-        {
-          text: labels.cancel,
-          style: 'cancel',
-          onPress: () => resolve({ status: 'cancelled' }),
-        },
-      ],
-      { cancelable: true, onDismiss: () => resolve({ status: 'cancelled' }) },
-    );
-  });
+  return source === 'camera'
+    ? openCamera(pickerMediaType, labels)
+    : openLibrary(pickerMediaType, labels);
 }
 
 /** Android 에서 content:// URI 는 그대로 FormData 에 넣습니다. */

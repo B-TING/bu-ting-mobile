@@ -1,4 +1,5 @@
 import type {
+  AiTravelPlanGenerateRequest,
   PlanCreateRequest,
   PlanPlaceCreateRequest,
   PlanPlaceResponse,
@@ -60,6 +61,7 @@ function summarizeTravelCreateRequest(body: TravelCreateRequest): Record<string,
     title: body.title,
     startDate: body.startDate,
     endDate: body.endDate,
+    destination: body.destination,
     hasHeavyBaggage: body.hasHeavyBaggage,
     hasPets: body.hasPets,
     travelStyle: body.travelStyle,
@@ -76,6 +78,20 @@ function summarizeTravelStatusUpdateRequest(
   body: TravelStatusUpdateRequest,
 ): Record<string, unknown> {
   return { status: body.status };
+}
+
+function summarizeAiTravelPlanGenerateRequest(
+  body: AiTravelPlanGenerateRequest,
+): Record<string, unknown> {
+  return {
+    selectedPlaceCount: body.selectedPlaces.length,
+    selectedPlaceIds: body.selectedPlaces.map(place => place.providerPlaceId),
+    foodIds: body.foodIds,
+    schedulePace: body.schedulePace,
+    purposes: body.purposes,
+    bookedAccommodation: body.bookedAccommodation,
+    accommodationAreaIds: body.accommodationAreaIds,
+  };
 }
 
 function summarizePlanCreateRequest(body: PlanCreateRequest): Record<string, unknown> {
@@ -266,6 +282,9 @@ function summarizeRequestBody(body: unknown): Record<string, unknown> | undefine
     return undefined;
   }
 
+  if ('selectedPlaces' in body) {
+    return summarizeAiTravelPlanGenerateRequest(body as AiTravelPlanGenerateRequest);
+  }
   if ('status' in body && !('startDate' in body)) {
     return summarizeTravelStatusUpdateRequest(body as TravelStatusUpdateRequest);
   }
