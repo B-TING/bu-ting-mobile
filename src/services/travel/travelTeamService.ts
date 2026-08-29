@@ -192,6 +192,23 @@ export async function leaveTravelTeam(
   });
 }
 
+/** DELETE /api/v1/travel/team/{travelId}/members/{userId} — 멤버 강퇴 */
+export async function removeTravelMember(
+  accessToken: string,
+  travelId: string,
+  userId: string,
+): Promise<void> {
+  const trimmed = userId.trim();
+  if (!trimmed) {
+    throw new TravelServiceError('userId is required');
+  }
+  const url = teamUrl(TRAVEL_TEAM_ENDPOINTS.travelMemberByUserId(travelId, trimmed));
+  await apiDelete(url, {
+    ...authOpts(accessToken),
+    ...teamLogHooks('DELETE', url, accessToken, travelId),
+  });
+}
+
 /** PATCH /api/v1/travel/team/{travelId}/leader — 방장 위임 */
 export async function transferTravelLeader(
   accessToken: string,

@@ -45,7 +45,7 @@ import {
   expenseCreateResponseToBudgetEntry,
 } from '../../services/travel/travelExpenseMapper';
 import { createTravelExpense } from '../../services/travel/travelExpenseService';
-import { resolveTravelInviteLink, leaveTravelTeam, transferTravelLeader } from '../../services/travel/travelTeamService';
+import { resolveTravelInviteLink, leaveTravelTeam, transferTravelLeader, removeTravelMember } from '../../services/travel/travelTeamService';
 import { TravelServiceError, updateTravelStatus } from '../../services/travel/travelService';
 import {
   PlaceReviewSyncError,
@@ -67,7 +67,7 @@ import { selectReusableAccessToken } from '../../stores/useAuthStore';
 import { useApiTravelPlanSync } from '../useApiTravelPlanSync';
 import { usePlanOfflineSyncFeedback } from '../usePlanOfflineSyncFeedback';
 import { usePlanPicker } from './usePlanPicker';
-import type { BudgetEntry, RouteItem, TravelLegMode } from '../../types/travelPlan';
+import type { BudgetEntry, PlanMember, RouteItem, TravelLegMode } from '../../types/travelPlan';
 import type { PlaceReview } from '../../types/travelReview';
 import { sortedRoutes } from '../../utils/plan/planItinerary';
 import { optimizeRouteOrder } from '../../utils/plan/routeOptimize';
@@ -301,8 +301,8 @@ export function usePlanDetailScreen({
     setReviewFormRoute(null);
     setBudgetModalOpen(false);
     setInviteModalOpen(false);
-    setTransferLeaderModalOpen(false);
-    setTransferLeaderError(null);
+    setSelectedMember(null);
+    setMemberActionError(null);
   }, [planId]);
 
   const canInvite = useMemo(() => {
@@ -321,24 +321,26 @@ export function usePlanDetailScreen({
     return plan.members.some(member => member.userId === authUser.userId);
   }, [authUser?.userId, isApiPlan, offlineMode, plan]);
 
-  const canTransferLeader = useMemo(() => {
-    if (!canInvite || offlineMode || !plan) {
+  const [leavingTrip, setLeavingTrip] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<PlanMember | null>(null);
+  const [memberActionBusy, setMemberActionBusy] = useState(false);
+  const [memberActionError, setMemberActionError] = useState<string | null>(null);
+
+  const canTransferSelected = useMemo(() => {
+    if (!canInvite || offlineMode || !selectedMember) {
       return false;
     }
-    return plan.members.some(member => member.role !== 'LEADER');
-  }, [canInvite, offlineMode, plan]);
+    return selectedMember.role !== 'LEADER';
+  }, [canInvite, offlineMode, selectedMember]);
 
-  const transferCandidates = useMemo(() => {
-    if (!plan) {
-      return [];
+  const canKickSelected = useMemo(() => {
+    if (!canInvite || offlineMode || !selectedMember || !authUser?.userId) {
+      return false;
     }
-    return plan.members.filter(member => member.role !== 'LEADER');
-  }, [plan]);
-
-  const [leavingTrip, setLeavingTrip] = useState(false);
-  const [transferLeaderModalOpen, setTransferLeaderModalOpen] = useState(false);
-  const [transferringLeader, setTransferringLeader] = useState(false);
-  const [transferLeaderError, setTransferLeaderError] = useState<string | null>(null);
+    return (
+      selectedMember.userId !== authUser.userId && selectedMember.role !== 'LEADER'
+    );
+  }, [authUser?.userId, canInvite, offlineMode, selectedMember]);
 
   const settlementConfirmed = settlement?.confirmed === true;
   const canConfirmSettlement = canInvite && !settlementConfirmed && !viewOnly;
@@ -528,62 +530,150 @@ export function usePlanDetailScreen({
     void syncMembers();
   }, [syncMembers]);
 
-  const openTransferLeaderModal = useCallback(() => {
-    if (!canTransferLeader) {
-      alert({
-        title: copy.transferLeader,
-        message: copy.transferLeaderEmpty,
-      });
-      return;
-    }
-    setTransferLeaderError(null);
-    setTransferLeaderModalOpen(true);
-  }, [alert, canTransferLeader, copy.transferLeader, copy.transferLeaderEmpty]);
-
-  const closeTransferLeaderModal = useCallback(() => {
-    if (transferringLeader) {
-      return;
-    }
-    setTransferLeaderModalOpen(false);
-    setTransferLeaderError(null);
-  }, [transferringLeader]);
-
-  const handleTransferLeader = useCallback(
-    async (newLeaderUserId: string) => {
-      if (!accessToken || !travelId || transferringLeader) {
+  const openMemberActions = useCallback(
+    (member: PlanMember) => {
+      if (!authUser?.userId || member.userId === authUser.userId) {
         return;
       }
-      const candidate = transferCandidates.find(m => m.userId === newLeaderUserId);
-      setTransferringLeader(true);
-      setTransferLeaderError(null);
-      try {
-        await transferTravelLeader(accessToken, travelId, newLeaderUserId);
-        await syncMembers();
-        setTransferLeaderModalOpen(false);
-        alert({
-          title: copy.transferLeader,
-          message: copy.transferLeaderSuccess(candidate?.nickname ?? newLeaderUserId),
-        });
-      } catch (error) {
-        setTransferLeaderError(
-          error instanceof Error ? error.message : copy.transferLeaderFailed,
-        );
-      } finally {
-        setTransferringLeader(false);
-      }
+      setMemberActionError(null);
+      setSelectedMember(member);
     },
-    [
-      accessToken,
-      alert,
-      copy.transferLeader,
-      copy.transferLeaderFailed,
-      copy.transferLeaderSuccess,
-      syncMembers,
-      transferCandidates,
-      transferringLeader,
-      travelId,
-    ],
+    [authUser?.userId],
   );
+
+  const closeMemberActions = useCallback(() => {
+    if (memberActionBusy) {
+      return;
+    }
+    setSelectedMember(null);
+    setMemberActionError(null);
+  }, [memberActionBusy]);
+
+  const handleTransferLeader = useCallback(async () => {
+    if (!accessToken || !travelId || !selectedMember || memberActionBusy) {
+      return;
+    }
+    setMemberActionBusy(true);
+    setMemberActionError(null);
+    try {
+      await transferTravelLeader(accessToken, travelId, selectedMember.userId);
+      await syncMembers();
+      const name = selectedMember.nickname;
+      setSelectedMember(null);
+      alert({
+        title: copy.transferLeader,
+        message: copy.transferLeaderSuccess(name),
+      });
+    } catch (error) {
+      setMemberActionError(
+        error instanceof Error ? error.message : copy.transferLeaderFailed,
+      );
+    } finally {
+      setMemberActionBusy(false);
+    }
+  }, [
+    accessToken,
+    alert,
+    copy.transferLeader,
+    copy.transferLeaderFailed,
+    copy.transferLeaderSuccess,
+    memberActionBusy,
+    selectedMember,
+    syncMembers,
+    travelId,
+  ]);
+
+  const requestTransferLeader = useCallback(() => {
+    if (!selectedMember || !canTransferSelected) {
+      return;
+    }
+    alert({
+      title: copy.transferLeaderConfirmTitle,
+      message: copy.transferLeaderConfirmMessage(selectedMember.nickname),
+      buttons: [
+        { label: copy.close, variant: 'secondary', onPress: () => {} },
+        {
+          label: copy.transferLeaderConfirm,
+          variant: 'primary',
+          onPress: () => {
+            void handleTransferLeader();
+          },
+        },
+      ],
+    });
+  }, [
+    alert,
+    canTransferSelected,
+    copy.close,
+    copy.transferLeaderConfirm,
+    copy.transferLeaderConfirmMessage,
+    copy.transferLeaderConfirmTitle,
+    handleTransferLeader,
+    selectedMember,
+  ]);
+
+  const handleKickMember = useCallback(async () => {
+    if (!accessToken || !travelId || !selectedMember || memberActionBusy) {
+      return;
+    }
+    setMemberActionBusy(true);
+    setMemberActionError(null);
+    try {
+      await removeTravelMember(accessToken, travelId, selectedMember.userId);
+      await syncMembers();
+      const name = selectedMember.nickname;
+      setSelectedMember(null);
+      alert({
+        title: copy.kickMember,
+        message: copy.kickMemberSuccess(name),
+      });
+    } catch (error) {
+      setMemberActionError(
+        error instanceof Error ? error.message : copy.kickMemberFailed,
+      );
+    } finally {
+      setMemberActionBusy(false);
+    }
+  }, [
+    accessToken,
+    alert,
+    copy.kickMember,
+    copy.kickMemberFailed,
+    copy.kickMemberSuccess,
+    memberActionBusy,
+    selectedMember,
+    syncMembers,
+    travelId,
+  ]);
+
+  const requestKickMember = useCallback(() => {
+    if (!selectedMember || !canKickSelected) {
+      return;
+    }
+    alert({
+      title: copy.kickMemberConfirmTitle,
+      message: copy.kickMemberConfirmMessage(selectedMember.nickname),
+      buttons: [
+        { label: copy.close, variant: 'secondary', onPress: () => {} },
+        {
+          label: copy.kickMemberConfirm,
+          variant: 'danger',
+          onPress: () => {
+            void handleKickMember();
+          },
+        },
+      ],
+    });
+  }, [
+    alert,
+    canKickSelected,
+    copy.close,
+    copy.kickMemberConfirm,
+    copy.kickMemberConfirmMessage,
+    copy.kickMemberConfirmTitle,
+    handleKickMember,
+    selectedMember,
+  ]);
 
   const handleLeaveTrip = useCallback(async () => {
     if (!accessToken || !travelId || !planId || leavingTrip) {
@@ -632,16 +722,6 @@ export function usePlanDetailScreen({
       alert({
         title: copy.leaveTrip,
         message: copy.leaveTripLeaderBlocked,
-        buttons: [
-          { label: copy.close, variant: 'secondary', onPress: () => {} },
-          {
-            label: copy.transferLeader,
-            variant: 'primary',
-            onPress: () => {
-              openTransferLeaderModal();
-            },
-          },
-        ],
       });
       return;
     }
@@ -669,10 +749,8 @@ export function usePlanDetailScreen({
     copy.leaveTripConfirmMessage,
     copy.leaveTripConfirmTitle,
     copy.leaveTripLeaderBlocked,
-    copy.transferLeader,
     handleLeaveTrip,
     leavingTrip,
-    openTransferLeaderModal,
     plan,
   ]);
 
@@ -1641,12 +1719,12 @@ export function usePlanDetailScreen({
     inviteError,
     canInvite,
     canLeaveTrip,
-    canTransferLeader,
     leavingTrip,
-    transferLeaderModalOpen,
-    transferringLeader,
-    transferLeaderError,
-    transferCandidates,
+    selectedMember,
+    memberActionBusy,
+    memberActionError,
+    canTransferSelected,
+    canKickSelected,
     settlementConfirmed,
     canConfirmSettlement,
     settlementMemberSummaries,
@@ -1676,9 +1754,10 @@ export function usePlanDetailScreen({
     reviewFormExisting,
     handleBackPress,
     handleInvite,
-    openTransferLeaderModal,
-    closeTransferLeaderModal,
-    handleTransferLeader,
+    openMemberActions,
+    closeMemberActions,
+    requestTransferLeader,
+    requestKickMember,
     requestLeaveTrip,
     handleSaveBudgetEntry,
     handleConfirmSettlement,

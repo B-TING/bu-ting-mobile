@@ -1,4 +1,4 @@
-import { Pressable, Text, View } from 'react-native';
+import { View } from 'react-native';
 
 import { MemberList } from '../overview/MemberList';
 import { OverviewMiniWidgets } from '../overview/OverviewMiniWidgets';
@@ -7,7 +7,7 @@ import { TripPeriodCard } from '../overview/TripPeriodCard';
 import type { PlanDetailTab } from '../../../constants/plan/planDetail';
 import type { CopyFor } from '../../../i18n';
 import type { AppLanguage } from '../../../types/user';
-import type { BudgetEntry, MemberRole, TravelPlan } from '../../../types/travelPlan';
+import type { BudgetEntry, MemberRole, PlanMember, TravelPlan } from '../../../types/travelPlan';
 
 type Copy = CopyFor<'planDetail'>;
 
@@ -23,11 +23,10 @@ type PlanOverviewTabProps = {
   isTravelRecordPublished?: boolean;
   showInvite?: boolean;
   onInvite?: () => void;
-  showTransferLeader?: boolean;
-  onTransferLeader?: () => void;
   showLeave?: boolean;
   leaveDisabled?: boolean;
   onLeave?: () => void;
+  onSelectMember?: (member: PlanMember) => void;
 };
 
 export function PlanOverviewTab({
@@ -42,11 +41,10 @@ export function PlanOverviewTab({
   isTravelRecordPublished,
   showInvite = false,
   onInvite,
-  showTransferLeader = false,
-  onTransferLeader,
   showLeave = false,
   leaveDisabled = false,
   onLeave,
+  onSelectMember,
 }: PlanOverviewTabProps) {
   return (
     <View className="px-4 py-4">
@@ -72,30 +70,11 @@ export function PlanOverviewTab({
         roleLabels={roleLabels}
         inviteLabel={showInvite ? copy.inviteMembers : undefined}
         onInvite={showInvite ? onInvite : undefined}
+        leaveLabel={showLeave ? copy.leaveTrip : undefined}
+        leaveDisabled={leaveDisabled}
+        onLeave={showLeave ? onLeave : undefined}
+        onSelectMember={onSelectMember}
       />
-
-      {showTransferLeader && onTransferLeader ? (
-        <Pressable
-          onPress={onTransferLeader}
-          accessibilityRole="button"
-          accessibilityLabel={copy.transferLeader}
-          className="mb-3 items-center rounded-2xl border border-brand-border bg-brand-surface py-3.5 active:opacity-80">
-          <Text className="text-sm font-bold text-brand-text">{copy.transferLeader}</Text>
-        </Pressable>
-      ) : null}
-
-      {showLeave && onLeave ? (
-        <Pressable
-          disabled={leaveDisabled}
-          onPress={onLeave}
-          accessibilityRole="button"
-          accessibilityLabel={copy.leaveTrip}
-          className={`mb-3 items-center rounded-2xl border border-red-200 bg-red-50 py-3.5 active:opacity-80 ${
-            leaveDisabled ? 'opacity-50' : ''
-          }`}>
-          <Text className="text-sm font-bold text-red-600">{copy.leaveTrip}</Text>
-        </Pressable>
-      ) : null}
 
       <OverviewMiniWidgets
         copy={copy}

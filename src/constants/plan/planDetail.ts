@@ -71,13 +71,19 @@ export const PLAN_DETAIL_COPY: Record<
     leaveTripLeaderBlocked: string;
     leaveTripFailed: string;
     transferLeader: string;
-    transferLeaderTitle: string;
-    transferLeaderSubtitle: string;
+    transferLeaderConfirmTitle: string;
+    transferLeaderConfirmMessage: (name: string) => string;
     transferLeaderConfirm: string;
-    transferLeaderWorking: string;
-    transferLeaderEmpty: string;
     transferLeaderSuccess: (name: string) => string;
     transferLeaderFailed: string;
+    kickMember: string;
+    kickMemberConfirmTitle: string;
+    kickMemberConfirmMessage: (name: string) => string;
+    kickMemberConfirm: string;
+    kickMemberSuccess: (name: string) => string;
+    kickMemberFailed: string;
+    memberActionsNone: string;
+    memberActionsWorking: string;
     tripPeriod: string;
     nights: (n: number) => string;
     dayLabel: (n: number) => string;
@@ -251,16 +257,24 @@ export const PLAN_DETAIL_COPY: Record<
     leaveTripConfirmMessage: '나가면 일행에서 제외되며, 이 기기에서 일정도 더 이상 보이지 않습니다.',
     leaveTripConfirm: '나가기',
     leaveTripLeaderBlocked:
-      '다른 일행이 남아 있으면 방장은 나갈 수 없습니다. 먼저 방장을 위임해 주세요.',
+      '다른 일행이 남아 있으면 방장은 나갈 수 없습니다. 일행을 눌러 방장을 위임한 뒤 나가 주세요.',
     leaveTripFailed: '여행 나가기에 실패했습니다.',
     transferLeader: '방장 위임',
-    transferLeaderTitle: '방장 위임',
-    transferLeaderSubtitle: '새 방장으로 지정할 일행을 선택하세요.',
+    transferLeaderConfirmTitle: '방장을 위임할까요?',
+    transferLeaderConfirmMessage: name =>
+      `「${name}」님에게 방장 권한을 넘깁니다. 위임 후에는 일반 일행이 됩니다.`,
     transferLeaderConfirm: '위임하기',
-    transferLeaderWorking: '위임 중…',
-    transferLeaderEmpty: '위임할 다른 일행이 없습니다.',
     transferLeaderSuccess: name => `「${name}」님에게 방장을 위임했습니다.`,
     transferLeaderFailed: '방장 위임에 실패했습니다.',
+    kickMember: '일행 내보내기',
+    kickMemberConfirmTitle: '이 일행을 내보낼까요?',
+    kickMemberConfirmMessage: name =>
+      `「${name}」님을 여행에서 제외합니다. 다시 초대하려면 초대 링크가 필요합니다.`,
+    kickMemberConfirm: '내보내기',
+    kickMemberSuccess: name => `「${name}」님을 내보냈습니다.`,
+    kickMemberFailed: '일행 내보내기에 실패했습니다.',
+    memberActionsNone: '이 일행에 대해 할 수 있는 작업이 없습니다.',
+    memberActionsWorking: '처리 중…',
     tripPeriod: '여행 기간',
     nights: n => `${n}박`,
     dayLabel: n => `Day ${n}`,
@@ -442,16 +456,24 @@ export const PLAN_DETAIL_COPY: Record<
       'You’ll be removed from the party, and this itinerary will no longer appear on this device.',
     leaveTripConfirm: 'Leave',
     leaveTripLeaderBlocked:
-      'As leader, you can’t leave while others remain. Transfer leadership first.',
+      'As leader, you can’t leave while others remain. Tap a companion to transfer leadership first.',
     leaveTripFailed: 'Could not leave the trip.',
     transferLeader: 'Transfer leadership',
-    transferLeaderTitle: 'Transfer leadership',
-    transferLeaderSubtitle: 'Choose a companion to become the new trip leader.',
+    transferLeaderConfirmTitle: 'Transfer leadership?',
+    transferLeaderConfirmMessage: name =>
+      `${name} will become the trip leader. You’ll become a regular companion.`,
     transferLeaderConfirm: 'Transfer',
-    transferLeaderWorking: 'Transferring…',
-    transferLeaderEmpty: 'No other companions to transfer to.',
     transferLeaderSuccess: name => `Leadership transferred to ${name}.`,
     transferLeaderFailed: 'Could not transfer leadership.',
+    kickMember: 'Remove companion',
+    kickMemberConfirmTitle: 'Remove this companion?',
+    kickMemberConfirmMessage: name =>
+      `${name} will be removed from this trip. They’ll need a new invite to rejoin.`,
+    kickMemberConfirm: 'Remove',
+    kickMemberSuccess: name => `${name} was removed.`,
+    kickMemberFailed: 'Could not remove the companion.',
+    memberActionsNone: 'No actions available for this companion.',
+    memberActionsWorking: 'Working…',
     tripPeriod: 'Trip dates',
     nights: n => `${n} night${n === 1 ? '' : 's'}`,
     dayLabel: n => `Day ${n}`,
@@ -634,16 +656,24 @@ export const PLAN_DETAIL_COPY: Record<
       '退出すると同行者から外れ、この端末でも行程が表示されなくなります。',
     leaveTripConfirm: '退出する',
     leaveTripLeaderBlocked:
-      '他の同行者が残っている場合、リーダーは退出できません。先にリーダーを委任してください。',
+      '他の同行者が残っている場合、リーダーは退出できません。同行者をタップしてリーダーを委任してから退出してください。',
     leaveTripFailed: '旅行からの退出に失敗しました。',
     transferLeader: 'リーダー委任',
-    transferLeaderTitle: 'リーダー委任',
-    transferLeaderSubtitle: '新しいリーダーにする同行者を選んでください。',
+    transferLeaderConfirmTitle: 'リーダーを委任しますか？',
+    transferLeaderConfirmMessage: name =>
+      `「${name}」さんにリーダー権限を渡します。委任後は通常の同行者になります。`,
     transferLeaderConfirm: '委任する',
-    transferLeaderWorking: '委任中…',
-    transferLeaderEmpty: '委任できる他の同行者がいません。',
     transferLeaderSuccess: name => `「${name}」さんにリーダーを委任しました。`,
     transferLeaderFailed: 'リーダーの委任に失敗しました。',
+    kickMember: '同行者を退出させる',
+    kickMemberConfirmTitle: 'この同行者を退出させますか？',
+    kickMemberConfirmMessage: name =>
+      `「${name}」さんを旅行から外します。再参加には新しい招待が必要です。`,
+    kickMemberConfirm: '退出させる',
+    kickMemberSuccess: name => `「${name}」さんを退出させました。`,
+    kickMemberFailed: '同行者の退出処理に失敗しました。',
+    memberActionsNone: 'この同行者に対してできる操作はありません。',
+    memberActionsWorking: '処理中…',
     tripPeriod: '旅行期間',
     nights: n => `${n}泊`,
     dayLabel: n => `Day ${n}`,
@@ -824,16 +854,24 @@ export const PLAN_DETAIL_COPY: Record<
     leaveTripConfirmTitle: '要退出此行程吗？',
     leaveTripConfirmMessage: '退出后将从同行中移除，此设备上也不再显示该行程。',
     leaveTripConfirm: '退出',
-    leaveTripLeaderBlocked: '仍有其他同行时，房主无法退出。请先转让房主。',
+    leaveTripLeaderBlocked: '仍有其他同行时，房主无法退出。请先点选同行转让房主后再退出。',
     leaveTripFailed: '退出行程失败。',
     transferLeader: '转让房主',
-    transferLeaderTitle: '转让房主',
-    transferLeaderSubtitle: '请选择新的行程房主。',
+    transferLeaderConfirmTitle: '要转让房主吗？',
+    transferLeaderConfirmMessage: name =>
+      `将把房主权限交给「${name}」。转让后您将变为普通同行。`,
     transferLeaderConfirm: '转让',
-    transferLeaderWorking: '转让中…',
-    transferLeaderEmpty: '没有可转让的其他同行。',
     transferLeaderSuccess: name => `已将房主转让给「${name}」。`,
     transferLeaderFailed: '转让房主失败。',
+    kickMember: '移出同行',
+    kickMemberConfirmTitle: '要移出该同行吗？',
+    kickMemberConfirmMessage: name =>
+      `将把「${name}」移出此行程。重新加入需要新的邀请。`,
+    kickMemberConfirm: '移出',
+    kickMemberSuccess: name => `已移出「${name}」。`,
+    kickMemberFailed: '移出同行失败。',
+    memberActionsNone: '对该同行没有可用操作。',
+    memberActionsWorking: '处理中…',
     tripPeriod: '行程日期',
     nights: n => `${n}晚`,
     dayLabel: n => `第 ${n} 天`,
