@@ -2,6 +2,7 @@ import { selectAuthUser, useAuthStore } from '../../stores/useAuthStore';
 import { usePlanStore } from '../../stores/usePlanStore';
 import type { InviteVerificationResponse } from '../../types/travelApi';
 import { syncMyActiveTravelsFromApi } from './syncMyActiveTravelsFromApi';
+import { syncTravelMembersToPlan } from './syncTravelMembersToPlan';
 import {
   acceptTravelInvite,
   verifyTravelInvite,
@@ -18,7 +19,7 @@ export async function previewTravelInvite(
 }
 
 /**
- * accept 후 내 여행 목록을 동기화하고 active plan을 맞춥니다.
+ * accept 후 내 여행 목록·멤버를 동기화하고 active plan을 맞춥니다.
  * @returns 로컬에서 열 PlanDetail용 planId
  */
 export async function acceptAndSyncTravelInvite(
@@ -40,6 +41,7 @@ export async function acceptAndSyncTravelInvite(
       )?.planId ??
       accepted.travelId;
     usePlanStore.getState().setActivePlan(planId);
+    await syncTravelMembersToPlan(accessToken, accepted.travelId, planId);
     return {
       travelId: accepted.travelId,
       travelName: accepted.travelName,
@@ -48,6 +50,7 @@ export async function acceptAndSyncTravelInvite(
   }
 
   usePlanStore.getState().setActivePlan(accepted.travelId);
+  await syncTravelMembersToPlan(accessToken, accepted.travelId, accepted.travelId);
   return {
     travelId: accepted.travelId,
     travelName: accepted.travelName,

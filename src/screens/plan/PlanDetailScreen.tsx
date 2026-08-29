@@ -62,6 +62,8 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     inviteLoading,
     inviteError,
     canInvite,
+    canLeaveTrip,
+    leavingTrip,
     settlementConfirmed,
     canConfirmSettlement,
     settlementMemberSummaries,
@@ -91,6 +93,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     reviewFormExisting,
     handleBackPress,
     handleInvite,
+    requestLeaveTrip,
     handleSaveBudgetEntry,
     handleConfirmSettlement,
     closeInviteModal,
@@ -234,6 +237,9 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
                 isTravelRecordPublished={isPlanPublished}
                 showInvite={isApiPlan && canInvite && !offlineMode}
                 onInvite={handleInvite}
+                showLeave={canLeaveTrip}
+                leaveDisabled={leavingTrip}
+                onLeave={requestLeaveTrip}
               />
             ),
             schedule: (

@@ -30,7 +30,6 @@ import {
   requestCameraPermission,
 } from '../../utils/media/mediaPermissions';
 import { parseInviteTokenFromUrl } from '../../utils/travel/parseInviteToken';
-import { savePendingInviteToken } from '../../utils/travel/pendingInviteToken';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'TravelInviteScan'>;
 
@@ -49,6 +48,15 @@ export function TravelInviteScanScreen({ navigation }: Props) {
   const lockRef = useRef(false);
 
   useEffect(() => {
+    if (!accessToken) {
+      navigation.replace('Login');
+    }
+  }, [accessToken, navigation]);
+
+  useEffect(() => {
+    if (!accessToken) {
+      return;
+    }
     let cancelled = false;
     void (async () => {
       const granted =
@@ -65,7 +73,7 @@ export function TravelInviteScanScreen({ navigation }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [copy.inviteScanCameraDenied]);
+  }, [accessToken, copy.inviteScanCameraDenied]);
 
   const runVerify = useCallback(
     async (raw: string) => {
@@ -126,12 +134,7 @@ export function TravelInviteScanScreen({ navigation }: Props) {
   }, []);
 
   const onConfirmJoin = useCallback(async () => {
-    if (!pendingToken) {
-      return;
-    }
-    if (!accessToken) {
-      await savePendingInviteToken(pendingToken);
-      navigation.replace('Login');
+    if (!pendingToken || !accessToken) {
       return;
     }
     setPhase('busy');
@@ -150,6 +153,10 @@ export function TravelInviteScanScreen({ navigation }: Props) {
       setPreviewName(null);
     }
   }, [accessToken, copy.inviteScanAcceptFailed, navigation, pendingToken]);
+
+  if (!accessToken) {
+    return <View className="flex-1 bg-black" />;
+  }
 
   return (
     <View className="flex-1 bg-black" style={{ paddingTop: insets.top }}>
@@ -243,7 +250,7 @@ export function TravelInviteScanScreen({ navigation }: Props) {
           className="px-5 pb-4"
           actions={[
             {
-              label: accessToken ? copy.inviteConfirmJoin : copy.inviteConfirmLogin,
+              label: copy.inviteConfirmJoin,
               onPress: () => {
                 void onConfirmJoin();
               },

@@ -45,8 +45,8 @@ import {
   expenseCreateResponseToBudgetEntry,
 } from '../../services/travel/travelExpenseMapper';
 import { createTravelExpense } from '../../services/travel/travelExpenseService';
-import { resolveTravelInviteLink } from '../../services/travel/travelTeamService';
-import { updateTravelStatus } from '../../services/travel/travelService';
+import { resolveTravelInviteLink, leaveTravelTeam } from '../../services/travel/travelTeamService';
+import { TravelServiceError, updateTravelStatus } from '../../services/travel/travelService';
 import {
   PlaceReviewSyncError,
   savePlaceReviewForTravel,
@@ -163,7 +163,7 @@ export function usePlanDetailScreen({
     enabled: isApiPlan && !offlineMode,
     accessToken,
   });
-  useTravelMembersSync({
+  const { syncMembers } = useTravelMembersSync({
     planId,
     travelId,
     accessToken,
@@ -311,6 +311,15 @@ export function usePlanDetailScreen({
       member => member.userId === authUser.userId && member.role === 'LEADER',
     );
   }, [authUser?.userId, isApiPlan, plan]);
+
+  const canLeaveTrip = useMemo(() => {
+    if (!isApiPlan || offlineMode || !authUser?.userId || !plan) {
+      return false;
+    }
+    return plan.members.some(member => member.userId === authUser.userId);
+  }, [authUser?.userId, isApiPlan, offlineMode, plan]);
+
+  const [leavingTrip, setLeavingTrip] = useState(false);
 
   const settlementConfirmed = settlement?.confirmed === true;
   const canConfirmSettlement = canInvite && !settlementConfirmed && !viewOnly;
@@ -497,7 +506,87 @@ export function usePlanDetailScreen({
     setInviteLink(null);
     setInviteExpiredAt(null);
     setInviteError(null);
-  }, []);
+    void syncMembers();
+  }, [syncMembers]);
+
+  const handleLeaveTrip = useCallback(async () => {
+    if (!accessToken || !travelId || !planId || leavingTrip) {
+      return;
+    }
+    setLeavingTrip(true);
+    try {
+      await leaveTravelTeam(accessToken, travelId);
+      completePlan(planId);
+      navigateToMainTab(navigation, 'home');
+    } catch (error) {
+      const isLeaderBlocked =
+        error instanceof TravelServiceError && error.status === 409;
+      alert({
+        title: copy.leaveTrip,
+        message: isLeaderBlocked
+          ? copy.leaveTripLeaderBlocked
+          : error instanceof Error
+            ? error.message
+            : copy.leaveTripFailed,
+      });
+    } finally {
+      setLeavingTrip(false);
+    }
+  }, [
+    accessToken,
+    alert,
+    completePlan,
+    copy.leaveTrip,
+    copy.leaveTripFailed,
+    copy.leaveTripLeaderBlocked,
+    leavingTrip,
+    navigation,
+    planId,
+    travelId,
+  ]);
+
+  const requestLeaveTrip = useCallback(() => {
+    if (!canLeaveTrip || leavingTrip || !plan || !authUser?.userId) {
+      return;
+    }
+    const isLeader = plan.members.some(
+      member => member.userId === authUser.userId && member.role === 'LEADER',
+    );
+    if (isLeader && plan.members.length > 1) {
+      alert({
+        title: copy.leaveTrip,
+        message: copy.leaveTripLeaderBlocked,
+      });
+      return;
+    }
+    alert({
+      title: copy.leaveTripConfirmTitle,
+      message: copy.leaveTripConfirmMessage,
+      buttons: [
+        { label: copy.close, variant: 'secondary', onPress: () => {} },
+        {
+          label: copy.leaveTripConfirm,
+          variant: 'danger',
+          onPress: () => {
+            void handleLeaveTrip();
+          },
+        },
+      ],
+    });
+  }, [
+    alert,
+    authUser?.userId,
+    canLeaveTrip,
+    copy.close,
+    copy.leaveTrip,
+    copy.leaveTripConfirm,
+    copy.leaveTripConfirmMessage,
+    copy.leaveTripConfirmTitle,
+    copy.leaveTripLeaderBlocked,
+    handleLeaveTrip,
+    leavingTrip,
+    plan,
+  ]);
 
   const lockScheduleOnApiError = useCallback(
     (error: unknown) => {
@@ -1463,6 +1552,8 @@ export function usePlanDetailScreen({
     inviteLoading,
     inviteError,
     canInvite,
+    canLeaveTrip,
+    leavingTrip,
     settlementConfirmed,
     canConfirmSettlement,
     settlementMemberSummaries,
@@ -1492,6 +1583,7 @@ export function usePlanDetailScreen({
     reviewFormExisting,
     handleBackPress,
     handleInvite,
+    requestLeaveTrip,
     handleSaveBudgetEntry,
     handleConfirmSettlement,
     closeInviteModal,

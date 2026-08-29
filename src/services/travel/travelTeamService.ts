@@ -12,7 +12,7 @@ import {
   logTravelPlanApiRequest,
   logTravelPlanApiResponse,
 } from '../../utils/travel/travelPlanApiLogger';
-import { ApiClientError, apiGet, apiPost } from '../api/apiClient';
+import { ApiClientError, apiDelete, apiGet, apiPost } from '../api/apiClient';
 import { TravelServiceError } from './travelService';
 
 function mapTravelTeamError(error: ApiClientError): TravelServiceError {
@@ -34,7 +34,7 @@ function teamUrl(path: string): string {
 }
 
 function teamLogHooks(
-  method: 'GET' | 'POST',
+  method: 'GET' | 'POST' | 'DELETE',
   url: string,
   accessToken: string,
   travelId?: string,
@@ -177,4 +177,16 @@ export async function acceptTravelInvite(
     throw new TravelServiceError('Invite accept response missing travelId');
   }
   return data;
+}
+
+/** DELETE /api/v1/travel/team/{travelId}/members/me — 여행 나가기 */
+export async function leaveTravelTeam(
+  accessToken: string,
+  travelId: string,
+): Promise<void> {
+  const url = teamUrl(TRAVEL_TEAM_ENDPOINTS.travelMembersMe(travelId));
+  await apiDelete(url, {
+    ...authOpts(accessToken),
+    ...teamLogHooks('DELETE', url, accessToken, travelId),
+  });
 }

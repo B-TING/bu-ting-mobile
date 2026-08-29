@@ -938,8 +938,6 @@ export const SETUP_COPY: Record<
     offlineModeEmpty: string;
     offlinePickTitle: string;
     offlinePickSubtitle: string;
-    inviteScanCta: string;
-    inviteScanCtaHint: string;
     email: string;
     password: string;
     login: string;
@@ -982,8 +980,6 @@ export const SETUP_COPY: Record<
     offlineModeEmpty: '열람할 저장된 일정이 없습니다.',
     offlinePickTitle: '저장된 여행 선택',
     offlinePickSubtitle: '오프라인으로 볼 여행을 골라 주세요',
-    inviteScanCta: '초대 QR 스캔',
-    inviteScanCtaHint: '일행 초대를 받았다면 QR을 스캔하세요',
     email: '이메일',
     password: '비밀번호',
     login: '로그인',
@@ -1027,8 +1023,6 @@ export const SETUP_COPY: Record<
     offlineModeEmpty: 'No saved itinerary to browse.',
     offlinePickTitle: 'Choose a saved trip',
     offlinePickSubtitle: 'Pick a trip to view offline',
-    inviteScanCta: 'Scan invite QR',
-    inviteScanCtaHint: 'Got an invite? Scan the QR code here',
     email: 'Email',
     password: 'Password',
     login: 'Sign in',
@@ -1072,8 +1066,6 @@ export const SETUP_COPY: Record<
     offlineModeEmpty: '閲覧できる行程がありません。',
     offlinePickTitle: '保存した旅行を選択',
     offlinePickSubtitle: 'オフラインで見る旅行を選んでください',
-    inviteScanCta: '招待QRをスキャン',
-    inviteScanCtaHint: '招待を受け取ったらここでQRをスキャン',
     email: 'メール',
     password: 'パスワード',
     login: 'ログイン',
@@ -1117,8 +1109,6 @@ export const SETUP_COPY: Record<
     offlineModeEmpty: '没有可浏览的已保存行程。',
     offlinePickTitle: '选择已保存的旅行',
     offlinePickSubtitle: '请选择要离线查看的旅行',
-    inviteScanCta: '扫描邀请二维码',
-    inviteScanCtaHint: '收到邀请后请在此扫描二维码',
     email: '邮箱',
     password: '密码',
     login: '登录',

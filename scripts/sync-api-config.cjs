@@ -104,6 +104,8 @@ export const TRAVEL_ENDPOINTS = {
 export const TRAVEL_TEAM_ENDPOINTS = {
   myTravels: '/api/v1/travel/team/my-travels',
   travelMembers: (travelId: string) => \`/api/v1/travel/team/\${travelId}/members\`,
+  /** DELETE — 인증 사용자 본인 여행 나가기 */
+  travelMembersMe: (travelId: string) => \`/api/v1/travel/team/\${travelId}/members/me\`,
   travelInvite: (travelId: string) => \`/api/v1/travel/team/\${travelId}/invite\`,
   /** GET — 초대 토큰 검증 (?token=) */
   invitesVerify: '/api/v1/travel/team/invites/verify',

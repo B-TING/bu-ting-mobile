@@ -64,7 +64,12 @@ export const PLAN_DETAIL_COPY: Record<
     inviteConfirmTitle: string;
     inviteConfirmSubtitle: (travelName: string) => string;
     inviteConfirmJoin: string;
-    inviteConfirmLogin: string;
+    leaveTrip: string;
+    leaveTripConfirmTitle: string;
+    leaveTripConfirmMessage: string;
+    leaveTripConfirm: string;
+    leaveTripLeaderBlocked: string;
+    leaveTripFailed: string;
     tripPeriod: string;
     nights: (n: number) => string;
     dayLabel: (n: number) => string;
@@ -233,7 +238,13 @@ export const PLAN_DETAIL_COPY: Record<
     inviteConfirmTitle: '이 여행에 합류할까요?',
     inviteConfirmSubtitle: name => `「${name}」에 일행으로 참여합니다.`,
     inviteConfirmJoin: '합류하기',
-    inviteConfirmLogin: '로그인 후 합류',
+    leaveTrip: '여행 나가기',
+    leaveTripConfirmTitle: '이 여행에서 나갈까요?',
+    leaveTripConfirmMessage: '나가면 일행에서 제외되며, 이 기기에서 일정도 더 이상 보이지 않습니다.',
+    leaveTripConfirm: '나가기',
+    leaveTripLeaderBlocked:
+      '다른 일행이 남아 있으면 방장은 나갈 수 없습니다. 먼저 방장을 위임해 주세요.',
+    leaveTripFailed: '여행 나가기에 실패했습니다.',
     tripPeriod: '여행 기간',
     nights: n => `${n}박`,
     dayLabel: n => `Day ${n}`,
@@ -409,7 +420,14 @@ export const PLAN_DETAIL_COPY: Record<
     inviteConfirmTitle: 'Join this trip?',
     inviteConfirmSubtitle: name => `You’ll join “${name}” as a companion.`,
     inviteConfirmJoin: 'Join',
-    inviteConfirmLogin: 'Log in to join',
+    leaveTrip: 'Leave trip',
+    leaveTripConfirmTitle: 'Leave this trip?',
+    leaveTripConfirmMessage:
+      'You’ll be removed from the party, and this itinerary will no longer appear on this device.',
+    leaveTripConfirm: 'Leave',
+    leaveTripLeaderBlocked:
+      'As leader, you can’t leave while others remain. Transfer leadership first.',
+    leaveTripFailed: 'Could not leave the trip.',
     tripPeriod: 'Trip dates',
     nights: n => `${n} night${n === 1 ? '' : 's'}`,
     dayLabel: n => `Day ${n}`,
@@ -586,7 +604,14 @@ export const PLAN_DETAIL_COPY: Record<
     inviteConfirmTitle: 'この旅行に参加しますか？',
     inviteConfirmSubtitle: name => `「${name}」に同行者として参加します。`,
     inviteConfirmJoin: '参加する',
-    inviteConfirmLogin: 'ログインして参加',
+    leaveTrip: '旅行から退出',
+    leaveTripConfirmTitle: 'この旅行から退出しますか？',
+    leaveTripConfirmMessage:
+      '退出すると同行者から外れ、この端末でも行程が表示されなくなります。',
+    leaveTripConfirm: '退出する',
+    leaveTripLeaderBlocked:
+      '他の同行者が残っている場合、リーダーは退出できません。先にリーダーを委任してください。',
+    leaveTripFailed: '旅行からの退出に失敗しました。',
     tripPeriod: '旅行期間',
     nights: n => `${n}泊`,
     dayLabel: n => `Day ${n}`,
@@ -763,7 +788,12 @@ export const PLAN_DETAIL_COPY: Record<
     inviteConfirmTitle: '要加入此行程吗？',
     inviteConfirmSubtitle: name => `将以同行身份加入「${name}」。`,
     inviteConfirmJoin: '加入',
-    inviteConfirmLogin: '登录后加入',
+    leaveTrip: '退出行程',
+    leaveTripConfirmTitle: '要退出此行程吗？',
+    leaveTripConfirmMessage: '退出后将从同行中移除，此设备上也不再显示该行程。',
+    leaveTripConfirm: '退出',
+    leaveTripLeaderBlocked: '仍有其他同行时，房主无法退出。请先转让房主。',
+    leaveTripFailed: '退出行程失败。',
     tripPeriod: '行程日期',
     nights: n => `${n}晚`,
     dayLabel: n => `第 ${n} 天`,

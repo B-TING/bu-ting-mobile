@@ -22,20 +22,11 @@ import type { RootStackParamList } from '../../navigation/types';
 import { completeProviderLogin } from '../../services/auth/authSession';
 import { AuthServiceError } from '../../services/auth/authService';
 import { OAuthSdkError, signInWithProvider } from '../../services/auth/oauthSdkService';
-import { acceptAndSyncTravelInvite } from '../../services/travel/acceptTravelInviteFlow';
 import { useAppStore, usePlanStore } from '../../stores';
-import {
-  selectReusableAccessToken,
-  useAuthStore,
-} from '../../stores/useAuthStore';
 import type { OAuthProvider } from '../../types/auth';
 import { logAuth } from '../../utils/auth/authLogger';
 import { cn } from '../../utils/common/cn';
 import { listOfflineViewablePlans } from '../../utils/plan/selectLatestLocalPlan';
-import {
-  clearPendingInviteToken,
-  peekPendingInviteToken,
-} from '../../utils/travel/pendingInviteToken';
 
 const heroImage = require('../../../assets/images/home-hero.jpg');
 
@@ -77,25 +68,6 @@ export function LoginScreen({ navigation }: Props) {
     [navigation, setActivePlan, setOfflineMode],
   );
 
-  const resumePendingInviteOrMain = useCallback(async () => {
-    const pendingToken = await peekPendingInviteToken();
-    const accessToken = selectReusableAccessToken(useAuthStore.getState());
-    if (pendingToken && accessToken) {
-      try {
-        const joined = await acceptAndSyncTravelInvite(accessToken, pendingToken);
-        await clearPendingInviteToken();
-        navigation.replace('PlanDetail', { planId: joined.planId });
-        return;
-      } catch (error) {
-        logAuth('invite.resume.failed', 'pending invite accept failed after login', {
-          level: 'warn',
-          detail: error,
-        });
-      }
-    }
-    navigation.replace('MainTabs');
-  }, [navigation]);
-
   const onProviderLogin = useCallback(
     async (provider: OAuthProvider) => {
       setErrorMessage(null);
@@ -103,7 +75,7 @@ export function LoginScreen({ navigation }: Props) {
       try {
         const result = await signInWithProvider(provider);
         await completeProviderLogin(provider, result.providerToken, rememberMe);
-        await resumePendingInviteOrMain();
+        navigation.replace('MainTabs');
       } catch (error) {
         if (error instanceof OAuthSdkError && error.message.includes('cancelled')) {
           logAuth('login.cancelled', `${provider} sign-in cancelled by user`, {
@@ -142,7 +114,7 @@ export function LoginScreen({ navigation }: Props) {
         setLoadingProvider(null);
       }
     },
-    [language, rememberMe, resumePendingInviteOrMain],
+    [language, navigation, rememberMe],
   );
 
   const onEnterOfflineMode = useCallback(() => {
@@ -233,19 +205,6 @@ export function LoginScreen({ navigation }: Props) {
           <Text className="mx-3 text-xs font-medium text-brand-muted">{copy.loginOr}</Text>
           <View className="h-px flex-1 bg-brand-border" />
         </View>
-
-        <Pressable
-          disabled={isLoading}
-          onPress={() => navigation.navigate('TravelInviteScan')}
-          accessibilityRole="button"
-          accessibilityLabel={copy.inviteScanCta}
-          className={cn(
-            'mb-3 items-center rounded-xl border border-brand-border bg-white py-3.5 active:opacity-80',
-            isLoading && 'opacity-50',
-          )}>
-          <Text className="text-base font-semibold text-brand-text">{copy.inviteScanCta}</Text>
-          <Text className="mt-1 text-xs text-brand-muted">{copy.inviteScanCtaHint}</Text>
-        </Pressable>
 
         <Pressable
           disabled={offlineEntryDisabled}
