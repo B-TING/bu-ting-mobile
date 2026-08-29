@@ -52,6 +52,19 @@ export const PLAN_DETAIL_COPY: Record<
     inviteRetry: string;
     inviteExpiresAt: (date: string) => string;
     inviteLeaderOnly: string;
+    inviteScanTitle: string;
+    inviteScanWorking: string;
+    inviteScanCameraDenied: string;
+    inviteScanInvalid: string;
+    inviteScanVerifyFailed: string;
+    inviteScanAcceptFailed: string;
+    inviteScanManualHint: string;
+    inviteScanManualPlaceholder: string;
+    inviteScanManualSubmit: string;
+    inviteConfirmTitle: string;
+    inviteConfirmSubtitle: (travelName: string) => string;
+    inviteConfirmJoin: string;
+    inviteConfirmLogin: string;
     tripPeriod: string;
     nights: (n: number) => string;
     dayLabel: (n: number) => string;
@@ -208,6 +221,19 @@ export const PLAN_DETAIL_COPY: Record<
     inviteRetry: '다시 시도',
     inviteExpiresAt: date => `만료: ${date}`,
     inviteLeaderOnly: '방장만 초대 링크를 생성할 수 있습니다.',
+    inviteScanTitle: '초대 QR 스캔',
+    inviteScanWorking: '확인 중…',
+    inviteScanCameraDenied: '카메라 권한이 필요합니다. 설정에서 허용해 주세요.',
+    inviteScanInvalid: '유효한 초대 QR/링크가 아닙니다.',
+    inviteScanVerifyFailed: '초대 정보를 확인하지 못했습니다.',
+    inviteScanAcceptFailed: '일행 합류에 실패했습니다.',
+    inviteScanManualHint: 'QR을 스캔하거나 아래에 초대 링크·토큰을 붙여넣으세요.',
+    inviteScanManualPlaceholder: '초대 링크 또는 토큰',
+    inviteScanManualSubmit: '초대로 확인',
+    inviteConfirmTitle: '이 여행에 합류할까요?',
+    inviteConfirmSubtitle: name => `「${name}」에 일행으로 참여합니다.`,
+    inviteConfirmJoin: '합류하기',
+    inviteConfirmLogin: '로그인 후 합류',
     tripPeriod: '여행 기간',
     nights: n => `${n}박`,
     dayLabel: n => `Day ${n}`,
@@ -371,6 +397,19 @@ export const PLAN_DETAIL_COPY: Record<
     inviteRetry: 'Try again',
     inviteExpiresAt: date => `Expires: ${date}`,
     inviteLeaderOnly: 'Only the trip leader can create an invite link.',
+    inviteScanTitle: 'Scan invite QR',
+    inviteScanWorking: 'Checking…',
+    inviteScanCameraDenied: 'Camera permission is required. Allow it in Settings.',
+    inviteScanInvalid: 'This is not a valid invite QR or link.',
+    inviteScanVerifyFailed: 'Could not verify the invite.',
+    inviteScanAcceptFailed: 'Could not join the trip.',
+    inviteScanManualHint: 'Scan a QR code or paste the invite link/token below.',
+    inviteScanManualPlaceholder: 'Invite link or token',
+    inviteScanManualSubmit: 'Check invite',
+    inviteConfirmTitle: 'Join this trip?',
+    inviteConfirmSubtitle: name => `You’ll join “${name}” as a companion.`,
+    inviteConfirmJoin: 'Join',
+    inviteConfirmLogin: 'Log in to join',
     tripPeriod: 'Trip dates',
     nights: n => `${n} night${n === 1 ? '' : 's'}`,
     dayLabel: n => `Day ${n}`,
@@ -535,6 +574,19 @@ export const PLAN_DETAIL_COPY: Record<
     inviteRetry: '再試行',
     inviteExpiresAt: date => `有効期限: ${date}`,
     inviteLeaderOnly: 'リーダーのみ招待リンクを作成できます。',
+    inviteScanTitle: '招待QRをスキャン',
+    inviteScanWorking: '確認中…',
+    inviteScanCameraDenied: 'カメラ権限が必要です。設定で許可してください。',
+    inviteScanInvalid: '有効な招待QR/リンクではありません。',
+    inviteScanVerifyFailed: '招待情報を確認できませんでした。',
+    inviteScanAcceptFailed: '同行者への参加に失敗しました。',
+    inviteScanManualHint: 'QRをスキャンするか、下に招待リンク・トークンを貼り付けてください。',
+    inviteScanManualPlaceholder: '招待リンクまたはトークン',
+    inviteScanManualSubmit: '招待を確認',
+    inviteConfirmTitle: 'この旅行に参加しますか？',
+    inviteConfirmSubtitle: name => `「${name}」に同行者として参加します。`,
+    inviteConfirmJoin: '参加する',
+    inviteConfirmLogin: 'ログインして参加',
     tripPeriod: '旅行期間',
     nights: n => `${n}泊`,
     dayLabel: n => `Day ${n}`,
@@ -699,6 +751,19 @@ export const PLAN_DETAIL_COPY: Record<
     inviteRetry: '重试',
     inviteExpiresAt: date => `过期时间: ${date}`,
     inviteLeaderOnly: '仅旅行房主可创建邀请链接。',
+    inviteScanTitle: '扫描邀请二维码',
+    inviteScanWorking: '确认中…',
+    inviteScanCameraDenied: '需要相机权限。请在设置中允许。',
+    inviteScanInvalid: '不是有效的邀请二维码或链接。',
+    inviteScanVerifyFailed: '无法验证邀请信息。',
+    inviteScanAcceptFailed: '加入行程失败。',
+    inviteScanManualHint: '扫描二维码，或在下方粘贴邀请链接/令牌。',
+    inviteScanManualPlaceholder: '邀请链接或令牌',
+    inviteScanManualSubmit: '确认邀请',
+    inviteConfirmTitle: '要加入此行程吗？',
+    inviteConfirmSubtitle: name => `将以同行身份加入「${name}」。`,
+    inviteConfirmJoin: '加入',
+    inviteConfirmLogin: '登录后加入',
     tripPeriod: '行程日期',
     nights: n => `${n}晚`,
     dayLabel: n => `第 ${n} 天`,
