@@ -105,6 +105,10 @@ export const TRAVEL_TEAM_ENDPOINTS = {
   myTravels: '/api/v1/travel/team/my-travels',
   travelMembers: (travelId: string) => \`/api/v1/travel/team/\${travelId}/members\`,
   travelInvite: (travelId: string) => \`/api/v1/travel/team/\${travelId}/invite\`,
+  /** GET — 초대 토큰 검증 (?token=) */
+  invitesVerify: '/api/v1/travel/team/invites/verify',
+  /** POST — 초대 수락·합류 (?token=, Bearer) */
+  invitesAccept: '/api/v1/travel/team/invites/accept',
 } as const;
 
 export const TRAVEL_EXPENSE_ENDPOINTS = {
@@ -152,6 +156,9 @@ export const TRAVEL_RECORD_ENDPOINTS = {
     \`/api/v1/travel-records/\${travelRecordId}/comments\`,
   commentById: (travelRecordId: string, commentId: string) =>
     \`/api/v1/travel-records/\${travelRecordId}/comments/\${commentId}\`,
+  /** POST — 여행기 스냅샷을 새 Travel(PLANNED)로 복제 */
+  cloneToTravel: (travelRecordId: string) =>
+    \`/api/v1/travel-records/\${travelRecordId}/clone-to-travel\`,
   placesTravelRecords: '/api/v1/places/travel-records',
   placesReviews: '/api/v1/places/reviews',
 } as const;

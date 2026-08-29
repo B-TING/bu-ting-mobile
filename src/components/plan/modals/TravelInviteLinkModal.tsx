@@ -8,6 +8,7 @@ import {
   TurboModuleRegistry,
   View,
 } from 'react-native';
+import QRCode from 'react-native-qrcode-svg';
 
 import type { CopyFor } from '../../../i18n';
 import { AppModal, AppModalActions } from '../../shared/modals';
@@ -19,6 +20,8 @@ type ClipboardTurboModule = {
 };
 
 const clipboardTurbo = TurboModuleRegistry.get('RNCClipboard') as ClipboardTurboModule | null;
+
+const QR_SIZE = 196;
 
 async function copyInviteLink(link: string): Promise<void> {
   if (clipboardTurbo) {
@@ -89,6 +92,16 @@ export function TravelInviteLinkModal({
           </View>
         ) : (
           <>
+            {inviteLink ? (
+              <View className="mb-4 items-center">
+                <View className="rounded-2xl border border-brand-border bg-white p-4">
+                  <QRCode value={inviteLink} size={QR_SIZE} backgroundColor="#FFFFFF" color="#0B1F33" />
+                </View>
+                <Text className="mt-3 px-2 text-center text-xs leading-5 text-brand-muted">
+                  {copy.inviteQrHint}
+                </Text>
+              </View>
+            ) : null}
             <TextInput
               value={inviteLink ?? ''}
               editable={false}

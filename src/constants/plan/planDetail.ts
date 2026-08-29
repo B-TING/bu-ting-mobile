@@ -44,6 +44,7 @@ export const PLAN_DETAIL_COPY: Record<
     inviteMembers: string;
     inviteModalTitle: string;
     inviteModalSubtitle: string;
+    inviteQrHint: string;
     inviteCopyLink: string;
     inviteCopied: string;
     inviteLinkLoading: string;
@@ -197,8 +198,9 @@ export const PLAN_DETAIL_COPY: Record<
     recordsPublished: '여행기 게시 완료',
     recordsHint: '방문한 여행지마다 후기를 남겨 보세요',
     inviteMembers: '일행 초대하기',
-    inviteModalTitle: '일행 초대 링크',
-    inviteModalSubtitle: '아래 링크를 복사해 일행에게 공유하세요.',
+    inviteModalTitle: '일행 초대',
+    inviteModalSubtitle: 'QR을 보여 주거나 링크를 복사해 일행을 초대하세요.',
+    inviteQrHint: '상대방이 앱에서 QR을 스캔하면 일행에 합류할 수 있어요.',
     inviteCopyLink: '링크 복사',
     inviteCopied: '복사됨',
     inviteLinkLoading: '초대 링크를 불러오는 중…',
@@ -359,8 +361,9 @@ export const PLAN_DETAIL_COPY: Record<
     recordsPublished: 'Travelogue published',
     recordsHint: 'Leave a review for each place you visit',
     inviteMembers: 'Invite companions',
-    inviteModalTitle: 'Invite link',
-    inviteModalSubtitle: 'Copy the link below and share it with your travel companions.',
+    inviteModalTitle: 'Invite companions',
+    inviteModalSubtitle: 'Show this QR code or copy the link to invite companions.',
+    inviteQrHint: 'Companions can join by scanning this QR in the app.',
     inviteCopyLink: 'Copy link',
     inviteCopied: 'Copied',
     inviteLinkLoading: 'Loading invite link…',
@@ -522,8 +525,9 @@ export const PLAN_DETAIL_COPY: Record<
     recordsPublished: '旅行記を公開済み',
     recordsHint: '訪問した各スポットにレビューを書きましょう',
     inviteMembers: '同行者を招待',
-    inviteModalTitle: '招待リンク',
-    inviteModalSubtitle: '下のリンクをコピーして同行者に共有してください。',
+    inviteModalTitle: '同行者を招待',
+    inviteModalSubtitle: 'QRコードを見せるか、リンクをコピーして招待してください。',
+    inviteQrHint: '相手がアプリでこのQRをスキャンすると同行者に参加できます。',
     inviteCopyLink: 'リンクをコピー',
     inviteCopied: 'コピーしました',
     inviteLinkLoading: '招待リンクを読み込み中…',
@@ -685,8 +689,9 @@ export const PLAN_DETAIL_COPY: Record<
     recordsPublished: '游记已发布',
     recordsHint: '为每个到访地点写点评',
     inviteMembers: '邀请同行',
-    inviteModalTitle: '邀请链接',
-    inviteModalSubtitle: '复制下方链接并分享给同行伙伴。',
+    inviteModalTitle: '邀请同行',
+    inviteModalSubtitle: '展示二维码或复制链接邀请同行伙伴。',
+    inviteQrHint: '对方在应用内扫描此二维码即可加入行程。',
     inviteCopyLink: '复制链接',
     inviteCopied: '已复制',
     inviteLinkLoading: '正在加载邀请链接…',
