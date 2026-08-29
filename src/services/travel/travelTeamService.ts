@@ -5,6 +5,7 @@ import type {
   TravelInviteLinkResponse,
   TravelMemberResponse,
   TravelStatusDto,
+  InviteVerificationResponse,
 } from '../../types/travelApi';
 import {
   logTravelPlanApiError,
@@ -130,4 +131,50 @@ export async function resolveTravelInviteLink(
   }
   const created = await createTravelInviteLink(accessToken, travelId);
   return { inviteLink: created.inviteLink };
+}
+
+function inviteTokenUrl(path: string, token: string): string {
+  const url = new URL(`${API_BASE_URL}${path}`);
+  url.searchParams.set('token', token);
+  return url.toString();
+}
+
+/** GET /api/v1/travel/team/invites/verify?token= — 초대 미리보기 (인증 불필요) */
+export async function verifyTravelInvite(
+  token: string,
+): Promise<InviteVerificationResponse> {
+  const trimmed = token.trim();
+  if (!trimmed) {
+    throw new TravelServiceError('Invite token is required');
+  }
+  const url = inviteTokenUrl(TRAVEL_TEAM_ENDPOINTS.invitesVerify, trimmed);
+  const data = await apiGet<InviteVerificationResponse>(url, {
+    errorMessagePrefix: 'Travel invite verify failed',
+    mapError: mapTravelTeamError,
+    ...teamLogHooks('GET', url, ''),
+  });
+  if (!data?.travelId) {
+    throw new TravelServiceError('Invite verify response missing travelId');
+  }
+  return data;
+}
+
+/** POST /api/v1/travel/team/invites/accept?token= — 합류 (Bearer 필수) */
+export async function acceptTravelInvite(
+  accessToken: string,
+  token: string,
+): Promise<InviteVerificationResponse> {
+  const trimmed = token.trim();
+  if (!trimmed) {
+    throw new TravelServiceError('Invite token is required');
+  }
+  const url = inviteTokenUrl(TRAVEL_TEAM_ENDPOINTS.invitesAccept, trimmed);
+  const data = await apiPost<InviteVerificationResponse>(url, {
+    ...authOpts(accessToken),
+    ...teamLogHooks('POST', url, accessToken),
+  });
+  if (!data?.travelId) {
+    throw new TravelServiceError('Invite accept response missing travelId');
+  }
+  return data;
 }
