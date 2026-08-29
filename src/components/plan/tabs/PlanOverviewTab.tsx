@@ -23,6 +23,8 @@ type PlanOverviewTabProps = {
   isTravelRecordPublished?: boolean;
   showInvite?: boolean;
   onInvite?: () => void;
+  showTransferLeader?: boolean;
+  onTransferLeader?: () => void;
   showLeave?: boolean;
   leaveDisabled?: boolean;
   onLeave?: () => void;
@@ -40,6 +42,8 @@ export function PlanOverviewTab({
   isTravelRecordPublished,
   showInvite = false,
   onInvite,
+  showTransferLeader = false,
+  onTransferLeader,
   showLeave = false,
   leaveDisabled = false,
   onLeave,
@@ -69,6 +73,16 @@ export function PlanOverviewTab({
         inviteLabel={showInvite ? copy.inviteMembers : undefined}
         onInvite={showInvite ? onInvite : undefined}
       />
+
+      {showTransferLeader && onTransferLeader ? (
+        <Pressable
+          onPress={onTransferLeader}
+          accessibilityRole="button"
+          accessibilityLabel={copy.transferLeader}
+          className="mb-3 items-center rounded-2xl border border-brand-border bg-brand-surface py-3.5 active:opacity-80">
+          <Text className="text-sm font-bold text-brand-text">{copy.transferLeader}</Text>
+        </Pressable>
+      ) : null}
 
       {showLeave && onLeave ? (
         <Pressable

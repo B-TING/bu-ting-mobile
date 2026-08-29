@@ -7,6 +7,7 @@ import { BackButton } from '../../components/shared/buttons/BackButton';
 import { BudgetEntryModal } from '../../components/plan/modals/BudgetEntryModal';
 import { PlacePickModal } from '../../components/plan/modals/PlacePickModal';
 import { TravelInviteLinkModal } from '../../components/plan/modals/TravelInviteLinkModal';
+import { TransferLeaderModal } from '../../components/plan/modals/TransferLeaderModal';
 import { HomePlanPickerModal } from '../../components/home/modals/HomePlanPickerModal';
 import { RouteOptimizeFab } from '../../components/plan/fab/RouteOptimizeFab';
 import { PlanBudgetTab } from '../../components/plan/tabs/PlanBudgetTab';
@@ -63,7 +64,12 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     inviteError,
     canInvite,
     canLeaveTrip,
+    canTransferLeader,
     leavingTrip,
+    transferLeaderModalOpen,
+    transferringLeader,
+    transferLeaderError,
+    transferCandidates,
     settlementConfirmed,
     canConfirmSettlement,
     settlementMemberSummaries,
@@ -93,6 +99,9 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     reviewFormExisting,
     handleBackPress,
     handleInvite,
+    openTransferLeaderModal,
+    closeTransferLeaderModal,
+    handleTransferLeader,
     requestLeaveTrip,
     handleSaveBudgetEntry,
     handleConfirmSettlement,
@@ -237,6 +246,8 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
                 isTravelRecordPublished={isPlanPublished}
                 showInvite={isApiPlan && canInvite && !offlineMode}
                 onInvite={handleInvite}
+                showTransferLeader={canTransferLeader}
+                onTransferLeader={openTransferLeaderModal}
                 showLeave={canLeaveTrip}
                 leaveDisabled={leavingTrip}
                 onLeave={requestLeaveTrip}
@@ -412,6 +423,19 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
         errorMessage={inviteError}
         onClose={closeInviteModal}
         onRetry={() => void loadInviteLink()}
+      />
+
+      <TransferLeaderModal
+        visible={transferLeaderModalOpen}
+        copy={copy}
+        roleLabels={roleLabels}
+        candidates={transferCandidates}
+        submitting={transferringLeader}
+        errorMessage={transferLeaderError}
+        onClose={closeTransferLeaderModal}
+        onConfirm={userId => {
+          void handleTransferLeader(userId);
+        }}
       />
 
       <TransientBottomToast

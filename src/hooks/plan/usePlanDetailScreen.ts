@@ -45,7 +45,7 @@ import {
   expenseCreateResponseToBudgetEntry,
 } from '../../services/travel/travelExpenseMapper';
 import { createTravelExpense } from '../../services/travel/travelExpenseService';
-import { resolveTravelInviteLink, leaveTravelTeam } from '../../services/travel/travelTeamService';
+import { resolveTravelInviteLink, leaveTravelTeam, transferTravelLeader } from '../../services/travel/travelTeamService';
 import { TravelServiceError, updateTravelStatus } from '../../services/travel/travelService';
 import {
   PlaceReviewSyncError,
@@ -301,6 +301,8 @@ export function usePlanDetailScreen({
     setReviewFormRoute(null);
     setBudgetModalOpen(false);
     setInviteModalOpen(false);
+    setTransferLeaderModalOpen(false);
+    setTransferLeaderError(null);
   }, [planId]);
 
   const canInvite = useMemo(() => {
@@ -319,7 +321,24 @@ export function usePlanDetailScreen({
     return plan.members.some(member => member.userId === authUser.userId);
   }, [authUser?.userId, isApiPlan, offlineMode, plan]);
 
+  const canTransferLeader = useMemo(() => {
+    if (!canInvite || offlineMode || !plan) {
+      return false;
+    }
+    return plan.members.some(member => member.role !== 'LEADER');
+  }, [canInvite, offlineMode, plan]);
+
+  const transferCandidates = useMemo(() => {
+    if (!plan) {
+      return [];
+    }
+    return plan.members.filter(member => member.role !== 'LEADER');
+  }, [plan]);
+
   const [leavingTrip, setLeavingTrip] = useState(false);
+  const [transferLeaderModalOpen, setTransferLeaderModalOpen] = useState(false);
+  const [transferringLeader, setTransferringLeader] = useState(false);
+  const [transferLeaderError, setTransferLeaderError] = useState<string | null>(null);
 
   const settlementConfirmed = settlement?.confirmed === true;
   const canConfirmSettlement = canInvite && !settlementConfirmed && !viewOnly;
@@ -509,6 +528,63 @@ export function usePlanDetailScreen({
     void syncMembers();
   }, [syncMembers]);
 
+  const openTransferLeaderModal = useCallback(() => {
+    if (!canTransferLeader) {
+      alert({
+        title: copy.transferLeader,
+        message: copy.transferLeaderEmpty,
+      });
+      return;
+    }
+    setTransferLeaderError(null);
+    setTransferLeaderModalOpen(true);
+  }, [alert, canTransferLeader, copy.transferLeader, copy.transferLeaderEmpty]);
+
+  const closeTransferLeaderModal = useCallback(() => {
+    if (transferringLeader) {
+      return;
+    }
+    setTransferLeaderModalOpen(false);
+    setTransferLeaderError(null);
+  }, [transferringLeader]);
+
+  const handleTransferLeader = useCallback(
+    async (newLeaderUserId: string) => {
+      if (!accessToken || !travelId || transferringLeader) {
+        return;
+      }
+      const candidate = transferCandidates.find(m => m.userId === newLeaderUserId);
+      setTransferringLeader(true);
+      setTransferLeaderError(null);
+      try {
+        await transferTravelLeader(accessToken, travelId, newLeaderUserId);
+        await syncMembers();
+        setTransferLeaderModalOpen(false);
+        alert({
+          title: copy.transferLeader,
+          message: copy.transferLeaderSuccess(candidate?.nickname ?? newLeaderUserId),
+        });
+      } catch (error) {
+        setTransferLeaderError(
+          error instanceof Error ? error.message : copy.transferLeaderFailed,
+        );
+      } finally {
+        setTransferringLeader(false);
+      }
+    },
+    [
+      accessToken,
+      alert,
+      copy.transferLeader,
+      copy.transferLeaderFailed,
+      copy.transferLeaderSuccess,
+      syncMembers,
+      transferCandidates,
+      transferringLeader,
+      travelId,
+    ],
+  );
+
   const handleLeaveTrip = useCallback(async () => {
     if (!accessToken || !travelId || !planId || leavingTrip) {
       return;
@@ -556,6 +632,16 @@ export function usePlanDetailScreen({
       alert({
         title: copy.leaveTrip,
         message: copy.leaveTripLeaderBlocked,
+        buttons: [
+          { label: copy.close, variant: 'secondary', onPress: () => {} },
+          {
+            label: copy.transferLeader,
+            variant: 'primary',
+            onPress: () => {
+              openTransferLeaderModal();
+            },
+          },
+        ],
       });
       return;
     }
@@ -583,8 +669,10 @@ export function usePlanDetailScreen({
     copy.leaveTripConfirmMessage,
     copy.leaveTripConfirmTitle,
     copy.leaveTripLeaderBlocked,
+    copy.transferLeader,
     handleLeaveTrip,
     leavingTrip,
+    openTransferLeaderModal,
     plan,
   ]);
 
@@ -1553,7 +1641,12 @@ export function usePlanDetailScreen({
     inviteError,
     canInvite,
     canLeaveTrip,
+    canTransferLeader,
     leavingTrip,
+    transferLeaderModalOpen,
+    transferringLeader,
+    transferLeaderError,
+    transferCandidates,
     settlementConfirmed,
     canConfirmSettlement,
     settlementMemberSummaries,
@@ -1583,6 +1676,9 @@ export function usePlanDetailScreen({
     reviewFormExisting,
     handleBackPress,
     handleInvite,
+    openTransferLeaderModal,
+    closeTransferLeaderModal,
+    handleTransferLeader,
     requestLeaveTrip,
     handleSaveBudgetEntry,
     handleConfirmSettlement,

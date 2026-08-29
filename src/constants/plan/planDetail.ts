@@ -70,6 +70,14 @@ export const PLAN_DETAIL_COPY: Record<
     leaveTripConfirm: string;
     leaveTripLeaderBlocked: string;
     leaveTripFailed: string;
+    transferLeader: string;
+    transferLeaderTitle: string;
+    transferLeaderSubtitle: string;
+    transferLeaderConfirm: string;
+    transferLeaderWorking: string;
+    transferLeaderEmpty: string;
+    transferLeaderSuccess: (name: string) => string;
+    transferLeaderFailed: string;
     tripPeriod: string;
     nights: (n: number) => string;
     dayLabel: (n: number) => string;
@@ -245,6 +253,14 @@ export const PLAN_DETAIL_COPY: Record<
     leaveTripLeaderBlocked:
       '다른 일행이 남아 있으면 방장은 나갈 수 없습니다. 먼저 방장을 위임해 주세요.',
     leaveTripFailed: '여행 나가기에 실패했습니다.',
+    transferLeader: '방장 위임',
+    transferLeaderTitle: '방장 위임',
+    transferLeaderSubtitle: '새 방장으로 지정할 일행을 선택하세요.',
+    transferLeaderConfirm: '위임하기',
+    transferLeaderWorking: '위임 중…',
+    transferLeaderEmpty: '위임할 다른 일행이 없습니다.',
+    transferLeaderSuccess: name => `「${name}」님에게 방장을 위임했습니다.`,
+    transferLeaderFailed: '방장 위임에 실패했습니다.',
     tripPeriod: '여행 기간',
     nights: n => `${n}박`,
     dayLabel: n => `Day ${n}`,
@@ -428,6 +444,14 @@ export const PLAN_DETAIL_COPY: Record<
     leaveTripLeaderBlocked:
       'As leader, you can’t leave while others remain. Transfer leadership first.',
     leaveTripFailed: 'Could not leave the trip.',
+    transferLeader: 'Transfer leadership',
+    transferLeaderTitle: 'Transfer leadership',
+    transferLeaderSubtitle: 'Choose a companion to become the new trip leader.',
+    transferLeaderConfirm: 'Transfer',
+    transferLeaderWorking: 'Transferring…',
+    transferLeaderEmpty: 'No other companions to transfer to.',
+    transferLeaderSuccess: name => `Leadership transferred to ${name}.`,
+    transferLeaderFailed: 'Could not transfer leadership.',
     tripPeriod: 'Trip dates',
     nights: n => `${n} night${n === 1 ? '' : 's'}`,
     dayLabel: n => `Day ${n}`,
@@ -612,6 +636,14 @@ export const PLAN_DETAIL_COPY: Record<
     leaveTripLeaderBlocked:
       '他の同行者が残っている場合、リーダーは退出できません。先にリーダーを委任してください。',
     leaveTripFailed: '旅行からの退出に失敗しました。',
+    transferLeader: 'リーダー委任',
+    transferLeaderTitle: 'リーダー委任',
+    transferLeaderSubtitle: '新しいリーダーにする同行者を選んでください。',
+    transferLeaderConfirm: '委任する',
+    transferLeaderWorking: '委任中…',
+    transferLeaderEmpty: '委任できる他の同行者がいません。',
+    transferLeaderSuccess: name => `「${name}」さんにリーダーを委任しました。`,
+    transferLeaderFailed: 'リーダーの委任に失敗しました。',
     tripPeriod: '旅行期間',
     nights: n => `${n}泊`,
     dayLabel: n => `Day ${n}`,
@@ -794,6 +826,14 @@ export const PLAN_DETAIL_COPY: Record<
     leaveTripConfirm: '退出',
     leaveTripLeaderBlocked: '仍有其他同行时，房主无法退出。请先转让房主。',
     leaveTripFailed: '退出行程失败。',
+    transferLeader: '转让房主',
+    transferLeaderTitle: '转让房主',
+    transferLeaderSubtitle: '请选择新的行程房主。',
+    transferLeaderConfirm: '转让',
+    transferLeaderWorking: '转让中…',
+    transferLeaderEmpty: '没有可转让的其他同行。',
+    transferLeaderSuccess: name => `已将房主转让给「${name}」。`,
+    transferLeaderFailed: '转让房主失败。',
     tripPeriod: '行程日期',
     nights: n => `${n}晚`,
     dayLabel: n => `第 ${n} 天`,

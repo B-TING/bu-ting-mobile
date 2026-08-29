@@ -12,7 +12,7 @@ import {
   logTravelPlanApiRequest,
   logTravelPlanApiResponse,
 } from '../../utils/travel/travelPlanApiLogger';
-import { ApiClientError, apiDelete, apiGet, apiPost } from '../api/apiClient';
+import { ApiClientError, apiDelete, apiGet, apiPatch, apiPost } from '../api/apiClient';
 import { TravelServiceError } from './travelService';
 
 function mapTravelTeamError(error: ApiClientError): TravelServiceError {
@@ -34,14 +34,15 @@ function teamUrl(path: string): string {
 }
 
 function teamLogHooks(
-  method: 'GET' | 'POST' | 'DELETE',
+  method: 'GET' | 'POST' | 'DELETE' | 'PATCH',
   url: string,
   accessToken: string,
   travelId?: string,
+  requestBody?: unknown,
 ) {
   return {
     onRequest: () => {
-      logTravelPlanApiRequest(method, url, { accessToken, travelId });
+      logTravelPlanApiRequest(method, url, { accessToken, travelId, requestBody });
     },
     onResponse: ({ status, body }: { status: number; body: unknown }) => {
       logTravelPlanApiResponse(method, url, status, body, { travelId });
@@ -188,5 +189,24 @@ export async function leaveTravelTeam(
   await apiDelete(url, {
     ...authOpts(accessToken),
     ...teamLogHooks('DELETE', url, accessToken, travelId),
+  });
+}
+
+/** PATCH /api/v1/travel/team/{travelId}/leader — 방장 위임 */
+export async function transferTravelLeader(
+  accessToken: string,
+  travelId: string,
+  newLeaderUserId: string,
+): Promise<void> {
+  const trimmed = newLeaderUserId.trim();
+  if (!trimmed) {
+    throw new TravelServiceError('newLeaderUserId is required');
+  }
+  const url = teamUrl(TRAVEL_TEAM_ENDPOINTS.travelLeader(travelId));
+  const body = { newLeaderUserId: trimmed };
+  await apiPatch(url, {
+    ...authOpts(accessToken),
+    body,
+    ...teamLogHooks('PATCH', url, accessToken, travelId, body),
   });
 }
