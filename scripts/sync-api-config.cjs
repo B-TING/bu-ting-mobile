@@ -106,6 +106,9 @@ export const TRAVEL_TEAM_ENDPOINTS = {
   travelMembers: (travelId: string) => \`/api/v1/travel/team/\${travelId}/members\`,
   /** DELETE — 인증 사용자 본인 여행 나가기 */
   travelMembersMe: (travelId: string) => \`/api/v1/travel/team/\${travelId}/members/me\`,
+  /** DELETE — 방장이 특정 멤버 강퇴 */
+  travelMemberByUserId: (travelId: string, userId: string) =>
+    \`/api/v1/travel/team/\${travelId}/members/\${userId}\`,
   /** PATCH — 방장 위임 body: { newLeaderUserId } */
   travelLeader: (travelId: string) => \`/api/v1/travel/team/\${travelId}/leader\`,
   travelInvite: (travelId: string) => \`/api/v1/travel/team/\${travelId}/invite\`,
