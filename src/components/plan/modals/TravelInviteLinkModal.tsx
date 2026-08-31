@@ -1,12 +1,4 @@
-import { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  Share,
-  Text,
-  TurboModuleRegistry,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 
 import type { CopyFor } from '../../../i18n';
@@ -14,22 +6,7 @@ import { AppModal, AppModalActions } from '../../shared/modals';
 
 type Copy = CopyFor<'planDetail'>;
 
-type ClipboardTurboModule = {
-  setString: (text: string) => void;
-};
-
-const clipboardTurbo = TurboModuleRegistry.get('RNCClipboard') as ClipboardTurboModule | null;
-
 const QR_SIZE = 196;
-
-async function copyInviteLink(link: string): Promise<void> {
-  if (clipboardTurbo) {
-    clipboardTurbo.setString(link);
-    return;
-  }
-
-  await Share.share({ message: link });
-}
 
 type TravelInviteLinkModalProps = {
   visible: boolean;
@@ -52,21 +29,6 @@ export function TravelInviteLinkModal({
   onClose,
   onRetry,
 }: TravelInviteLinkModalProps) {
-  const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    if (!visible) {
-      setCopied(false);
-    }
-  }, [visible, inviteLink]);
-
-  const handleCopy = () => {
-    if (!inviteLink) {
-      return;
-    }
-    void copyInviteLink(inviteLink).then(() => setCopied(true));
-  };
-
   return (
     <AppModal
       visible={visible}
@@ -106,14 +68,9 @@ export function TravelInviteLinkModal({
                 {copy.inviteExpiresAt(expiredAt)}
               </Text>
             ) : null}
-            <Pressable
-              onPress={handleCopy}
-              disabled={!inviteLink}
-              className="items-center rounded-2xl bg-brand-primary py-3 active:opacity-90">
-              <Text className="text-sm font-bold text-white">
-                {copied ? copy.inviteCopied : copy.inviteCopyLink}
-              </Text>
-            </Pressable>
+            <View className="items-center rounded-2xl bg-brand-border/60 py-3 opacity-60">
+              <Text className="text-sm font-bold text-brand-muted">{copy.inviteCopyLinkSoon}</Text>
+            </View>
           </>
         )}
       </View>
