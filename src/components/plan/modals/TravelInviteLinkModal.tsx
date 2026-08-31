@@ -4,7 +4,6 @@ import {
   Pressable,
   Share,
   Text,
-  TextInput,
   TurboModuleRegistry,
   View,
 } from 'react-native';
@@ -102,22 +101,15 @@ export function TravelInviteLinkModal({
                 </Text>
               </View>
             ) : null}
-            <TextInput
-              value={inviteLink ?? ''}
-              editable={false}
-              multiline
-              selectTextOnFocus
-              className="rounded-2xl border border-brand-border bg-brand-surface px-4 py-3 text-sm text-brand-text"
-            />
             {expiredAt ? (
-              <Text className="mt-2 text-xs text-brand-muted">
+              <Text className="mb-2 text-xs text-brand-muted">
                 {copy.inviteExpiresAt(expiredAt)}
               </Text>
             ) : null}
             <Pressable
               onPress={handleCopy}
               disabled={!inviteLink}
-              className="mt-3 items-center rounded-2xl bg-brand-primary py-3 active:opacity-90">
+              className="items-center rounded-2xl bg-brand-primary py-3 active:opacity-90">
               <Text className="text-sm font-bold text-white">
                 {copied ? copy.inviteCopied : copy.inviteCopyLink}
               </Text>
