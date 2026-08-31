@@ -1,0 +1,16 @@
+diff --git a/node_modules/react-native-svg/android/src/main/java/com/horcrux/svg/PathParser.java b/node_modules/react-native-svg/android/src/main/java/com/horcrux/svg/PathParser.java
+index 3f3c0ba..3d728b7 100644
+--- a/node_modules/react-native-svg/android/src/main/java/com/horcrux/svg/PathParser.java
++++ b/node_modules/react-native-svg/android/src/main/java/com/horcrux/svg/PathParser.java
+@@ -474,9 +474,9 @@ class PathParser {
+     // Bezier Curve Approximation
+     float arc = ea - sa;
+     if (arc < 0 && clockwise) {
+-      arc += Math.PI * 2;
++      arc += (float) (Math.PI * 2);
+     } else if (arc > 0 && !clockwise) {
+-      arc -= Math.PI * 2;
++      arc -= (float) (Math.PI * 2);
+     }
+ 
+     int n = (int) Math.ceil(Math.abs(round(arc / (Math.PI / 2))));

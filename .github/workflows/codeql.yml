@@ -83,13 +83,24 @@ jobs:
       with:
         languages: ${{ matrix.language }}
         build-mode: ${{ matrix.build-mode }}
+        config-file: ./.github/codeql/codeql-config.yml
 
     - name: Build Android for CodeQL
       if: matrix.language == 'java-kotlin'
       working-directory: android
       run: |
         chmod +x gradlew
-        ./gradlew assembleDebug --no-daemon --stacktrace
+        # Google Maven 일시 502 등 네트워크 오류 대비 재시도
+        for attempt in 1 2 3; do
+          if ./gradlew assembleDebug --no-daemon --stacktrace; then
+            exit 0
+          fi
+          echo "Gradle assembleDebug failed (attempt ${attempt}/3)"
+          if [ "$attempt" -lt 3 ]; then
+            sleep $((attempt * 30))
+          fi
+        done
+        exit 1
 
     - name: Build iOS for CodeQL
       if: matrix.language == 'swift'

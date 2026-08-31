@@ -1,0 +1,31 @@
+diff --git a/node_modules/react-native-video/android/src/main/java/com/brentvatne/exoplayer/VideoPlaybackService.kt b/node_modules/react-native-video/android/src/main/java/com/brentvatne/exoplayer/VideoPlaybackService.kt
+index 1111111..2222222 100644
+--- a/node_modules/react-native-video/android/src/main/java/com/brentvatne/exoplayer/VideoPlaybackService.kt
++++ b/node_modules/react-native-video/android/src/main/java/com/brentvatne/exoplayer/VideoPlaybackService.kt
+@@ -155,7 +155,7 @@ class VideoPlaybackService : MediaSessionService() {
+                 this,
+                 playerId * 10,
+                 seekBackwardIntent,
+-                PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
++                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+             )
+ 
+             // ACTION FOR COMMAND.TOGGLE_PLAY
+@@ -167,7 +167,7 @@ class VideoPlaybackService : MediaSessionService() {
+                 this,
+                 playerId * 10 + 1,
+                 togglePlayIntent,
+-                PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
++                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+             )
+ 
+             // ACTION FOR COMMAND.SEEK_FORWARD
+@@ -179,7 +179,7 @@ class VideoPlaybackService : MediaSessionService() {
+                 this,
+                 playerId * 10 + 2,
+                 seekForwardIntent,
+-                PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
++                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+             )
+ 
+             NotificationCompat.Builder(this, NOTIFICATION_CHANEL_ID)
