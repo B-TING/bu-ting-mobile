@@ -118,8 +118,14 @@ export async function syncMyActiveTravelsFromApi(
       continue;
     }
     usePlanStore.getState().setPlanOfflineSync(plan.planId, false);
-    usePlanStore.getState().upsertPlan(plan);
-    syncedPlans.push(plan);
+    // 일정 sync는 멤버를 API에서 안 가져오므로, 그사이 멤버 sync가 갱신했으면 유지
+    const latest = usePlanStore.getState().plans.find(p => p.planId === plan.planId);
+    const merged = {
+      ...plan,
+      members: latest?.members ?? plan.members,
+    };
+    usePlanStore.getState().upsertPlan(merged);
+    syncedPlans.push(merged);
   }
 
   const activePlanId = pickActiveTravelId(travels, usePlanStore.getState().activePlanId);

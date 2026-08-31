@@ -58,7 +58,13 @@ export function useApiTravelPlanSync({
       );
       markPlanOfflineSync(planId, scheduleLocked);
       if (!scheduleLocked) {
-        upsertPlan(plan);
+        // 일정 sync와 멤버 sync가 동시에 돌면, 늦게 끝난 일정 sync가
+        // 멤버 목록을 예전 스냅샷으로 덮어쓸 수 있어 최신 store 멤버를 유지한다.
+        const latest = usePlanStore.getState().plans.find(p => p.planId === planId);
+        upsertPlan({
+          ...plan,
+          members: latest?.members ?? plan.members,
+        });
       }
       return plan;
     } finally {
