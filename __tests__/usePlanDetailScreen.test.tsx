@@ -49,7 +49,7 @@ jest.mock('../src/hooks/useTravelExpensesSync', () => ({
 }));
 
 jest.mock('../src/hooks/useTravelMembersSync', () => ({
-  useTravelMembersSync: jest.fn(),
+  useTravelMembersSync: () => ({ syncMembers: jest.fn() }),
 }));
 
 jest.mock('../src/hooks/useApiTravelPlanSync', () => ({

@@ -10,6 +10,10 @@ type MemberListProps = {
   roleLabels: Record<MemberRole, string>;
   inviteLabel?: string;
   onInvite?: () => void;
+  leaveLabel?: string;
+  leaveDisabled?: boolean;
+  onLeave?: () => void;
+  onSelectMember?: (member: PlanMember) => void;
 };
 
 function initials(name: string) {
@@ -26,20 +30,46 @@ export function MemberList({
   roleLabels,
   inviteLabel,
   onInvite,
+  leaveLabel,
+  leaveDisabled = false,
+  onLeave,
+  onSelectMember,
 }: MemberListProps) {
+  const showHeaderActions = Boolean(
+    (inviteLabel && onInvite) || (leaveLabel && onLeave),
+  );
+
   return (
     <View className="mb-3">
-      <View className="mb-2 flex-row items-center justify-between">
-        <Text className="text-sm font-bold text-brand-text">{title}</Text>
-        {inviteLabel && onInvite && (
-          <Pressable
-            onPress={onInvite}
-            className="rounded-full border border-brand-primary bg-brand-selected px-2.5 py-1 active:opacity-80"
-            accessibilityRole="button"
-            accessibilityLabel={inviteLabel}>
-            <Text className="text-[10px] font-semibold text-brand-primary">{inviteLabel}</Text>
-          </Pressable>
-        )}
+      <View className="mb-2 flex-row items-center justify-between gap-2">
+        <Text className="shrink text-sm font-bold text-brand-text">{title}</Text>
+        {showHeaderActions ? (
+          <View className="flex-row flex-wrap items-center justify-end gap-1.5">
+            {inviteLabel && onInvite ? (
+              <Pressable
+                onPress={onInvite}
+                className="rounded-full border border-brand-primary bg-brand-selected px-2.5 py-1 active:opacity-80"
+                accessibilityRole="button"
+                accessibilityLabel={inviteLabel}>
+                <Text className="text-[10px] font-semibold text-brand-primary">
+                  {inviteLabel}
+                </Text>
+              </Pressable>
+            ) : null}
+            {leaveLabel && onLeave ? (
+              <Pressable
+                disabled={leaveDisabled}
+                onPress={onLeave}
+                className={`rounded-full border border-red-200 bg-red-50 px-2.5 py-1 active:opacity-80 ${
+                  leaveDisabled ? 'opacity-50' : ''
+                }`}
+                accessibilityRole="button"
+                accessibilityLabel={leaveLabel}>
+                <Text className="text-[10px] font-semibold text-red-600">{leaveLabel}</Text>
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null}
       </View>
 
       <ScrollView
@@ -47,24 +77,48 @@ export function MemberList({
         nestedScrollEnabled
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ gap: 8, paddingRight: 4 }}>
-        {members.map((m, i) => (
-          <View
-            key={m.userId}
-            style={{ width: CARD_WIDTH }}
-            className="items-center rounded-xl border border-brand-border bg-brand-surface px-2 py-2.5">
+        {members.map((m, i) => {
+          const card = (
+            <>
+              <View
+                className="mb-1.5 h-8 w-8 items-center justify-center rounded-full"
+                style={{ backgroundColor: AVATAR_COLORS[i % AVATAR_COLORS.length] }}>
+                <Text className="text-xs font-bold text-white">{initials(m.nickname)}</Text>
+              </View>
+              <Text
+                className="w-full text-center text-xs font-semibold text-brand-text"
+                numberOfLines={1}>
+                {m.nickname}
+              </Text>
+              <Text className="mt-0.5 text-[10px] text-brand-muted" numberOfLines={1}>
+                {roleLabels[m.role]}
+              </Text>
+            </>
+          );
+
+          if (onSelectMember) {
+            return (
+              <Pressable
+                key={m.userId}
+                onPress={() => onSelectMember(m)}
+                style={{ width: CARD_WIDTH }}
+                className="items-center rounded-xl border border-brand-border bg-brand-surface px-2 py-2.5 active:opacity-80"
+                accessibilityRole="button"
+                accessibilityLabel={m.nickname}>
+                {card}
+              </Pressable>
+            );
+          }
+
+          return (
             <View
-              className="mb-1.5 h-8 w-8 items-center justify-center rounded-full"
-              style={{ backgroundColor: AVATAR_COLORS[i % AVATAR_COLORS.length] }}>
-              <Text className="text-xs font-bold text-white">{initials(m.nickname)}</Text>
+              key={m.userId}
+              style={{ width: CARD_WIDTH }}
+              className="items-center rounded-xl border border-brand-border bg-brand-surface px-2 py-2.5">
+              {card}
             </View>
-            <Text className="w-full text-center text-xs font-semibold text-brand-text" numberOfLines={1}>
-              {m.nickname}
-            </Text>
-            <Text className="mt-0.5 text-[10px] text-brand-muted" numberOfLines={1}>
-              {roleLabels[m.role]}
-            </Text>
-          </View>
-        ))}
+          );
+        })}
 
         {inviteLabel && onInvite ? (
           <Pressable

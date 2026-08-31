@@ -45,8 +45,8 @@ import {
   expenseCreateResponseToBudgetEntry,
 } from '../../services/travel/travelExpenseMapper';
 import { createTravelExpense } from '../../services/travel/travelExpenseService';
-import { resolveTravelInviteLink } from '../../services/travel/travelTeamService';
-import { updateTravelStatus } from '../../services/travel/travelService';
+import { resolveTravelInviteLink, leaveTravelTeam, transferTravelLeader, removeTravelMember } from '../../services/travel/travelTeamService';
+import { TravelServiceError, updateTravelStatus } from '../../services/travel/travelService';
 import {
   PlaceReviewSyncError,
   savePlaceReviewForTravel,
@@ -67,7 +67,7 @@ import { selectReusableAccessToken } from '../../stores/useAuthStore';
 import { useApiTravelPlanSync } from '../useApiTravelPlanSync';
 import { usePlanOfflineSyncFeedback } from '../usePlanOfflineSyncFeedback';
 import { usePlanPicker } from './usePlanPicker';
-import type { BudgetEntry, RouteItem, TravelLegMode } from '../../types/travelPlan';
+import type { BudgetEntry, PlanMember, RouteItem, TravelLegMode } from '../../types/travelPlan';
 import type { PlaceReview } from '../../types/travelReview';
 import { sortedRoutes } from '../../utils/plan/planItinerary';
 import { optimizeRouteOrder } from '../../utils/plan/routeOptimize';
@@ -163,7 +163,7 @@ export function usePlanDetailScreen({
     enabled: isApiPlan && !offlineMode,
     accessToken,
   });
-  useTravelMembersSync({
+  const { syncMembers } = useTravelMembersSync({
     planId,
     travelId,
     accessToken,
@@ -301,6 +301,8 @@ export function usePlanDetailScreen({
     setReviewFormRoute(null);
     setBudgetModalOpen(false);
     setInviteModalOpen(false);
+    setSelectedMember(null);
+    setMemberActionError(null);
   }, [planId]);
 
   const canInvite = useMemo(() => {
@@ -311,6 +313,34 @@ export function usePlanDetailScreen({
       member => member.userId === authUser.userId && member.role === 'LEADER',
     );
   }, [authUser?.userId, isApiPlan, plan]);
+
+  const canLeaveTrip = useMemo(() => {
+    if (!isApiPlan || offlineMode || !authUser?.userId || !plan) {
+      return false;
+    }
+    return plan.members.some(member => member.userId === authUser.userId);
+  }, [authUser?.userId, isApiPlan, offlineMode, plan]);
+
+  const [leavingTrip, setLeavingTrip] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<PlanMember | null>(null);
+  const [memberActionBusy, setMemberActionBusy] = useState(false);
+  const [memberActionError, setMemberActionError] = useState<string | null>(null);
+
+  const canTransferSelected = useMemo(() => {
+    if (!canInvite || offlineMode || !selectedMember) {
+      return false;
+    }
+    return selectedMember.role !== 'LEADER';
+  }, [canInvite, offlineMode, selectedMember]);
+
+  const canKickSelected = useMemo(() => {
+    if (!canInvite || offlineMode || !selectedMember || !authUser?.userId) {
+      return false;
+    }
+    return (
+      selectedMember.userId !== authUser.userId && selectedMember.role !== 'LEADER'
+    );
+  }, [authUser?.userId, canInvite, offlineMode, selectedMember]);
 
   const settlementConfirmed = settlement?.confirmed === true;
   const canConfirmSettlement = canInvite && !settlementConfirmed && !viewOnly;
@@ -497,7 +527,232 @@ export function usePlanDetailScreen({
     setInviteLink(null);
     setInviteExpiredAt(null);
     setInviteError(null);
-  }, []);
+    void syncMembers();
+  }, [syncMembers]);
+
+  const openMemberActions = useCallback(
+    (member: PlanMember) => {
+      if (!authUser?.userId || member.userId === authUser.userId) {
+        return;
+      }
+      setMemberActionError(null);
+      setSelectedMember(member);
+    },
+    [authUser?.userId],
+  );
+
+  const closeMemberActions = useCallback(() => {
+    if (memberActionBusy) {
+      return;
+    }
+    setSelectedMember(null);
+    setMemberActionError(null);
+  }, [memberActionBusy]);
+
+  const handleTransferLeader = useCallback(async () => {
+    if (!accessToken || !travelId || !selectedMember || memberActionBusy) {
+      return;
+    }
+    setMemberActionBusy(true);
+    setMemberActionError(null);
+    try {
+      await transferTravelLeader(accessToken, travelId, selectedMember.userId);
+      await syncMembers();
+      const name = selectedMember.nickname;
+      setSelectedMember(null);
+      alert({
+        title: copy.transferLeader,
+        message: copy.transferLeaderSuccess(name),
+      });
+    } catch (error) {
+      setMemberActionError(
+        error instanceof Error ? error.message : copy.transferLeaderFailed,
+      );
+    } finally {
+      setMemberActionBusy(false);
+    }
+  }, [
+    accessToken,
+    alert,
+    copy.transferLeader,
+    copy.transferLeaderFailed,
+    copy.transferLeaderSuccess,
+    memberActionBusy,
+    selectedMember,
+    syncMembers,
+    travelId,
+  ]);
+
+  const requestTransferLeader = useCallback(() => {
+    if (!selectedMember || !canTransferSelected) {
+      return;
+    }
+    alert({
+      title: copy.transferLeaderConfirmTitle,
+      message: copy.transferLeaderConfirmMessage(selectedMember.nickname),
+      buttons: [
+        { label: copy.close, variant: 'secondary', onPress: () => {} },
+        {
+          label: copy.transferLeaderConfirm,
+          variant: 'primary',
+          onPress: () => {
+            void handleTransferLeader();
+          },
+        },
+      ],
+    });
+  }, [
+    alert,
+    canTransferSelected,
+    copy.close,
+    copy.transferLeaderConfirm,
+    copy.transferLeaderConfirmMessage,
+    copy.transferLeaderConfirmTitle,
+    handleTransferLeader,
+    selectedMember,
+  ]);
+
+  const handleKickMember = useCallback(async () => {
+    if (!accessToken || !travelId || !selectedMember || memberActionBusy) {
+      return;
+    }
+    setMemberActionBusy(true);
+    setMemberActionError(null);
+    try {
+      await removeTravelMember(accessToken, travelId, selectedMember.userId);
+      await syncMembers();
+      const name = selectedMember.nickname;
+      setSelectedMember(null);
+      alert({
+        title: copy.kickMember,
+        message: copy.kickMemberSuccess(name),
+      });
+    } catch (error) {
+      setMemberActionError(
+        error instanceof Error ? error.message : copy.kickMemberFailed,
+      );
+    } finally {
+      setMemberActionBusy(false);
+    }
+  }, [
+    accessToken,
+    alert,
+    copy.kickMember,
+    copy.kickMemberFailed,
+    copy.kickMemberSuccess,
+    memberActionBusy,
+    selectedMember,
+    syncMembers,
+    travelId,
+  ]);
+
+  const requestKickMember = useCallback(() => {
+    if (!selectedMember || !canKickSelected) {
+      return;
+    }
+    alert({
+      title: copy.kickMemberConfirmTitle,
+      message: copy.kickMemberConfirmMessage(selectedMember.nickname),
+      buttons: [
+        { label: copy.close, variant: 'secondary', onPress: () => {} },
+        {
+          label: copy.kickMemberConfirm,
+          variant: 'danger',
+          onPress: () => {
+            void handleKickMember();
+          },
+        },
+      ],
+    });
+  }, [
+    alert,
+    canKickSelected,
+    copy.close,
+    copy.kickMemberConfirm,
+    copy.kickMemberConfirmMessage,
+    copy.kickMemberConfirmTitle,
+    handleKickMember,
+    selectedMember,
+  ]);
+
+  const handleLeaveTrip = useCallback(async () => {
+    if (!accessToken || !travelId || !planId || leavingTrip) {
+      return;
+    }
+    setLeavingTrip(true);
+    try {
+      await leaveTravelTeam(accessToken, travelId);
+      completePlan(planId);
+      navigateToMainTab(navigation, 'home');
+    } catch (error) {
+      const isLeaderBlocked =
+        error instanceof TravelServiceError && error.status === 409;
+      alert({
+        title: copy.leaveTrip,
+        message: isLeaderBlocked
+          ? copy.leaveTripLeaderBlocked
+          : error instanceof Error
+            ? error.message
+            : copy.leaveTripFailed,
+      });
+    } finally {
+      setLeavingTrip(false);
+    }
+  }, [
+    accessToken,
+    alert,
+    completePlan,
+    copy.leaveTrip,
+    copy.leaveTripFailed,
+    copy.leaveTripLeaderBlocked,
+    leavingTrip,
+    navigation,
+    planId,
+    travelId,
+  ]);
+
+  const requestLeaveTrip = useCallback(() => {
+    if (!canLeaveTrip || leavingTrip || !plan || !authUser?.userId) {
+      return;
+    }
+    const isLeader = plan.members.some(
+      member => member.userId === authUser.userId && member.role === 'LEADER',
+    );
+    if (isLeader && plan.members.length > 1) {
+      alert({
+        title: copy.leaveTrip,
+        message: copy.leaveTripLeaderBlocked,
+      });
+      return;
+    }
+    alert({
+      title: copy.leaveTripConfirmTitle,
+      message: copy.leaveTripConfirmMessage,
+      buttons: [
+        { label: copy.close, variant: 'secondary', onPress: () => {} },
+        {
+          label: copy.leaveTripConfirm,
+          variant: 'danger',
+          onPress: () => {
+            void handleLeaveTrip();
+          },
+        },
+      ],
+    });
+  }, [
+    alert,
+    authUser?.userId,
+    canLeaveTrip,
+    copy.close,
+    copy.leaveTrip,
+    copy.leaveTripConfirm,
+    copy.leaveTripConfirmMessage,
+    copy.leaveTripConfirmTitle,
+    copy.leaveTripLeaderBlocked,
+    handleLeaveTrip,
+    leavingTrip,
+    plan,
+  ]);
 
   const lockScheduleOnApiError = useCallback(
     (error: unknown) => {
@@ -1463,6 +1718,13 @@ export function usePlanDetailScreen({
     inviteLoading,
     inviteError,
     canInvite,
+    canLeaveTrip,
+    leavingTrip,
+    selectedMember,
+    memberActionBusy,
+    memberActionError,
+    canTransferSelected,
+    canKickSelected,
     settlementConfirmed,
     canConfirmSettlement,
     settlementMemberSummaries,
@@ -1492,6 +1754,11 @@ export function usePlanDetailScreen({
     reviewFormExisting,
     handleBackPress,
     handleInvite,
+    openMemberActions,
+    closeMemberActions,
+    requestTransferLeader,
+    requestKickMember,
+    requestLeaveTrip,
     handleSaveBudgetEntry,
     handleConfirmSettlement,
     closeInviteModal,

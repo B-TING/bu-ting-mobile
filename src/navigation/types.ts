@@ -18,6 +18,8 @@ export type RootStackParamList = {
   PlanCandidates: undefined;
   /** planId 생략 시 진행 중(active) 플랜 사용 */
   PlanDetail: { planId?: string; openReboot?: boolean; tab?: 'overview' | 'schedule' | 'budget' | 'records' } | undefined;
+  /** 인앱 QR/링크 스캔으로 여행 초대 수락 */
+  TravelInviteScan: undefined;
   MenuPlaceholder: { title: string };
   TravelRecordDetail: { travelRecordId: string };
   FestivalCalendar: { initialDate?: string } | undefined;

@@ -42,6 +42,13 @@ export const APP_MENU_ITEMS: AppMenuItem[] = [
     target: { kind: 'screen', route: 'PlanWizard' },
   },
   {
+    id: 'inviteScan',
+    labelKo: '초대 QR 스캔',
+    labelEn: 'Scan invite QR',
+    icon: 'camera',
+    target: { kind: 'screen', route: 'TravelInviteScan' },
+  },
+  {
     id: 'places',
     labelKo: '장소 탐색',
     labelEn: 'Explore places',

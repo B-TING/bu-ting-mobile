@@ -5,13 +5,14 @@ import type {
   TravelInviteLinkResponse,
   TravelMemberResponse,
   TravelStatusDto,
+  InviteVerificationResponse,
 } from '../../types/travelApi';
 import {
   logTravelPlanApiError,
   logTravelPlanApiRequest,
   logTravelPlanApiResponse,
 } from '../../utils/travel/travelPlanApiLogger';
-import { ApiClientError, apiGet, apiPost } from '../api/apiClient';
+import { ApiClientError, apiDelete, apiGet, apiPatch, apiPost } from '../api/apiClient';
 import { TravelServiceError } from './travelService';
 
 function mapTravelTeamError(error: ApiClientError): TravelServiceError {
@@ -33,14 +34,15 @@ function teamUrl(path: string): string {
 }
 
 function teamLogHooks(
-  method: 'GET' | 'POST',
+  method: 'GET' | 'POST' | 'DELETE' | 'PATCH',
   url: string,
   accessToken: string,
   travelId?: string,
+  requestBody?: unknown,
 ) {
   return {
     onRequest: () => {
-      logTravelPlanApiRequest(method, url, { accessToken, travelId });
+      logTravelPlanApiRequest(method, url, { accessToken, travelId, requestBody });
     },
     onResponse: ({ status, body }: { status: number; body: unknown }) => {
       logTravelPlanApiResponse(method, url, status, body, { travelId });
@@ -130,4 +132,98 @@ export async function resolveTravelInviteLink(
   }
   const created = await createTravelInviteLink(accessToken, travelId);
   return { inviteLink: created.inviteLink };
+}
+
+function inviteTokenUrl(path: string, token: string): string {
+  const url = new URL(`${API_BASE_URL}${path}`);
+  url.searchParams.set('token', token);
+  return url.toString();
+}
+
+/** GET /api/v1/travel/team/invites/verify?token= — 초대 미리보기 (인증 불필요) */
+export async function verifyTravelInvite(
+  token: string,
+): Promise<InviteVerificationResponse> {
+  const trimmed = token.trim();
+  if (!trimmed) {
+    throw new TravelServiceError('Invite token is required');
+  }
+  const url = inviteTokenUrl(TRAVEL_TEAM_ENDPOINTS.invitesVerify, trimmed);
+  const data = await apiGet<InviteVerificationResponse>(url, {
+    errorMessagePrefix: 'Travel invite verify failed',
+    mapError: mapTravelTeamError,
+    ...teamLogHooks('GET', url, ''),
+  });
+  if (!data?.travelId) {
+    throw new TravelServiceError('Invite verify response missing travelId');
+  }
+  return data;
+}
+
+/** POST /api/v1/travel/team/invites/accept?token= — 합류 (Bearer 필수) */
+export async function acceptTravelInvite(
+  accessToken: string,
+  token: string,
+): Promise<InviteVerificationResponse> {
+  const trimmed = token.trim();
+  if (!trimmed) {
+    throw new TravelServiceError('Invite token is required');
+  }
+  const url = inviteTokenUrl(TRAVEL_TEAM_ENDPOINTS.invitesAccept, trimmed);
+  const data = await apiPost<InviteVerificationResponse>(url, {
+    ...authOpts(accessToken),
+    ...teamLogHooks('POST', url, accessToken),
+  });
+  if (!data?.travelId) {
+    throw new TravelServiceError('Invite accept response missing travelId');
+  }
+  return data;
+}
+
+/** DELETE /api/v1/travel/team/{travelId}/members/me — 여행 나가기 */
+export async function leaveTravelTeam(
+  accessToken: string,
+  travelId: string,
+): Promise<void> {
+  const url = teamUrl(TRAVEL_TEAM_ENDPOINTS.travelMembersMe(travelId));
+  await apiDelete(url, {
+    ...authOpts(accessToken),
+    ...teamLogHooks('DELETE', url, accessToken, travelId),
+  });
+}
+
+/** DELETE /api/v1/travel/team/{travelId}/members/{userId} — 멤버 강퇴 */
+export async function removeTravelMember(
+  accessToken: string,
+  travelId: string,
+  userId: string,
+): Promise<void> {
+  const trimmed = userId.trim();
+  if (!trimmed) {
+    throw new TravelServiceError('userId is required');
+  }
+  const url = teamUrl(TRAVEL_TEAM_ENDPOINTS.travelMemberByUserId(travelId, trimmed));
+  await apiDelete(url, {
+    ...authOpts(accessToken),
+    ...teamLogHooks('DELETE', url, accessToken, travelId),
+  });
+}
+
+/** PATCH /api/v1/travel/team/{travelId}/leader — 방장 위임 */
+export async function transferTravelLeader(
+  accessToken: string,
+  travelId: string,
+  newLeaderUserId: string,
+): Promise<void> {
+  const trimmed = newLeaderUserId.trim();
+  if (!trimmed) {
+    throw new TravelServiceError('newLeaderUserId is required');
+  }
+  const url = teamUrl(TRAVEL_TEAM_ENDPOINTS.travelLeader(travelId));
+  const body = { newLeaderUserId: trimmed };
+  await apiPatch(url, {
+    ...authOpts(accessToken),
+    body,
+    ...teamLogHooks('PATCH', url, accessToken, travelId, body),
+  });
 }
