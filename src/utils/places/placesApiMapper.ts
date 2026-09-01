@@ -235,6 +235,24 @@ export function enrichBusanPlaceFromDetail(
   };
 }
 
+/** 키워드 검색 결과 → 일정 카드용 최소 상세(이미지·평점만, detail API 미호출) */
+export function busanPlaceToPlaceDetailStub(place: BusanPlace): PlaceDetailVO {
+  return {
+    googlePlaceId: place.contentId,
+    internalPlaceId: place.contentId,
+    name: place.name,
+    kind: contentTypeToKind(place.contentTypeId),
+    googleTypes: [],
+    formattedAddress: place.address,
+    location: place.location,
+    rating: place.rating,
+    userRatingCount: place.userRatingsTotal,
+    reviews: [],
+    photos: [],
+    imageUrl: place.imageUrl,
+  };
+}
+
 export function mapPlaceDetailToPlaceDetailVO(
   detail: PlaceDetailResponseDto,
   fallback?: { name?: string; address?: string; imageUrl?: string },

@@ -80,12 +80,23 @@ import {
   candidateToRouteItem,
   type RebootPlaceCandidate,
 } from '../../utils/places/rebootPlaces';
-import { mergeRouteWithPlaceDetail } from '../../utils/places/routePlaceDetail';
+import {
+  mergeRouteWithPlaceDetail,
+  resolveRouteImageUrl,
+} from '../../utils/places/routePlaceDetail';
+import { usePlaceDetailCacheStore } from '../../stores/usePlaceDetailCacheStore';
 import { getReviewForPlace, reviewProgress } from '../../utils/review/travelReview';
 import { lockPlanScheduleIfApiError } from '../../utils/travel/scheduleApiLock';
 import type { BudgetEntryDraft } from '../../components/plan/modals/BudgetEntryModal';
 
 const EMPTY_BUDGET: BudgetEntry[] = [];
+
+function seedCandidateRouteImage(candidate: RebootPlaceCandidate): void {
+  usePlaceDetailCacheStore.getState().seedImageUrl(candidate.placeId, candidate.imageUrl, {
+    name: candidate.placeName,
+    address: candidate.address,
+  });
+}
 
 export type UsePlanDetailScreenParams = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'PlanDetail'>;
@@ -783,11 +794,16 @@ export function usePlanDetailScreen({
         ...day,
         routes: sortedRoutes(day.routes).map(route => {
           const withCatalog = hydrateRoutePlaceInfo(route, language);
-          return mergeRouteWithPlaceDetail(
-            withCatalog,
-            detailsByPlaceId[route.placeId] ?? null,
-            language,
-          );
+          const detail = detailsByPlaceId[route.placeId] ?? null;
+          const merged = mergeRouteWithPlaceDetail(withCatalog, detail, language);
+          const imageUrl = resolveRouteImageUrl(merged, detail);
+          if (!imageUrl || merged.placeInfo?.imageUrl) {
+            return merged;
+          }
+          return {
+            ...merged,
+            placeInfo: { ...merged.placeInfo!, imageUrl },
+          };
         }),
       })),
     };
@@ -1105,6 +1121,8 @@ export function usePlanDetailScreen({
         return;
       }
 
+      seedCandidateRouteImage(candidate);
+
       const apiPlanId = scheduleDay.apiPlanId;
       if (isApiPlan && accessToken && apiPlanId) {
         try {
@@ -1260,6 +1278,8 @@ export function usePlanDetailScreen({
       if (!scheduleDay || !planId || !enrichedPlan || viewOnly) {
         return;
       }
+
+      seedCandidateRouteImage(candidate);
 
       const apiPlanId = scheduleDay.apiPlanId;
       if (isApiPlan && apiPlanId && accessToken) {

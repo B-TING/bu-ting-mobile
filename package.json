@@ -1,6 +1,6 @@
 {
   "name": "BUTingMobile",
-  "version": "1.2.2-alpha",
+  "version": "1.2.2a-alpha",
   "private": true,
   "scripts": {
     "android": "node scripts/run-android.cjs",
@@ -90,6 +90,7 @@
   },
   "overrides": {
     "decode-uri-component": "0.5.0",
+    "react-native-css-interop": "0.2.6",
     "fast-xml-parser": ">=5.7.0",
     "js-yaml": ">=5.2.2",
     "postcss": ">=8.5.18",
