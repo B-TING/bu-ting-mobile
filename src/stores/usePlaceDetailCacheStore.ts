@@ -6,6 +6,8 @@ import type { PlaceDetailVO } from '../types/googlePlaces';
 import type { RouteItem, RouteItemType } from '../types/travelPlan';
 import {
   fetchRoutePlaceDetail,
+  fetchRoutePlaceImageViaKeywordSearch,
+  isRouteImageOnlyDetail,
   shouldPrefetchRouteDetail,
 } from '../utils/places/routePlaceDetail';
 
@@ -17,7 +19,13 @@ type PlaceDetailCacheState = {
   isLoading: (placeId: string) => boolean;
   isRouteDetailPending: (route: RouteItem) => boolean;
   mergeDetails: (details: Record<string, PlaceDetailVO | null | undefined>) => void;
+  seedImageUrl: (
+    placeId: string,
+    imageUrl: string | undefined,
+    meta?: { name?: string; address?: string },
+  ) => void;
   prefetchRoutes: (routes: RouteItem[]) => void;
+  prefetchImageForRoute: (route: RouteItem) => Promise<PlaceDetailVO | null>;
   fetchForRoute: (
     placeId: string,
     type: RouteItemType,
@@ -26,6 +34,7 @@ type PlaceDetailCacheState = {
 };
 
 const pendingFetches = new Map<string, Promise<PlaceDetailVO | null>>();
+const pendingImagePrefetches = new Map<string, Promise<PlaceDetailVO | null>>();
 
 /** 실패 직후 프리패치 폭주 방지 (명시적 fetchForRoute는 재시도 가능) */
 const PREFETCH_FAILURE_COOLDOWN_MS = 30_000;
@@ -69,6 +78,17 @@ function stripNullDetails(
   return next;
 }
 
+function hasCachedRouteImage(
+  detailsByPlaceId: Record<string, PlaceDetailVO>,
+  placeId: string,
+  route?: RouteItem,
+): boolean {
+  if (route?.placeInfo?.imageUrl?.trim()) {
+    return true;
+  }
+  return Boolean(detailsByPlaceId[placeId]?.imageUrl?.trim());
+}
+
 export const usePlaceDetailCacheStore = create<PlaceDetailCacheState>()(
   persist(
     (set, get) => ({
@@ -85,10 +105,13 @@ export const usePlaceDetailCacheStore = create<PlaceDetailCacheState>()(
         if (!shouldPrefetchRouteDetail(route)) {
           return false;
         }
-        if (get().hasDetail(route.placeId)) {
+        if (hasCachedRouteImage(get().detailsByPlaceId, route.placeId, route)) {
           return false;
         }
-        return get().isLoading(route.placeId) || pendingFetches.has(route.placeId);
+        return (
+          get().isLoading(route.placeId) ||
+          pendingImagePrefetches.has(route.placeId)
+        );
       },
 
       mergeDetails: details => {
@@ -115,26 +138,100 @@ export const usePlaceDetailCacheStore = create<PlaceDetailCacheState>()(
         });
       },
 
+      seedImageUrl: (placeId, imageUrl, meta) => {
+        const trimmed = imageUrl?.trim();
+        if (!placeId || !trimmed) {
+          return;
+        }
+
+        const existing = get().detailsByPlaceId[placeId];
+        if (existing?.imageUrl?.trim()) {
+          return;
+        }
+
+        if (existing) {
+          get().mergeDetails({ [placeId]: { ...existing, imageUrl: trimmed } });
+          return;
+        }
+
+        get().mergeDetails({
+          [placeId]: {
+            googlePlaceId: placeId,
+            name: meta?.name?.trim() || '',
+            kind: 'attraction',
+            googleTypes: [],
+            formattedAddress: meta?.address?.trim() || '',
+            location: { lat: 0, lng: 0 },
+            reviews: [],
+            photos: [],
+            imageUrl: trimmed,
+          },
+        });
+      },
+
       prefetchRoutes: routes => {
         for (const route of uniquePrefetchRoutes(routes)) {
+          const placeId = route.placeId;
           if (
-            get().hasDetail(route.placeId) ||
-            pendingFetches.has(route.placeId) ||
-            isPrefetchCoolingDown(route.placeId)
+            hasCachedRouteImage(get().detailsByPlaceId, placeId, route) ||
+            pendingImagePrefetches.has(placeId) ||
+            isPrefetchCoolingDown(placeId)
           ) {
             continue;
           }
-          void get().fetchForRoute(route.placeId, route.type, {
-            placeName: route.placeName,
-            address: route.placeInfo?.address,
-            imageUrl: route.placeInfo?.imageUrl,
-          });
+          void get().prefetchImageForRoute(route);
         }
       },
 
+      prefetchImageForRoute: async route => {
+        const placeId = route.placeId;
+        const pending = pendingImagePrefetches.get(placeId);
+        if (pending) {
+          return pending;
+        }
+
+        set(state => ({
+          loadingIds: { ...state.loadingIds, [placeId]: true },
+        }));
+
+        const promise = fetchRoutePlaceImageViaKeywordSearch(placeId, route.type, {
+          placeName: route.placeName,
+          address: route.placeInfo?.address,
+          imageUrl: route.placeInfo?.imageUrl,
+        })
+          .then(result => {
+            if (result?.imageUrl?.trim()) {
+              prefetchFailedAtByPlaceId.delete(placeId);
+              const existing = get().detailsByPlaceId[placeId];
+              if (existing && !isRouteImageOnlyDetail(existing)) {
+                get().mergeDetails({
+                  [placeId]: { ...existing, imageUrl: result.imageUrl },
+                });
+              } else {
+                get().mergeDetails({ [placeId]: result });
+              }
+            } else {
+              prefetchFailedAtByPlaceId.set(placeId, Date.now());
+            }
+            return result;
+          })
+          .finally(() => {
+            pendingImagePrefetches.delete(placeId);
+            set(state => {
+              const nextLoading = { ...state.loadingIds };
+              delete nextLoading[placeId];
+              return { loadingIds: nextLoading };
+            });
+          });
+
+        pendingImagePrefetches.set(placeId, promise);
+        return promise;
+      },
+
       fetchForRoute: async (placeId, type, options) => {
-        if (get().hasDetail(placeId)) {
-          return get().getDetail(placeId) ?? null;
+        const existing = get().getDetail(placeId);
+        if (existing && !isRouteImageOnlyDetail(existing)) {
+          return existing;
         }
 
         const pending = pendingFetches.get(placeId);
@@ -150,7 +247,12 @@ export const usePlaceDetailCacheStore = create<PlaceDetailCacheState>()(
           .then(result => {
             if (result != null) {
               prefetchFailedAtByPlaceId.delete(placeId);
-              get().mergeDetails({ [placeId]: result });
+              const previous = get().detailsByPlaceId[placeId];
+              const merged =
+                previous?.imageUrl?.trim() && !result.imageUrl?.trim()
+                  ? { ...result, imageUrl: previous.imageUrl }
+                  : result;
+              get().mergeDetails({ [placeId]: merged });
             } else {
               prefetchFailedAtByPlaceId.set(placeId, Date.now());
               // 과거 null poison 캐시가 있으면 제거해 재시도 가능하게 한다.

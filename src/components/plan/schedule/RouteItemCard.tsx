@@ -5,6 +5,7 @@ import { StarRating } from '../../shared/rating/StarRating';
 import { AppIcon } from '../../shared/icons/AppIcon';
 import { PlaceImage } from '../../places/PlaceImage';
 import { usePlaceDetailCacheStore } from '../../../stores/usePlaceDetailCacheStore';
+import { resolveRouteImageUrl } from '../../../utils/places/routePlaceDetail';
 import type { RouteItem } from '../../../types/travelPlan';
 
 type RouteItemCardProps = {
@@ -56,7 +57,8 @@ export function RouteItemCard({
 }: RouteItemCardProps) {
   const info = route.placeInfo;
   const isDetailPending = usePlaceDetailCacheStore(s => s.isRouteDetailPending(route));
-  const imageUrl = info?.imageUrl;
+  const cachedDetail = usePlaceDetailCacheStore(s => s.detailsByPlaceId[route.placeId]);
+  const imageUrl = resolveRouteImageUrl(route, cachedDetail);
   const leftBorderColor = zoneColor ?? dayColor;
 
   return (
