@@ -42,6 +42,10 @@ jobs:
         node-version: 22
         cache: npm
 
+    - name: Prepare local env for postinstall sync
+      if: matrix.language == 'java-kotlin' || matrix.language == 'swift'
+      run: cp .env.example .env
+
     - name: Install npm dependencies
       if: matrix.language == 'java-kotlin' || matrix.language == 'swift'
       run: npm ci
@@ -76,7 +80,10 @@ jobs:
 
     - name: Prepare iOS configuration for CI
       if: matrix.language == 'swift'
-      run: cp ios/BUTingMobile/Info.plist.example ios/BUTingMobile/Info.plist
+      run: |
+        cp ios/BUTingMobile/Info.plist.example ios/BUTingMobile/Info.plist
+        # Xcode script phases do not inherit Actions PATH — pin node for RN bundle scripts.
+        echo "export NODE_BINARY=$(command -v node)" > ios/.xcode.env.local
 
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v4
@@ -106,12 +113,14 @@ jobs:
       if: matrix.language == 'swift'
       working-directory: ios
       run: |
+        # CodeQL needs native compile only — skip Release device JS bundling (Metro/Hermes).
+        export SKIP_BUNDLING=1
         xcodebuild \
           -workspace BUTingMobile.xcworkspace \
           -scheme BUTingMobile \
-          -configuration Release \
-          -sdk iphoneos \
-          -destination 'generic/platform=iOS' \
+          -configuration Debug \
+          -sdk iphonesimulator \
+          -destination 'generic/platform=iOS Simulator' \
           CODE_SIGNING_REQUIRED=NO \
           CODE_SIGNING_ALLOWED=NO \
           build
