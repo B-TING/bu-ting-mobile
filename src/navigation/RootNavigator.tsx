@@ -18,6 +18,7 @@ import { MenuPlaceholderScreen } from '../screens/MenuPlaceholderScreen';
 import { PlanCandidatesScreen } from '../screens/plan/PlanCandidatesScreen';
 import { PlanDetailScreen } from '../screens/plan/PlanDetailScreen';
 import { PlanWizardScreen } from '../screens/plan/PlanWizardScreen';
+import { TravelInviteScanScreen } from '../screens/plan/TravelInviteScanScreen';
 import { LanguageSelectionScreen } from '../screens/setup/LanguageSelectionScreen';
 import { LoginScreen } from '../screens/setup/LoginScreen';
 import { OnboardingScreen } from '../screens/setup/OnboardingScreen';
@@ -109,6 +110,7 @@ export function RootNavigator() {
         <Stack.Screen name="PlanWizard" component={PlanWizardScreen} />
         <Stack.Screen name="PlanCandidates" component={PlanCandidatesScreen} />
         <Stack.Screen name="PlanDetail" component={PlanDetailScreen} />
+        <Stack.Screen name="TravelInviteScan" component={TravelInviteScanScreen} />
         <Stack.Screen name="TravelRecordDetail" component={TravelogueDetailScreen} />
         <Stack.Screen name="FestivalCalendar" component={FestivalCalendarScreen} />
         <Stack.Screen name="FestivalDetail" component={FestivalDetailScreen} />

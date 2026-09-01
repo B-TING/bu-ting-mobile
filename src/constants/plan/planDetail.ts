@@ -44,6 +44,7 @@ export const PLAN_DETAIL_COPY: Record<
     inviteMembers: string;
     inviteModalTitle: string;
     inviteModalSubtitle: string;
+    inviteQrHint: string;
     inviteCopyLink: string;
     inviteCopied: string;
     inviteLinkLoading: string;
@@ -51,6 +52,38 @@ export const PLAN_DETAIL_COPY: Record<
     inviteRetry: string;
     inviteExpiresAt: (date: string) => string;
     inviteLeaderOnly: string;
+    inviteScanTitle: string;
+    inviteScanWorking: string;
+    inviteScanCameraDenied: string;
+    inviteScanInvalid: string;
+    inviteScanVerifyFailed: string;
+    inviteScanAcceptFailed: string;
+    inviteScanManualHint: string;
+    inviteScanManualPlaceholder: string;
+    inviteScanManualSubmit: string;
+    inviteConfirmTitle: string;
+    inviteConfirmSubtitle: (travelName: string) => string;
+    inviteConfirmJoin: string;
+    leaveTrip: string;
+    leaveTripConfirmTitle: string;
+    leaveTripConfirmMessage: string;
+    leaveTripConfirm: string;
+    leaveTripLeaderBlocked: string;
+    leaveTripFailed: string;
+    transferLeader: string;
+    transferLeaderConfirmTitle: string;
+    transferLeaderConfirmMessage: (name: string) => string;
+    transferLeaderConfirm: string;
+    transferLeaderSuccess: (name: string) => string;
+    transferLeaderFailed: string;
+    kickMember: string;
+    kickMemberConfirmTitle: string;
+    kickMemberConfirmMessage: (name: string) => string;
+    kickMemberConfirm: string;
+    kickMemberSuccess: (name: string) => string;
+    kickMemberFailed: string;
+    memberActionsNone: string;
+    memberActionsWorking: string;
     tripPeriod: string;
     nights: (n: number) => string;
     dayLabel: (n: number) => string;
@@ -197,8 +230,9 @@ export const PLAN_DETAIL_COPY: Record<
     recordsPublished: '여행기 게시 완료',
     recordsHint: '방문한 여행지마다 후기를 남겨 보세요',
     inviteMembers: '일행 초대하기',
-    inviteModalTitle: '일행 초대 링크',
-    inviteModalSubtitle: '아래 링크를 복사해 일행에게 공유하세요.',
+    inviteModalTitle: '일행 초대',
+    inviteModalSubtitle: 'QR을 보여 주거나 링크를 복사해 일행을 초대하세요.',
+    inviteQrHint: '상대방이 앱에서 QR을 스캔하면 일행에 합류할 수 있어요.',
     inviteCopyLink: '링크 복사',
     inviteCopied: '복사됨',
     inviteLinkLoading: '초대 링크를 불러오는 중…',
@@ -206,6 +240,41 @@ export const PLAN_DETAIL_COPY: Record<
     inviteRetry: '다시 시도',
     inviteExpiresAt: date => `만료: ${date}`,
     inviteLeaderOnly: '방장만 초대 링크를 생성할 수 있습니다.',
+    inviteScanTitle: '초대 QR 스캔',
+    inviteScanWorking: '확인 중…',
+    inviteScanCameraDenied: '카메라 권한이 필요합니다. 설정에서 허용해 주세요.',
+    inviteScanInvalid: '유효한 초대 QR/링크가 아닙니다.',
+    inviteScanVerifyFailed: '초대 정보를 확인하지 못했습니다.',
+    inviteScanAcceptFailed: '일행 합류에 실패했습니다.',
+    inviteScanManualHint: 'QR을 스캔하거나 아래에 초대 링크·토큰을 붙여넣으세요.',
+    inviteScanManualPlaceholder: '초대 링크 또는 토큰',
+    inviteScanManualSubmit: '초대로 확인',
+    inviteConfirmTitle: '이 여행에 합류할까요?',
+    inviteConfirmSubtitle: name => `「${name}」에 일행으로 참여합니다.`,
+    inviteConfirmJoin: '합류하기',
+    leaveTrip: '여행 나가기',
+    leaveTripConfirmTitle: '이 여행에서 나갈까요?',
+    leaveTripConfirmMessage: '나가면 일행에서 제외되며, 이 기기에서 일정도 더 이상 보이지 않습니다.',
+    leaveTripConfirm: '나가기',
+    leaveTripLeaderBlocked:
+      '다른 일행이 남아 있으면 방장은 나갈 수 없습니다. 일행을 눌러 방장을 위임한 뒤 나가 주세요.',
+    leaveTripFailed: '여행 나가기에 실패했습니다.',
+    transferLeader: '방장 위임',
+    transferLeaderConfirmTitle: '방장을 위임할까요?',
+    transferLeaderConfirmMessage: name =>
+      `「${name}」님에게 방장 권한을 넘깁니다. 위임 후에는 일반 일행이 됩니다.`,
+    transferLeaderConfirm: '위임하기',
+    transferLeaderSuccess: name => `「${name}」님에게 방장을 위임했습니다.`,
+    transferLeaderFailed: '방장 위임에 실패했습니다.',
+    kickMember: '일행 내보내기',
+    kickMemberConfirmTitle: '이 일행을 내보낼까요?',
+    kickMemberConfirmMessage: name =>
+      `「${name}」님을 여행에서 제외합니다. 다시 초대하려면 초대 링크가 필요합니다.`,
+    kickMemberConfirm: '내보내기',
+    kickMemberSuccess: name => `「${name}」님을 내보냈습니다.`,
+    kickMemberFailed: '일행 내보내기에 실패했습니다.',
+    memberActionsNone: '이 일행에 대해 할 수 있는 작업이 없습니다.',
+    memberActionsWorking: '처리 중…',
     tripPeriod: '여행 기간',
     nights: n => `${n}박`,
     dayLabel: n => `Day ${n}`,
@@ -359,8 +428,9 @@ export const PLAN_DETAIL_COPY: Record<
     recordsPublished: 'Travelogue published',
     recordsHint: 'Leave a review for each place you visit',
     inviteMembers: 'Invite companions',
-    inviteModalTitle: 'Invite link',
-    inviteModalSubtitle: 'Copy the link below and share it with your travel companions.',
+    inviteModalTitle: 'Invite companions',
+    inviteModalSubtitle: 'Show this QR code or copy the link to invite companions.',
+    inviteQrHint: 'Companions can join by scanning this QR in the app.',
     inviteCopyLink: 'Copy link',
     inviteCopied: 'Copied',
     inviteLinkLoading: 'Loading invite link…',
@@ -368,6 +438,42 @@ export const PLAN_DETAIL_COPY: Record<
     inviteRetry: 'Try again',
     inviteExpiresAt: date => `Expires: ${date}`,
     inviteLeaderOnly: 'Only the trip leader can create an invite link.',
+    inviteScanTitle: 'Scan invite QR',
+    inviteScanWorking: 'Checking…',
+    inviteScanCameraDenied: 'Camera permission is required. Allow it in Settings.',
+    inviteScanInvalid: 'This is not a valid invite QR or link.',
+    inviteScanVerifyFailed: 'Could not verify the invite.',
+    inviteScanAcceptFailed: 'Could not join the trip.',
+    inviteScanManualHint: 'Scan a QR code or paste the invite link/token below.',
+    inviteScanManualPlaceholder: 'Invite link or token',
+    inviteScanManualSubmit: 'Check invite',
+    inviteConfirmTitle: 'Join this trip?',
+    inviteConfirmSubtitle: name => `You’ll join “${name}” as a companion.`,
+    inviteConfirmJoin: 'Join',
+    leaveTrip: 'Leave trip',
+    leaveTripConfirmTitle: 'Leave this trip?',
+    leaveTripConfirmMessage:
+      'You’ll be removed from the party, and this itinerary will no longer appear on this device.',
+    leaveTripConfirm: 'Leave',
+    leaveTripLeaderBlocked:
+      'As leader, you can’t leave while others remain. Tap a companion to transfer leadership first.',
+    leaveTripFailed: 'Could not leave the trip.',
+    transferLeader: 'Transfer leadership',
+    transferLeaderConfirmTitle: 'Transfer leadership?',
+    transferLeaderConfirmMessage: name =>
+      `${name} will become the trip leader. You’ll become a regular companion.`,
+    transferLeaderConfirm: 'Transfer',
+    transferLeaderSuccess: name => `Leadership transferred to ${name}.`,
+    transferLeaderFailed: 'Could not transfer leadership.',
+    kickMember: 'Remove companion',
+    kickMemberConfirmTitle: 'Remove this companion?',
+    kickMemberConfirmMessage: name =>
+      `${name} will be removed from this trip. They’ll need a new invite to rejoin.`,
+    kickMemberConfirm: 'Remove',
+    kickMemberSuccess: name => `${name} was removed.`,
+    kickMemberFailed: 'Could not remove the companion.',
+    memberActionsNone: 'No actions available for this companion.',
+    memberActionsWorking: 'Working…',
     tripPeriod: 'Trip dates',
     nights: n => `${n} night${n === 1 ? '' : 's'}`,
     dayLabel: n => `Day ${n}`,
@@ -522,8 +628,9 @@ export const PLAN_DETAIL_COPY: Record<
     recordsPublished: '旅行記を公開済み',
     recordsHint: '訪問した各スポットにレビューを書きましょう',
     inviteMembers: '同行者を招待',
-    inviteModalTitle: '招待リンク',
-    inviteModalSubtitle: '下のリンクをコピーして同行者に共有してください。',
+    inviteModalTitle: '同行者を招待',
+    inviteModalSubtitle: 'QRコードを見せるか、リンクをコピーして招待してください。',
+    inviteQrHint: '相手がアプリでこのQRをスキャンすると同行者に参加できます。',
     inviteCopyLink: 'リンクをコピー',
     inviteCopied: 'コピーしました',
     inviteLinkLoading: '招待リンクを読み込み中…',
@@ -531,6 +638,42 @@ export const PLAN_DETAIL_COPY: Record<
     inviteRetry: '再試行',
     inviteExpiresAt: date => `有効期限: ${date}`,
     inviteLeaderOnly: 'リーダーのみ招待リンクを作成できます。',
+    inviteScanTitle: '招待QRをスキャン',
+    inviteScanWorking: '確認中…',
+    inviteScanCameraDenied: 'カメラ権限が必要です。設定で許可してください。',
+    inviteScanInvalid: '有効な招待QR/リンクではありません。',
+    inviteScanVerifyFailed: '招待情報を確認できませんでした。',
+    inviteScanAcceptFailed: '同行者への参加に失敗しました。',
+    inviteScanManualHint: 'QRをスキャンするか、下に招待リンク・トークンを貼り付けてください。',
+    inviteScanManualPlaceholder: '招待リンクまたはトークン',
+    inviteScanManualSubmit: '招待を確認',
+    inviteConfirmTitle: 'この旅行に参加しますか？',
+    inviteConfirmSubtitle: name => `「${name}」に同行者として参加します。`,
+    inviteConfirmJoin: '参加する',
+    leaveTrip: '旅行から退出',
+    leaveTripConfirmTitle: 'この旅行から退出しますか？',
+    leaveTripConfirmMessage:
+      '退出すると同行者から外れ、この端末でも行程が表示されなくなります。',
+    leaveTripConfirm: '退出する',
+    leaveTripLeaderBlocked:
+      '他の同行者が残っている場合、リーダーは退出できません。同行者をタップしてリーダーを委任してから退出してください。',
+    leaveTripFailed: '旅行からの退出に失敗しました。',
+    transferLeader: 'リーダー委任',
+    transferLeaderConfirmTitle: 'リーダーを委任しますか？',
+    transferLeaderConfirmMessage: name =>
+      `「${name}」さんにリーダー権限を渡します。委任後は通常の同行者になります。`,
+    transferLeaderConfirm: '委任する',
+    transferLeaderSuccess: name => `「${name}」さんにリーダーを委任しました。`,
+    transferLeaderFailed: 'リーダーの委任に失敗しました。',
+    kickMember: '同行者を退出させる',
+    kickMemberConfirmTitle: 'この同行者を退出させますか？',
+    kickMemberConfirmMessage: name =>
+      `「${name}」さんを旅行から外します。再参加には新しい招待が必要です。`,
+    kickMemberConfirm: '退出させる',
+    kickMemberSuccess: name => `「${name}」さんを退出させました。`,
+    kickMemberFailed: '同行者の退出処理に失敗しました。',
+    memberActionsNone: 'この同行者に対してできる操作はありません。',
+    memberActionsWorking: '処理中…',
     tripPeriod: '旅行期間',
     nights: n => `${n}泊`,
     dayLabel: n => `Day ${n}`,
@@ -685,8 +828,9 @@ export const PLAN_DETAIL_COPY: Record<
     recordsPublished: '游记已发布',
     recordsHint: '为每个到访地点写点评',
     inviteMembers: '邀请同行',
-    inviteModalTitle: '邀请链接',
-    inviteModalSubtitle: '复制下方链接并分享给同行伙伴。',
+    inviteModalTitle: '邀请同行',
+    inviteModalSubtitle: '展示二维码或复制链接邀请同行伙伴。',
+    inviteQrHint: '对方在应用内扫描此二维码即可加入行程。',
     inviteCopyLink: '复制链接',
     inviteCopied: '已复制',
     inviteLinkLoading: '正在加载邀请链接…',
@@ -694,6 +838,40 @@ export const PLAN_DETAIL_COPY: Record<
     inviteRetry: '重试',
     inviteExpiresAt: date => `过期时间: ${date}`,
     inviteLeaderOnly: '仅旅行房主可创建邀请链接。',
+    inviteScanTitle: '扫描邀请二维码',
+    inviteScanWorking: '确认中…',
+    inviteScanCameraDenied: '需要相机权限。请在设置中允许。',
+    inviteScanInvalid: '不是有效的邀请二维码或链接。',
+    inviteScanVerifyFailed: '无法验证邀请信息。',
+    inviteScanAcceptFailed: '加入行程失败。',
+    inviteScanManualHint: '扫描二维码，或在下方粘贴邀请链接/令牌。',
+    inviteScanManualPlaceholder: '邀请链接或令牌',
+    inviteScanManualSubmit: '确认邀请',
+    inviteConfirmTitle: '要加入此行程吗？',
+    inviteConfirmSubtitle: name => `将以同行身份加入「${name}」。`,
+    inviteConfirmJoin: '加入',
+    leaveTrip: '退出行程',
+    leaveTripConfirmTitle: '要退出此行程吗？',
+    leaveTripConfirmMessage: '退出后将从同行中移除，此设备上也不再显示该行程。',
+    leaveTripConfirm: '退出',
+    leaveTripLeaderBlocked: '仍有其他同行时，房主无法退出。请先点选同行转让房主后再退出。',
+    leaveTripFailed: '退出行程失败。',
+    transferLeader: '转让房主',
+    transferLeaderConfirmTitle: '要转让房主吗？',
+    transferLeaderConfirmMessage: name =>
+      `将把房主权限交给「${name}」。转让后您将变为普通同行。`,
+    transferLeaderConfirm: '转让',
+    transferLeaderSuccess: name => `已将房主转让给「${name}」。`,
+    transferLeaderFailed: '转让房主失败。',
+    kickMember: '移出同行',
+    kickMemberConfirmTitle: '要移出该同行吗？',
+    kickMemberConfirmMessage: name =>
+      `将把「${name}」移出此行程。重新加入需要新的邀请。`,
+    kickMemberConfirm: '移出',
+    kickMemberSuccess: name => `已移出「${name}」。`,
+    kickMemberFailed: '移出同行失败。',
+    memberActionsNone: '对该同行没有可用操作。',
+    memberActionsWorking: '处理中…',
     tripPeriod: '行程日期',
     nights: n => `${n}晚`,
     dayLabel: n => `第 ${n} 天`,

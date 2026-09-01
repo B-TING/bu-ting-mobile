@@ -7,7 +7,7 @@ import { TripPeriodCard } from '../overview/TripPeriodCard';
 import type { PlanDetailTab } from '../../../constants/plan/planDetail';
 import type { CopyFor } from '../../../i18n';
 import type { AppLanguage } from '../../../types/user';
-import type { BudgetEntry, MemberRole, TravelPlan } from '../../../types/travelPlan';
+import type { BudgetEntry, MemberRole, PlanMember, TravelPlan } from '../../../types/travelPlan';
 
 type Copy = CopyFor<'planDetail'>;
 
@@ -23,6 +23,10 @@ type PlanOverviewTabProps = {
   isTravelRecordPublished?: boolean;
   showInvite?: boolean;
   onInvite?: () => void;
+  showLeave?: boolean;
+  leaveDisabled?: boolean;
+  onLeave?: () => void;
+  onSelectMember?: (member: PlanMember) => void;
 };
 
 export function PlanOverviewTab({
@@ -37,6 +41,10 @@ export function PlanOverviewTab({
   isTravelRecordPublished,
   showInvite = false,
   onInvite,
+  showLeave = false,
+  leaveDisabled = false,
+  onLeave,
+  onSelectMember,
 }: PlanOverviewTabProps) {
   return (
     <View className="px-4 py-4">
@@ -62,6 +70,10 @@ export function PlanOverviewTab({
         roleLabels={roleLabels}
         inviteLabel={showInvite ? copy.inviteMembers : undefined}
         onInvite={showInvite ? onInvite : undefined}
+        leaveLabel={showLeave ? copy.leaveTrip : undefined}
+        leaveDisabled={leaveDisabled}
+        onLeave={showLeave ? onLeave : undefined}
+        onSelectMember={onSelectMember}
       />
 
       <OverviewMiniWidgets

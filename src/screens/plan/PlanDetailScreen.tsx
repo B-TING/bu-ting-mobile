@@ -7,6 +7,7 @@ import { BackButton } from '../../components/shared/buttons/BackButton';
 import { BudgetEntryModal } from '../../components/plan/modals/BudgetEntryModal';
 import { PlacePickModal } from '../../components/plan/modals/PlacePickModal';
 import { TravelInviteLinkModal } from '../../components/plan/modals/TravelInviteLinkModal';
+import { MemberActionsModal } from '../../components/plan/modals/MemberActionsModal';
 import { HomePlanPickerModal } from '../../components/home/modals/HomePlanPickerModal';
 import { RouteOptimizeFab } from '../../components/plan/fab/RouteOptimizeFab';
 import { PlanBudgetTab } from '../../components/plan/tabs/PlanBudgetTab';
@@ -62,6 +63,13 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     inviteLoading,
     inviteError,
     canInvite,
+    canLeaveTrip,
+    leavingTrip,
+    selectedMember,
+    memberActionBusy,
+    memberActionError,
+    canTransferSelected,
+    canKickSelected,
     settlementConfirmed,
     canConfirmSettlement,
     settlementMemberSummaries,
@@ -91,6 +99,11 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     reviewFormExisting,
     handleBackPress,
     handleInvite,
+    openMemberActions,
+    closeMemberActions,
+    requestTransferLeader,
+    requestKickMember,
+    requestLeaveTrip,
     handleSaveBudgetEntry,
     handleConfirmSettlement,
     closeInviteModal,
@@ -234,6 +247,10 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
                 isTravelRecordPublished={isPlanPublished}
                 showInvite={isApiPlan && canInvite && !offlineMode}
                 onInvite={handleInvite}
+                showLeave={canLeaveTrip}
+                leaveDisabled={leavingTrip}
+                onLeave={requestLeaveTrip}
+                onSelectMember={canInvite ? openMemberActions : undefined}
               />
             ),
             schedule: (
@@ -406,6 +423,20 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
         errorMessage={inviteError}
         onClose={closeInviteModal}
         onRetry={() => void loadInviteLink()}
+      />
+
+      <MemberActionsModal
+        visible={Boolean(selectedMember)}
+        copy={copy}
+        roleLabels={roleLabels}
+        member={selectedMember}
+        canTransfer={canTransferSelected}
+        canKick={canKickSelected}
+        busy={memberActionBusy}
+        errorMessage={memberActionError}
+        onClose={closeMemberActions}
+        onTransfer={requestTransferLeader}
+        onKick={requestKickMember}
       />
 
       <TransientBottomToast

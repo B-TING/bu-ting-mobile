@@ -90,6 +90,13 @@ export type TravelInviteLinkInfoResponse = {
   expiredAt?: string | null;
 };
 
+/** GET/POST …/invites/verify|accept 응답 data */
+export type InviteVerificationResponse = {
+  travelId: string;
+  travelName: string;
+  valid: boolean;
+};
+
 export type PlanCreateRequest = {
   dayNumber: number;
   visitDate: string;
