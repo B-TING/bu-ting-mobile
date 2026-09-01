@@ -1,7 +1,6 @@
-import { useEffect, useState, type ReactNode } from 'react';
-import { Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { type ReactNode } from 'react';
+import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { catalogThumbnail } from '../../constants/places/placeCatalog';
 import {
   ICON_COLOR_STAR_EMPTY,
 } from '../../constants/icons';
@@ -14,6 +13,7 @@ import type { BusanPlace } from '../../types/placeSearch';
 import type { PlaceDetailVO } from '../../types/googlePlaces';
 import type { AppLanguage } from '../../types/user';
 import { PlaceGoogleDetailBody } from './PlaceGoogleDetailBody';
+import { PlaceImage } from './PlaceImage';
 
 type Copy = CopyFor<'placeSearch'>;
 
@@ -49,7 +49,6 @@ export function PlaceDetailPanel({
 }: PlaceDetailPanelProps) {
   const defaultCopy = useCopy('placeSearch');
   const copy = copyProp ?? defaultCopy;
-  const [imageFailed, setImageFailed] = useState(false);
   const categoryLabel = copy.categoryLabels[place.contentTypeId];
   const isFestival = isFestivalPlaceSearch(place.contentTypeId);
   const rating = detail?.rating ?? place.rating;
@@ -58,12 +57,7 @@ export function PlaceDetailPanel({
     ? copy.festivalDetailMeta
     : copy.ratingSummary(rating, reviewCount);
   const imageUrl = detail?.imageUrl ?? place.imageUrl;
-  const thumbColor = catalogThumbnail(place.contentId);
   const sheetHeader = layout === 'sheetHeader';
-
-  useEffect(() => {
-    setImageFailed(false);
-  }, [imageUrl]);
 
   const openGoogleMaps = () => {
     if (detail) {
@@ -101,16 +95,11 @@ export function PlaceDetailPanel({
       <View
         className="w-full overflow-hidden bg-brand-surface"
         style={sheetHeader ? styles.sheetHero : styles.compactHero}>
-        {imageUrl && !imageFailed ? (
-          <Image
-            source={{ uri: imageUrl }}
-            className="h-full w-full"
-            resizeMode="cover"
-            onError={() => setImageFailed(true)}
-          />
-        ) : sheetHeader ? (
-          <View className="h-full w-full" style={{ backgroundColor: thumbColor }} />
-        ) : null}
+        <PlaceImage
+          imageUrl={imageUrl}
+          className="h-full w-full"
+          iconSize={sheetHeader ? 40 : 28}
+        />
       </View>
       <View className="flex-row items-start justify-between gap-3 px-5 pt-5">
         <View className="flex-1">
@@ -137,18 +126,11 @@ export function PlaceDetailPanel({
           <Text className="mt-1 text-sm font-semibold text-brand-primary">{metaLine}</Text>
         </View>
         {!sheetHeader ? (
-          <View
-            className="h-[64px] w-[64px] overflow-hidden rounded-xl bg-brand-surface"
-            style={!imageUrl || imageFailed ? { backgroundColor: thumbColor } : undefined}>
-            {imageUrl && !imageFailed ? (
-              <Image
-                source={{ uri: imageUrl }}
-                className="h-full w-full"
-                resizeMode="cover"
-                onError={() => setImageFailed(true)}
-              />
-            ) : null}
-          </View>
+          <PlaceImage
+            imageUrl={imageUrl}
+            className="h-[64px] w-[64px] rounded-xl"
+            iconSize={26}
+          />
         ) : null}
       </View>
 
