@@ -1,13 +1,4 @@
-import { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  Share,
-  Text,
-  TextInput,
-  TurboModuleRegistry,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 
 import type { CopyFor } from '../../../i18n';
@@ -15,22 +6,7 @@ import { AppModal, AppModalActions } from '../../shared/modals';
 
 type Copy = CopyFor<'planDetail'>;
 
-type ClipboardTurboModule = {
-  setString: (text: string) => void;
-};
-
-const clipboardTurbo = TurboModuleRegistry.get('RNCClipboard') as ClipboardTurboModule | null;
-
 const QR_SIZE = 196;
-
-async function copyInviteLink(link: string): Promise<void> {
-  if (clipboardTurbo) {
-    clipboardTurbo.setString(link);
-    return;
-  }
-
-  await Share.share({ message: link });
-}
 
 type TravelInviteLinkModalProps = {
   visible: boolean;
@@ -53,21 +29,6 @@ export function TravelInviteLinkModal({
   onClose,
   onRetry,
 }: TravelInviteLinkModalProps) {
-  const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    if (!visible) {
-      setCopied(false);
-    }
-  }, [visible, inviteLink]);
-
-  const handleCopy = () => {
-    if (!inviteLink) {
-      return;
-    }
-    void copyInviteLink(inviteLink).then(() => setCopied(true));
-  };
-
   return (
     <AppModal
       visible={visible}
@@ -102,26 +63,14 @@ export function TravelInviteLinkModal({
                 </Text>
               </View>
             ) : null}
-            <TextInput
-              value={inviteLink ?? ''}
-              editable={false}
-              multiline
-              selectTextOnFocus
-              className="rounded-2xl border border-brand-border bg-brand-surface px-4 py-3 text-sm text-brand-text"
-            />
             {expiredAt ? (
-              <Text className="mt-2 text-xs text-brand-muted">
+              <Text className="mb-2 text-xs text-brand-muted">
                 {copy.inviteExpiresAt(expiredAt)}
               </Text>
             ) : null}
-            <Pressable
-              onPress={handleCopy}
-              disabled={!inviteLink}
-              className="mt-3 items-center rounded-2xl bg-brand-primary py-3 active:opacity-90">
-              <Text className="text-sm font-bold text-white">
-                {copied ? copy.inviteCopied : copy.inviteCopyLink}
-              </Text>
-            </Pressable>
+            <View className="items-center rounded-2xl bg-brand-border/60 py-3 opacity-60">
+              <Text className="text-sm font-bold text-brand-muted">{copy.inviteCopyLinkSoon}</Text>
+            </View>
           </>
         )}
       </View>

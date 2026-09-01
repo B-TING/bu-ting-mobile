@@ -1,0 +1,23 @@
+diff --git a/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManagerImpl.kt b/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManagerImpl.kt
+index 1111111..2222222 100644
+--- a/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManagerImpl.kt
++++ b/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManagerImpl.kt
+@@ -20,7 +20,6 @@ import androidx.webkit.WebViewFeature
+ import com.facebook.react.bridge.ReadableArray
+ import com.facebook.react.bridge.ReadableMap
+ import com.facebook.react.common.MapBuilder
+-import com.facebook.react.common.build.ReactBuildConfig
+ import com.facebook.react.uimanager.ThemedReactContext
+ import org.json.JSONException
+ import org.json.JSONObject
+@@ -88,9 +87,7 @@ class RNCWebViewManagerImpl(private val newArch: Boolean = false) {
+             ViewGroup.LayoutParams.MATCH_PARENT,
+             ViewGroup.LayoutParams.MATCH_PARENT
+         )
+-        if (ReactBuildConfig.DEBUG) {
+-            WebView.setWebContentsDebuggingEnabled(true)
+-        }
++        // Keep WebView debugging off (CodeQL: setWebContentsDebuggingEnabled).
+         webView.setDownloadListener(DownloadListener { url, userAgent, contentDisposition, mimetype, contentLength ->
+             val module = webView.reactApplicationContext.getNativeModule(RNCWebViewModule::class.java) ?: return@DownloadListener
+             val request: DownloadManager.Request = try {

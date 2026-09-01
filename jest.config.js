@@ -2,6 +2,7 @@ module.exports = {
   preset: '@react-native/jest-preset',
   moduleNameMapper: {
     '\\.css$': '<rootDir>/__mocks__/styleMock.js',
+    '^lucide-react-native$': '<rootDir>/__mocks__/lucide-react-native.js',
   },
   testPathIgnorePatterns: ['/node_modules/', '/__tests__/helpers/'],
   transformIgnorePatterns: [
