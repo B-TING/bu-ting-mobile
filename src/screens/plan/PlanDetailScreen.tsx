@@ -47,6 +47,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     setTab,
     toastText,
     toastOpacity,
+    showToast,
     notifyScheduleReadOnly,
     selectedDay,
     setSelectedDay,
@@ -285,6 +286,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
                 }}
                 onRemoveDay={handleRemoveDay}
                 scrollBottomInset={embeddedInMainTabs ? 0 : undefined}
+                onNotify={showToast}
               />
             ),
             budget: (

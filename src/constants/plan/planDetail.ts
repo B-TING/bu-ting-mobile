@@ -16,6 +16,8 @@ export const PLAN_DETAIL_COPY: Record<
     routeOptimize: string;
     addPlace: string;
     directions: string;
+    directionsFailed: string;
+    directionsUnavailable: string;
     mapPlaceholder: string;
     mapPlaceholderSub: string;
     mapTapHint: string;
@@ -205,6 +207,8 @@ export const PLAN_DETAIL_COPY: Record<
     routeOptimize: '경로 최적화',
     addPlace: '장소 추가',
     directions: '길찾기',
+    directionsFailed: '지도 앱을 열지 못했습니다.',
+    directionsUnavailable: '길찾기에 필요한 위치 정보가 없습니다.',
     mapPlaceholder: '카카오맵',
     mapPlaceholderSub: '일정·장소 위치',
     mapTapHint: '탭하여 크게 보기',
@@ -404,6 +408,8 @@ export const PLAN_DETAIL_COPY: Record<
     routeOptimize: 'Optimize route',
     addPlace: 'Add place',
     directions: 'Directions',
+    directionsFailed: 'Could not open a maps app.',
+    directionsUnavailable: 'Location data is missing for directions.',
     mapPlaceholder: 'Kakao Map',
     mapPlaceholderSub: 'Trip stops and places',
     mapTapHint: 'Tap to expand map',
@@ -605,6 +611,8 @@ export const PLAN_DETAIL_COPY: Record<
     routeOptimize: 'ルート最適化',
     addPlace: '場所を追加',
     directions: '道順',
+    directionsFailed: '地図アプリを開けませんでした。',
+    directionsUnavailable: '道順に必要な位置情報がありません。',
     mapPlaceholder: 'Googleマップ',
     mapPlaceholderSub: '日程・スポットの位置',
     mapTapHint: 'タップで拡大',
@@ -806,6 +814,8 @@ export const PLAN_DETAIL_COPY: Record<
     routeOptimize: '优化路线',
     addPlace: '添加地点',
     directions: '导航',
+    directionsFailed: '无法打开地图应用。',
+    directionsUnavailable: '缺少导航所需的位置信息。',
     mapPlaceholder: 'Google 地图',
     mapPlaceholderSub: '行程与地点位置',
     mapTapHint: '点击放大地图',

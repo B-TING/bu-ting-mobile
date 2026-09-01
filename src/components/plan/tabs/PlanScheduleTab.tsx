@@ -35,8 +35,12 @@ import {
 import { sortedRoutes } from '../../../utils/plan/planItinerary';
 import { countScheduleZoneSegments } from '../../../utils/plan/scheduleZoneGroups';
 import { resolveEventZoneForRoute } from '../../../utils/eventZone/zoneResolver';
-import { estimateTravelLeg } from '../../../utils/geo/geo';
 import { computeDayTotalMinutes, formatDurationMinutes } from '../../../utils/geo/tripDuration';
+import {
+  isLegDirectionsInputValid,
+  openLegDirections,
+  type LegDirectionsInput,
+} from '../../../utils/map/mapDirections';
 import { getReviewForPlace } from '../../../utils/review/travelReview';
 
 type Copy = CopyFor<'planDetail'>;
@@ -82,6 +86,7 @@ type PlanScheduleTabProps = {
   onAddDay?: () => void;
   onRemoveDay?: () => void;
   scrollBottomInset?: number;
+  onNotify?: (message: string) => void;
 };
 
 export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTabProps>(
@@ -111,6 +116,7 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
       onAddDay,
       onRemoveDay,
       scrollBottomInset,
+      onNotify,
     },
     ref,
   ) {
@@ -188,6 +194,38 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
         legTransit: copy.legTransit,
       }),
       [copy.legDrive, copy.legTransit, copy.legWalk],
+    );
+
+    const handleLegDirections = useCallback(
+      (from: RouteItem, to: RouteItem) => {
+        const input: LegDirectionsInput = {
+          from: {
+            lat: from.location.lat,
+            lng: from.location.lng,
+            name: from.placeName,
+          },
+          to: {
+            lat: to.location.lat,
+            lng: to.location.lng,
+            name: to.placeName,
+          },
+          mode: to.legMode ?? 'walk',
+        };
+
+        if (!isLegDirectionsInputValid(input)) {
+          onNotify?.(copy.directionsUnavailable);
+          return;
+        }
+
+        void openLegDirections(input).then(result => {
+          if (result === 'invalid') {
+            onNotify?.(copy.directionsUnavailable);
+          } else if (result === 'failed') {
+            onNotify?.(copy.directionsFailed);
+          }
+        });
+      },
+      [copy.directionsFailed, copy.directionsUnavailable, onNotify],
     );
 
     const slotCopy = useMemo(
@@ -556,25 +594,38 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
 
           {dayRoutes.map((route, index) => {
             const prevRoute = index > 0 ? dayRoutes[index - 1] : null;
-            const leg =
-              prevRoute != null
-                ? estimateTravelLeg(
-                    prevRoute.location,
-                    route.location,
-                    route.legMode,
-                  )
-                : null;
             const zoneColor =
               EVENT_ZONE_BY_ID[resolveEventZoneForRoute(route)].baseColor;
+            const directionsInput: LegDirectionsInput | null =
+              prevRoute != null
+                ? {
+                    from: {
+                      lat: prevRoute.location.lat,
+                      lng: prevRoute.location.lng,
+                      name: prevRoute.placeName,
+                    },
+                    to: {
+                      lat: route.location.lat,
+                      lng: route.location.lng,
+                      name: route.placeName,
+                    },
+                    mode: route.legMode ?? 'walk',
+                  }
+                : null;
 
             return (
               <View key={route.itemId}>
-                {leg ? (
+                {prevRoute != null ? (
                   <TravelLegRow
-                    leg={leg}
+                    mode={route.legMode ?? 'walk'}
                     directionsLabel={copy.directions}
                     copy={legCopy}
                     lineColor={zoneColor}
+                    directionsDisabled={
+                      directionsInput != null &&
+                      !isLegDirectionsInputValid(directionsInput)
+                    }
+                    onDirectionsPress={() => handleLegDirections(prevRoute, route)}
                   />
                 ) : null}
                 {renderRouteSlot(route, index)}

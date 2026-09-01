@@ -1702,6 +1702,7 @@ export function usePlanDetailScreen({
     setTab,
     toastText,
     toastOpacity,
+    showToast,
     notifyScheduleReadOnly,
     selectedDay,
     setSelectedDay,
