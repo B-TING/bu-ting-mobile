@@ -1,6 +1,6 @@
 {
   "name": "BUTingMobile",
-  "version": "1.2.0-alpha",
+  "version": "1.2.2-alpha",
   "private": true,
   "scripts": {
     "android": "node scripts/run-android.cjs",
@@ -25,7 +25,7 @@
     "oauth:sync": "node scripts/sync-oauth-config.cjs",
     "hooks:install": "node scripts/install-git-hooks.cjs",
     "fonts:sync": "node scripts/sync-pretendard-fonts.cjs",
-    "postinstall": "node scripts/sync-kakao-map-key.cjs && node scripts/sync-api-config.cjs && node scripts/sync-oauth-config.cjs && node scripts/sync-pretendard-fonts.cjs && patch-package && node scripts/install-git-hooks.cjs",
+    "postinstall": "node scripts/sync-kakao-map-key.cjs && node scripts/sync-api-config.cjs && node scripts/sync-oauth-config.cjs && node scripts/sync-pretendard-fonts.cjs && patch-package && node scripts/pin-metro-image-size.cjs && node scripts/install-git-hooks.cjs",
     "test": "jest",
     "icons:generate": "node scripts/generate-app-icons.cjs"
   },
@@ -48,6 +48,7 @@
     "react-i18next": "^17.0.8",
     "react-native": "0.85.3",
     "react-native-camera-kit": "^18.0.1",
+    "react-native-css-interop": "0.2.6",
     "react-native-get-random-values": "^2.0.0",
     "react-native-image-picker": "^8.2.1",
     "react-native-qrcode-svg": "^6.3.21",
@@ -94,7 +95,6 @@
     "postcss": ">=8.5.18",
     "brace-expansion@1": "1.1.17",
     "brace-expansion@5": "5.0.8",
-    "nanoid": "3.3.18",
-    "image-size": "npm:image-size-next@2.1.1"
+    "nanoid": "3.3.18"
   }
 }
