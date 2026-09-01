@@ -92,12 +92,39 @@ function resolvePhone(detail: PlaceDetailResponseDto): string | undefined {
   return undefined;
 }
 
+/** Release Android는 HTTP(cleartext)를 막음. Tour CDN은 동일 리소스를 HTTPS로도 제공. */
+export function normalizeTourImageUrl(url?: string | null): string | undefined {
+  const trimmed = url?.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  try {
+    const parsed = new URL(trimmed);
+    const host = parsed.hostname.toLowerCase();
+    const isTourHost =
+      host === 'visitkorea.or.kr' ||
+      host.endsWith('.visitkorea.or.kr') ||
+      host === 'knto.or.kr' ||
+      host.endsWith('.knto.or.kr');
+
+    if (isTourHost && parsed.protocol === 'http:') {
+      parsed.protocol = 'https:';
+      return parsed.toString();
+    }
+  } catch {
+    return trimmed;
+  }
+
+  return trimmed;
+}
+
 export function resolvePlaceDetailImageUrl(
   detail: Pick<PlaceDetailResponseDto, 'imageUrl' | 'thumbnailUrl' | 'firstImage' | 'details'>,
 ): string | undefined {
   const fromDetails = detail.details?.firstimage?.trim() || detail.details?.firstimage2?.trim();
   const url = detail.imageUrl ?? detail.thumbnailUrl ?? detail.firstImage ?? fromDetails;
-  return url || undefined;
+  return normalizeTourImageUrl(url);
 }
 
 function parseCoord(value: number | string | undefined): number | null {
@@ -177,7 +204,9 @@ export function mapPlaceSearchItemToBusanPlace(item: PlaceSearchItemDto): BusanP
     rating: item.rating ?? 0,
     userRatingsTotal: reviewCount,
     districtName: item.districtName,
-    imageUrl: item.imageUrl ?? item.thumbnailUrl ?? item.firstImage,
+    imageUrl: normalizeTourImageUrl(
+      item.imageUrl ?? item.thumbnailUrl ?? item.firstImage,
+    ),
   };
 }
 
@@ -216,7 +245,9 @@ export function mapPlaceDetailToPlaceDetailVO(
   const openingHours = resolveOpeningHours(detail);
   const reviews = resolveReviews(detail);
   const tourismInfoRows = formatTourismInfoRows(detail.details, detail.contentTypeId);
-  const imageUrl = resolvePlaceDetailImageUrl(detail) ?? fallback?.imageUrl;
+  const imageUrl = normalizeTourImageUrl(
+    resolvePlaceDetailImageUrl(detail) ?? fallback?.imageUrl,
+  );
   const overview =
     detail.details?.overview?.trim() ||
     detail.details?.infotext?.trim() ||
