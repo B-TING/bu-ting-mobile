@@ -2,7 +2,7 @@
  * Staged files / diff lines that must not be committed.
  * Used by scripts/git-hooks/pre-commit.cjs
  */
-const { execSync } = require('child_process');
+const { execFileSync, execSync } = require('child_process');
 const path = require('path');
 
 /** @param {string} file */
@@ -61,7 +61,7 @@ function isBlockedPath(file) {
 /** @param {string} file @param {string} projectRoot */
 function isGitIgnored(file, projectRoot) {
   try {
-    execSync(`git check-ignore -q -- "${file.replace(/"/g, '\\"')}"`, {
+    execFileSync('git', ['check-ignore', '-q', '--', file], {
       cwd: projectRoot,
       stdio: 'pipe',
     });
