@@ -1,10 +1,9 @@
-import { useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ICON_COLOR_MUTED, ICON_COLOR_PRIMARY } from '../../../constants/icons';
 import { StarRating } from '../../shared/rating/StarRating';
 import { AppIcon } from '../../shared/icons/AppIcon';
-import { catalogThumbnail } from '../../../constants/places/placeCatalog';
+import { PlaceImage } from '../../places/PlaceImage';
 import { usePlaceDetailCacheStore } from '../../../stores/usePlaceDetailCacheStore';
 import type { RouteItem } from '../../../types/travelPlan';
 
@@ -57,9 +56,7 @@ export function RouteItemCard({
 }: RouteItemCardProps) {
   const info = route.placeInfo;
   const isDetailPending = usePlaceDetailCacheStore(s => s.isRouteDetailPending(route));
-  const thumb = catalogThumbnail(route.placeId);
   const imageUrl = info?.imageUrl;
-  const [imageFailed, setImageFailed] = useState(false);
   const leftBorderColor = zoneColor ?? dayColor;
 
   return (
@@ -158,18 +155,7 @@ export function RouteItemCard({
           className="mb-2 rounded-full border border-brand-border bg-brand-background px-2.5 py-1 active:opacity-80">
           <Text className="text-[11px] font-bold text-brand-primary">{editLabel}</Text>
         </Pressable>
-        <View
-          className="h-[56px] w-[56px] overflow-hidden rounded-xl"
-          style={!imageUrl || imageFailed ? { backgroundColor: thumb } : undefined}>
-          {imageUrl && !imageFailed ? (
-            <Image
-              source={{ uri: imageUrl }}
-              className="h-full w-full"
-              resizeMode="cover"
-              onError={() => setImageFailed(true)}
-            />
-          ) : null}
-        </View>
+        <PlaceImage imageUrl={imageUrl} className="h-[56px] w-[56px] rounded-xl" iconSize={24} />
       </View>
     </View>
   );

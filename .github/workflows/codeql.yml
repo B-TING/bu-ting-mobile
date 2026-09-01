@@ -126,6 +126,47 @@ jobs:
           build
 
     - name: Perform CodeQL Analysis
+      if: matrix.language == 'java-kotlin' || matrix.language == 'swift'
+      uses: github/codeql-action/analyze@v4
+      with:
+        category: "/language:${{matrix.language}}"
+        output: sarif-results
+        upload: never
+
+    - name: Locate SARIF file
+      if: matrix.language == 'java-kotlin' || matrix.language == 'swift'
+      id: sarif
+      shell: bash
+      run: |
+        shopt -s nullglob
+        files=(sarif-results/*.sarif)
+        if [ ${#files[@]} -eq 0 ]; then
+          echo "No SARIF files found:"
+          ls -la sarif-results/ || true
+          exit 1
+        fi
+        echo "path=${files[0]}" >> "$GITHUB_OUTPUT"
+
+    # Manual build (Java/Kotlin, Swift) ignores paths-ignore; drop vendor paths from SARIF.
+    - name: Filter third-party SARIF alerts
+      if: matrix.language == 'java-kotlin' || matrix.language == 'swift'
+      uses: advanced-security/filter-sarif@v1.1
+      with:
+        patterns: |
+          -**/node_modules/**
+          -**/Pods/**
+        input: ${{ steps.sarif.outputs.path }}
+        output: ${{ steps.sarif.outputs.path }}
+
+    - name: Upload SARIF
+      if: matrix.language == 'java-kotlin' || matrix.language == 'swift'
+      uses: github/codeql-action/upload-sarif@v4
+      with:
+        category: "/language:${{matrix.language}}"
+        sarif_file: sarif-results
+
+    - name: Perform CodeQL Analysis
+      if: matrix.language != 'java-kotlin' && matrix.language != 'swift'
       uses: github/codeql-action/analyze@v4
       with:
         category: "/language:${{matrix.language}}"
