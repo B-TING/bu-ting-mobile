@@ -16,6 +16,7 @@ import {
   resolveEventAuthTarget,
 } from '../../constants/eventZone/eventGame';
 import { ZONE_EVENT_TYPE_META } from '../../constants/eventZone/zoneEvents';
+import { useEventAuthRadiusGate } from '../../hooks/eventZone/useEventAuthRadiusGate';
 import { useAppLanguage, useCopy } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
 import { useZoneEventStore } from '../../stores';
@@ -34,6 +35,7 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
   const language = useAppLanguage();
   const copy = useCopy('eventGame');
   const zoneCopy = useCopy('eventZone');
+  const { checking, assertWithinRadius } = useEventAuthRadiusGate();
 
   const activeEventsByZone = useZoneEventStore(s => s.activeEventsByZone);
   const event = useMemo(
@@ -76,8 +78,12 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
 
   const targetTitle = event.type === 'place_auth' ? copy.targetPlace : copy.targetObject;
 
-  const handleParticipate = () => {
-    if (remainingMs <= 0) {
+  const handleParticipate = async () => {
+    if (remainingMs <= 0 || checking) {
+      return;
+    }
+    const within = await assertWithinRadius(event);
+    if (!within) {
       return;
     }
     setStatus('in_progress');
@@ -171,10 +177,12 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
         style={{ paddingBottom: insets.bottom + 12 }}>
         <Pressable
           accessibilityRole="button"
-          disabled={remainingMs <= 0}
+          disabled={remainingMs <= 0 || checking}
           onPress={handleParticipate}
           className="items-center rounded-2xl bg-brand-primary py-4 active:opacity-90 disabled:opacity-50">
-          <Text className="text-base font-bold text-white">{copy.participate}</Text>
+          <Text className="text-base font-bold text-white">
+            {checking ? copy.checkingLocation : copy.participate}
+          </Text>
         </Pressable>
       </View>
     </View>

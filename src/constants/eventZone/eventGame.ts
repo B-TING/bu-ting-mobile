@@ -173,6 +173,14 @@ export const EVENT_GAME_COPY: Record<
     radiusTitle: string;
     radiusLabel: (meters: number) => string;
     radiusHint: string;
+    outOfRadiusTitle: string;
+    outOfRadiusHint: string;
+    outOfRadiusMessage: (distanceM: number, radiusM: number) => string;
+    locationDeniedTitle: string;
+    locationDeniedMessage: string;
+    locationUnavailableTitle: string;
+    locationUnavailableMessage: string;
+    checkingLocation: string;
     typePlaceAuth: string;
     typeObjectSight: string;
     remainingLabel: (remaining: string) => string;
@@ -232,6 +240,17 @@ export const EVENT_GAME_COPY: Record<
     radiusTitle: '인증 반경',
     radiusLabel: meters => `반경 ${meters}m`,
     radiusHint: '목표 지점 반경 안에서만 참여·촬영할 수 있어요.',
+    outOfRadiusTitle: '인증 반경 밖입니다',
+    outOfRadiusHint: '목표 지점 반경 안에서만 참여·촬영할 수 있어요.',
+    outOfRadiusMessage: (distanceM, radiusM) =>
+      `현재 약 ${distanceM}m 떨어져 있어요. 반경 ${radiusM}m 안으로 이동해 주세요.`,
+    locationDeniedTitle: '위치 권한이 필요해요',
+    locationDeniedMessage:
+      '인증 반경을 확인하려면 위치 접근을 허용해 주세요.',
+    locationUnavailableTitle: '위치를 확인할 수 없어요',
+    locationUnavailableMessage:
+      'GPS를 켠 뒤 다시 시도해 주세요.',
+    checkingLocation: '위치 확인 중…',
     typePlaceAuth: '장소 인증',
     typeObjectSight: '사물 인증',
     remainingLabel: remaining => `남은 시간 ${remaining}`,
@@ -290,6 +309,16 @@ export const EVENT_GAME_COPY: Record<
     radiusTitle: 'Auth radius',
     radiusLabel: meters => `${meters}m radius`,
     radiusHint: 'You can join and capture only inside the target radius.',
+    outOfRadiusTitle: 'Outside the auth radius',
+    outOfRadiusHint: 'You can join and capture only inside the target radius.',
+    outOfRadiusMessage: (distanceM, radiusM) =>
+      `You are about ${distanceM}m away. Move within ${radiusM}m of the target.`,
+    locationDeniedTitle: 'Location permission needed',
+    locationDeniedMessage:
+      'Allow location access to verify you are inside the auth radius.',
+    locationUnavailableTitle: 'Could not get your location',
+    locationUnavailableMessage: 'Turn on GPS and try again.',
+    checkingLocation: 'Checking location…',
     typePlaceAuth: 'Place check-in',
     typeObjectSight: 'Object sight',
     remainingLabel: remaining => `${remaining} left`,
@@ -346,6 +375,16 @@ export const EVENT_GAME_COPY: Record<
     radiusTitle: '認証半径',
     radiusLabel: meters => `半径 ${meters}m`,
     radiusHint: '目標地点の半径内でのみ参加・撮影できます。',
+    outOfRadiusTitle: '認証半径の外です',
+    outOfRadiusHint: '目標地点の半径内でのみ参加・撮影できます。',
+    outOfRadiusMessage: (distanceM, radiusM) =>
+      `現在およそ${distanceM}m離れています。半径${radiusM}m以内に移動してください。`,
+    locationDeniedTitle: '位置情報の許可が必要です',
+    locationDeniedMessage:
+      '認証半径を確認するには位置情報へのアクセスを許可してください。',
+    locationUnavailableTitle: '位置情報を取得できません',
+    locationUnavailableMessage: 'GPSをオンにしてから再試行してください。',
+    checkingLocation: '位置を確認中…',
     typePlaceAuth: '場所認証',
     typeObjectSight: '物体認証',
     remainingLabel: remaining => `残り ${remaining}`,
@@ -402,6 +441,15 @@ export const EVENT_GAME_COPY: Record<
     radiusTitle: '认证半径',
     radiusLabel: meters => `半径 ${meters}m`,
     radiusHint: '仅可在目标点半径内参与并拍摄。',
+    outOfRadiusTitle: '不在认证半径内',
+    outOfRadiusHint: '仅可在目标点半径内参与并拍摄。',
+    outOfRadiusMessage: (distanceM, radiusM) =>
+      `当前约距目标 ${distanceM}m，请移动到半径 ${radiusM}m 以内。`,
+    locationDeniedTitle: '需要位置权限',
+    locationDeniedMessage: '请允许位置访问以确认是否在认证半径内。',
+    locationUnavailableTitle: '无法获取位置',
+    locationUnavailableMessage: '请开启 GPS 后重试。',
+    checkingLocation: '正在确认位置…',
     typePlaceAuth: '地点认证',
     typeObjectSight: '物体认证',
     remainingLabel: remaining => `剩余 ${remaining}`,

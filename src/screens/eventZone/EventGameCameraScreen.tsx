@@ -11,6 +11,7 @@ import {
   isCameraEventGame,
   mockEvaluateGameCapture,
 } from '../../constants/eventZone/eventGame';
+import { useEventAuthRadiusGate } from '../../hooks/eventZone/useEventAuthRadiusGate';
 import { useAppLanguage, useCopy } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
 import { useZoneEventStore } from '../../stores';
@@ -24,6 +25,7 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const language = useAppLanguage();
   const copy = useCopy('eventGame');
+  const { checking, assertWithinRadius } = useEventAuthRadiusGate();
 
   const activeEventsByZone = useZoneEventStore(s => s.activeEventsByZone);
   const event = useMemo(
@@ -53,10 +55,16 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
   const processingText =
     event.type === 'place_auth' ? copy.processingPlace : copy.processingObject;
 
-  const handleCapture = () => {
-    if (phase !== 'ready') {
+  const handleCapture = async () => {
+    if (phase !== 'ready' || checking) {
       return;
     }
+
+    const within = await assertWithinRadius(event);
+    if (!within) {
+      return;
+    }
+
     setCaptured(true);
     setPhase('processing');
 
@@ -106,13 +114,18 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
                 <AppIcon name="camera" size={56} color={ICON_COLOR_WHITE} />
               </View>
               <Text className="mt-4 px-6 text-center text-sm text-white/80">{hintText}</Text>
+              <Text className="mt-2 px-6 text-center text-xs text-white/50">
+                {copy.radiusHint}
+              </Text>
             </View>
           )}
 
-          {phase === 'processing' ? (
+          {phase === 'processing' || checking ? (
             <View className="absolute inset-0 items-center justify-center bg-black/70">
               <ActivityIndicator size="large" color="#FFFFFF" />
-              <Text className="mt-3 text-sm font-semibold text-white">{processingText}</Text>
+              <Text className="mt-3 text-sm font-semibold text-white">
+                {checking ? copy.checkingLocation : processingText}
+              </Text>
             </View>
           ) : null}
         </View>
@@ -124,12 +137,14 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={copy.capture}
-          disabled={phase !== 'ready'}
+          disabled={phase !== 'ready' || checking}
           onPress={handleCapture}
           className="h-20 w-20 items-center justify-center rounded-full border-4 border-white active:opacity-80 disabled:opacity-40">
           <View className="h-14 w-14 rounded-full bg-white" />
         </Pressable>
-        <Text className="mt-3 text-sm font-semibold text-white">{copy.capture}</Text>
+        <Text className="mt-3 text-sm font-semibold text-white">
+          {checking ? copy.checkingLocation : copy.capture}
+        </Text>
       </View>
 
       <Modal visible={phase === 'result'} transparent animationType="fade">
