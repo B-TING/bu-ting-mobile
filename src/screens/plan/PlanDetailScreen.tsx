@@ -9,7 +9,6 @@ import { PlacePickModal } from '../../components/plan/modals/PlacePickModal';
 import { TravelInviteLinkModal } from '../../components/plan/modals/TravelInviteLinkModal';
 import { MemberActionsModal } from '../../components/plan/modals/MemberActionsModal';
 import { HomePlanPickerModal } from '../../components/home/modals/HomePlanPickerModal';
-import { RouteOptimizeFab } from '../../components/plan/fab/RouteOptimizeFab';
 import { PlanBudgetTab } from '../../components/plan/tabs/PlanBudgetTab';
 import { PlanOverviewTab } from '../../components/plan/tabs/PlanOverviewTab';
 import { PlanRecordsTab } from '../../components/plan/tabs/PlanRecordsTab';
@@ -88,7 +87,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     day,
     transportCopy,
     mainTabBottomClearance,
-    fabBottom,
+    actionBarBottomInset,
     toastBottom,
     scheduleRef,
     planReviews,
@@ -223,7 +222,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
       <View
         className="min-h-0 flex-1"
         style={
-          mainTabBottomClearance > 0
+          mainTabBottomClearance > 0 && tab !== 'schedule'
             ? { marginBottom: mainTabBottomClearance }
             : undefined
         }>
@@ -285,7 +284,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
                   void handleAddDay();
                 }}
                 onRemoveDay={handleRemoveDay}
-                scrollBottomInset={embeddedInMainTabs ? 0 : undefined}
+                actionBarBottomInset={actionBarBottomInset}
                 onNotify={showToast}
               />
             ),
@@ -332,16 +331,6 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
           }}
         />
       </View>
-
-      {tab === 'schedule' && !viewOnly ? (
-        <RouteOptimizeFab
-          bottom={fabBottom}
-          label={copy.routeOptimize}
-          addPlaceLabel={copy.addPlace}
-          onPress={() => scheduleRef.current?.handleRouteOptimize()}
-          onAddPlace={() => scheduleRef.current?.handleAddPlacePress()}
-        />
-      ) : null}
 
       <BudgetEntryModal
         visible={!viewOnly && budgetModalOpen}

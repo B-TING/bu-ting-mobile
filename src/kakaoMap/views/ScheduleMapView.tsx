@@ -26,7 +26,7 @@ export function ScheduleMapView({
   highlightItemId,
   mapTitle,
   mapSubtitle,
-  showFooter = true,
+  showFooter = false,
 }: ScheduleMapViewProps) {
   const { location } = useCurrentEventZone();
   const mapDays = useMemo(() => buildScheduleMapDays(itinerary), [itinerary]);

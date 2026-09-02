@@ -9,19 +9,16 @@ import {
   View,
 } from 'react-native';
 
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
 import {
   ICON_COLOR_MUTED,
   ICON_COLOR_PRIMARY,
 } from '../../../constants/icons';
 import { AppIcon } from '../../shared/icons/AppIcon';
-import { routeFabScrollPadding } from '../fab/RouteOptimizeFab';
 import { ScheduleMapView } from '../../../kakaoMap';
 import { APP_MODAL } from '../../shared/modals/appModalStyles';
 import type { DailyItinerary } from '../../../types/travelPlan';
 
-const DEFAULT_SCHEDULE_RATIO = 0.38;
+const DEFAULT_SCHEDULE_RATIO = 0.4;
 const DETAIL_SCHEDULE_RATIO = 0.58;
 const MAX_SCHEDULE_RATIO = 1.0;
 const MIN_MAP_HEIGHT = 0;
@@ -32,16 +29,15 @@ type ScheduleMapSplitProps = {
   itinerary: DailyItinerary[];
   selectedDayNumber: number;
   highlightItemId?: string | null;
-  mapTitle: string;
-  mapSubtitle: string;
   dragLabel: string;
   mapClosedHint: string;
   detailContent?: ReactNode;
   detailCloseLabel?: string;
   onDetailClose?: () => void;
-  scrollBottomInset?: number;
   children: ReactNode;
 };
+
+const LIST_BOTTOM_PADDING = 16;
 
 function snapScheduleHeight(height: number, containerHeight: number): number {
   const closed = 0;
@@ -75,18 +71,13 @@ export function ScheduleMapSplit({
   itinerary,
   selectedDayNumber,
   highlightItemId,
-  mapTitle,
-  mapSubtitle,
   dragLabel,
   mapClosedHint,
   detailContent,
   detailCloseLabel,
   onDetailClose,
-  scrollBottomInset,
   children,
 }: ScheduleMapSplitProps) {
-  const insets = useSafeAreaInsets();
-  const listBottomPadding = routeFabScrollPadding(scrollBottomInset ?? insets.bottom);
   const [scheduleHeight, setScheduleHeight] = useState(0);
   const scheduleHeightRef = useRef(0);
   const dragStartHeightRef = useRef(0);
@@ -165,8 +156,8 @@ export function ScheduleMapSplit({
           itinerary={itinerary}
           selectedDayNumber={selectedDayNumber}
           highlightItemId={highlightItemId}
-          mapTitle={mapTitle}
-          mapSubtitle={mapSubtitle}
+          mapTitle=""
+          mapSubtitle=""
         />
       </View>
 
@@ -184,10 +175,12 @@ export function ScheduleMapSplit({
       </View>
 
       {scheduleOpen ? (
-        <View style={{ height: scheduleHeight }} className="relative min-h-0 bg-brand-background">
+        <View
+          style={{ height: scheduleHeight }}
+          className="relative min-h-0 bg-brand-background">
           <ScrollView
             className="flex-1 px-4"
-            contentContainerStyle={{ paddingBottom: listBottomPadding }}
+            contentContainerStyle={{ paddingBottom: LIST_BOTTOM_PADDING }}
             showsVerticalScrollIndicator={false}
             nestedScrollEnabled
             pointerEvents={detailActive ? 'none' : 'auto'}
@@ -209,7 +202,7 @@ export function ScheduleMapSplit({
               ) : null}
               <ScrollView
                 className="flex-1"
-                contentContainerStyle={{ paddingBottom: listBottomPadding }}
+                contentContainerStyle={{ paddingBottom: LIST_BOTTOM_PADDING }}
                 showsVerticalScrollIndicator={false}
                 nestedScrollEnabled>
                 {detailContent}

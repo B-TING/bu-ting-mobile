@@ -2,6 +2,7 @@ import {
   buildGoogleMapsDirectionsAppUrl,
   buildGoogleMapsDirectionsWebUrl,
   buildKakaoMapDirectionsAppUrl,
+  buildKakaoMapDirectionsMobileWebUrl,
   buildKakaoMapDirectionsWebUrl,
   buildLegDirectionsFallbackUrls,
   isLegDirectionsInputValid,
@@ -97,16 +98,26 @@ describe('mapDirections', () => {
     );
   });
 
-  it('builds Kakao app url with car mode', () => {
+  it('builds Kakao app url with lowercase travel mode and raw coords', () => {
     expect(buildKakaoMapDirectionsAppUrl({ ...sampleLeg, mode: 'drive' })).toBe(
-      'kakaomap://route?sp=35.1587%2C129.1604&ep=35.1796%2C129.0756&by=CAR',
+      'kakaomap://route?sp=35.1587,129.1604&ep=35.1796,129.0756&by=car&sn=35.1587%2C129.1604&en=35.1796%2C129.0756',
     );
   });
 
-  it('builds Kakao web url with name and address', () => {
-    expect(buildKakaoMapDirectionsWebUrl(sampleLegWithAddress)).toContain(
-      encodeURIComponent('해운대해수욕장 부산 해운대구 우동 264'),
+  it('builds Kakao mobile web scheme url', () => {
+    expect(buildKakaoMapDirectionsMobileWebUrl(sampleLeg)).toContain(
+      'http://m.map.kakao.com/scheme/route?sp=35.1587,129.1604',
     );
+    expect(buildKakaoMapDirectionsMobileWebUrl(sampleLeg)).toContain('by=foot');
+  });
+
+  it('builds Kakao web url with official link/by pattern', () => {
+    const url = buildKakaoMapDirectionsWebUrl(sampleLegWithAddress);
+    expect(url).toContain('https://map.kakao.com/link/by/walk/');
+    expect(url).toContain(
+      encodeURIComponent('부산 해운대구 우동 264'),
+    );
+    expect(url).not.toContain('/link/route/');
   });
 
   it('returns fallback chain google-first', () => {
@@ -114,6 +125,7 @@ describe('mapDirections', () => {
     expect(urls[0]).toContain('comgooglemaps://');
     expect(urls[1]).toContain('google.com/maps/dir');
     expect(urls[2]).toContain('kakaomap://');
-    expect(urls[3]).toContain('map.kakao.com/link/route');
+    expect(urls[3]).toContain('m.map.kakao.com/scheme/route');
+    expect(urls[4]).toContain('map.kakao.com/link/by/walk');
   });
 });

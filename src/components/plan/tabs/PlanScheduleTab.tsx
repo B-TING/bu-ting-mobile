@@ -16,6 +16,7 @@ import {
 } from '../../../constants/common/alphaFeatureBlocks';
 import { AppIcon } from '../../shared/icons/AppIcon';
 import { DayChips } from '../schedule/DayChips';
+import { ScheduleActionBar } from '../schedule/ScheduleActionBar';
 import { ScheduleMapSplit } from '../schedule/ScheduleMapSplit';
 import { ScheduleRouteDetailPanel } from '../schedule/ScheduleRouteDetailPanel';
 import { TravelLegRow } from '../schedule/TravelLegRow';
@@ -38,7 +39,8 @@ import { resolveEventZoneForRoute } from '../../../utils/eventZone/zoneResolver'
 import { computeDayTotalMinutes, formatDurationMinutes } from '../../../utils/geo/tripDuration';
 import {
   isLegDirectionsInputValid,
-  openLegDirections,
+  openGoogleLegDirections,
+  openKakaoLegDirections,
   type LegDirectionsInput,
 } from '../../../utils/map/mapDirections';
 import { getReviewForPlace } from '../../../utils/review/travelReview';
@@ -85,7 +87,7 @@ type PlanScheduleTabProps = {
   canRemoveDay?: boolean;
   onAddDay?: () => void;
   onRemoveDay?: () => void;
-  scrollBottomInset?: number;
+  actionBarBottomInset?: number;
   onNotify?: (message: string) => void;
 };
 
@@ -115,7 +117,7 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
       canRemoveDay = false,
       onAddDay,
       onRemoveDay,
-      scrollBottomInset,
+      actionBarBottomInset = 0,
       onNotify,
     },
     ref,
@@ -187,30 +189,42 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
       [dayRoutes],
     );
 
-    const handleLegDirections = useCallback(
-      (from: RouteItem, to: RouteItem) => {
-        const input: LegDirectionsInput = {
-          from: {
-            lat: from.location.lat,
-            lng: from.location.lng,
-            name: from.placeName,
-            address: from.placeInfo?.address,
-          },
-          to: {
-            lat: to.location.lat,
-            lng: to.location.lng,
-            name: to.placeName,
-            address: to.placeInfo?.address,
-          },
-          mode: to.legMode ?? 'walk',
-        };
+    const buildLegDirectionsInput = useCallback(
+      (from: RouteItem, to: RouteItem): LegDirectionsInput => ({
+        from: {
+          lat: from.location.lat,
+          lng: from.location.lng,
+          name: from.placeName,
+          address: from.placeInfo?.address,
+        },
+        to: {
+          lat: to.location.lat,
+          lng: to.location.lng,
+          name: to.placeName,
+          address: to.placeInfo?.address,
+        },
+        mode: to.legMode ?? 'walk',
+      }),
+      [],
+    );
+
+    const openLegDirectionsWithProvider = useCallback(
+      (
+        provider: 'google' | 'kakao',
+        from: RouteItem,
+        to: RouteItem,
+      ) => {
+        const input = buildLegDirectionsInput(from, to);
 
         if (!isLegDirectionsInputValid(input)) {
           onNotify?.(copy.directionsUnavailable);
           return;
         }
 
-        void openLegDirections(input).then(result => {
+        const open =
+          provider === 'google' ? openGoogleLegDirections : openKakaoLegDirections;
+
+        void open(input).then(result => {
           if (result === 'invalid') {
             onNotify?.(copy.directionsUnavailable);
           } else if (result === 'failed') {
@@ -218,7 +232,12 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
           }
         });
       },
-      [copy.directionsFailed, copy.directionsUnavailable, onNotify],
+      [
+        buildLegDirectionsInput,
+        copy.directionsFailed,
+        copy.directionsUnavailable,
+        onNotify,
+      ],
     );
 
     const slotCopy = useMemo(
@@ -518,18 +537,16 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
     ) : null;
 
     return (
-      <ScheduleMapSplit
-        itinerary={plan.itinerary}
-        selectedDayNumber={day?.dayNumber ?? 1}
-        highlightItemId={focusedRoute?.itemId ?? null}
-        mapTitle={copy.mapPlaceholder}
-        mapSubtitle={copy.mapPlaceholderSub}
-        dragLabel={copy.mapDragLabel}
-        mapClosedHint={copy.mapClosedHint}
-        detailCloseLabel={copy.close}
-        onDetailClose={() => setFocusedRoute(null)}
-        scrollBottomInset={scrollBottomInset}
-        detailContent={detailPanel}>
+      <View className="flex-1">
+        <ScheduleMapSplit
+          itinerary={plan.itinerary}
+          selectedDayNumber={day?.dayNumber ?? 1}
+          highlightItemId={focusedRoute?.itemId ?? null}
+          dragLabel={copy.mapDragLabel}
+          mapClosedHint={copy.mapClosedHint}
+          detailCloseLabel={copy.close}
+          onDetailClose={() => setFocusedRoute(null)}
+          detailContent={detailPanel}>
           <DayChips
             days={plan.itinerary}
             selectedDayNumber={day?.dayNumber ?? 1}
@@ -612,13 +629,19 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
               <View key={route.itemId}>
                 {prevRoute != null ? (
                   <TravelLegRow
-                    directionsLabel={copy.directionsGoogleButton}
+                    googleLabel={copy.directionsGoogleButton}
+                    kakaoLabel={copy.directionsKakaoButton}
                     lineColor={zoneColor}
                     directionsDisabled={
                       directionsInput != null &&
                       !isLegDirectionsInputValid(directionsInput)
                     }
-                    onDirectionsPress={() => handleLegDirections(prevRoute, route)}
+                    onGooglePress={() =>
+                      openLegDirectionsWithProvider('google', prevRoute, route)
+                    }
+                    onKakaoPress={() =>
+                      openLegDirectionsWithProvider('kakao', prevRoute, route)
+                    }
                   />
                 ) : null}
                 {renderRouteSlot(route, index)}
@@ -628,7 +651,18 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
 
           <Text className="mt-2 text-xs text-brand-muted">{copy.reorderLongPressHint}</Text>
           <Text className="mb-4 mt-1 text-xs text-brand-muted">{copy.closedHint}</Text>
-      </ScheduleMapSplit>
+        </ScheduleMapSplit>
+
+        {!readOnly && !focusedRoute ? (
+          <ScheduleActionBar
+            onOptimize={handleRouteOptimize}
+            onAddPlace={handleAddPlacePress}
+            optimizeLabel={copy.routeOptimize}
+            addPlaceLabel={copy.addPlace}
+            bottomInset={actionBarBottomInset}
+          />
+        ) : null}
+      </View>
     );
   },
 );
