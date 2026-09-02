@@ -30,9 +30,13 @@ function pickActiveTravelId(
     const activePlan = filterPlansForCurrentApiServer(usePlanStore.getState().plans).find(
       p => p.planId === currentActivePlanId,
     );
+    const stillActive =
+      activePlan &&
+      activePlan.status !== 'COMPLETED' &&
+      activePlan.travelStatus !== 'COMPLETED';
     const activeTravelId = activePlan?.apiTravelId ?? activePlan?.planId;
-    if (activeTravelId && travelIds.has(activeTravelId)) {
-      return activePlan?.planId ?? activeTravelId;
+    if (stillActive && activeTravelId && travelIds.has(activeTravelId)) {
+      return activePlan.planId;
     }
   }
 
@@ -105,17 +109,23 @@ export async function syncMyActiveTravelsFromApi(
     const { plan, scheduleLocked } = await trySyncTravelPlanFromApi(accessToken, shell);
     if (scheduleLocked) {
       const existingPlan = findLocalPlanForTravel(usePlanStore.getState().plans, travel.travelId);
-      const offlinePlanId = existingPlan?.planId ?? plan.planId;
-      usePlanStore.getState().setPlanOfflineSync(offlinePlanId, true);
-      if (existingPlan) {
-        syncedPlans.push(existingPlan);
+      if (!existingPlan) {
+        // 로컬 캐시 없는 locked shell은 빈 일정 UX를 만들지 않도록 건너뛴다.
         continue;
       }
-    } else {
-      usePlanStore.getState().setPlanOfflineSync(plan.planId, false);
+      usePlanStore.getState().setPlanOfflineSync(existingPlan.planId, true);
+      syncedPlans.push(existingPlan);
+      continue;
     }
-    usePlanStore.getState().upsertPlan(plan);
-    syncedPlans.push(plan);
+    usePlanStore.getState().setPlanOfflineSync(plan.planId, false);
+    // 일정 sync는 멤버를 API에서 안 가져오므로, 그사이 멤버 sync가 갱신했으면 유지
+    const latest = usePlanStore.getState().plans.find(p => p.planId === plan.planId);
+    const merged = {
+      ...plan,
+      members: latest?.members ?? plan.members,
+    };
+    usePlanStore.getState().upsertPlan(merged);
+    syncedPlans.push(merged);
   }
 
   const activePlanId = pickActiveTravelId(travels, usePlanStore.getState().activePlanId);

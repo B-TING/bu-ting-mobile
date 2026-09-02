@@ -92,12 +92,39 @@ function resolvePhone(detail: PlaceDetailResponseDto): string | undefined {
   return undefined;
 }
 
+/** Release Android는 HTTP(cleartext)를 막음. Tour CDN은 동일 리소스를 HTTPS로도 제공. */
+export function normalizeTourImageUrl(url?: string | null): string | undefined {
+  const trimmed = url?.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  try {
+    const parsed = new URL(trimmed);
+    const host = parsed.hostname.toLowerCase();
+    const isTourHost =
+      host === 'visitkorea.or.kr' ||
+      host.endsWith('.visitkorea.or.kr') ||
+      host === 'knto.or.kr' ||
+      host.endsWith('.knto.or.kr');
+
+    if (isTourHost && parsed.protocol === 'http:') {
+      parsed.protocol = 'https:';
+      return parsed.toString();
+    }
+  } catch {
+    return trimmed;
+  }
+
+  return trimmed;
+}
+
 export function resolvePlaceDetailImageUrl(
   detail: Pick<PlaceDetailResponseDto, 'imageUrl' | 'thumbnailUrl' | 'firstImage' | 'details'>,
 ): string | undefined {
   const fromDetails = detail.details?.firstimage?.trim() || detail.details?.firstimage2?.trim();
   const url = detail.imageUrl ?? detail.thumbnailUrl ?? detail.firstImage ?? fromDetails;
-  return url || undefined;
+  return normalizeTourImageUrl(url);
 }
 
 function parseCoord(value: number | string | undefined): number | null {
@@ -145,14 +172,15 @@ function contentTypeToKind(contentTypeId: string): PlaceKind {
   }
 }
 
-function asContentTypeId(value: string): PlaceContentTypeId {
+function asContentTypeId(value: string | number): PlaceContentTypeId {
+  const normalized = String(value);
   if (
-    value === PLACE_CONTENT_TYPE.attraction ||
-    value === PLACE_CONTENT_TYPE.accommodation ||
-    value === PLACE_CONTENT_TYPE.restaurant ||
-    value === PLACE_CONTENT_TYPE.festival
+    normalized === PLACE_CONTENT_TYPE.attraction ||
+    normalized === PLACE_CONTENT_TYPE.accommodation ||
+    normalized === PLACE_CONTENT_TYPE.restaurant ||
+    normalized === PLACE_CONTENT_TYPE.festival
   ) {
-    return value;
+    return normalized;
   }
   return PLACE_CONTENT_TYPE.attraction;
 }
@@ -163,7 +191,7 @@ export function mapPlaceSearchItemToBusanPlace(item: PlaceSearchItemDto): BusanP
     return null;
   }
 
-  const contentId = item.contentId;
+  const contentId = String(item.contentId);
   const reviewCount = item.reviewCount ?? item.userRatingCount ?? 0;
 
   return {
@@ -176,7 +204,9 @@ export function mapPlaceSearchItemToBusanPlace(item: PlaceSearchItemDto): BusanP
     rating: item.rating ?? 0,
     userRatingsTotal: reviewCount,
     districtName: item.districtName,
-    imageUrl: item.imageUrl ?? item.thumbnailUrl ?? item.firstImage,
+    imageUrl: normalizeTourImageUrl(
+      item.imageUrl ?? item.thumbnailUrl ?? item.firstImage,
+    ),
   };
 }
 
@@ -205,6 +235,24 @@ export function enrichBusanPlaceFromDetail(
   };
 }
 
+/** 키워드 검색 결과 → 일정 카드용 최소 상세(이미지·평점만, detail API 미호출) */
+export function busanPlaceToPlaceDetailStub(place: BusanPlace): PlaceDetailVO {
+  return {
+    googlePlaceId: place.contentId,
+    internalPlaceId: place.contentId,
+    name: place.name,
+    kind: contentTypeToKind(place.contentTypeId),
+    googleTypes: [],
+    formattedAddress: place.address,
+    location: place.location,
+    rating: place.rating,
+    userRatingCount: place.userRatingsTotal,
+    reviews: [],
+    photos: [],
+    imageUrl: place.imageUrl,
+  };
+}
+
 export function mapPlaceDetailToPlaceDetailVO(
   detail: PlaceDetailResponseDto,
   fallback?: { name?: string; address?: string; imageUrl?: string },
@@ -215,7 +263,9 @@ export function mapPlaceDetailToPlaceDetailVO(
   const openingHours = resolveOpeningHours(detail);
   const reviews = resolveReviews(detail);
   const tourismInfoRows = formatTourismInfoRows(detail.details, detail.contentTypeId);
-  const imageUrl = resolvePlaceDetailImageUrl(detail) ?? fallback?.imageUrl;
+  const imageUrl = normalizeTourImageUrl(
+    resolvePlaceDetailImageUrl(detail) ?? fallback?.imageUrl,
+  );
   const overview =
     detail.details?.overview?.trim() ||
     detail.details?.infotext?.trim() ||

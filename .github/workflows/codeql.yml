@@ -42,6 +42,10 @@ jobs:
         node-version: 22
         cache: npm
 
+    - name: Prepare local env for postinstall sync
+      if: matrix.language == 'java-kotlin' || matrix.language == 'swift'
+      run: cp .env.example .env
+
     - name: Install npm dependencies
       if: matrix.language == 'java-kotlin' || matrix.language == 'swift'
       run: npm ci
@@ -76,36 +80,93 @@ jobs:
 
     - name: Prepare iOS configuration for CI
       if: matrix.language == 'swift'
-      run: cp ios/BUTingMobile/Info.plist.example ios/BUTingMobile/Info.plist
+      run: |
+        cp ios/BUTingMobile/Info.plist.example ios/BUTingMobile/Info.plist
+        # Xcode script phases do not inherit Actions PATH — pin node for RN bundle scripts.
+        echo "export NODE_BINARY=$(command -v node)" > ios/.xcode.env.local
 
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v4
       with:
         languages: ${{ matrix.language }}
         build-mode: ${{ matrix.build-mode }}
+        config-file: ./.github/codeql/codeql-config.yml
 
     - name: Build Android for CodeQL
       if: matrix.language == 'java-kotlin'
       working-directory: android
       run: |
         chmod +x gradlew
-        ./gradlew assembleDebug --no-daemon --stacktrace
+        # Google Maven 일시 502 등 네트워크 오류 대비 재시도
+        for attempt in 1 2 3; do
+          if ./gradlew assembleDebug --no-daemon --stacktrace; then
+            exit 0
+          fi
+          echo "Gradle assembleDebug failed (attempt ${attempt}/3)"
+          if [ "$attempt" -lt 3 ]; then
+            sleep $((attempt * 30))
+          fi
+        done
+        exit 1
 
     - name: Build iOS for CodeQL
       if: matrix.language == 'swift'
       working-directory: ios
       run: |
+        # CodeQL needs native compile only — skip Release device JS bundling (Metro/Hermes).
+        export SKIP_BUNDLING=1
         xcodebuild \
           -workspace BUTingMobile.xcworkspace \
           -scheme BUTingMobile \
-          -configuration Release \
-          -sdk iphoneos \
-          -destination 'generic/platform=iOS' \
+          -configuration Debug \
+          -sdk iphonesimulator \
+          -destination 'generic/platform=iOS Simulator' \
           CODE_SIGNING_REQUIRED=NO \
           CODE_SIGNING_ALLOWED=NO \
           build
 
     - name: Perform CodeQL Analysis
+      if: matrix.language == 'java-kotlin' || matrix.language == 'swift'
+      uses: github/codeql-action/analyze@v4
+      with:
+        category: "/language:${{matrix.language}}"
+        output: sarif-results
+        upload: never
+
+    - name: Locate SARIF file
+      if: matrix.language == 'java-kotlin' || matrix.language == 'swift'
+      id: sarif
+      shell: bash
+      run: |
+        shopt -s nullglob
+        files=(sarif-results/*.sarif)
+        if [ ${#files[@]} -eq 0 ]; then
+          echo "No SARIF files found:"
+          ls -la sarif-results/ || true
+          exit 1
+        fi
+        echo "path=${files[0]}" >> "$GITHUB_OUTPUT"
+
+    # Manual build (Java/Kotlin, Swift) ignores paths-ignore; drop vendor paths from SARIF.
+    - name: Filter third-party SARIF alerts
+      if: matrix.language == 'java-kotlin' || matrix.language == 'swift'
+      uses: advanced-security/filter-sarif@v1.1
+      with:
+        patterns: |
+          -**/node_modules/**
+          -**/Pods/**
+        input: ${{ steps.sarif.outputs.path }}
+        output: ${{ steps.sarif.outputs.path }}
+
+    - name: Upload SARIF
+      if: matrix.language == 'java-kotlin' || matrix.language == 'swift'
+      uses: github/codeql-action/upload-sarif@v4
+      with:
+        category: "/language:${{matrix.language}}"
+        sarif_file: sarif-results
+
+    - name: Perform CodeQL Analysis
+      if: matrix.language != 'java-kotlin' && matrix.language != 'swift'
       uses: github/codeql-action/analyze@v4
       with:
         category: "/language:${{matrix.language}}"

@@ -1,11 +1,20 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <!-- Play: no broad photo/video access — use system photo picker instead -->
+    <uses-permission
+      android:name="android.permission.READ_MEDIA_IMAGES"
+      tools:node="remove" />
+    <uses-permission
+      android:name="android.permission.READ_MEDIA_VIDEO"
+      tools:node="remove" />
+    <uses-permission
+      android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED"
+      tools:node="remove" />
     <uses-permission
       android:name="android.permission.READ_EXTERNAL_STORAGE"
       android:maxSdkVersion="32" />
@@ -18,6 +27,7 @@
       android:allowBackup="false"
       android:theme="@style/AppTheme"
       android:usesCleartextTraffic="${usesCleartextTraffic}"
+      android:networkSecurityConfig="@xml/network_security_config"
       android:supportsRtl="true">
       <activity
         android:name=".MainActivity"

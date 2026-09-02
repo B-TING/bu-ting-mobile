@@ -58,28 +58,31 @@ function syncStatusSubscriptions(
   get: () => ZoneChatMemberState,
   set: (partial: Partial<ZoneChatMemberState>) => void,
 ): void {
-  get()._hubRelease?.();
-
   if (!isZoneChatWebSocketEnabled()) {
+    void zoneChatRoomStatusHub.suspend();
     set({ _hubRelease: null });
     return;
   }
 
   if (get()._chatActiveRoomId) {
+    void zoneChatRoomStatusHub.suspend();
     set({ _hubRelease: null });
     return;
   }
+
+  zoneChatRoomStatusHub.resume();
 
   const { _statusConsumers, _accessToken } = get();
   const roomIds = [...new Set(Object.values(_statusConsumers).flat().filter(Boolean))];
 
   if (!_accessToken || roomIds.length === 0) {
+    zoneChatRoomStatusHub.setDesiredRooms([], _accessToken ?? '');
     set({ _hubRelease: null });
     return;
   }
 
-  const release = zoneChatRoomStatusHub.retainRooms(roomIds, _accessToken);
-  set({ _hubRelease: release });
+  zoneChatRoomStatusHub.setDesiredRooms(roomIds, _accessToken);
+  set({ _hubRelease: () => zoneChatRoomStatusHub.setDesiredRooms([], _accessToken) });
 }
 
 let hubListenerAttached = false;

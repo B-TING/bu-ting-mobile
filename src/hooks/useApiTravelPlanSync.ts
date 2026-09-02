@@ -13,6 +13,11 @@ type UseApiTravelPlanSyncOptions = {
   accessToken: string | null;
 };
 
+function findCurrentPlan(planId: string): TravelPlan | null {
+  const plan = usePlanStore.getState().plans.find(p => p.planId === planId) ?? null;
+  return plan && isPlanForCurrentApiServer(plan) ? plan : null;
+}
+
 /** API 연동 플랜 — 화면 포커스 시 서버 일정으로 로컬 캐시를 갱신 */
 export function useApiTravelPlanSync({
   planId,
@@ -32,14 +37,17 @@ export function useApiTravelPlanSync({
 
   const syncFromServer = useCallback(async (): Promise<TravelPlan | null> => {
     if (!enabled || !accessToken || !planId) {
-      const plan = usePlanStore.getState().plans.find(p => p.planId === planId) ?? null;
-      return plan && isPlanForCurrentApiServer(plan) ? plan : null;
+      return findCurrentPlan(planId);
     }
 
     const localPlan = usePlanStore.getState().plans.find(p => p.planId === planId);
     if (!localPlan || localPlan.source !== 'api' || !isPlanForCurrentApiServer(localPlan)) {
       unlockPlanSchedule(planId);
       return localPlan && isPlanForCurrentApiServer(localPlan) ? localPlan : null;
+    }
+
+    if (syncingRef.current) {
+      return localPlan;
     }
 
     syncingRef.current = true;
@@ -50,7 +58,13 @@ export function useApiTravelPlanSync({
       );
       markPlanOfflineSync(planId, scheduleLocked);
       if (!scheduleLocked) {
-        upsertPlan(plan);
+        // 일정 sync와 멤버 sync가 동시에 돌면, 늦게 끝난 일정 sync가
+        // 멤버 목록을 예전 스냅샷으로 덮어쓸 수 있어 최신 store 멤버를 유지한다.
+        const latest = usePlanStore.getState().plans.find(p => p.planId === planId);
+        upsertPlan({
+          ...plan,
+          members: latest?.members ?? plan.members,
+        });
       }
       return plan;
     } finally {

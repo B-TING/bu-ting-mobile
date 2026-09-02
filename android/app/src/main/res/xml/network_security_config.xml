@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Release 빌드는 RN 기본값 usesCleartextTraffic=false.
+  한국관광공사(Tour API) 이미지 URL은 http:// 이라 도메인별 cleartext만 허용합니다.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">visitkorea.or.kr</domain>
+        <domain includeSubdomains="true">knto.or.kr</domain>
+    </domain-config>
+</network-security-config>

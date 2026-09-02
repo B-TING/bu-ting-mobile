@@ -9,7 +9,6 @@ import type {
   TravelStyle,
   VisitPurpose,
 } from '../../types/user';
-import { buildUserPromptContext } from './promptBuilder';
 
 const PURPOSE_VALUES: VisitPurpose[] = [
   'food',
@@ -104,7 +103,6 @@ export function createEmptyOnboardingProfile(
     aiPromptContext: '',
     ownerUserId,
   };
-  profile.aiPromptContext = buildUserPromptContext(profile);
   return profile;
 }
 
@@ -171,10 +169,6 @@ export function fromTravelSurveyResponse(
 
   if (!hasAnsweredSurvey(profile)) {
     return null;
-  }
-
-  if (!profile.aiPromptContext) {
-    profile.aiPromptContext = buildUserPromptContext(profile);
   }
 
   return profile;

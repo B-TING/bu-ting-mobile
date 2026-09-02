@@ -936,6 +936,8 @@ export const SETUP_COPY: Record<
     offlineMode: string;
     offlineModeHint: string;
     offlineModeEmpty: string;
+    offlinePickTitle: string;
+    offlinePickSubtitle: string;
     email: string;
     password: string;
     login: string;
@@ -974,8 +976,10 @@ export const SETUP_COPY: Record<
     loginPrivacyPolicy: '개인정보처리방침',
     loginTermsSuffix: '에 동의합니다',
     offlineMode: '오프라인으로 일정 보기',
-    offlineModeHint: '저장된 최근 일정만 열람합니다',
+    offlineModeHint: '기기에 저장된 여행 중 하나를 골라 열람합니다',
     offlineModeEmpty: '열람할 저장된 일정이 없습니다.',
+    offlinePickTitle: '저장된 여행 선택',
+    offlinePickSubtitle: '오프라인으로 볼 여행을 골라 주세요',
     email: '이메일',
     password: '비밀번호',
     login: '로그인',
@@ -1015,8 +1019,10 @@ export const SETUP_COPY: Record<
     loginPrivacyPolicy: 'Privacy Policy',
     loginTermsSuffix: '',
     offlineMode: 'View itinerary offline',
-    offlineModeHint: 'View your latest saved itinerary only',
+    offlineModeHint: 'Choose one of your saved trips to browse offline',
     offlineModeEmpty: 'No saved itinerary to browse.',
+    offlinePickTitle: 'Choose a saved trip',
+    offlinePickSubtitle: 'Pick a trip to view offline',
     email: 'Email',
     password: 'Password',
     login: 'Sign in',
@@ -1056,8 +1062,10 @@ export const SETUP_COPY: Record<
     loginPrivacyPolicy: 'プライバシーポリシー',
     loginTermsSuffix: 'に同意したものとみなされます',
     offlineMode: 'オフラインで行程を見る',
-    offlineModeHint: '保存した最新の行程のみ閲覧できます',
+    offlineModeHint: '端末に保存した旅行から選んで閲覧できます',
     offlineModeEmpty: '閲覧できる行程がありません。',
+    offlinePickTitle: '保存した旅行を選択',
+    offlinePickSubtitle: 'オフラインで見る旅行を選んでください',
     email: 'メール',
     password: 'パスワード',
     login: 'ログイン',
@@ -1097,8 +1105,10 @@ export const SETUP_COPY: Record<
     loginPrivacyPolicy: '隐私政策',
     loginTermsSuffix: '',
     offlineMode: '离线查看行程',
-    offlineModeHint: '仅可浏览最近保存的行程',
+    offlineModeHint: '从已保存在设备上的旅行中选择一个浏览',
     offlineModeEmpty: '没有可浏览的已保存行程。',
+    offlinePickTitle: '选择已保存的旅行',
+    offlinePickSubtitle: '请选择要离线查看的旅行',
     email: '邮箱',
     password: '密码',
     login: '登录',

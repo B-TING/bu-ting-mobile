@@ -82,8 +82,8 @@ android {
         applicationId "com.butingmobile"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 4
-        versionName "1.0.3-alpha"
+        versionCode 10
+        versionName "1.2.2a-alpha"
     }
     signingConfigs {
         debug {

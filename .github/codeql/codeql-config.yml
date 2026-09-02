@@ -1,0 +1,10 @@
+name: "CodeQL config"
+
+# Third-party deps are patched via patch-package where needed;
+# still exclude bulk node_modules noise from JS analysis paths.
+paths-ignore:
+  - "**/node_modules/**"
+  - "**/android/build/**"
+  - "**/android/app/build/**"
+  - "**/ios/Pods/**"
+  - "**/.dist/**"

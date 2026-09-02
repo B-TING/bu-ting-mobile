@@ -16,6 +16,7 @@ export {
   hydrateRoutePlaceInfo,
   selectActivePlan,
   selectHomeFeaturedPlan,
+  selectSelectableHomePlans,
   selectLatestLocalPlan,
   selectPlanById,
   usePlanStore,
@@ -37,6 +38,8 @@ export { usePlaceBookmarkStore } from './usePlaceBookmarkStore';
 export {
   isPlaceSearchNoResultsError,
   isPlaceSearchNoResultsMessage,
+  isPlaceSearchServerError,
+  placeSearchCatchMessage,
   searchCenterKey,
   usePlaceSearchStore,
   type PlaceSearchCacheEntry,

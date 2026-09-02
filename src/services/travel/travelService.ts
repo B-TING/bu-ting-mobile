@@ -9,6 +9,7 @@ import type {
   PlanPlaceVisitedUpdateRequest,
   PlanResponse,
   TravelCreateRequest,
+  AiTravelPlanGenerateRequest,
   TravelPlansResponse,
   TravelResponse,
   TravelStatusUpdateRequest,
@@ -38,6 +39,8 @@ function mapTravelError(error: ApiClientError): TravelServiceError {
     responseBody: error.responseBody,
   });
 }
+
+export const AI_TRAVEL_PLAN_TIMEOUT_MS = 30_000;
 
 function travelUrl(path: string) {
   return `${API_BASE_URL}${path}`;
@@ -97,6 +100,43 @@ export async function createTravel(
   });
   if (!data?.travelId) {
     throw new TravelServiceError('Travel create response missing travelId');
+  }
+  return data;
+}
+
+export async function generateAiTravelPlans(
+  accessToken: string,
+  travelId: string,
+  body: AiTravelPlanGenerateRequest,
+): Promise<TravelPlansResponse> {
+  const url = travelUrl(TRAVEL_ENDPOINTS.aiPlans(travelId));
+  const data = await apiPost<TravelPlansResponse>(url, {
+    ...authOpts(accessToken),
+    body,
+    timeoutMs: AI_TRAVEL_PLAN_TIMEOUT_MS,
+    mapError: error => {
+      if (error.code === 'TIMEOUT') {
+        return new TravelServiceError('일정 생성 시간이 초과되었습니다. 다시 시도해 주세요.', {
+          url: error.url,
+          responseBody: error.responseBody,
+        });
+      }
+      if (error.status === 500) {
+        return new TravelServiceError(
+          'AI 일정 생성 중 서버 오류가 발생했습니다. 백엔드 AI 설정과 로그를 확인해 주세요.',
+          {
+            status: error.status,
+            url: error.url,
+            responseBody: error.responseBody,
+          },
+        );
+      }
+      return mapTravelError(error);
+    },
+    ...travelPlanLogHooks('POST', url, accessToken, { travelId, requestBody: body }),
+  });
+  if (!data?.travelId) {
+    throw new TravelServiceError('AI travel plan response missing travelId');
   }
   return data;
 }

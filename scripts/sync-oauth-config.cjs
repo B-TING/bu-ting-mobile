@@ -108,11 +108,14 @@ function upsertStringXml(name, value) {
     'values',
     'oauth_strings.xml',
   );
-  const escaped = value
+  // Android strings.xml — escape `\` first, then XML meta characters.
+  const escaped = String(value)
+    .replace(/\\/g, '\\\\')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '\\"');
+    .replace(/"/g, '\\"')
+    .replace(/'/g, "\\'");
   const content = `<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="kakao_app_key" translatable="false">${escaped}</string>

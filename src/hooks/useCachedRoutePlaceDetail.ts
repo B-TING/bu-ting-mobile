@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import { usePlaceDetailCacheStore } from '../stores/usePlaceDetailCacheStore';
 import type { PlaceDetailVO } from '../types/googlePlaces';
@@ -18,26 +18,33 @@ export function useCachedRoutePlaceDetail(
     placeId ? s.detailsByPlaceId[placeId] : undefined,
   );
   const fetchForRoute = usePlaceDetailCacheStore(s => s.fetchForRoute);
+  const [fetchSettled, setFetchSettled] = useState(false);
 
   useEffect(() => {
     if (!enabled || !route) {
+      setFetchSettled(false);
       return;
     }
 
+    let cancelled = false;
+    setFetchSettled(false);
     void fetchForRoute(route.placeId, route.type, {
       placeName: route.placeName,
       address: route.placeInfo?.address,
       imageUrl: route.placeInfo?.imageUrl,
+    }).finally(() => {
+      if (!cancelled) {
+        setFetchSettled(true);
+      }
     });
+
+    return () => {
+      cancelled = true;
+    };
   }, [enabled, route, fetchForRoute]);
 
-  const isCached = cached !== undefined;
-  const isLoading = usePlaceDetailCacheStore(s =>
-    placeId ? s.isLoading(placeId) : false,
-  );
-
   return {
-    detail: isCached ? cached : null,
-    loading: enabled && (isLoading || !isCached),
+    detail: cached ?? null,
+    loading: Boolean(enabled && placeId && cached == null && !fetchSettled),
   };
 }

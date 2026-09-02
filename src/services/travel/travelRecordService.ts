@@ -6,6 +6,7 @@ import type {
   PlaceReviewUpdateRequest,
   PlaceTravelRecordsQuery,
   TravelRecordBookmarkResponse,
+  TravelRecordCloneToTravelRequest,
   TravelRecordCommentCreateRequest,
   TravelRecordCommentUpdateRequest,
   TravelRecordCreateRequest,
@@ -17,6 +18,7 @@ import type {
   TravelRecordUpdateRequest,
 } from '../../types/travelRecordApi';
 import type { TravelRecordComment } from '../../types/travelReview';
+import type { TravelPlansResponse } from '../../types/travelApi';
 import { ApiClientError, apiDelete, apiGet, apiPatch, apiPost } from '../api/apiClient';
 
 export class TravelRecordServiceError extends ApiClientError {
@@ -394,5 +396,17 @@ export async function fetchPlaceReviewSummary(
   return apiGet(url(`${TRAVEL_RECORD_ENDPOINTS.placesReviews}${qs}`), {
     errorMessagePrefix: 'Travel record request failed',
     mapError,
+  });
+}
+
+/** POST /api/v1/travel-records/{travelRecordId}/clone-to-travel */
+export async function cloneTravelRecordToTravel(
+  accessToken: string,
+  travelRecordId: string,
+  body: TravelRecordCloneToTravelRequest,
+): Promise<TravelPlansResponse> {
+  return apiPost(url(TRAVEL_RECORD_ENDPOINTS.cloneToTravel(travelRecordId)), {
+    ...auth(accessToken),
+    body,
   });
 }
