@@ -50,7 +50,6 @@ export function EventZoneScreen({ navigation }: Props) {
     toastText,
     toastOpacity,
     liveMemberCounts,
-    selectedActiveEvent,
     listActiveEventsByZone,
     currentZoneGameEvent,
     selectedZoneGameEvent,
@@ -178,7 +177,7 @@ export function EventZoneScreen({ navigation }: Props) {
             closeLabel={copy.closePanel}
             mapZoneBadgeLabel={copy.mapZoneBadgeLabel}
             isCurrentZone={focusZoneId === currentZoneId}
-            activeEvent={selectedActiveEvent}
+            activeEvent={selectedZoneGameEvent}
             eventEndsInLabel={copy.eventEndsIn}
             eventEndedLabel={copy.eventEnded}
             surpriseMissionBadge={copy.surpriseMissionBadge}

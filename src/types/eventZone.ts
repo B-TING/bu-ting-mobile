@@ -107,4 +107,9 @@ export type ZoneEvent = {
   targetObjectLabelEn?: string;
   targetObjectLabelJa?: string;
   targetObjectLabelZh?: string;
+  /** 인증 반경 중심 (없으면 랜드마크/구역 첫 명소 location) */
+  authLatitude?: number;
+  authLongitude?: number;
+  /** 인증 허용 반경(m). Phase 1 GPS 검사용 */
+  authRadiusM?: number;
 };

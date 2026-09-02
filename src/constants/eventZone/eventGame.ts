@@ -3,11 +3,21 @@ import type { EventGameType, EventZoneId, ZoneEvent } from '../../types/eventZon
 import { EVENT_ZONE_BY_ID } from './eventZone';
 import { buildMockZoneEvent } from './zoneEvents';
 
+/** Phase 1: 장소·사물 인증만 (묵찌빠는 Phase 3+) */
+export const PHASE1_EVENT_GAME_TYPES: Array<'place_auth' | 'object_sight'> = [
+  'place_auth',
+  'object_sight',
+];
+
+/** @deprecated Phase 1에서는 PHASE1_EVENT_GAME_TYPES 사용 */
 export const EVENT_GAME_TYPES: EventGameType[] = [
   'place_auth',
   'object_sight',
   'mukjjippa',
 ];
+
+/** 기본 인증 반경 (m) — Notion auth_target.radius_m */
+export const DEFAULT_AUTH_RADIUS_M = 150;
 
 const MOCK_OBJECTS = [
   {
@@ -36,12 +46,41 @@ export function isEventGameType(type: string): type is EventGameType {
   );
 }
 
+/** Phase 1 화면에서 다루는 인증 게임인지 */
+export function isPhase1EventGame(event: ZoneEvent): boolean {
+  return event.type === 'place_auth' || event.type === 'object_sight';
+}
+
 export function isEventGame(event: ZoneEvent): boolean {
   return isEventGameType(event.type);
 }
 
 export function isCameraEventGame(event: ZoneEvent): boolean {
   return event.type === 'place_auth' || event.type === 'object_sight';
+}
+
+export function resolveEventAuthTarget(event: ZoneEvent): {
+  latitude: number;
+  longitude: number;
+  radiusM: number;
+} | null {
+  const zone = EVENT_ZONE_BY_ID[event.zoneId];
+  const landmark =
+    (event.targetLandmarkId
+      ? zone.landmarks.find(item => item.id === event.targetLandmarkId)
+      : undefined) ?? zone.landmarks[0];
+
+  const latitude = event.authLatitude ?? landmark?.location.lat;
+  const longitude = event.authLongitude ?? landmark?.location.lng;
+  if (latitude == null || longitude == null) {
+    return null;
+  }
+
+  return {
+    latitude,
+    longitude,
+    radiusM: event.authRadiusM ?? DEFAULT_AUTH_RADIUS_M,
+  };
 }
 
 export function buildMockGameEvent(
@@ -51,11 +90,20 @@ export function buildMockGameEvent(
   const zone = EVENT_ZONE_BY_ID[zoneId];
   const landmark = zone.landmarks[0];
   const base = buildMockZoneEvent(zoneId, type);
+  const authFields =
+    landmark != null
+      ? {
+          authLatitude: landmark.location.lat,
+          authLongitude: landmark.location.lng,
+          authRadiusM: DEFAULT_AUTH_RADIUS_M,
+        }
+      : { authRadiusM: DEFAULT_AUTH_RADIUS_M };
 
   if (type === 'place_auth') {
     return {
       ...base,
       targetLandmarkId: landmark?.id,
+      ...authFields,
     };
   }
 
@@ -66,15 +114,20 @@ export function buildMockGameEvent(
   const object = MOCK_OBJECTS[Math.floor(Math.random() * MOCK_OBJECTS.length)];
   return {
     ...base,
+    targetLandmarkId: landmark?.id,
     targetObjectLabelKo: object.labelKo,
     targetObjectLabelEn: object.labelEn,
     targetObjectLabelJa: object.labelJa,
     targetObjectLabelZh: object.labelZh,
+    ...authFields,
   };
 }
 
 export function buildRandomMockGameEvent(zoneId: EventZoneId): ZoneEvent {
-  const type = EVENT_GAME_TYPES[Math.floor(Math.random() * EVENT_GAME_TYPES.length)];
+  const type =
+    PHASE1_EVENT_GAME_TYPES[
+      Math.floor(Math.random() * PHASE1_EVENT_GAME_TYPES.length)
+    ];
   return buildMockGameEvent(zoneId, type);
 }
 
@@ -117,6 +170,11 @@ export const EVENT_GAME_COPY: Record<
     targetObject: string;
     targetOpponent: string;
     targetOpponentHint: string;
+    radiusTitle: string;
+    radiusLabel: (meters: number) => string;
+    radiusHint: string;
+    typePlaceAuth: string;
+    typeObjectSight: string;
     remainingLabel: (remaining: string) => string;
     cameraHintPlace: string;
     cameraHintObject: (objectName: string) => string;
@@ -171,6 +229,11 @@ export const EVENT_GAME_COPY: Record<
     targetObject: '목표 사물',
     targetOpponent: '대결 상대',
     targetOpponentHint: '다른 구역 유저와 랜덤 매칭 (목업)',
+    radiusTitle: '인증 반경',
+    radiusLabel: meters => `반경 ${meters}m`,
+    radiusHint: '목표 지점 반경 안에서만 참여·촬영할 수 있어요.',
+    typePlaceAuth: '장소 인증',
+    typeObjectSight: '사물 인증',
     remainingLabel: remaining => `남은 시간 ${remaining}`,
     cameraHintPlace: '목표 장소가 화면에 담기도록 촬영해 주세요',
     cameraHintObject: objectName => `'${objectName}'을(를) 찾아 촬영해 주세요`,
@@ -224,6 +287,11 @@ export const EVENT_GAME_COPY: Record<
     targetObject: 'Target object',
     targetOpponent: 'Opponent',
     targetOpponentHint: 'Random match with another zone (mock)',
+    radiusTitle: 'Auth radius',
+    radiusLabel: meters => `${meters}m radius`,
+    radiusHint: 'You can join and capture only inside the target radius.',
+    typePlaceAuth: 'Place check-in',
+    typeObjectSight: 'Object sight',
     remainingLabel: remaining => `${remaining} left`,
     cameraHintPlace: 'Frame the target place in your shot',
     cameraHintObject: objectName => `Find and photograph the ${objectName}`,
@@ -275,6 +343,11 @@ export const EVENT_GAME_COPY: Record<
     targetObject: '目標物体',
     targetOpponent: '対戦相手',
     targetOpponentHint: '他エリアのユーザーとランダム対戦（モック）',
+    radiusTitle: '認証半径',
+    radiusLabel: meters => `半径 ${meters}m`,
+    radiusHint: '目標地点の半径内でのみ参加・撮影できます。',
+    typePlaceAuth: '場所認証',
+    typeObjectSight: '物体認証',
     remainingLabel: remaining => `残り ${remaining}`,
     cameraHintPlace: '目標スポットが写るように撮影してください',
     cameraHintObject: objectName => `「${objectName}」を見つけて撮影してください`,
@@ -326,6 +399,11 @@ export const EVENT_GAME_COPY: Record<
     targetObject: '目标物体',
     targetOpponent: '对战对手',
     targetOpponentHint: '与其他区域用户随机匹配（模拟）',
+    radiusTitle: '认证半径',
+    radiusLabel: meters => `半径 ${meters}m`,
+    radiusHint: '仅可在目标点半径内参与并拍摄。',
+    typePlaceAuth: '地点认证',
+    typeObjectSight: '物体认证',
     remainingLabel: remaining => `剩余 ${remaining}`,
     cameraHintPlace: '请将目标地点拍入画面',
     cameraHintObject: objectName => `找到并拍摄「${objectName}」`,

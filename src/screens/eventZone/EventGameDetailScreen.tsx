@@ -12,7 +12,8 @@ import {
 } from '../../constants/eventZone/eventZone';
 import {
   eventGameObjectLabel,
-  isEventGame,
+  isPhase1EventGame,
+  resolveEventAuthTarget,
 } from '../../constants/eventZone/eventGame';
 import { ZONE_EVENT_TYPE_META } from '../../constants/eventZone/zoneEvents';
 import { useAppLanguage, useCopy } from '../../i18n';
@@ -43,7 +44,7 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
   const [status, setStatus] = useState<ParticipationStatus>('not_joined');
   const remainingMs = useZoneEventRemaining(event);
 
-  if (!event || !isEventGame(event)) {
+  if (!event || !isPhase1EventGame(event)) {
     return (
       <View
         className="flex-1 items-center justify-center bg-brand-background px-6"
@@ -60,7 +61,9 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
   const meta = ZONE_EVENT_TYPE_META[event.type];
   const landmark = zone.landmarks.find(item => item.id === event.targetLandmarkId);
   const objectLabel = eventGameObjectLabel(event, language);
+  const authTarget = resolveEventAuthTarget(event);
   const remainingText = formatZoneEventRemaining(remainingMs, language);
+  const typeLabel = event.type === 'place_auth' ? copy.typePlaceAuth : copy.typeObjectSight;
   const statusLabel =
     status === 'completed'
       ? copy.statusCompleted
@@ -69,25 +72,15 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
         : copy.statusNotJoined;
 
   const rulesText =
-    event.type === 'place_auth'
-      ? copy.placeAuthRules
-      : event.type === 'mukjjippa'
-        ? copy.mukjjippaRules
-        : copy.objectSightRules;
+    event.type === 'place_auth' ? copy.placeAuthRules : copy.objectSightRules;
 
-  const targetTitle =
-    event.type === 'place_auth'
-      ? copy.targetPlace
-      : event.type === 'mukjjippa'
-        ? copy.targetOpponent
-        : copy.targetObject;
+  const targetTitle = event.type === 'place_auth' ? copy.targetPlace : copy.targetObject;
 
   const handleParticipate = () => {
-    setStatus('in_progress');
-    if (event.type === 'mukjjippa') {
-      navigation.navigate('EventGameMukjjippa', { eventId: event.id });
+    if (remainingMs <= 0) {
       return;
     }
+    setStatus('in_progress');
     navigation.navigate('EventGameCamera', { eventId: event.id });
   };
 
@@ -105,7 +98,12 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
         className="flex-1"
         contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 24 }}>
         <View className="rounded-3xl border border-pink-200 bg-pink-50 p-5">
-          <Text className="text-3xl">{meta.emoji}</Text>
+          <View className="flex-row items-center gap-2">
+            <Text className="text-3xl">{meta.emoji}</Text>
+            <View className="rounded-full bg-pink-600 px-2.5 py-0.5">
+              <Text className="text-[10px] font-bold text-white">{typeLabel}</Text>
+            </View>
+          </View>
           <Text className="mt-2 text-xl font-bold text-brand-text">{event.titleKo}</Text>
           <Text className="mt-1 text-sm text-brand-muted">
             {eventZoneName(zone, language)} · {event.descriptionKo}
@@ -144,13 +142,6 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
                 </Text>
               </View>
             </View>
-          ) : event.type === 'mukjjippa' ? (
-            <View className="mt-3 flex-row items-center gap-3">
-              <Text className="text-2xl">⚔️</Text>
-              <Text className="flex-1 text-base font-semibold text-brand-text">
-                {copy.targetOpponentHint}
-              </Text>
-            </View>
           ) : (
             <View className="mt-3 flex-row items-center gap-3">
               <Text className="text-2xl">🔍</Text>
@@ -159,10 +150,20 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
           )}
         </View>
 
-        <View className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-          <Text className="text-sm font-bold text-amber-900">{copy.rewardTitle}</Text>
-          <Text className="mt-1 text-sm text-amber-800">{copy.rewardHint}</Text>
-        </View>
+        {authTarget ? (
+          <View className="mt-4 rounded-2xl border border-brand-border bg-brand-surface p-4">
+            <Text className="text-sm font-bold text-brand-text">{copy.radiusTitle}</Text>
+            <Text className="mt-2 text-base font-semibold text-brand-primary">
+              {copy.radiusLabel(authTarget.radiusM)}
+            </Text>
+            <Text className="mt-1 text-xs leading-relaxed text-brand-muted">
+              {copy.radiusHint}
+            </Text>
+            <Text className="mt-2 text-[11px] text-brand-muted">
+              {authTarget.latitude.toFixed(5)}, {authTarget.longitude.toFixed(5)}
+            </Text>
+          </View>
+        ) : null}
       </ScrollView>
 
       <View

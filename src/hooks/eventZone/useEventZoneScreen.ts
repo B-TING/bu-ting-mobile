@@ -16,7 +16,7 @@ import {
 } from '../../constants/eventZone/eventZone';
 import {
   buildRandomMockGameEvent,
-  isEventGame,
+  isPhase1EventGame,
 } from '../../constants/eventZone/eventGame';
 import { isZoneEventActive } from '../../constants/eventZone/zoneEvents';
 import { useCurrentEventZone } from '../useCurrentEventZone';
@@ -140,7 +140,7 @@ export function useEventZoneScreen({ navigation }: UseEventZoneScreenParams) {
       return undefined;
     }
     const event = activeEventsByZone[currentZoneId];
-    if (!event || !isEventGame(event) || !isZoneEventActive(event)) {
+    if (!event || !isPhase1EventGame(event) || !isZoneEventActive(event)) {
       return undefined;
     }
     return event;
@@ -151,7 +151,7 @@ export function useEventZoneScreen({ navigation }: UseEventZoneScreenParams) {
       return undefined;
     }
     const event = activeEventsByZone[focusZoneId];
-    if (!event || !isEventGame(event) || !isZoneEventActive(event)) {
+    if (!event || !isPhase1EventGame(event) || !isZoneEventActive(event)) {
       return undefined;
     }
     return event;
