@@ -21,6 +21,11 @@ import {
   useZoneEventRemaining,
 } from '../../utils/eventZone/zoneEventRemaining';
 
+export const PLANNING_CHIP_BG = '#EDE9FE';
+export const PLANNING_CHIP_TEXT = '#6E36DB';
+export const EVENT_PINK = '#DB2777';
+const EVENT_PINK_DARK = '#BE185D';
+
 type EventRemainingLabelProps = {
   event: ZoneEvent;
   language: AppLanguage;
@@ -39,8 +44,8 @@ function EventRemainingLabel({
 
   return (
     <View className="mt-2 flex-row items-center gap-1.5">
-      <AppIcon name="timer" size={12} color="#DB2777" />
-      <Text className="text-xs font-semibold text-pink-600">
+      <AppIcon name="timer" size={12} color={EVENT_PINK} />
+      <Text className="text-xs font-semibold" style={{ color: EVENT_PINK }}>
         {remainingMs > 0 ? endsInLabel(remainingText) : endedLabel}
       </Text>
     </View>
@@ -51,11 +56,10 @@ type EventZoneMapBadgeProps = {
   zone?: EventZoneDefinition | null;
   room: EventZoneChatRoom | undefined;
   language: AppLanguage;
-  currentZoneLabel: string;
+  mapZoneBadgeLabel: string;
   noZoneLabel?: string;
   memberCountLabel: (n: number) => string;
   fallbackHint?: string;
-  /** 백엔드 currentMembers (없으면 room.memberCount) */
   liveMemberCount?: number | null;
 };
 
@@ -63,35 +67,48 @@ export function EventZoneMapBadge({
   zone,
   room,
   language,
-  currentZoneLabel,
+  mapZoneBadgeLabel,
   noZoneLabel,
   memberCountLabel,
   fallbackHint,
   liveMemberCount,
 }: EventZoneMapBadgeProps) {
   return (
-    <View className="rounded-2xl border border-brand-border bg-white px-3 py-2 shadow-sm">
-      <Text className="text-[10px] font-semibold uppercase tracking-wide text-brand-muted">
-        {zone ? currentZoneLabel : (noZoneLabel ?? currentZoneLabel)}
-      </Text>
+    <View className="max-w-[220px] rounded-2xl border border-brand-border bg-white px-3 py-2.5 shadow-sm">
       {zone ? (
-        <Text className="mt-0.5 text-sm font-bold text-brand-text">
-          {eventZoneName(zone, language)}
-        </Text>
-      ) : null}
-      {zone && room ? (
-        <Text className="mt-0.5 text-xs text-brand-primary">
-          {memberCountLabel(liveMemberCount ?? room.memberCount)}
-        </Text>
-      ) : null}
-      {fallbackHint ? (
-        <Text className="mt-1 text-[10px] text-amber-700">{fallbackHint}</Text>
-      ) : null}
+        <>
+          <Text className="text-[10px] font-semibold text-brand-muted">{mapZoneBadgeLabel}</Text>
+          <Text className="mt-0.5 text-[13px] font-bold leading-[18px] text-brand-text">
+            {eventZoneName(zone, language)}
+          </Text>
+          {room ? (
+            <Text className="mt-0.5 text-[11px] font-semibold text-brand-primary">
+              {memberCountLabel(liveMemberCount ?? room.memberCount)}
+            </Text>
+          ) : null}
+        </>
+      ) : (
+        <>
+          <Text className="text-[13px] font-bold leading-[18px] text-brand-text">
+            {noZoneLabel ?? mapZoneBadgeLabel}
+          </Text>
+          {fallbackHint ? (
+            <Text className="mt-1 text-[11px] leading-[15px] text-amber-600">{fallbackHint}</Text>
+          ) : null}
+        </>
+      )}
     </View>
   );
 }
 
 const panelShadow = StyleSheet.create({
+  sheet: {
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 8,
+  },
   card: {
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 10 },
@@ -112,6 +129,7 @@ type EventZoneChatListProps = {
   liveMemberCounts?: Partial<Record<EventZoneId, number>>;
   onRoomPress: (zoneId: EventZoneId) => void;
   onJoinPress: (roomId: string) => void;
+  embedded?: boolean;
 };
 
 export function EventZoneChatList({
@@ -125,17 +143,27 @@ export function EventZoneChatList({
   liveMemberCounts,
   onRoomPress,
   onJoinPress,
+  embedded = false,
 }: EventZoneChatListProps) {
   return (
     <View
-      style={panelShadow.card}
-      className="flex-1 overflow-hidden rounded-3xl border border-brand-border bg-white">
-      <View className="border-b border-brand-border px-4 pb-3 pt-4">
-        <Text className="text-base font-bold text-brand-text">{title}</Text>
+      style={embedded ? panelShadow.sheet : panelShadow.card}
+      className={
+        embedded
+          ? 'flex-1 bg-white'
+          : 'flex-1 overflow-hidden rounded-3xl border border-brand-border bg-white'
+      }>
+      <View className={`px-5 pb-3 ${embedded ? 'pt-4' : 'border-b border-brand-border pt-5'}`}>
+        <Text className="text-lg font-bold text-brand-text">{title}</Text>
       </View>
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: bottomInset + 12 }}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingTop: 4,
+          paddingBottom: bottomInset + 16,
+          gap: 10,
+        }}
         showsVerticalScrollIndicator={false}>
         {rooms.map(room => {
           const zone = EVENT_ZONE_BY_ID[room.zoneId];
@@ -145,10 +173,8 @@ export function EventZoneChatList({
           return (
             <View
               key={room.id}
-              className={`mb-2 flex-row items-center justify-between rounded-2xl border px-4 py-3.5 ${
-                isEventRoom
-                  ? 'border-pink-300 bg-pink-50'
-                  : 'border-brand-border bg-brand-background'
+              className={`flex-row items-center justify-between rounded-2xl border px-4 py-3.5 ${
+                isEventRoom ? 'border-pink-200 bg-pink-50' : 'border-brand-border bg-brand-background'
               }`}>
               <Pressable
                 accessibilityRole="button"
@@ -160,16 +186,20 @@ export function EventZoneChatList({
                 <View className="mt-1 flex-row items-start gap-1">
                   {isEventRoom ? (
                     <View className="mt-0.5">
-                      <AppIcon name="zap" size={12} color="#DB2777" />
+                      <AppIcon name="zap" size={12} color={EVENT_PINK} />
                     </View>
                   ) : null}
-                  <Text className="flex-1 text-xs text-brand-muted" numberOfLines={2}>
+                  <Text
+                    className={`flex-1 text-xs leading-[17px] ${
+                      isEventRoom ? 'text-pink-900' : 'text-brand-muted'
+                    }`}
+                    numberOfLines={2}>
                     {isEventRoom
-                      ? `${activeEvent.titleKo} - ${activeEvent.descriptionKo}`
+                      ? `${activeEvent.titleKo} · ${activeEvent.descriptionKo}`
                       : chatRoomTopic(room, language)}
                   </Text>
                 </View>
-                <Text className="mt-1.5 text-xs font-semibold text-brand-primary">
+                <Text className="mt-1.5 text-[11px] font-semibold text-brand-primary">
                   {memberCountLabel(liveMemberCounts?.[room.zoneId] ?? room.memberCount)}
                 </Text>
               </Pressable>
@@ -177,9 +207,10 @@ export function EventZoneChatList({
                 accessibilityRole="button"
                 accessibilityLabel={joinLabel}
                 onPress={() => onJoinPress(room.id)}
-                className={`rounded-xl px-3.5 py-2 active:opacity-90 ${
-                  isEventRoom ? 'bg-pink-600' : 'bg-brand-primary'
-                }`}>
+                className={`min-w-[68px] items-center rounded-xl px-4 py-3 active:opacity-90 ${
+                  isEventRoom ? '' : 'bg-brand-primary'
+                }`}
+                style={isEventRoom ? { backgroundColor: EVENT_PINK } : undefined}>
                 <Text className="text-xs font-bold text-white">{joinLabel}</Text>
               </Pressable>
             </View>
@@ -196,9 +227,10 @@ type EventZoneZoneDetailPanelProps = {
   language: AppLanguage;
   landmarksTitle: string;
   memberCountLabel: (n: number) => string;
-  enterLabel: string;
+  enterChatRoomLabel: string;
+  joinMissionLabel: string;
   closeLabel: string;
-  currentZoneLabel: string;
+  mapZoneBadgeLabel: string;
   isCurrentZone: boolean;
   activeEvent?: ZoneEvent;
   eventEndsInLabel: (remaining: string) => string;
@@ -206,9 +238,10 @@ type EventZoneZoneDetailPanelProps = {
   surpriseMissionBadge: string;
   onClose: () => void;
   onEnterChat: () => void;
+  onJoinMission: () => void;
   liveMemberCount?: number | null;
-  /** 하단 리스트 슬롯과 동일한 시트 레이아웃 */
   bottomInset?: number;
+  embedded?: boolean;
 };
 
 export function EventZoneZoneDetailPanel({
@@ -217,9 +250,10 @@ export function EventZoneZoneDetailPanel({
   language,
   landmarksTitle,
   memberCountLabel,
-  enterLabel,
+  enterChatRoomLabel,
+  joinMissionLabel,
   closeLabel,
-  currentZoneLabel,
+  mapZoneBadgeLabel,
   isCurrentZone,
   activeEvent,
   eventEndsInLabel,
@@ -227,34 +261,39 @@ export function EventZoneZoneDetailPanel({
   surpriseMissionBadge,
   onClose,
   onEnterChat,
+  onJoinMission,
   liveMemberCount,
   bottomInset = 0,
+  embedded = false,
 }: EventZoneZoneDetailPanelProps) {
   return (
     <View
-      style={panelShadow.card}
-      className="flex-1 overflow-hidden rounded-3xl border border-brand-border bg-white">
-      <View className="flex-row items-start justify-between border-b border-brand-border px-4 pb-3 pt-4">
+      style={embedded ? panelShadow.sheet : panelShadow.card}
+      className={
+        embedded
+          ? 'flex-1 bg-white'
+          : 'flex-1 overflow-hidden rounded-3xl border border-brand-border bg-white'
+      }>
+      <View
+        className={`flex-row items-start justify-between px-5 pb-3 ${
+          embedded ? 'pt-4' : 'border-b border-brand-border pt-5'
+        }`}>
         <View className="min-w-0 flex-1 pr-2">
-          <View className="flex-row flex-wrap items-center gap-x-1.5 gap-y-1">
-            <Text className="text-lg font-bold text-brand-text">
-              {eventZoneName(zone, language)}
-            </Text>
+          <View className="flex-row flex-wrap items-center gap-x-2 gap-y-1">
+            <Text className="text-lg font-bold text-brand-text">{eventZoneName(zone, language)}</Text>
             {activeEvent ? (
-              <View className="rounded-full bg-pink-600 px-2 py-0.5">
+              <View className="rounded-full px-2.5 py-0.5" style={{ backgroundColor: EVENT_PINK }}>
                 <Text className="text-[10px] font-bold text-white">{surpriseMissionBadge}</Text>
               </View>
             ) : null}
           </View>
           {room ? (
-            <Text className="mt-0.5 text-xs font-semibold text-brand-primary">
+            <Text className="mt-1 text-[11px] font-semibold text-brand-primary">
               {memberCountLabel(liveMemberCount ?? room.memberCount)}
             </Text>
           ) : null}
           {isCurrentZone ? (
-            <Text className="mt-0.5 text-[10px] font-semibold text-amber-700">
-              {currentZoneLabel}
-            </Text>
+            <Text className="mt-1 text-[10px] font-semibold text-amber-700">{mapZoneBadgeLabel}</Text>
           ) : null}
         </View>
         <Pressable
@@ -262,7 +301,7 @@ export function EventZoneZoneDetailPanel({
           accessibilityLabel={closeLabel}
           onPress={onClose}
           hitSlop={8}
-          className="rounded-full bg-brand-background px-2 py-1 active:opacity-80">
+          className="h-7 w-7 items-center justify-center rounded-lg bg-brand-background active:opacity-80">
           <AppIcon name="x" size={14} color={ICON_COLOR_MUTED} strokeWidth={2.5} />
         </Pressable>
       </View>
@@ -272,19 +311,17 @@ export function EventZoneZoneDetailPanel({
         contentContainerStyle={{
           paddingHorizontal: 16,
           paddingTop: 14,
-          paddingBottom: bottomInset + 12,
+          paddingBottom: bottomInset + 16,
           gap: 14,
         }}
         showsVerticalScrollIndicator={false}>
         {activeEvent ? (
-          <View className="rounded-xl border border-pink-300 bg-pink-50 px-3 py-2.5">
+          <View className="rounded-2xl border border-pink-200 bg-pink-50 px-4 py-3">
             <View className="flex-row items-center gap-1.5">
-              <AppIcon name="zap" size={14} color="#BE185D" />
-              <Text className="flex-1 text-sm font-bold text-pink-700">
-                {activeEvent.titleKo}
-              </Text>
+              <AppIcon name="zap" size={14} color={EVENT_PINK_DARK} />
+              <Text className="flex-1 text-sm font-bold text-pink-700">{activeEvent.titleKo}</Text>
             </View>
-            <Text className="mt-1 text-xs leading-[18px] text-pink-900">
+            <Text className="mt-1.5 text-xs leading-[18px] text-pink-900">
               {activeEvent.descriptionKo}
             </Text>
             <EventRemainingLabel
@@ -318,15 +355,36 @@ export function EventZoneZoneDetailPanel({
           </View>
         </View>
 
-        <Pressable
-          accessibilityRole="button"
-          onPress={onEnterChat}
-          disabled={!room}
-          className={`items-center rounded-xl py-3 active:opacity-90 ${
-            room ? 'bg-brand-primary' : 'bg-brand-border'
-          }`}>
-          <Text className="text-[15px] font-bold text-white">{enterLabel}</Text>
-        </Pressable>
+        {activeEvent ? (
+          <View className="flex-row gap-2.5">
+            <Pressable
+              accessibilityRole="button"
+              onPress={onJoinMission}
+              className="flex-1 items-center rounded-xl py-3.5 active:opacity-90"
+              style={{ backgroundColor: EVENT_PINK }}>
+              <Text className="text-[15px] font-bold text-white">{joinMissionLabel}</Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              onPress={onEnterChat}
+              disabled={!room}
+              className={`flex-1 items-center rounded-xl py-3.5 active:opacity-90 ${
+                room ? 'bg-brand-primary' : 'bg-brand-border'
+              }`}>
+              <Text className="text-[15px] font-bold text-white">{enterChatRoomLabel}</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <Pressable
+            accessibilityRole="button"
+            onPress={onEnterChat}
+            disabled={!room}
+            className={`items-center rounded-xl py-3.5 active:opacity-90 ${
+              room ? 'bg-brand-primary' : 'bg-brand-border'
+            }`}>
+            <Text className="text-[15px] font-bold text-white">{enterChatRoomLabel}</Text>
+          </Pressable>
+        )}
       </ScrollView>
     </View>
   );
