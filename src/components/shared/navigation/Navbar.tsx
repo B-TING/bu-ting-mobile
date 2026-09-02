@@ -14,9 +14,17 @@ export type NavbarTab = 'home' | 'route' | 'feed' | 'my';
 /** 탭 아이콘·라벨 영역 높이 (safe area / home indicator 패딩 제외) */
 export const NAVBAR_HEIGHT = 72;
 
+/** Navbar 실제 탭 행 높이 (pt-2 + icon/label + py-1). 액션 바 등 하단 고정 UI clearance용 */
+export const NAVBAR_TAB_ROW_HEIGHT = 54;
+
 /** absolute Navbar가 덮는 전체 높이 — 탭 콘텐츠·FAB 하단 clearance에 사용 */
 export function getNavbarOverlayHeight(safeAreaBottom: number): number {
   return NAVBAR_HEIGHT + Math.max(safeAreaBottom, 8);
+}
+
+/** 하단 고정 버튼 바 → Navbar 아이콘 바로 위까지 (여백 최소) */
+export function getNavbarActionBarInset(safeAreaBottom: number): number {
+  return NAVBAR_TAB_ROW_HEIGHT + Math.max(safeAreaBottom, 8);
 }
 
 type TabConfig = {

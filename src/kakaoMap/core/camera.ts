@@ -14,6 +14,8 @@ export type MapCamera = {
   lat: number;
   lng: number;
   zoomLevel: number;
+  /** setCenter 후 panBy(0, y) — 하단 시트에 가려지지 않도록 포커스 보정 */
+  panOffsetY?: number;
 };
 
 const DEFAULT_LAT_DELTA = 0.02;

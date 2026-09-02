@@ -1,4 +1,5 @@
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { useEffect } from 'react';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { PlanSyncStatusDot } from '../../components/plan/PlanSyncStatusDot';
@@ -9,7 +10,6 @@ import { PlacePickModal } from '../../components/plan/modals/PlacePickModal';
 import { TravelInviteLinkModal } from '../../components/plan/modals/TravelInviteLinkModal';
 import { MemberActionsModal } from '../../components/plan/modals/MemberActionsModal';
 import { HomePlanPickerModal } from '../../components/home/modals/HomePlanPickerModal';
-import { RouteOptimizeFab } from '../../components/plan/fab/RouteOptimizeFab';
 import { PlanBudgetTab } from '../../components/plan/tabs/PlanBudgetTab';
 import { PlanOverviewTab } from '../../components/plan/tabs/PlanOverviewTab';
 import { PlanRecordsTab } from '../../components/plan/tabs/PlanRecordsTab';
@@ -21,6 +21,7 @@ import { useAppBarTopInset } from '../../components/shared/navigation/AppBar';
 import { ICON_COLOR_DEFAULT, ICON_COLOR_PRIMARY } from '../../constants/icons';
 import { canRemovePlanDay } from '../../services/travel/planDaySync';
 import { usePlanDetailScreen } from '../../hooks/plan/usePlanDetailScreen';
+import { useMainTabNavigationOptional } from '../../navigation/mainTabNavigation';
 import type { RootStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PlanDetail'> & {
@@ -29,6 +30,8 @@ type Props = NativeStackScreenProps<RootStackParamList, 'PlanDetail'> & {
 
 export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false }: Props) {
   const headerTopInset = useAppBarTopInset();
+  const mainTabNav = useMainTabNavigationOptional();
+  const isRouteMainTabActive = !embeddedInMainTabs || mainTabNav?.activeTab === 'route';
   const {
     language,
     offlineMode,
@@ -47,6 +50,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     setTab,
     toastText,
     toastOpacity,
+    showToast,
     notifyScheduleReadOnly,
     selectedDay,
     setSelectedDay,
@@ -87,7 +91,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     day,
     transportCopy,
     mainTabBottomClearance,
-    fabBottom,
+    actionBarBottomInset,
     toastBottom,
     scheduleRef,
     planReviews,
@@ -142,6 +146,19 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     openReboot: route.params?.openReboot,
     embeddedInMainTabs,
   });
+
+  const scheduleImmersive =
+    embeddedInMainTabs && isRouteMainTabActive && tab === 'schedule';
+
+  useEffect(() => {
+    if (!embeddedInMainTabs || !mainTabNav) {
+      return;
+    }
+    mainTabNav.setNavbarHidden(scheduleImmersive);
+    return () => {
+      mainTabNav.setNavbarHidden(false);
+    };
+  }, [embeddedInMainTabs, mainTabNav, scheduleImmersive]);
 
   if (!enrichedPlan) {
     if (offlineMode && !plansHydrated) {
@@ -219,17 +236,12 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
         </View>
       ) : null}
 
-      <View
-        className="min-h-0 flex-1"
-        style={
-          mainTabBottomClearance > 0
-            ? { marginBottom: mainTabBottomClearance }
-            : undefined
-        }>
+      <View className="min-h-0 flex-1">
         <PlanTabPager
           active={tab}
           onChange={setTab}
           language={language}
+          scrollBottomInset={mainTabBottomClearance}
           horizontalScrollEnabled={
             !scheduleReorderActive && tab !== 'schedule' && tab !== 'overview'
           }
@@ -256,6 +268,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
             schedule: (
               <PlanScheduleTab
                 ref={scheduleRef}
+                isActive={tab === 'schedule' && isRouteMainTabActive}
                 planId={planId}
                 plan={enrichedPlan}
                 language={language}
@@ -284,7 +297,8 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
                   void handleAddDay();
                 }}
                 onRemoveDay={handleRemoveDay}
-                scrollBottomInset={embeddedInMainTabs ? 0 : undefined}
+                actionBarBottomInset={actionBarBottomInset}
+                onNotify={showToast}
               />
             ),
             budget: (
@@ -330,16 +344,6 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
           }}
         />
       </View>
-
-      {tab === 'schedule' && !viewOnly ? (
-        <RouteOptimizeFab
-          bottom={fabBottom}
-          label={copy.routeOptimize}
-          addPlaceLabel={copy.addPlace}
-          onPress={() => scheduleRef.current?.handleRouteOptimize()}
-          onAddPlace={() => scheduleRef.current?.handleAddPlacePress()}
-        />
-      ) : null}
 
       <BudgetEntryModal
         visible={!viewOnly && budgetModalOpen}

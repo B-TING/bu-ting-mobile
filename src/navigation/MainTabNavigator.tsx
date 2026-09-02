@@ -102,6 +102,7 @@ export function MainTabNavigator({ navigation, route }: Props) {
     () => new Set<NavbarTab>([safeInitialTab]),
   );
   const [menuOpen, setMenuOpen] = useState(false);
+  const [navbarHidden, setNavbarHidden] = useState(false);
   const slideX = useRef(new Animated.Value(-tabIndex(safeInitialTab) * width)).current;
   const activeTabRef = useRef(activeTab);
   activeTabRef.current = activeTab;
@@ -193,8 +194,10 @@ export function MainTabNavigator({ navigation, route }: Props) {
     () => ({
       activeTab,
       goToTab,
+      navbarHidden,
+      setNavbarHidden,
     }),
-    [activeTab, goToTab],
+    [activeTab, goToTab, navbarHidden],
   );
 
   return (
@@ -233,7 +236,9 @@ export function MainTabNavigator({ navigation, route }: Props) {
           </Animated.View>
         </View>
 
-        <Navbar activeTab={activeTab} language={language} onTabPress={goToTab} />
+        {navbarHidden ? null : (
+          <Navbar activeTab={activeTab} language={language} onTabPress={goToTab} />
+        )}
       </View>
     </MainTabNavigationContext.Provider>
   );
