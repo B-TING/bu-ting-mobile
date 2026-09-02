@@ -40,6 +40,7 @@ export function MainHomeScreen({
     featuredPlan,
     featuredTravelStatus,
     pickerPlans,
+    activePlanCount,
     canSwitchPlans,
     planPickerOpen,
     showTripRebootFab,
@@ -89,7 +90,7 @@ export function MainHomeScreen({
             language={language}
             copy={activePlanHeroCopy}
             canSwitchPlans={canSwitchPlans}
-            planCount={pickerPlans.length}
+            planCount={activePlanCount}
             onPress={goToPlan}
             onSwitchPress={openPlanPicker}
             onCreatePress={goToCreatePlan}

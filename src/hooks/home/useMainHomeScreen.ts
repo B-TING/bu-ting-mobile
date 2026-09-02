@@ -79,6 +79,7 @@ export function useMainHomeScreen({
     openPlanPicker,
     closePlanPicker,
     selectPlan: selectHomePlan,
+    activePlanCount,
   } = usePlanPicker();
   const featuredTravelStatus = useMemo(
     () => (featuredPlan ? resolvePlanTravelStatus(featuredPlan) : null),
@@ -351,6 +352,7 @@ export function useMainHomeScreen({
     featuredPlan,
     featuredTravelStatus,
     pickerPlans,
+    activePlanCount,
     canSwitchPlans,
     planPickerOpen,
     showTripRebootFab,

@@ -26,34 +26,33 @@ function pickActiveTravelId(
   }
 
   const travelIds = new Set(travels.map(travel => travel.travelId));
-  if (currentActivePlanId) {
-    const activePlan = filterPlansForCurrentApiServer(usePlanStore.getState().plans).find(
-      p => p.planId === currentActivePlanId,
-    );
-    const stillActive =
-      activePlan &&
-      activePlan.status !== 'COMPLETED' &&
-      activePlan.travelStatus !== 'COMPLETED';
-    const activeTravelId = activePlan?.apiTravelId ?? activePlan?.planId;
-    if (stillActive && activeTravelId && travelIds.has(activeTravelId)) {
-      return activePlan.planId;
-    }
-  }
+  const plans = usePlanStore.getState().plans;
 
   const inProgress = travels.find(travel => travel.status === 'IN_PROGRESS');
   if (inProgress) {
-    const local = findLocalPlanForTravel(usePlanStore.getState().plans, inProgress.travelId);
+    const local = findLocalPlanForTravel(plans, inProgress.travelId);
     return local?.planId ?? inProgress.travelId;
   }
 
   const planned = travels.find(travel => travel.status === 'PLANNED');
   if (planned) {
-    const local = findLocalPlanForTravel(usePlanStore.getState().plans, planned.travelId);
+    const local = findLocalPlanForTravel(plans, planned.travelId);
     return local?.planId ?? planned.travelId;
   }
 
+  // 활성(예정·진행)이 없으면 COMPLETED 포함해 현재 선택·첫 항목 유지 (조회용)
+  if (currentActivePlanId) {
+    const activePlan = filterPlansForCurrentApiServer(plans).find(
+      p => p.planId === currentActivePlanId,
+    );
+    const activeTravelId = activePlan?.apiTravelId ?? activePlan?.planId;
+    if (activePlan && activeTravelId && travelIds.has(activeTravelId)) {
+      return activePlan.planId;
+    }
+  }
+
   const first = travels[0];
-  const local = findLocalPlanForTravel(usePlanStore.getState().plans, first.travelId);
+  const local = findLocalPlanForTravel(plans, first.travelId);
   return local?.planId ?? first.travelId;
 }
 
@@ -63,17 +62,12 @@ function clearInvalidActivePlan(): void {
     return;
   }
   const active = store.plans.find(plan => plan.planId === store.activePlanId);
-  if (
-    !active ||
-    !isServerBackedPlan(active) ||
-    active.status === 'COMPLETED' ||
-    !isPlanForCurrentApiServer(active)
-  ) {
+  if (!active || !isServerBackedPlan(active) || !isPlanForCurrentApiServer(active)) {
     store.clearActivePlan();
   }
 }
 
-/** 내 참여 여행(PLANNED·IN_PROGRESS) 목록을 서버에서 받아 로컬 플랜을 갱신합니다. */
+/** 내 여행(PLANNED·IN_PROGRESS·COMPLETED) 목록을 서버에서 받아 로컬 플랜을 갱신합니다. */
 export async function syncMyActiveTravelsFromApi(
   accessToken: string,
   member: PlanMember,
@@ -81,7 +75,7 @@ export async function syncMyActiveTravelsFromApi(
   const travels = await fetchMyActiveTravels(accessToken);
   const store = usePlanStore.getState();
 
-  logTravelPlanApi('my-travels.filtered', 'PLANNED·IN_PROGRESS 여행 필터링 결과', {
+  logTravelPlanApi('my-travels.filtered', 'my-travels 동기화 대상 필터링 결과', {
     detail: {
       count: travels.length,
       statuses: travels.map(t => t.status),
