@@ -6,11 +6,28 @@ import {
   buildLegDirectionsFallbackUrls,
   isLegDirectionsInputValid,
   isValidMapCoordinate,
+  resolveGoogleDirectionsLabel,
 } from '../src/utils/map/mapDirections';
 
 const sampleLeg = {
   from: { lat: 35.1587, lng: 129.1604, name: '해운대' },
   to: { lat: 35.1796, lng: 129.0756, name: '서면' },
+  mode: 'walk' as const,
+};
+
+const sampleLegWithAddress = {
+  from: {
+    lat: 35.1587,
+    lng: 129.1604,
+    name: '해운대해수욕장',
+    address: '부산 해운대구 우동 264',
+  },
+  to: {
+    lat: 35.1796,
+    lng: 129.0756,
+    name: '서면',
+    address: '부산 부산진구 부전동',
+  },
   mode: 'walk' as const,
 };
 
@@ -21,27 +38,63 @@ describe('mapDirections', () => {
     expect(isValidMapCoordinate(Number.NaN, 129)).toBe(false);
   });
 
-  it('validates leg input', () => {
+  it('validates leg input with coordinates or address', () => {
     expect(isLegDirectionsInputValid(sampleLeg)).toBe(true);
+    expect(isLegDirectionsInputValid(sampleLegWithAddress)).toBe(true);
     expect(
       isLegDirectionsInputValid({
         ...sampleLeg,
-        to: { ...sampleLeg.to, lat: 0, lng: 0 },
+        to: { ...sampleLeg.to, lat: 0, lng: 0, name: '', address: '' },
       }),
     ).toBe(false);
+    expect(
+      isLegDirectionsInputValid({
+        ...sampleLeg,
+        to: { ...sampleLeg.to, lat: 0, lng: 0, name: '서면', address: '' },
+      }),
+    ).toBe(true);
   });
 
-  it('builds Google app url with walking mode', () => {
+  it('prefers address, then coordinates, then name for Google label', () => {
+    expect(resolveGoogleDirectionsLabel(sampleLegWithAddress.from)).toBe(
+      '부산 해운대구 우동 264',
+    );
+    expect(
+      resolveGoogleDirectionsLabel({
+        lat: 35.1587,
+        lng: 129.1604,
+        name: '해운대',
+        address: '',
+      }),
+    ).toBe('35.1587,129.1604');
+    expect(
+      resolveGoogleDirectionsLabel({
+        lat: 0,
+        lng: 0,
+        name: '해운대',
+        address: '',
+      }),
+    ).toBe('해운대');
+  });
+
+  it('builds Google app url with address when available', () => {
+    expect(buildGoogleMapsDirectionsAppUrl(sampleLegWithAddress)).toBe(
+      'comgooglemaps://?saddr=%EB%B6%80%EC%82%B0%20%ED%95%B4%EC%9A%B4%EB%8C%80%EA%B5%AC%20%EC%9A%B0%EB%8F%99%20264&daddr=%EB%B6%80%EC%82%B0%20%EB%B6%80%EC%82%B0%EC%A7%84%EA%B5%AC%20%EB%B6%80%EC%A0%84%EB%8F%99&directionsmode=walking',
+    );
+  });
+
+  it('builds Google app url with coordinates when no address', () => {
     expect(buildGoogleMapsDirectionsAppUrl(sampleLeg)).toBe(
       'comgooglemaps://?saddr=35.1587%2C129.1604&daddr=35.1796%2C129.0756&directionsmode=walking',
     );
   });
 
   it('builds Google web url with transit mode', () => {
-    const url = buildGoogleMapsDirectionsWebUrl({ ...sampleLeg, mode: 'transit' });
+    const url = buildGoogleMapsDirectionsWebUrl({ ...sampleLegWithAddress, mode: 'transit' });
     expect(url).toContain('travelmode=transit');
-    expect(url).toContain('origin=35.1587%2C129.1604');
-    expect(url).toContain('destination=35.1796%2C129.0756');
+    expect(url).toContain(
+      encodeURIComponent('부산 해운대구 우동 264'),
+    );
   });
 
   it('builds Kakao app url with car mode', () => {
@@ -50,9 +103,9 @@ describe('mapDirections', () => {
     );
   });
 
-  it('builds Kakao web url with encoded place names', () => {
-    expect(buildKakaoMapDirectionsWebUrl(sampleLeg)).toBe(
-      'https://map.kakao.com/link/route/%ED%95%B4%EC%9A%B4%EB%8C%80,35.1587,129.1604/%EC%84%9C%EB%A9%B4,35.1796,129.0756',
+  it('builds Kakao web url with name and address', () => {
+    expect(buildKakaoMapDirectionsWebUrl(sampleLegWithAddress)).toContain(
+      encodeURIComponent('해운대해수욕장 부산 해운대구 우동 264'),
     );
   });
 

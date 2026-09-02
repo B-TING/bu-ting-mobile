@@ -187,15 +187,6 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
       [dayRoutes],
     );
 
-    const legCopy = useMemo(
-      () => ({
-        legWalk: copy.legWalk,
-        legDrive: copy.legDrive,
-        legTransit: copy.legTransit,
-      }),
-      [copy.legDrive, copy.legTransit, copy.legWalk],
-    );
-
     const handleLegDirections = useCallback(
       (from: RouteItem, to: RouteItem) => {
         const input: LegDirectionsInput = {
@@ -203,11 +194,13 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
             lat: from.location.lat,
             lng: from.location.lng,
             name: from.placeName,
+            address: from.placeInfo?.address,
           },
           to: {
             lat: to.location.lat,
             lng: to.location.lng,
             name: to.placeName,
+            address: to.placeInfo?.address,
           },
           mode: to.legMode ?? 'walk',
         };
@@ -603,11 +596,13 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
                       lat: prevRoute.location.lat,
                       lng: prevRoute.location.lng,
                       name: prevRoute.placeName,
+                      address: prevRoute.placeInfo?.address,
                     },
                     to: {
                       lat: route.location.lat,
                       lng: route.location.lng,
                       name: route.placeName,
+                      address: route.placeInfo?.address,
                     },
                     mode: route.legMode ?? 'walk',
                   }
@@ -617,9 +612,7 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
               <View key={route.itemId}>
                 {prevRoute != null ? (
                   <TravelLegRow
-                    mode={route.legMode ?? 'walk'}
-                    directionsLabel={copy.directions}
-                    copy={legCopy}
+                    directionsLabel={copy.directionsGoogleButton}
                     lineColor={zoneColor}
                     directionsDisabled={
                       directionsInput != null &&

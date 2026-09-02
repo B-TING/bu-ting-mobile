@@ -6,6 +6,7 @@ export type MapDirectionsPoint = {
   lat: number;
   lng: number;
   name: string;
+  address?: string;
 };
 
 export type LegDirectionsInput = {
@@ -35,11 +36,37 @@ export function isValidMapCoordinate(lat: number, lng: number): boolean {
   );
 }
 
+/** Google 길찾기 — 주소 → 좌표 → 장소명 */
+export function resolveGoogleDirectionsLabel(point: MapDirectionsPoint): string {
+  const address = point.address?.trim();
+  if (address) {
+    return address;
+  }
+  if (isValidMapCoordinate(point.lat, point.lng)) {
+    return formatCoord(point.lat, point.lng);
+  }
+  const name = point.name?.trim();
+  if (name) {
+    return name;
+  }
+  return formatCoord(point.lat, point.lng);
+}
+
+function hasDirectionsEndpoint(point: MapDirectionsPoint): boolean {
+  if (point.address?.trim()) {
+    return true;
+  }
+  if (isValidMapCoordinate(point.lat, point.lng)) {
+    return true;
+  }
+  if (point.name?.trim()) {
+    return true;
+  }
+  return false;
+}
+
 export function isLegDirectionsInputValid(input: LegDirectionsInput): boolean {
-  return (
-    isValidMapCoordinate(input.from.lat, input.from.lng) &&
-    isValidMapCoordinate(input.to.lat, input.to.lng)
-  );
+  return hasDirectionsEndpoint(input.from) && hasDirectionsEndpoint(input.to);
 }
 
 function toGoogleTravelMode(mode: TravelLegMode): GoogleTravelMode {
@@ -64,15 +91,15 @@ function toKakaoRouteBy(mode: TravelLegMode): KakaoRouteBy {
 
 export function buildGoogleMapsDirectionsAppUrl(input: LegDirectionsInput): string {
   const travelMode = toGoogleTravelMode(input.mode);
-  const saddr = encodeURIComponent(formatCoord(input.from.lat, input.from.lng));
-  const daddr = encodeURIComponent(formatCoord(input.to.lat, input.to.lng));
+  const saddr = encodeURIComponent(resolveGoogleDirectionsLabel(input.from));
+  const daddr = encodeURIComponent(resolveGoogleDirectionsLabel(input.to));
   return `comgooglemaps://?saddr=${saddr}&daddr=${daddr}&directionsmode=${travelMode}`;
 }
 
 export function buildGoogleMapsDirectionsWebUrl(input: LegDirectionsInput): string {
   const travelMode = toGoogleTravelMode(input.mode);
-  const origin = encodeURIComponent(formatCoord(input.from.lat, input.from.lng));
-  const destination = encodeURIComponent(formatCoord(input.to.lat, input.to.lng));
+  const origin = encodeURIComponent(resolveGoogleDirectionsLabel(input.from));
+  const destination = encodeURIComponent(resolveGoogleDirectionsLabel(input.to));
   return `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=${travelMode}`;
 }
 
@@ -83,9 +110,18 @@ export function buildKakaoMapDirectionsAppUrl(input: LegDirectionsInput): string
   return `kakaomap://route?sp=${sp}&ep=${ep}&by=${by}`;
 }
 
+function resolveKakaoRouteLabel(point: MapDirectionsPoint): string {
+  const name = point.name?.trim();
+  const address = point.address?.trim();
+  if (name && address) {
+    return `${name} ${address}`;
+  }
+  return address || name || formatCoord(point.lat, point.lng);
+}
+
 export function buildKakaoMapDirectionsWebUrl(input: LegDirectionsInput): string {
-  const fromName = encodeURIComponent(input.from.name);
-  const toName = encodeURIComponent(input.to.name);
+  const fromName = encodeURIComponent(resolveKakaoRouteLabel(input.from));
+  const toName = encodeURIComponent(resolveKakaoRouteLabel(input.to));
   const fromCoord = `${input.from.lat},${input.from.lng}`;
   const toCoord = `${input.to.lat},${input.to.lng}`;
   return `https://map.kakao.com/link/route/${fromName},${fromCoord}/${toName},${toCoord}`;
