@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   ring: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderRadius: RING_SIZE / 2,
     borderWidth: 2.5,
     borderColor: EVENT_GLOW_COLOR,
