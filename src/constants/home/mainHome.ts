@@ -58,6 +58,10 @@ export const MAIN_HOME_COPY: Record<
     pickPlanSubtitle: string;
     pickPlanClose: string;
     pickPlanSelected: string;
+    pickStatusInProgress: string;
+    pickStatusPlanned: string;
+    pickStatusCompleted: string;
+    pickStatusEmpty: string;
   }
 > = {
   ko: {
@@ -86,6 +90,10 @@ export const MAIN_HOME_COPY: Record<
     pickPlanSubtitle: '홈과 일정 탭에 보여줄 여행을 골라 주세요',
     pickPlanClose: '닫기',
     pickPlanSelected: '선택됨',
+    pickStatusInProgress: '진행',
+    pickStatusPlanned: '예정',
+    pickStatusCompleted: '완료',
+    pickStatusEmpty: '이 상태의 여행이 없어요',
   },
   en: {
     heroTitle: 'Start your new Busan trip with BU-TING!',
@@ -113,6 +121,10 @@ export const MAIN_HOME_COPY: Record<
     pickPlanSubtitle: 'Pick which trip to show on Home and Route',
     pickPlanClose: 'Close',
     pickPlanSelected: 'Selected',
+    pickStatusInProgress: 'Active',
+    pickStatusPlanned: 'Upcoming',
+    pickStatusCompleted: 'Done',
+    pickStatusEmpty: 'No trips in this status',
   },
   ja: {
     heroTitle: '新しい釜山旅行をBU-TINGしよう！',
@@ -140,6 +152,10 @@ export const MAIN_HOME_COPY: Record<
     pickPlanSubtitle: 'ホームと行程タブに表示する旅行を選んでください',
     pickPlanClose: '閉じる',
     pickPlanSelected: '選択中',
+    pickStatusInProgress: '進行中',
+    pickStatusPlanned: '予定',
+    pickStatusCompleted: '完了',
+    pickStatusEmpty: 'この状態の旅行はありません',
   },
   zh: {
     heroTitle: '用 BU-TING 开启全新釜山之旅！',
@@ -167,6 +183,10 @@ export const MAIN_HOME_COPY: Record<
     pickPlanSubtitle: '选择要在首页和行程页显示的旅行',
     pickPlanClose: '关闭',
     pickPlanSelected: '已选择',
+    pickStatusInProgress: '进行中',
+    pickStatusPlanned: '计划中',
+    pickStatusCompleted: '已完成',
+    pickStatusEmpty: '该状态下没有旅行',
   },
 };
 

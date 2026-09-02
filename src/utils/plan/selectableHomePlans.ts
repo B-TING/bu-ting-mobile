@@ -34,14 +34,14 @@ function planTravelStatus(plan: TravelPlan): TravelStatusDto {
   return 'IN_PROGRESS';
 }
 
-function isActiveTravelStatus(status: TravelStatusDto): boolean {
-  return status === 'PLANNED' || status === 'IN_PROGRESS';
+function isHomeSelectableTravelStatus(status: TravelStatusDto): boolean {
+  return status === 'PLANNED' || status === 'IN_PROGRESS' || status === 'COMPLETED';
 }
 
 let cachedSelectableInput: TravelPlan[] | undefined;
 let cachedSelectableResult: TravelPlan[] = [];
 
-/** 홈·일정 탭에서 고를 수 있는 서버 연동 여행 (예정·진행 중) */
+/** 홈·일정 탭에서 고를 수 있는 서버 연동 여행 (예정·진행·완료) */
 export function getSelectableHomePlans(plans: TravelPlan[]): TravelPlan[] {
   if (cachedSelectableInput === plans) {
     return cachedSelectableResult;
@@ -49,7 +49,9 @@ export function getSelectableHomePlans(plans: TravelPlan[]): TravelPlan[] {
 
   cachedSelectableInput = plans;
   cachedSelectableResult = filterPlansForCurrentApiServer(plans)
-    .filter(plan => isServerBackedPlan(plan) && isActiveTravelStatus(planTravelStatus(plan)))
+    .filter(
+      plan => isServerBackedPlan(plan) && isHomeSelectableTravelStatus(planTravelStatus(plan)),
+    )
     .sort((a, b) => {
       const statusDiff = STATUS_RANK[planTravelStatus(a)] - STATUS_RANK[planTravelStatus(b)];
       if (statusDiff !== 0) {
@@ -64,12 +66,12 @@ export function getSelectableHomePlans(plans: TravelPlan[]): TravelPlan[] {
   return cachedSelectableResult;
 }
 
-/** 피커에 현재 히어로 플랜이 빠져 있으면 맨 앞에 붙입니다. 완료된 여행은 넣지 않습니다. */
+/** 피커에 현재 히어로 플랜이 빠져 있으면 맨 앞에 붙입니다. */
 export function mergeFeaturedIntoPickerPlans(
   selectablePlans: TravelPlan[],
   featuredPlan: TravelPlan | null,
 ): TravelPlan[] {
-  if (!featuredPlan || !isActiveTravelStatus(planTravelStatus(featuredPlan))) {
+  if (!featuredPlan || !isHomeSelectableTravelStatus(planTravelStatus(featuredPlan))) {
     return selectablePlans;
   }
   if (selectablePlans.some(plan => plan.planId === featuredPlan.planId)) {

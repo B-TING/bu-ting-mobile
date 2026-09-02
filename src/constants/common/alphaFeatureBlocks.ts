@@ -19,8 +19,8 @@ export const ALPHA_FEATURE_BLOCKS = {
   planAiCandidates: true,
   /** AI 헬프데스크 */
   helpdesk: true,
-  /** 리부트 */
-  reboot: true,
+  /** 리부트(일정 장소 삭제·교체) */
+  reboot: false,
 } as const;
 
 export type AlphaBlockedFeature = keyof typeof ALPHA_FEATURE_BLOCKS;

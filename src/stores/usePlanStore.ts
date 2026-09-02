@@ -411,7 +411,7 @@ export function selectActivePlan(state: PlanState): TravelPlan | null {
   return active;
 }
 
-/** 메인 홈 히어로·일정 탭용 — 예정·진행 중만. 완료된 활성 플랜이면 다음 여행으로 넘깁니다. */
+/** 메인 홈 히어로·일정 탭용 — 예정·진행·완료. 활성 플랜이 없으면 null. */
 export function selectHomeFeaturedPlan(state: PlanState): TravelPlan | null {
   const selectable = getSelectableHomePlans(state.plans);
   if (!state.activePlanId) {
@@ -420,7 +420,7 @@ export function selectHomeFeaturedPlan(state: PlanState): TravelPlan | null {
   return selectable.find(p => p.planId === state.activePlanId) ?? selectable[0] ?? null;
 }
 
-/** 홈에서 바꿀 수 있는 예정·진행 중 서버 연동 여행 */
+/** 홈에서 바꿀 수 있는 예정·진행·완료 서버 연동 여행 */
 export function selectSelectableHomePlans(state: PlanState): TravelPlan[] {
   return getSelectableHomePlans(state.plans);
 }

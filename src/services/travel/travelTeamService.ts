@@ -73,11 +73,14 @@ export async function fetchMyTravels(
   return data ?? [];
 }
 
-/** PLANNED·IN_PROGRESS 여행만 반환 */
+/** PLANNED·IN_PROGRESS·COMPLETED 여행 반환 (홈 조회용) */
 export async function fetchMyActiveTravels(accessToken: string): Promise<MyTravelResponse[]> {
   const travels = await fetchMyTravels(accessToken);
   return travels.filter(
-    travel => travel.status === 'PLANNED' || travel.status === 'IN_PROGRESS',
+    travel =>
+      travel.status === 'PLANNED' ||
+      travel.status === 'IN_PROGRESS' ||
+      travel.status === 'COMPLETED',
   );
 }
 

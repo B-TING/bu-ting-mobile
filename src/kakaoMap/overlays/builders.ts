@@ -51,7 +51,7 @@ export function kakaoOverlaysFromSchedule(
       lat: marker.coordinate.latitude,
       lng: marker.coordinate.longitude,
       order: marker.order,
-      color: active ? '#0369A1' : dayColor.main,
+      color: dayColor.main,
       opacity: marker.isSelectedDay ? 1 : 0.72,
       size: active ? 40 : marker.isActiveDay ? 28 : 24,
       zIndex: active ? 12 : marker.isActiveDay ? 10 : 5,

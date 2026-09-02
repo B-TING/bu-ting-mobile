@@ -28,7 +28,7 @@ function plan(overrides: Partial<TravelPlan>): TravelPlan {
 }
 
 describe('getSelectableHomePlans', () => {
-  it('keeps planned and in-progress server plans, dropping completed and local drafts', () => {
+  it('keeps planned, in-progress, and completed server plans, dropping local drafts', () => {
     const planned = plan({
       planId: 'planned',
       apiTravelId: 't-planned',
@@ -46,6 +46,8 @@ describe('getSelectableHomePlans', () => {
       apiTravelId: 't-completed',
       travelStatus: 'COMPLETED',
       status: 'COMPLETED',
+      startDate: '2026-07-01',
+      endDate: '2026-07-02',
     });
     const localDraft = plan({
       planId: 'local',
@@ -57,7 +59,7 @@ describe('getSelectableHomePlans', () => {
 
     expect(
       getSelectableHomePlans([planned, inProgress, completed, localDraft]).map(p => p.planId),
-    ).toEqual(['in-progress', 'planned']);
+    ).toEqual(['in-progress', 'planned', 'completed']);
   });
 
   it('returns the same array reference when the plans list did not change', () => {
@@ -78,11 +80,12 @@ describe('getSelectableHomePlans', () => {
 });
 
 describe('mergeFeaturedIntoPickerPlans', () => {
-  it('does not prepend a completed featured plan', () => {
+  it('prepends a completed featured plan that is not already in the list', () => {
     const featured = plan({ planId: 'featured', travelStatus: 'COMPLETED' });
     const selectable = [plan({ planId: 'other', apiTravelId: 't-other' })];
 
     expect(mergeFeaturedIntoPickerPlans(selectable, featured).map(p => p.planId)).toEqual([
+      'featured',
       'other',
     ]);
   });
