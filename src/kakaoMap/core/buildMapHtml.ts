@@ -79,6 +79,7 @@ window.renderKakaoMapOverlays = function (overlays) {
     if (overlay.kind === 'numbered') {
       var size = overlay.size || 28;
       var active = overlay.active;
+      var markerColor = overlay.color || '#0077B6';
       var wrap = document.createElement('div');
       wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;';
 
@@ -89,13 +90,13 @@ window.renderKakaoMapOverlays = function (overlays) {
         'px;height:' +
         size +
         'px;border-radius:50%;background:' +
-        window.kakaoMarkerBackground(overlay.color || '#0077B6', active) +
+        window.kakaoMarkerBackground(markerColor, active) +
         ';border:' +
         (active ? '3px' : '2px') +
         ' solid #fff;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:' +
         (size >= 36 ? 14 : size >= 28 ? 12 : 11) +
         'px;box-shadow:' +
-        (active ? '0 2px 10px rgba(3,105,161,0.45)' : '0 1px 4px rgba(0,0,0,0.25)') +
+        (active ? '0 2px 10px rgba(0,0,0,0.35)' : '0 1px 4px rgba(0,0,0,0.25)') +
         ';opacity:' +
         (overlay.opacity != null ? overlay.opacity : 1) +
         ';';
@@ -117,7 +118,11 @@ window.renderKakaoMapOverlays = function (overlays) {
       if (active && overlay.label) {
         var caption = document.createElement('div');
         caption.style.cssText =
-          'margin-top:4px;max-width:160px;padding:3px 8px;border-radius:6px;background:rgba(255,255,255,0.96);color:#0369A1;border:1px solid #0369A1;font-size:10px;font-weight:700;text-align:center;line-height:1.3;word-break:keep-all;box-shadow:0 1px 4px rgba(0,0,0,0.12);';
+          'margin-top:4px;max-width:160px;padding:3px 8px;border-radius:6px;background:rgba(255,255,255,0.96);color:' +
+          markerColor +
+          ';border:1px solid ' +
+          markerColor +
+          ';font-size:10px;font-weight:700;text-align:center;line-height:1.3;word-break:keep-all;box-shadow:0 1px 4px rgba(0,0,0,0.12);';
         caption.textContent = overlay.label;
         wrap.appendChild(caption);
       }

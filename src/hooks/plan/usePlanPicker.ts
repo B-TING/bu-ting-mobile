@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { useAppStore, selectHomeFeaturedPlan, usePlanStore } from '../../stores';
 import type { TravelPlan } from '../../types/travelPlan';
 import { listOfflineViewablePlans } from '../../utils/plan/selectLatestLocalPlan';
+import { resolvePlanTravelStatus } from '../../utils/plan/planTravelStatus';
 import {
   getSelectableHomePlans,
   mergeFeaturedIntoPickerPlans,
@@ -33,6 +34,15 @@ export function usePlanPicker(viewedPlan?: TravelPlan | null) {
     }
     return mergeFeaturedIntoPickerPlans(selectablePlans, currentPlan ?? null);
   }, [currentPlan, offlineMode, selectablePlans]);
+  /** 헤더 「일정 n개」— 진행·예정만 집계 (완료 제외) */
+  const activePlanCount = useMemo(
+    () =>
+      pickerPlans.filter(plan => {
+        const status = resolvePlanTravelStatus(plan);
+        return status === 'IN_PROGRESS' || status === 'PLANNED';
+      }).length,
+    [pickerPlans],
+  );
   const canSwitchPlans = pickerPlans.some(plan => plan.planId !== currentPlan?.planId);
   const [planPickerOpen, setPlanPickerOpen] = useState(false);
 
@@ -54,6 +64,7 @@ export function usePlanPicker(viewedPlan?: TravelPlan | null) {
 
   return {
     pickerPlans,
+    activePlanCount,
     canSwitchPlans,
     planPickerOpen,
     selectedPlanId: currentPlan?.planId ?? null,
