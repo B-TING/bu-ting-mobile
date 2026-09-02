@@ -190,6 +190,14 @@ export function useEventZoneScreen({ navigation }: UseEventZoneScreenParams) {
     navigation.navigate('EventGameDetail', { eventId });
   };
 
+  const handleJoinMission = () => {
+    if (selectedZoneGameEvent) {
+      handleOpenGameDetail(selectedZoneGameEvent.id);
+      return;
+    }
+    showUnavailable(ALPHA_FEATURE_LABELS.zoneEvent);
+  };
+
   const zoneEventBlocked = isAlphaFeatureBlocked('zoneEvent');
   const selectedActiveEvent =
     zoneEventBlocked || !focusZoneId ? undefined : activeEventsByZone[focusZoneId];
@@ -227,5 +235,6 @@ export function useEventZoneScreen({ navigation }: UseEventZoneScreenParams) {
     handleEnterChat,
     handleJoinChat,
     handleOpenGameDetail,
+    handleJoinMission,
   };
 }
