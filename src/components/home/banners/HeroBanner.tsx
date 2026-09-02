@@ -20,13 +20,25 @@ type HeroBannerProps = {
   onCtaPress: () => void;
 };
 
-export function HeroBanner({ title, subtitle, ctaLabel, onCtaPress }: HeroBannerProps) {
+export function HeroBanner({
+  title,
+  subtitle,
+  ctaLabel,
+  onCtaPress,
+}: HeroBannerProps) {
   return (
-    <View className="mb-5 overflow-hidden rounded-2xl">
-      <ImageBackground source={heroImage} style={styles.image} resizeMode="cover">
-        <View style={styles.overlay} className="justify-end p-5">
-          <Text className="mb-1 text-lg font-bold leading-snug text-white">{title}</Text>
-          <Text className="mb-4 text-xs leading-relaxed text-white/90">{subtitle}</Text>
+    <View className="mb-5 overflow-hidden">
+      <ImageBackground
+        source={heroImage}
+        style={styles.image}
+        resizeMode="cover">
+        <View style={[styles.overlay]} className="justify-end p-5">
+          <Text className="mb-1 text-lg font-bold leading-snug text-white">
+            {title}
+          </Text>
+          <Text className="mb-4 text-xs leading-relaxed text-white/90">
+            {subtitle}
+          </Text>
           <GuideTarget id={GUIDE_TARGET.plannerHeroCta} className="self-start">
             <Pressable
               onPress={onCtaPress}
@@ -45,11 +57,11 @@ export function HeroBanner({ title, subtitle, ctaLabel, onCtaPress }: HeroBanner
 const styles = StyleSheet.create({
   image: {
     width: '100%',
-    minHeight: 200,
+    minHeight: 240,
   },
   overlay: {
     flex: 1,
-    minHeight: 200,
+    minHeight: 240,
     backgroundColor: 'rgba(15, 23, 42, 0.35)',
   },
 });

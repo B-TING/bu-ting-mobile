@@ -78,7 +78,7 @@ export function MainHomeScreen({
     <View className="flex-1 bg-brand-background" style={layout.screen}>
       <ScrollView
         ref={scrollRef}
-        className="flex-1 px-5"
+        className="flex-1"
         contentContainerStyle={{ paddingBottom: scrollPaddingBottom }}
         showsVerticalScrollIndicator={false}>
         {featuredPlan && featuredTravelStatus ? (
@@ -103,38 +103,40 @@ export function MainHomeScreen({
           />
         )}
 
-        <QuickAccessRow
-          items={QUICK_ACCESS_ITEMS}
-          language={language}
-          onItemPress={handleQuickAccessPress}
-        />
-
-        <HomeEventZoneSection
-          onMapPress={goToEventZone}
-          onEnterChat={goToEventZoneChat}
-        />
-
-        <EventsSectionMock
-          title={copy.eventsTitle}
-          viewAllLabel={copy.eventsViewAll}
-          events={homeEvents}
-          language={language}
-          onViewAllPress={handleEventsViewAllPress}
-          onEventPress={handleEventPress}
-        />
-
-        <View
-          onLayout={e => {
-            handleTravelogueLayout(e.nativeEvent.layout.y);
-          }}>
-          <TraveloguePreview
-            trendingTitle={copy.trendingTitle}
+        <View className="px-5">
+          <QuickAccessRow
+            items={QUICK_ACCESS_ITEMS}
             language={language}
-            latestTravelogue={latestTravelogue}
-            loading={loadingTravelogue}
-            onTraveloguePress={handleTraveloguePress}
-            onFeedPress={handleFeedPress}
+            onItemPress={handleQuickAccessPress}
           />
+
+          <HomeEventZoneSection
+            onMapPress={goToEventZone}
+            onEnterChat={goToEventZoneChat}
+          />
+
+          <EventsSectionMock
+            title={copy.eventsTitle}
+            viewAllLabel={copy.eventsViewAll}
+            events={homeEvents}
+            language={language}
+            onViewAllPress={handleEventsViewAllPress}
+            onEventPress={handleEventPress}
+          />
+
+          <View
+            onLayout={e => {
+              handleTravelogueLayout(e.nativeEvent.layout.y);
+            }}>
+            <TraveloguePreview
+              trendingTitle={copy.trendingTitle}
+              language={language}
+              latestTravelogue={latestTravelogue}
+              loading={loadingTravelogue}
+              onTraveloguePress={handleTraveloguePress}
+              onFeedPress={handleFeedPress}
+            />
+          </View>
         </View>
       </ScrollView>
 

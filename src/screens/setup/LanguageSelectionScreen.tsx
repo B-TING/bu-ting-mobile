@@ -15,17 +15,29 @@ import { cn } from '../../utils/common/cn';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LanguageSelection'>;
 
-export function LanguageSelectionScreen({ navigation }: Props) {
+export function LanguageSelectionScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
+  const isSettingsMode = route.params?.mode === 'settings';
+  const currentLanguage = useAppStore(state => state.language);
   const setLanguage = useAppStore(state => state.setLanguage);
-  const [selected, setSelected] = useState<AppLanguage | null>(null);
-  const copy = getCopyForLanguage('setup', selected ?? 'ko');
+  const [selected, setSelected] = useState<AppLanguage | null>(
+    isSettingsMode ? currentLanguage : null,
+  );
+  const copy = getCopyForLanguage('setup', selected ?? currentLanguage ?? 'ko');
 
   const onContinue = () => {
     if (!selected) {
       return;
     }
     setLanguage(selected);
+    if (isSettingsMode) {
+      if (navigation.canGoBack()) {
+        navigation.goBack();
+        return;
+      }
+      navigation.replace('MainTabs');
+      return;
+    }
     navigation.replace('Onboarding');
   };
 
@@ -33,6 +45,16 @@ export function LanguageSelectionScreen({ navigation }: Props) {
     <View
       className="flex-1 bg-white px-6"
       style={{ paddingTop: insets.top + 28, paddingBottom: insets.bottom + 20 }}>
+      {isSettingsMode ? (
+        <Pressable
+          onPress={() => navigation.goBack()}
+          className="mb-4 self-start active:opacity-70"
+          accessibilityRole="button"
+          accessibilityLabel={copy.back}
+          hitSlop={8}>
+          <Text className="text-sm font-semibold text-brand-muted">{copy.back}</Text>
+        </Pressable>
+      ) : null}
       <View className="mb-8">
         <View className="mb-3 flex-row items-center gap-2.5">
           <BrandIcon size={36} />
@@ -83,7 +105,7 @@ export function LanguageSelectionScreen({ navigation }: Props) {
 
       <View className="pt-4">
         <PrimaryButton
-          label={copy.continue}
+          label={isSettingsMode ? copy.save : copy.continue}
           onPress={onContinue}
           disabled={!selected}
         />

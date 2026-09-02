@@ -5,7 +5,7 @@ import type { WizardPickedPlace } from '../types/planWizard';
 export type WizardPlacePickKind = 'attractions' | 'accommodation';
 
 export type RootStackParamList = {
-  LanguageSelection: undefined;
+  LanguageSelection: { mode?: 'setup' | 'settings' } | undefined;
   Login: undefined;
   Onboarding: { mode?: 'setup' | 'edit' | 'account' } | undefined;
   MainTabs: { tab?: NavbarTab } | undefined;

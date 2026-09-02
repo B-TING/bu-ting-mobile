@@ -284,7 +284,9 @@ export function MyPageScreen({ navigation }: Props) {
               <SettingsRow
                 icon="globe"
                 label={copy.languageSettings}
-                onPress={() => navigation.navigate('LanguageSelection')}
+                onPress={() =>
+                  navigation.navigate('LanguageSelection', { mode: 'settings' })
+                }
               />
               <SettingsRow
                 icon="settings"
