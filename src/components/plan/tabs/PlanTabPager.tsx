@@ -78,20 +78,20 @@ export function PlanTabPager({
         horizontal
         pagingEnabled
         scrollEnabled={horizontalScrollEnabled}
-        style={{ flex: 1 }}
+        style={{ flex: 1, overflow: 'hidden' }}
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={syncTabFromScroll}
         onScrollEndDrag={syncTabFromScroll}
         scrollEventThrottle={16}>
         {TAB_ORDER.map(tab =>
           tab === 'schedule' ? (
-            <View key={tab} style={{ width, flex: 1 }}>
+            <View key={tab} style={{ width, height: '100%', overflow: 'hidden' }}>
               {pages[tab]}
             </View>
           ) : (
             <ScrollView
               key={tab}
-              style={{ width }}
+              style={{ width, height: '100%' }}
               contentContainerStyle={{ paddingBottom: pageBottomPadding }}
               showsVerticalScrollIndicator={false}
               nestedScrollEnabled>

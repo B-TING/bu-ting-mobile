@@ -78,6 +78,10 @@ window.renderKakaoMapOverlays = function (overlays) {
 
     if (overlay.kind === 'numbered') {
       var size = overlay.size || 28;
+      var active = overlay.active;
+      var wrap = document.createElement('div');
+      wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;';
+
       var markerEl = document.createElement('div');
       markerEl.style.cssText =
         'width:' +
@@ -85,18 +89,43 @@ window.renderKakaoMapOverlays = function (overlays) {
         'px;height:' +
         size +
         'px;border-radius:50%;background:' +
-        (overlay.color || '#0077B6') +
-        ';border:2px solid #fff;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:' +
-        (size >= 30 ? 13 : 11) +
-        'px;box-shadow:0 1px 4px rgba(0,0,0,0.25);opacity:' +
+        window.kakaoMarkerBackground(overlay.color || '#0077B6', active) +
+        ';border:' +
+        (active ? '3px' : '2px') +
+        ' solid #fff;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:' +
+        (size >= 36 ? 14 : size >= 28 ? 12 : 11) +
+        'px;box-shadow:' +
+        (active ? '0 2px 10px rgba(3,105,161,0.45)' : '0 1px 4px rgba(0,0,0,0.25)') +
+        ';opacity:' +
         (overlay.opacity != null ? overlay.opacity : 1) +
         ';';
       markerEl.textContent = String(overlay.order);
 
+      if (overlay.id) {
+        markerEl.style.cursor = 'pointer';
+        markerEl.addEventListener('click', function () {
+          if (window.ReactNativeWebView) {
+            window.ReactNativeWebView.postMessage(
+              JSON.stringify({ type: 'overlayPress', id: overlay.id }),
+            );
+          }
+        });
+      }
+
+      wrap.appendChild(markerEl);
+
+      if (active && overlay.label) {
+        var caption = document.createElement('div');
+        caption.style.cssText =
+          'margin-top:4px;max-width:160px;padding:3px 8px;border-radius:6px;background:rgba(255,255,255,0.96);color:#0369A1;border:1px solid #0369A1;font-size:10px;font-weight:700;text-align:center;line-height:1.3;word-break:keep-all;box-shadow:0 1px 4px rgba(0,0,0,0.12);';
+        caption.textContent = overlay.label;
+        wrap.appendChild(caption);
+      }
+
       var numberedOverlay = new kakao.maps.CustomOverlay({
         position: new kakao.maps.LatLng(overlay.lat, overlay.lng),
-        content: markerEl,
-        yAnchor: 0.5,
+        content: wrap,
+        yAnchor: active && overlay.label ? 0.62 : 0.5,
         xAnchor: 0.5,
         zIndex: overlay.zIndex || 5,
       });
@@ -338,13 +367,32 @@ export function buildKakaoMapMoveScript(camera: MapCamera): string {
   const level = Number.isFinite(camera.zoomLevel)
     ? Math.min(14, Math.max(1, Math.round(camera.zoomLevel)))
     : 5;
+  const panOffsetY =
+    camera.panOffsetY != null && Number.isFinite(camera.panOffsetY)
+      ? Math.round(camera.panOffsetY)
+      : 0;
 
   return `
     (function () {
       if (!window.kakao || !window.kakaoMap) return true;
-      var moveLatLng = new window.kakao.maps.LatLng(${lat}, ${lng});
-      window.kakaoMap.setCenter(moveLatLng);
-      window.kakaoMap.setLevel(${level});
+      var map = window.kakaoMap;
+      var target = new window.kakao.maps.LatLng(${lat}, ${lng});
+      map.setLevel(${level});
+      ${
+        panOffsetY !== 0
+          ? `
+      try {
+        var proj = map.getProjection();
+        if (proj) {
+          var pt = proj.containerPointFromCoords(target);
+          pt.y += ${panOffsetY};
+          target = proj.coordsFromContainerPoint(pt);
+        }
+      } catch (e) {}
+      `
+          : ''
+      }
+      map.setCenter(target);
       return true;
     })();
   `;

@@ -1,4 +1,5 @@
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { useEffect } from 'react';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { PlanSyncStatusDot } from '../../components/plan/PlanSyncStatusDot';
@@ -20,6 +21,7 @@ import { useAppBarTopInset } from '../../components/shared/navigation/AppBar';
 import { ICON_COLOR_DEFAULT, ICON_COLOR_PRIMARY } from '../../constants/icons';
 import { canRemovePlanDay } from '../../services/travel/planDaySync';
 import { usePlanDetailScreen } from '../../hooks/plan/usePlanDetailScreen';
+import { useMainTabNavigationOptional } from '../../navigation/mainTabNavigation';
 import type { RootStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PlanDetail'> & {
@@ -28,6 +30,8 @@ type Props = NativeStackScreenProps<RootStackParamList, 'PlanDetail'> & {
 
 export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false }: Props) {
   const headerTopInset = useAppBarTopInset();
+  const mainTabNav = useMainTabNavigationOptional();
+  const isRouteMainTabActive = !embeddedInMainTabs || mainTabNav?.activeTab === 'route';
   const {
     language,
     offlineMode,
@@ -143,6 +147,19 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     embeddedInMainTabs,
   });
 
+  const scheduleImmersive =
+    embeddedInMainTabs && isRouteMainTabActive && tab === 'schedule';
+
+  useEffect(() => {
+    if (!embeddedInMainTabs || !mainTabNav) {
+      return;
+    }
+    mainTabNav.setNavbarHidden(scheduleImmersive);
+    return () => {
+      mainTabNav.setNavbarHidden(false);
+    };
+  }, [embeddedInMainTabs, mainTabNav, scheduleImmersive]);
+
   if (!enrichedPlan) {
     if (offlineMode && !plansHydrated) {
       return (
@@ -219,17 +236,12 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
         </View>
       ) : null}
 
-      <View
-        className="min-h-0 flex-1"
-        style={
-          mainTabBottomClearance > 0 && tab !== 'schedule'
-            ? { marginBottom: mainTabBottomClearance }
-            : undefined
-        }>
+      <View className="min-h-0 flex-1">
         <PlanTabPager
           active={tab}
           onChange={setTab}
           language={language}
+          scrollBottomInset={mainTabBottomClearance}
           horizontalScrollEnabled={
             !scheduleReorderActive && tab !== 'schedule' && tab !== 'overview'
           }
@@ -256,6 +268,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
             schedule: (
               <PlanScheduleTab
                 ref={scheduleRef}
+                isActive={tab === 'schedule' && isRouteMainTabActive}
                 planId={planId}
                 plan={enrichedPlan}
                 language={language}

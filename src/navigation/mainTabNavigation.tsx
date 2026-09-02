@@ -5,6 +5,8 @@ import type { NavbarTab } from '../components/shared/navigation/Navbar';
 export type MainTabNavigationContextValue = {
   activeTab: NavbarTab;
   goToTab: (tab: NavbarTab) => void;
+  navbarHidden: boolean;
+  setNavbarHidden: (hidden: boolean) => void;
 };
 
 export const MainTabNavigationContext = createContext<MainTabNavigationContextValue | null>(

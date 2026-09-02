@@ -7,23 +7,23 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { useAppAlert, useFeatureUnavailableAlert } from '../../shared/modals';
 import {
   ALPHA_FEATURE_LABELS,
   isAlphaFeatureBlocked,
 } from '../../../constants/common/alphaFeatureBlocks';
-import { AppIcon } from '../../shared/icons/AppIcon';
-import { DayChips } from '../schedule/DayChips';
-import { ScheduleActionBar } from '../schedule/ScheduleActionBar';
+import { ScheduleDayChipPanel } from '../schedule/ScheduleDayChipPanel';
+import { ScheduleDayHeaderRow } from '../schedule/ScheduleDayHeaderRow';
+import { ScheduleMapZoneBadge } from '../schedule/ScheduleMapZoneBadge';
+import { ScheduleQuickActions } from '../schedule/ScheduleQuickActions';
 import { ScheduleMapSplit } from '../schedule/ScheduleMapSplit';
 import { ScheduleRouteDetailPanel } from '../schedule/ScheduleRouteDetailPanel';
 import { TravelLegRow } from '../schedule/TravelLegRow';
 import { ScheduleRouteSlot, type RebootPhase } from '../schedule/ScheduleRouteSlot';
 import type { CopyFor } from '../../../i18n';
 import { EVENT_ZONE_BY_ID } from '../../../constants/eventZone/eventZone';
-import { ICON_COLOR_MUTED } from '../../../constants/icons';
 import { getScheduleDayColor } from '../../../constants/plan/scheduleDayColors';
 import { usePlanStore } from '../../../stores';
 import type { AppLanguage } from '../../../types/user';
@@ -88,6 +88,8 @@ type PlanScheduleTabProps = {
   onAddDay?: () => void;
   onRemoveDay?: () => void;
   actionBarBottomInset?: number;
+  /** 일정 탭이 화면에 보일 때만 지도·시트 렌더 (탭 전환 bleed 방지) */
+  isActive?: boolean;
   onNotify?: (message: string) => void;
 };
 
@@ -118,6 +120,7 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
       onAddDay,
       onRemoveDay,
       actionBarBottomInset = 0,
+      isActive = true,
       onNotify,
     },
     ref,
@@ -130,6 +133,8 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
 
     const [reboot, setReboot] = useState<RebootState>(null);
     const [focusedRoute, setFocusedRoute] = useState<RouteItem | null>(null);
+    const [mapSelectedItemId, setMapSelectedItemId] = useState<string | null>(null);
+    const [scheduleFullExpanded, setScheduleFullExpanded] = useState(false);
     const [orderedIds, setOrderedIds] = useState<string[]>([]);
     const [swapPickId, setSwapPickId] = useState<string | null>(null);
     const onModalChangeRef = useRef(onScheduleModalChange);
@@ -264,6 +269,7 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
       setReboot(null);
       setSwapPickId(null);
       setFocusedRoute(null);
+      setMapSelectedItemId(null);
       onModalChangeRef.current({ kind: 'none' });
     }, [selectedDay]);
 
@@ -319,6 +325,9 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
       if (focusedRoute?.itemId === route.itemId) {
         setFocusedRoute(null);
       }
+      if (mapSelectedItemId === route.itemId) {
+        setMapSelectedItemId(null);
+      }
       clearReboot();
     };
 
@@ -326,8 +335,27 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
       setReboot(null);
       setSwapPickId(null);
       onModalChangeRef.current({ kind: 'none' });
+      setMapSelectedItemId(route.itemId);
       setFocusedRoute(route);
     }, []);
+
+    const handleMapMarkerPress = useCallback(
+      (itemId: string) => {
+        const route = dayRoutes.find(r => r.itemId === itemId);
+        if (!route) {
+          return;
+        }
+        if (mapSelectedItemId === itemId && focusedRoute?.itemId === itemId) {
+          setFocusedRoute(null);
+          setMapSelectedItemId(null);
+          return;
+        }
+        openRouteDetail(route);
+      },
+      [dayRoutes, mapSelectedItemId, focusedRoute?.itemId, openRouteDetail],
+    );
+
+    const mapHighlightItemId = mapSelectedItemId ?? focusedRoute?.itemId ?? null;
 
     const swapRoutes = useCallback(
       (idA: string, idB: string) => {
@@ -439,9 +467,62 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
 
     const dayColor = getScheduleDayColor(day?.dayNumber ?? 1);
 
+    const zoneLabel =
+      dayRoutes.length > 0 ? copy.dayZoneCount(zoneSegmentCount) : null;
+
+    const dayChipPanelProps = {
+      days: plan.itinerary,
+      selectedDayNumber: day?.dayNumber ?? 1,
+      onSelect: onSelectDay,
+      language,
+      canAddDay: canAddDay && !readOnly,
+      addDayLabel: copy.addDay,
+      onAddDay,
+    };
+
+    const mapQuickActions =
+      !readOnly && !focusedRoute ? (
+        <ScheduleQuickActions
+          compact
+          onOptimize={handleRouteOptimize}
+          onAddPlace={handleAddPlacePress}
+          optimizeLabel={copy.routeOptimize}
+          addPlaceLabel={copy.addPlace}
+        />
+      ) : null;
+
+    const dayHeaderRow = (
+      <ScheduleDayHeaderRow
+        {...dayChipPanelProps}
+        showQuickActions={!readOnly && !focusedRoute}
+        onOptimize={handleRouteOptimize}
+        onAddPlace={handleAddPlacePress}
+        optimizeLabel={copy.routeOptimize}
+        addPlaceLabel={copy.addPlace}
+        canRemoveDay={canRemoveDay && !readOnly}
+        removeDayLabel={copy.removeDay}
+        onRemoveDay={
+          canRemoveDay && !readOnly && onRemoveDay
+            ? () => {
+                if (guardReadOnly()) {
+                  return;
+                }
+                onRemoveDay();
+              }
+            : undefined
+        }
+      />
+    );
+
+    const mapZoneBadge =
+      zoneLabel || dayDurationLabel ? (
+        <ScheduleMapZoneBadge zoneLabel={zoneLabel} durationLabel={dayDurationLabel} />
+      ) : null;
+
     const renderRouteSlot = (r: RouteItem, index: number) => {
       const indexSelected = swapPickId === r.itemId;
-      const isFocused = focusedRoute?.itemId === r.itemId;
+      const isFocused =
+        mapSelectedItemId === r.itemId || focusedRoute?.itemId === r.itemId;
       const indexHint = indexSelected
         ? copy.reorderHandleHintSelected
         : copy.reorderHandleHint;
@@ -539,63 +620,26 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
     return (
       <View className="flex-1">
         <ScheduleMapSplit
+          isActive={isActive}
           itinerary={plan.itinerary}
           selectedDayNumber={day?.dayNumber ?? 1}
-          highlightItemId={focusedRoute?.itemId ?? null}
+          highlightItemId={mapHighlightItemId}
+          onMarkerPress={handleMapMarkerPress}
           dragLabel={copy.mapDragLabel}
           mapClosedHint={copy.mapClosedHint}
           detailCloseLabel={copy.close}
           onDetailClose={() => setFocusedRoute(null)}
+          onScheduleExpandChange={setScheduleFullExpanded}
+          bottomInset={actionBarBottomInset}
+          mapTopRight={mapZoneBadge}
+          mapOverlayLeading={scheduleFullExpanded ? undefined : mapQuickActions}
+          mapOverlay={
+            scheduleFullExpanded ? undefined : (
+              <ScheduleDayChipPanel {...dayChipPanelProps} variant="overlay" />
+            )
+          }
+          sheetHeader={dayHeaderRow}
           detailContent={detailPanel}>
-          <DayChips
-            days={plan.itinerary}
-            selectedDayNumber={day?.dayNumber ?? 1}
-            onSelect={onSelectDay}
-            language={language}
-            canAddDay={canAddDay && !readOnly}
-            addDayLabel={copy.addDay}
-            onAddDay={onAddDay}
-          />
-
-          <View className="mb-2 flex-row items-baseline justify-between">
-            <View className="flex-row items-center gap-2">
-              <View
-                className="h-3 w-3 rounded-full"
-                style={{ backgroundColor: dayColor.main }}
-              />
-              <Text className="text-lg font-bold text-brand-text">
-                {day?.date} · Day {day?.dayNumber}
-              </Text>
-              {canRemoveDay && !readOnly && onRemoveDay ? (
-                <Pressable
-                  onPress={() => {
-                    if (guardReadOnly()) {
-                      return;
-                    }
-                    onRemoveDay();
-                  }}
-                  accessibilityRole="button"
-                  accessibilityLabel={copy.removeDay}
-                  hitSlop={8}
-                  className="ml-1 rounded-full border border-brand-border bg-brand-surface p-1.5 active:bg-brand-selected">
-                  <AppIcon name="minus" size={14} color={ICON_COLOR_MUTED} strokeWidth={2.5} />
-                </Pressable>
-              ) : null}
-            </View>
-            <View className="items-end gap-0.5">
-              {dayRoutes.length > 0 ? (
-                <Text className="text-xs font-semibold text-brand-primary">
-                  {copy.dayZoneCount(zoneSegmentCount)}
-                </Text>
-              ) : null}
-              {dayDurationLabel ? (
-                <Text className="text-xs font-semibold text-brand-muted">
-                  {dayDurationLabel}
-                </Text>
-              ) : null}
-            </View>
-          </View>
-
           {swapPickId != null && (
             <View className="mb-3 rounded-xl border border-brand-primary bg-brand-selected px-3 py-2">
               <Text className="text-xs text-brand-text">{copy.reorderActiveHint}</Text>
@@ -652,16 +696,6 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
           <Text className="mt-2 text-xs text-brand-muted">{copy.reorderLongPressHint}</Text>
           <Text className="mb-4 mt-1 text-xs text-brand-muted">{copy.closedHint}</Text>
         </ScheduleMapSplit>
-
-        {!readOnly && !focusedRoute ? (
-          <ScheduleActionBar
-            onOptimize={handleRouteOptimize}
-            onAddPlace={handleAddPlacePress}
-            optimizeLabel={copy.routeOptimize}
-            addPlaceLabel={copy.addPlace}
-            bottomInset={actionBarBottomInset}
-          />
-        ) : null}
       </View>
     );
   },

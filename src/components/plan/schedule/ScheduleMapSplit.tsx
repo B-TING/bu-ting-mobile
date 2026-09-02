@@ -9,44 +9,62 @@ import {
   View,
 } from 'react-native';
 
-import {
-  ICON_COLOR_MUTED,
-  ICON_COLOR_PRIMARY,
-} from '../../../constants/icons';
+import { ICON_COLOR_PRIMARY } from '../../../constants/icons';
 import { AppIcon } from '../../shared/icons/AppIcon';
 import { ScheduleMapView } from '../../../kakaoMap';
 import { APP_MODAL } from '../../shared/modals/appModalStyles';
 import type { DailyItinerary } from '../../../types/travelPlan';
 
-const DEFAULT_SCHEDULE_RATIO = 0.4;
+const DEFAULT_SCHEDULE_RATIO = 0.48;
 const DETAIL_SCHEDULE_RATIO = 0.58;
 const MAX_SCHEDULE_RATIO = 1.0;
-const MIN_MAP_HEIGHT = 0;
 const SNAP_CLOSE_THRESHOLD = 72;
-const HANDLE_HEIGHT = 32;
+const SHEET_HANDLE_AREA_HEIGHT = 28;
+const COLLAPSED_PEEK_HEIGHT = 52;
 
 type ScheduleMapSplitProps = {
   itinerary: DailyItinerary[];
   selectedDayNumber: number;
   highlightItemId?: string | null;
+  onMarkerPress?: (itemId: string) => void;
   dragLabel: string;
   mapClosedHint: string;
   detailContent?: ReactNode;
   detailCloseLabel?: string;
   onDetailClose?: () => void;
+  mapOverlay?: ReactNode;
+  /** 지도 좌측 끝 오버레이 (경로 최적화·관광지 추가) */
+  mapOverlayLeading?: ReactNode;
+  /** 지도 우상단 (방문 영역 등) */
+  mapTopRight?: ReactNode;
+  /** 시트 최대 확장 시 스크롤 위 고정 헤더 (일자 chips) */
+  sheetHeader?: ReactNode;
+  onScheduleExpandChange?: (fullyExpanded: boolean) => void;
+  /** 시트 하단에 붙는 액션 버튼 등 (일정 열림·상세 패널 없을 때) */
+  sheetFooter?: ReactNode;
+  /** Navbar clearance — 시트 bottom·최대 높이 계산 */
+  bottomInset?: number;
+  /** false면 시트·지도 레이어 숨김 (다른 탭 전환 시 elevation bleed 방지) */
+  isActive?: boolean;
   children: ReactNode;
 };
 
 const LIST_BOTTOM_PADDING = 16;
+const FULL_EXPAND_THRESHOLD_PX = 8;
 
-function snapScheduleHeight(height: number, containerHeight: number): number {
+function maxScheduleHeightFor(containerHeight: number, bottomInset = 0): number {
+  if (containerHeight <= 0) {
+    return 0;
+  }
+  const available = Math.max(0, containerHeight - bottomInset);
+  return Math.min(Math.round(available * MAX_SCHEDULE_RATIO), available);
+}
+
+function snapScheduleHeight(height: number, containerHeight: number, bottomInset = 0): number {
   const closed = 0;
-  const maxHeight = Math.min(
-    Math.round(containerHeight * MAX_SCHEDULE_RATIO),
-    containerHeight - HANDLE_HEIGHT - MIN_MAP_HEIGHT,
-  );
+  const maxHeight = maxScheduleHeightFor(containerHeight, bottomInset);
   const defaultHeight = Math.min(
-    Math.round(containerHeight * DEFAULT_SCHEDULE_RATIO),
+    Math.round((containerHeight - bottomInset) * DEFAULT_SCHEDULE_RATIO),
     maxHeight,
   );
 
@@ -71,24 +89,33 @@ export function ScheduleMapSplit({
   itinerary,
   selectedDayNumber,
   highlightItemId,
+  onMarkerPress,
   dragLabel,
   mapClosedHint,
   detailContent,
   detailCloseLabel,
   onDetailClose,
+  mapOverlay,
+  mapOverlayLeading,
+  mapTopRight,
+  sheetHeader,
+  onScheduleExpandChange,
+  sheetFooter,
+  bottomInset = 0,
+  isActive = true,
   children,
 }: ScheduleMapSplitProps) {
   const [scheduleHeight, setScheduleHeight] = useState(0);
+  const [containerHeight, setContainerHeight] = useState(0);
   const scheduleHeightRef = useRef(0);
   const dragStartHeightRef = useRef(0);
   const containerHeightRef = useRef(0);
+  const bottomInsetRef = useRef(bottomInset);
+  bottomInsetRef.current = bottomInset;
   const detailActive = detailContent != null;
 
   const applyScheduleHeight = useCallback((height: number) => {
-    const max = Math.min(
-      Math.round(containerHeightRef.current * MAX_SCHEDULE_RATIO),
-      containerHeightRef.current - HANDLE_HEIGHT - MIN_MAP_HEIGHT,
-    );
+    const max = maxScheduleHeightFor(containerHeightRef.current, bottomInsetRef.current);
     const clamped = Math.max(0, Math.min(height, max));
     scheduleHeightRef.current = clamped;
     setScheduleHeight(clamped);
@@ -99,10 +126,8 @@ export function ScheduleMapSplit({
       return;
     }
     const target = Math.min(
-      Math.round(containerHeightRef.current * DETAIL_SCHEDULE_RATIO),
-      Math.round(containerHeightRef.current * MAX_SCHEDULE_RATIO) -
-        HANDLE_HEIGHT -
-        MIN_MAP_HEIGHT,
+      Math.round((containerHeightRef.current - bottomInsetRef.current) * DETAIL_SCHEDULE_RATIO),
+      maxScheduleHeightFor(containerHeightRef.current, bottomInsetRef.current),
     );
     applyScheduleHeight(target);
   }, [applyScheduleHeight]);
@@ -114,8 +139,11 @@ export function ScheduleMapSplit({
         return;
       }
       containerHeightRef.current = nextHeight;
+      setContainerHeight(nextHeight);
       if (scheduleHeightRef.current === 0) {
-        applyScheduleHeight(Math.round(nextHeight * DEFAULT_SCHEDULE_RATIO));
+        applyScheduleHeight(
+          Math.round((nextHeight - bottomInsetRef.current) * DEFAULT_SCHEDULE_RATIO),
+        );
       }
     },
     [applyScheduleHeight],
@@ -140,7 +168,9 @@ export function ScheduleMapSplit({
         },
         onPanResponderRelease: (_, gesture) => {
           const projected = dragStartHeightRef.current - gesture.dy;
-          applyScheduleHeight(snapScheduleHeight(projected, containerHeightRef.current));
+          applyScheduleHeight(
+            snapScheduleHeight(projected, containerHeightRef.current, bottomInsetRef.current),
+          );
         },
         onPanResponderTerminationRequest: () => false,
       }),
@@ -148,74 +178,168 @@ export function ScheduleMapSplit({
   );
 
   const scheduleOpen = scheduleHeight > SNAP_CLOSE_THRESHOLD;
+  const maxScheduleHeight = maxScheduleHeightFor(containerHeight, bottomInset);
+  const isFullyExpanded =
+    scheduleOpen &&
+    maxScheduleHeight > 0 &&
+    scheduleHeight >= maxScheduleHeight - FULL_EXPAND_THRESHOLD_PX;
+
+  const sheetVisualHeight = scheduleOpen ? scheduleHeight : COLLAPSED_PEEK_HEIGHT;
+  const mapObstructionBottom = sheetVisualHeight + bottomInset;
+  // 드래그 중 시트 높이마다 pan을 바꾸면 지도가 흔들림 → 스냅 비율만 사용
+  const focusPanOffsetY = useMemo(() => {
+    if (containerHeight <= 0) {
+      return 0;
+    }
+    const available = Math.max(0, containerHeight - bottomInset);
+    const sheetForFocus = Math.round(
+      available * (detailActive ? DETAIL_SCHEDULE_RATIO : DEFAULT_SCHEDULE_RATIO),
+    );
+    return Math.round((sheetForFocus + bottomInset) / 2);
+  }, [containerHeight, bottomInset, detailActive]);
+
+  useEffect(() => {
+    onScheduleExpandChange?.(isFullyExpanded);
+  }, [isFullyExpanded, onScheduleExpandChange]);
 
   return (
-    <View className="flex-1" onLayout={handleContainerLayout}>
-      <View className="min-h-0 flex-1 overflow-hidden bg-[#E8F4E8]">
+    <View className="flex-1 overflow-hidden" onLayout={handleContainerLayout}>
+      <View
+        className="absolute inset-0 overflow-hidden bg-[#E8F4E8]"
+        pointerEvents={isActive ? 'auto' : 'none'}
+        style={isActive ? undefined : styles.inactiveLayer}>
         <ScheduleMapView
           itinerary={itinerary}
           selectedDayNumber={selectedDayNumber}
           highlightItemId={highlightItemId}
+          onMarkerPress={onMarkerPress}
+          focusPanOffsetY={focusPanOffsetY}
+          viewportInsetReady={containerHeight > 0}
           mapTitle=""
           mapSubtitle=""
         />
-      </View>
-
-      <View
-        {...panResponder.panHandlers}
-        accessibilityRole="adjustable"
-        accessibilityLabel={dragLabel}
-        accessibilityHint={mapClosedHint}
-        className="items-center justify-center border-y border-brand-border bg-brand-surface py-2"
-        style={{ minHeight: HANDLE_HEIGHT }}>
-        <View className="rounded-full bg-brand-border" style={{ width: 44, height: 5 }} />
-        {!scheduleOpen ? (
-          <Text className="mt-1.5 text-[10px] font-medium text-brand-muted">{mapClosedHint}</Text>
+        {mapTopRight && !isFullyExpanded ? (
+          <View className="absolute right-3 top-3 z-10" pointerEvents="box-none">
+            {mapTopRight}
+          </View>
+        ) : null}
+        {mapOverlayLeading && !isFullyExpanded ? (
+          <View
+            className="absolute left-3 z-10"
+            style={{ bottom: mapObstructionBottom + 8 }}
+            pointerEvents="box-none">
+            {mapOverlayLeading}
+          </View>
+        ) : null}
+        {mapOverlay && !isFullyExpanded ? (
+          <View
+            className="absolute right-3 z-10"
+            style={{ bottom: mapObstructionBottom + 8 }}
+            pointerEvents="box-none">
+            {mapOverlay}
+          </View>
         ) : null}
       </View>
 
-      {scheduleOpen ? (
+      <View
+        style={[
+          styles.sheet,
+          { height: sheetVisualHeight, bottom: bottomInset },
+          !isActive && styles.inactiveSheet,
+        ]}
+        pointerEvents={isActive ? 'box-none' : 'none'}>
         <View
-          style={{ height: scheduleHeight }}
-          className="relative min-h-0 bg-brand-background">
-          <ScrollView
-            className="flex-1 px-4"
-            contentContainerStyle={{ paddingBottom: LIST_BOTTOM_PADDING }}
-            showsVerticalScrollIndicator={false}
-            nestedScrollEnabled
-            pointerEvents={detailActive ? 'none' : 'auto'}
-            style={detailActive ? styles.hiddenList : undefined}>
-            {children}
-          </ScrollView>
-
-          {detailActive ? (
-            <View className="absolute inset-0 bg-brand-background">
-              {onDetailClose && detailCloseLabel ? (
-                <Pressable
-                  onPress={onDetailClose}
-                  accessibilityRole="button"
-                  accessibilityLabel={detailCloseLabel}
-                  style={styles.detailCloseBtn}
-                  hitSlop={8}>
-                  <AppIcon name="x" size={16} color={ICON_COLOR_PRIMARY} strokeWidth={2.5} />
-                </Pressable>
-              ) : null}
-              <ScrollView
-                className="flex-1"
-                contentContainerStyle={{ paddingBottom: LIST_BOTTOM_PADDING }}
-                showsVerticalScrollIndicator={false}
-                nestedScrollEnabled>
-                {detailContent}
-              </ScrollView>
-            </View>
+          {...panResponder.panHandlers}
+          accessibilityRole="adjustable"
+          accessibilityLabel={dragLabel}
+          accessibilityHint={mapClosedHint}
+          style={styles.sheetHandleArea}
+          className="bg-brand-surface">
+          <View style={styles.sheetHandle} />
+          {!scheduleOpen ? (
+            <Text className="mt-1 text-[10px] font-medium text-brand-muted">{mapClosedHint}</Text>
           ) : null}
         </View>
-      ) : null}
+
+        {scheduleOpen ? (
+          <View className="relative min-h-0 flex-1 bg-brand-background">
+            {isFullyExpanded && sheetHeader ? (
+              <View className="border-b border-brand-border/60 bg-brand-background px-3">
+                {sheetHeader}
+              </View>
+            ) : null}
+            <ScrollView
+              className="flex-1 px-4"
+              contentContainerStyle={{ paddingBottom: LIST_BOTTOM_PADDING }}
+              showsVerticalScrollIndicator={false}
+              nestedScrollEnabled
+              pointerEvents={detailActive ? 'none' : 'auto'}
+              style={detailActive ? styles.hiddenList : undefined}>
+              {children}
+            </ScrollView>
+
+            {detailActive ? (
+              <View className="absolute inset-0 rounded-t-[24px] bg-brand-background">
+                {onDetailClose && detailCloseLabel ? (
+                  <Pressable
+                    onPress={onDetailClose}
+                    accessibilityRole="button"
+                    accessibilityLabel={detailCloseLabel}
+                    style={styles.detailCloseBtn}
+                    hitSlop={8}>
+                    <AppIcon name="x" size={16} color={ICON_COLOR_PRIMARY} strokeWidth={2.5} />
+                  </Pressable>
+                ) : null}
+                <ScrollView
+                  className="flex-1"
+                  contentContainerStyle={{ paddingBottom: LIST_BOTTOM_PADDING }}
+                  showsVerticalScrollIndicator={false}
+                  nestedScrollEnabled>
+                  {detailContent}
+                </ScrollView>
+              </View>
+            ) : null}
+
+            {sheetFooter && !detailActive ? sheetFooter : null}
+          </View>
+        ) : null}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  sheet: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 20,
+    borderTopLeftRadius: APP_MODAL.sheetRadius,
+    borderTopRightRadius: APP_MODAL.sheetRadius,
+    overflow: 'hidden',
+    backgroundColor: APP_MODAL.sheetBackground,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.14,
+    shadowRadius: 16,
+    elevation: 12,
+  },
+  sheetHandleArea: {
+    minHeight: SHEET_HANDLE_AREA_HEIGHT,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 10,
+    paddingBottom: 6,
+    borderTopLeftRadius: APP_MODAL.sheetRadius,
+    borderTopRightRadius: APP_MODAL.sheetRadius,
+  },
+  sheetHandle: {
+    width: APP_MODAL.handleWidth,
+    height: APP_MODAL.handleHeight,
+    borderRadius: APP_MODAL.handleHeight / 2,
+    backgroundColor: APP_MODAL.handleColor,
+  },
   hiddenList: {
     opacity: 0,
   },
@@ -236,23 +360,12 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 4,
   },
-  detailSheet: {
-    borderTopLeftRadius: APP_MODAL.sheetRadius,
-    borderTopRightRadius: APP_MODAL.sheetRadius,
-    overflow: 'hidden',
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    elevation: 8,
+  inactiveLayer: {
+    opacity: 0,
   },
-  detailHandle: {
-    alignSelf: 'center',
-    width: APP_MODAL.handleWidth,
-    height: APP_MODAL.handleHeight,
-    borderRadius: APP_MODAL.handleHeight / 2,
-    backgroundColor: APP_MODAL.handleColor,
-    marginTop: 10,
-    marginBottom: 4,
+  inactiveSheet: {
+    opacity: 0,
+    elevation: 0,
+    shadowOpacity: 0,
   },
 });

@@ -15,18 +15,26 @@ type ScheduleMapViewProps = {
   itinerary: DailyItinerary[];
   selectedDayNumber?: number;
   highlightItemId?: string | null;
+  onMarkerPress?: (itemId: string) => void;
   mapTitle: string;
   mapSubtitle: string;
   showFooter?: boolean;
+  /** 하단 시트에 가려지지 않도록 포커스 마커를 위로 보정 (px) */
+  focusPanOffsetY?: number;
+  /** false면 레이아웃 측정 전 — 카메라 동기화 대기 */
+  viewportInsetReady?: boolean;
 };
 
 export function ScheduleMapView({
   itinerary,
   selectedDayNumber,
   highlightItemId,
+  onMarkerPress,
   mapTitle,
   mapSubtitle,
   showFooter = false,
+  focusPanOffsetY = 0,
+  viewportInsetReady = true,
 }: ScheduleMapViewProps) {
   const { location } = useCurrentEventZone();
   const mapDays = useMemo(() => buildScheduleMapDays(itinerary), [itinerary]);
@@ -71,8 +79,11 @@ export function ScheduleMapView({
       points={points}
       focusPoint={focusPoint}
       overlays={overlays}
+      onOverlayPress={onMarkerPress}
       cameraKmSpan={focusPoint ? undefined : dayFocusSpan}
       fitPointsToCamera={!focusPoint}
+      focusPanOffsetY={focusPanOffsetY}
+      viewportInsetReady={viewportInsetReady}
       size="fill"
       emptySubtitle={mapSubtitle}
       footer={showFooter ? { title: mapTitle, subtitle: mapSubtitle } : undefined}

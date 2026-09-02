@@ -1613,15 +1613,18 @@ export function usePlanDetailScreen({
     legTransit: copy.legTransit,
   };
 
+  const scheduleImmersive = embeddedInMainTabs && tab === 'schedule';
   const mainTabBottomClearance = embeddedInMainTabs
     ? getNavbarOverlayHeight(insets.bottom)
     : 0;
   const fabBottomInset = embeddedInMainTabs
     ? mainTabBottomClearance
     : insets.bottom;
-  const actionBarBottomInset = embeddedInMainTabs
-    ? getNavbarActionBarInset(insets.bottom)
-    : insets.bottom;
+  const actionBarBottomInset = scheduleImmersive
+    ? Math.max(insets.bottom, 8)
+    : embeddedInMainTabs
+      ? getNavbarActionBarInset(insets.bottom)
+      : insets.bottom;
   const toastBottom = fabBottomInset + 16;
 
   const handleBackPress = useCallback(() => {

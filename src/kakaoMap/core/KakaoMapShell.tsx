@@ -31,6 +31,10 @@ type KakaoMapShellProps = {
   cameraKmSpan?: number;
   /** false면 마커 목록 변경 시 전체 bbox로 줌 재조정하지 않음 */
   fitPointsToCamera?: boolean;
+  /** 장소 포커스 시 하단 UI 가림 보정 (px) */
+  focusPanOffsetY?: number;
+  /** false면 시트 높이 측정 전 카메라 이동 보류 */
+  viewportInsetReady?: boolean;
   /** 6개 행사 구역 색상·구분선 토글 (기본 꺼짐) */
   eventZoneToggle?: boolean;
 };
@@ -64,6 +68,8 @@ export function KakaoMapShell({
   emptySubtitle,
   cameraKmSpan,
   fitPointsToCamera = true,
+  focusPanOffsetY = 0,
+  viewportInsetReady = true,
   eventZoneToggle = true,
 }: KakaoMapShellProps) {
   const webViewRef = useRef<WebView>(null);
@@ -90,22 +96,31 @@ export function KakaoMapShell({
   const regionSyncKey = pointsSignature(points);
 
   const targetCamera = useMemo<MapCamera | null>(() => {
+    const pan =
+      focusPanOffsetY > 0 ? { panOffsetY: focusPanOffsetY } : undefined;
     if (focusPoint) {
-      return cameraFromPoints(points, {
-        focus: focusPoint,
-        ...(cameraKmSpan != null ? { kmSpan: cameraKmSpan } : {}),
-      });
+      return {
+        ...cameraFromPoints(points, {
+          focus: focusPoint,
+          ...(cameraKmSpan != null ? { kmSpan: cameraKmSpan } : {}),
+        }),
+        ...pan,
+      };
     }
     if (!fitPointsToCamera) {
       return null;
     }
-    return cameraFromPoints(points, {
-      ...(cameraKmSpan != null ? { kmSpan: cameraKmSpan } : {}),
-    });
-  }, [points, focusPoint, cameraKmSpan, fitPointsToCamera]);
+    return {
+      ...cameraFromPoints(points, {
+        ...(cameraKmSpan != null ? { kmSpan: cameraKmSpan } : {}),
+      }),
+      ...pan,
+    };
+  }, [points, focusPoint, cameraKmSpan, fitPointsToCamera, focusPanOffsetY]);
 
   const overlayKey = overlaysSignature(mergedOverlays);
   const pointsSyncKey = fitPointsToCamera ? regionSyncKey : null;
+  const lastCameraKeyRef = useRef<string | null>(null);
 
   if (bootstrapHtmlRef.current === null && KAKAO_MAP_JS_KEY && points.length > 0) {
     const bootstrapCamera =
@@ -120,6 +135,7 @@ export function KakaoMapShell({
     if (points.length === 0) {
       bootstrapHtmlRef.current = null;
       mapReadyRef.current = false;
+      lastCameraKeyRef.current = null;
       setMapReady(false);
     }
   }, [points.length]);
@@ -139,11 +155,37 @@ export function KakaoMapShell({
   }, [mapReady, mapError, regionSyncKey]);
 
   useEffect(() => {
-    if (!mapReady || !targetCamera) {
+    if (!mapReady || !targetCamera || !viewportInsetReady) {
       return;
     }
 
+    const panKey = targetCamera.panOffsetY ?? 0;
+    const cameraKey = focusPoint
+      ? [
+          focusPoint.lat.toFixed(6),
+          focusPoint.lng.toFixed(6),
+          targetCamera.zoomLevel,
+          panKey,
+        ].join('|')
+      : [
+          targetCamera.lat.toFixed(6),
+          targetCamera.lng.toFixed(6),
+          targetCamera.zoomLevel,
+          pointsSyncKey ?? '',
+          panKey,
+        ].join('|');
+
+    if (lastCameraKeyRef.current === cameraKey) {
+      return;
+    }
+    lastCameraKeyRef.current = cameraKey;
+
     syncMapCamera(webViewRef, targetCamera);
+
+    // 포커스 이동은 한 번만 — 중복 setCenter가 흔들림 유발
+    if (focusPoint) {
+      return;
+    }
 
     const retryTimers = [150, 400].map(delay =>
       setTimeout(() => syncMapCamera(webViewRef, targetCamera), delay),
@@ -152,7 +194,7 @@ export function KakaoMapShell({
     return () => {
       retryTimers.forEach(clearTimeout);
     };
-  }, [mapReady, targetCamera, pointsSyncKey]);
+  }, [mapReady, targetCamera, pointsSyncKey, focusPoint, viewportInsetReady]);
 
   useEffect(() => {
     if (!mapReady) {

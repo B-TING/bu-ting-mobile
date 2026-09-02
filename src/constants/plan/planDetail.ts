@@ -207,7 +207,7 @@ export const PLAN_DETAIL_COPY: Record<
 > = {
   ko: {
     routeOptimize: '경로 최적화',
-    addPlace: '장소 추가',
+    addPlace: '관광지 추가',
     directions: '길찾기',
     directionsGoogleButton: '구글에서 경로 보기',
     directionsKakaoButton: '카카오맵에서 경로 보기',
