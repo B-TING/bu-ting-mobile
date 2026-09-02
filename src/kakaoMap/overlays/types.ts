@@ -8,6 +8,8 @@ export type KakaoMapNumberedMarkerOverlay = {
   opacity?: number;
   size?: number;
   zIndex?: number;
+  active?: boolean;
+  label?: string;
 };
 
 export type KakaoMapRatingMarkerOverlay = {

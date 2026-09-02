@@ -91,6 +91,8 @@ function OnboardingFeatureGuideInner({
     () => ({
       activeTab: 'home' as NavbarTab,
       goToTab: (_tab: NavbarTab) => undefined,
+      navbarHidden: false,
+      setNavbarHidden: (_hidden: boolean) => undefined,
     }),
     [],
   );

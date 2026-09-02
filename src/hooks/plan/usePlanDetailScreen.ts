@@ -7,8 +7,7 @@ import {
   type PlanScheduleTabHandle,
   type ScheduleModalState,
 } from '../../components/plan/tabs/PlanScheduleTab';
-import { routeFabBottom } from '../../components/plan/fab/RouteOptimizeFab';
-import { getNavbarOverlayHeight } from '../../components/shared/navigation/Navbar';
+import { getNavbarActionBarInset, getNavbarOverlayHeight } from '../../components/shared/navigation/Navbar';
 import { type PlanDetailTab } from '../../constants/plan/planDetail';
 import { useAppLanguage, useCopy } from '../../i18n';
 import { useAppAlert, useFeatureUnavailableAlert } from '../../components/shared/modals';
@@ -1614,13 +1613,18 @@ export function usePlanDetailScreen({
     legTransit: copy.legTransit,
   };
 
+  const scheduleImmersive = embeddedInMainTabs && tab === 'schedule';
   const mainTabBottomClearance = embeddedInMainTabs
     ? getNavbarOverlayHeight(insets.bottom)
     : 0;
   const fabBottomInset = embeddedInMainTabs
     ? mainTabBottomClearance
     : insets.bottom;
-  const fabBottom = routeFabBottom(fabBottomInset);
+  const actionBarBottomInset = scheduleImmersive
+    ? Math.max(insets.bottom, 8)
+    : embeddedInMainTabs
+      ? getNavbarActionBarInset(insets.bottom)
+      : insets.bottom;
   const toastBottom = fabBottomInset + 16;
 
   const handleBackPress = useCallback(() => {
@@ -1722,6 +1726,7 @@ export function usePlanDetailScreen({
     setTab,
     toastText,
     toastOpacity,
+    showToast,
     notifyScheduleReadOnly,
     selectedDay,
     setSelectedDay,
@@ -1762,7 +1767,7 @@ export function usePlanDetailScreen({
     day,
     transportCopy,
     mainTabBottomClearance,
-    fabBottom,
+    actionBarBottomInset,
     toastBottom,
     scheduleRef,
     planReviews,

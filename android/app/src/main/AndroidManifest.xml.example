@@ -19,6 +19,20 @@
       android:name="android.permission.READ_EXTERNAL_STORAGE"
       android:maxSdkVersion="32" />
 
+    <!-- #167: canOpenURL for Google Maps / Kakao Map directions -->
+    <queries>
+      <intent>
+        <action android:name="android.intent.action.VIEW" />
+        <data android:scheme="comgooglemaps" />
+      </intent>
+      <intent>
+        <action android:name="android.intent.action.VIEW" />
+        <data android:scheme="kakaomap" />
+      </intent>
+      <package android:name="com.google.android.apps.maps" />
+      <package android:name="net.daum.android.map" />
+    </queries>
+
     <application
       android:name=".MainApplication"
       android:label="@string/app_name"

@@ -47,14 +47,16 @@ export function kakaoOverlaysFromSchedule(
     const active = highlightItemId != null && highlightItemId === marker.itemId;
     overlays.push({
       kind: 'numbered',
-      id: marker.key,
+      id: marker.itemId,
       lat: marker.coordinate.latitude,
       lng: marker.coordinate.longitude,
       order: marker.order,
-      color: active ? '#0077B6' : dayColor.main,
+      color: active ? '#0369A1' : dayColor.main,
       opacity: marker.isSelectedDay ? 1 : 0.72,
-      size: active ? 34 : marker.isActiveDay ? 30 : 26,
+      size: active ? 40 : marker.isActiveDay ? 28 : 24,
       zIndex: active ? 12 : marker.isActiveDay ? 10 : 5,
+      active,
+      label: active ? marker.placeName : undefined,
     });
   }
 

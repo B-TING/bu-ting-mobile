@@ -21,6 +21,7 @@ export type ScheduleMapMarkerOverlay = {
   key: string;
   dayNumber: number;
   itemId: string;
+  placeName: string;
   coordinate: LatLng;
   order: number;
   isSelectedDay: boolean;
@@ -35,7 +36,7 @@ function withAlpha(hex: string, alpha: number): string {
   return `#${normalized}${value}`;
 }
 
-/** null/undefined ì¢Œí‘œ ?œê±° ??Polyline ?¬ëž˜??ë°©ì? */
+/** null/undefined ?? ?ï¿½? ??Polyline ?ï¿½????ï¿½? */
 export function filterValidCoordinates(coordinates: LatLng[]): LatLng[] {
   return coordinates.filter(
     coord =>
@@ -90,6 +91,7 @@ export function buildScheduleMapOverlays(
         key: `marker-${day.dayNumber}-${route.itemId}-order-${index + 1}`,
         dayNumber: day.dayNumber,
         itemId: route.itemId,
+        placeName: route.placeName,
         coordinate,
         order: index + 1,
         isSelectedDay,
