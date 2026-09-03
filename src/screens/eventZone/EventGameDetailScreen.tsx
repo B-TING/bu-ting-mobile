@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,15 +19,16 @@ import { ZONE_EVENT_TYPE_META } from '../../constants/eventZone/zoneEvents';
 import { useEventAuthRadiusGate } from '../../hooks/eventZone/useEventAuthRadiusGate';
 import { useAppLanguage, useCopy } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
-import { useZoneEventStore } from '../../stores';
+import {
+  useEventParticipationStore,
+  useZoneEventStore,
+} from '../../stores';
 import {
   formatZoneEventRemaining,
   useZoneEventRemaining,
 } from '../../utils/eventZone/zoneEventRemaining';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EventGameDetail'>;
-
-type ParticipationStatus = 'not_joined' | 'in_progress' | 'completed';
 
 export function EventGameDetailScreen({ navigation, route }: Props) {
   const { eventId } = route.params;
@@ -38,12 +39,14 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
   const { checking, assertWithinRadius } = useEventAuthRadiusGate();
 
   const activeEventsByZone = useZoneEventStore(s => s.activeEventsByZone);
+  const participation = useEventParticipationStore(s =>
+    s.records.find(item => item.eventId === eventId),
+  );
   const event = useMemo(
     () => Object.values(activeEventsByZone).find(item => item?.id === eventId),
     [activeEventsByZone, eventId],
   );
 
-  const [status, setStatus] = useState<ParticipationStatus>('not_joined');
   const remainingMs = useZoneEventRemaining(event);
 
   if (!event || !isPhase1EventGame(event)) {
@@ -66,12 +69,26 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
   const authTarget = resolveEventAuthTarget(event);
   const remainingText = formatZoneEventRemaining(remainingMs, language);
   const typeLabel = event.type === 'place_auth' ? copy.typePlaceAuth : copy.typeObjectSight;
-  const statusLabel =
-    status === 'completed'
-      ? copy.statusCompleted
-      : status === 'in_progress'
-        ? copy.statusInProgress
-        : copy.statusNotJoined;
+
+  const statusLabel = (() => {
+    if (!participation) {
+      return copy.statusNotJoined;
+    }
+    if (participation.status === 'pending_review') {
+      return copy.statusPendingReview;
+    }
+    if (participation.status === 'approved') {
+      return copy.statusCompleted;
+    }
+    if (participation.status === 'rejected') {
+      return copy.failTitle;
+    }
+    return copy.statusInProgress;
+  })();
+
+  const alreadySubmitted =
+    participation?.status === 'pending_review' ||
+    participation?.status === 'approved';
 
   const rulesText =
     event.type === 'place_auth' ? copy.placeAuthRules : copy.objectSightRules;
@@ -79,14 +96,13 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
   const targetTitle = event.type === 'place_auth' ? copy.targetPlace : copy.targetObject;
 
   const handleParticipate = async () => {
-    if (remainingMs <= 0 || checking) {
+    if (remainingMs <= 0 || checking || alreadySubmitted) {
       return;
     }
     const within = await assertWithinRadius(event);
     if (!within) {
       return;
     }
-    setStatus('in_progress');
     navigation.navigate('EventGameCamera', { eventId: event.id });
   };
 
@@ -177,11 +193,15 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
         style={{ paddingBottom: insets.bottom + 12 }}>
         <Pressable
           accessibilityRole="button"
-          disabled={remainingMs <= 0 || checking}
+          disabled={remainingMs <= 0 || checking || alreadySubmitted}
           onPress={handleParticipate}
           className="items-center rounded-2xl bg-brand-primary py-4 active:opacity-90 disabled:opacity-50">
           <Text className="text-base font-bold text-white">
-            {checking ? copy.checkingLocation : copy.participate}
+            {checking
+              ? copy.checkingLocation
+              : alreadySubmitted
+                ? copy.pendingReviewTitle
+                : copy.participate}
           </Text>
         </Pressable>
       </View>

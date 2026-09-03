@@ -144,7 +144,7 @@ export function eventGameObjectLabel(event: ZoneEvent, language: AppLanguage): s
   return event.targetObjectLabelKo ?? '';
 }
 
-/** 목업: 촬영 후 성공 여부 (90% 성공) */
+/** @deprecated Phase 1 본 플로우에서는 사용하지 않음 — 검수 대기만 표시 */
 export function mockEvaluateGameCapture(_event: ZoneEvent): boolean {
   return Math.random() < 0.9;
 }
@@ -159,6 +159,7 @@ export const EVENT_GAME_COPY: Record<
     statusNotJoined: string;
     statusInProgress: string;
     statusCompleted: string;
+    statusPendingReview: string;
     rulesTitle: string;
     rewardTitle: string;
     rewardHint: string;
@@ -181,6 +182,15 @@ export const EVENT_GAME_COPY: Record<
     locationUnavailableTitle: string;
     locationUnavailableMessage: string;
     checkingLocation: string;
+    submitForReview: string;
+    retakePhoto: string;
+    pendingReviewTitle: string;
+    pendingReviewMessage: string;
+    cameraPermissionTitle: string;
+    cameraPermissionMessage: string;
+    cameraPermissionAllow: string;
+    cameraPermissionDeny: string;
+    captureFailed: string;
     typePlaceAuth: string;
     typeObjectSight: string;
     remainingLabel: (remaining: string) => string;
@@ -223,6 +233,7 @@ export const EVENT_GAME_COPY: Record<
     statusNotJoined: '아직 참여하지 않았어요',
     statusInProgress: '참여 중',
     statusCompleted: '미션 완료',
+    statusPendingReview: '검수 대기 중',
     rulesTitle: '참여 방법',
     rewardTitle: '보상',
     rewardHint: '미션 성공 시 구역 배지와 포인트가 지급됩니다. (목업)',
@@ -251,6 +262,17 @@ export const EVENT_GAME_COPY: Record<
     locationUnavailableMessage:
       'GPS를 켠 뒤 다시 시도해 주세요.',
     checkingLocation: '위치 확인 중…',
+    submitForReview: '검수 요청',
+    retakePhoto: '다시 촬영',
+    pendingReviewTitle: '검수 대기 중',
+    pendingReviewMessage:
+      '사진이 제출되었어요. 관리자 승인 후 결과가 안내됩니다.',
+    cameraPermissionTitle: '카메라 권한이 필요해요',
+    cameraPermissionMessage:
+      '이벤트 인증 사진을 촬영하려면 카메라 접근을 허용해 주세요.',
+    cameraPermissionAllow: '허용',
+    cameraPermissionDeny: '나중에',
+    captureFailed: '촬영에 실패했어요. 다시 시도해 주세요.',
     typePlaceAuth: '장소 인증',
     typeObjectSight: '사물 인증',
     remainingLabel: remaining => `남은 시간 ${remaining}`,
@@ -292,6 +314,7 @@ export const EVENT_GAME_COPY: Record<
     statusNotJoined: 'Not joined yet',
     statusInProgress: 'In progress',
     statusCompleted: 'Completed',
+    statusPendingReview: 'Pending review',
     rulesTitle: 'How to play',
     rewardTitle: 'Reward',
     rewardHint: 'Earn zone badges and points on success. (Mock)',
@@ -319,6 +342,17 @@ export const EVENT_GAME_COPY: Record<
     locationUnavailableTitle: 'Could not get your location',
     locationUnavailableMessage: 'Turn on GPS and try again.',
     checkingLocation: 'Checking location…',
+    submitForReview: 'Submit for review',
+    retakePhoto: 'Retake',
+    pendingReviewTitle: 'Pending review',
+    pendingReviewMessage:
+      'Your photo was submitted. An admin will review it and share the result.',
+    cameraPermissionTitle: 'Camera permission needed',
+    cameraPermissionMessage:
+      'Allow camera access to take an event verification photo.',
+    cameraPermissionAllow: 'Allow',
+    cameraPermissionDeny: 'Not now',
+    captureFailed: 'Could not capture. Please try again.',
     typePlaceAuth: 'Place check-in',
     typeObjectSight: 'Object sight',
     remainingLabel: remaining => `${remaining} left`,
@@ -360,6 +394,7 @@ export const EVENT_GAME_COPY: Record<
     statusNotJoined: 'まだ参加していません',
     statusInProgress: '参加中',
     statusCompleted: 'ミッション完了',
+    statusPendingReview: '審査待ち',
     rulesTitle: '参加方法',
     rewardTitle: '報酬',
     rewardHint: '成功時にエリアバッジとポイントを獲得（モック）',
@@ -385,6 +420,17 @@ export const EVENT_GAME_COPY: Record<
     locationUnavailableTitle: '位置情報を取得できません',
     locationUnavailableMessage: 'GPSをオンにしてから再試行してください。',
     checkingLocation: '位置を確認中…',
+    submitForReview: '審査を依頼',
+    retakePhoto: '再撮影',
+    pendingReviewTitle: '審査待ち',
+    pendingReviewMessage:
+      '写真を提出しました。管理者の承認後に結果が案内されます。',
+    cameraPermissionTitle: 'カメラ権限が必要です',
+    cameraPermissionMessage:
+      'イベント認証の写真を撮るにはカメラへのアクセスを許可してください。',
+    cameraPermissionAllow: '許可',
+    cameraPermissionDeny: 'あとで',
+    captureFailed: '撮影に失敗しました。もう一度お試しください。',
     typePlaceAuth: '場所認証',
     typeObjectSight: '物体認証',
     remainingLabel: remaining => `残り ${remaining}`,
@@ -426,6 +472,7 @@ export const EVENT_GAME_COPY: Record<
     statusNotJoined: '尚未参与',
     statusInProgress: '进行中',
     statusCompleted: '任务完成',
+    statusPendingReview: '审核中',
     rulesTitle: '参与方式',
     rewardTitle: '奖励',
     rewardHint: '成功后获得区域徽章和积分。（模拟）',
@@ -450,6 +497,15 @@ export const EVENT_GAME_COPY: Record<
     locationUnavailableTitle: '无法获取位置',
     locationUnavailableMessage: '请开启 GPS 后重试。',
     checkingLocation: '正在确认位置…',
+    submitForReview: '提交审核',
+    retakePhoto: '重新拍摄',
+    pendingReviewTitle: '审核中',
+    pendingReviewMessage: '照片已提交。管理员审核后会告知结果。',
+    cameraPermissionTitle: '需要相机权限',
+    cameraPermissionMessage: '请允许使用相机以拍摄活动认证照片。',
+    cameraPermissionAllow: '允许',
+    cameraPermissionDeny: '稍后',
+    captureFailed: '拍摄失败，请重试。',
     typePlaceAuth: '地点认证',
     typeObjectSight: '物体认证',
     remainingLabel: remaining => `剩余 ${remaining}`,

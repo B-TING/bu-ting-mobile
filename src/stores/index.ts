@@ -28,6 +28,7 @@ export {
 export { useTravelRecordBookmarkStore } from './useTravelRecordBookmarkStore';
 export { useLockerBookmarkStore } from './useLockerBookmarkStore';
 export { useZoneEventStore } from './useZoneEventStore';
+export { useEventParticipationStore } from './useEventParticipationStore';
 export {
   selectAllZoneChatMemberCounts,
   selectZoneChatMemberCount,
