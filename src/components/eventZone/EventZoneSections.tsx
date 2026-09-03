@@ -129,6 +129,8 @@ type EventZoneChatListProps = {
   liveMemberCounts?: Partial<Record<EventZoneId, number>>;
   onRoomPress: (zoneId: EventZoneId) => void;
   onJoinPress: (roomId: string) => void;
+  historyLabel?: string;
+  onHistoryPress?: () => void;
   embedded?: boolean;
 };
 
@@ -143,6 +145,8 @@ export function EventZoneChatList({
   liveMemberCounts,
   onRoomPress,
   onJoinPress,
+  historyLabel,
+  onHistoryPress,
   embedded = false,
 }: EventZoneChatListProps) {
   return (
@@ -154,7 +158,18 @@ export function EventZoneChatList({
           : 'flex-1 overflow-hidden rounded-3xl border border-brand-border bg-white'
       }>
       <View className={`px-5 pb-3 ${embedded ? 'pt-4' : 'border-b border-brand-border pt-5'}`}>
-        <Text className="text-lg font-bold text-brand-text">{title}</Text>
+        <View className="flex-row items-center justify-between gap-3">
+          <Text className="flex-1 text-lg font-bold text-brand-text">{title}</Text>
+          {historyLabel && onHistoryPress ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={onHistoryPress}
+              className="flex-row items-center gap-1 rounded-full border border-brand-border bg-brand-background px-3 py-1.5 active:opacity-80">
+              <AppIcon name="clipboardList" size={14} color="#64748B" />
+              <Text className="text-xs font-semibold text-brand-primary">{historyLabel}</Text>
+            </Pressable>
+          ) : null}
+        </View>
       </View>
       <ScrollView
         className="flex-1"

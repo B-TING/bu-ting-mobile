@@ -40,6 +40,7 @@ export type RootStackParamList = {
   EventGameDetail: { eventId: string };
   EventGameCamera: { eventId: string };
   EventGameMukjjippa: { eventId: string };
+  EventParticipationHistory: undefined;
 };
 
 export type SetupPhase = 'language' | 'login' | 'onboarding' | 'main';

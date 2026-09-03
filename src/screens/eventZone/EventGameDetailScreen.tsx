@@ -39,6 +39,7 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
   const { checking, assertWithinRadius } = useEventAuthRadiusGate();
 
   const activeEventsByZone = useZoneEventStore(s => s.activeEventsByZone);
+  const beginParticipation = useEventParticipationStore(s => s.beginParticipation);
   const participation = useEventParticipationStore(s =>
     s.records.find(item => item.eventId === eventId),
   );
@@ -81,14 +82,40 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
       return copy.statusCompleted;
     }
     if (participation.status === 'rejected') {
-      return copy.failTitle;
+      return copy.statusRejected;
     }
     return copy.statusInProgress;
   })();
 
-  const alreadySubmitted =
+  const participationBlocked =
     participation?.status === 'pending_review' ||
-    participation?.status === 'approved';
+    participation?.status === 'approved' ||
+    participation?.status === 'rejected';
+
+  const canCapture =
+    remainingMs > 0 &&
+    !checking &&
+    !participationBlocked &&
+    (participation == null || participation.status === 'in_progress');
+
+  const participateLabel = (() => {
+    if (checking) {
+      return copy.checkingLocation;
+    }
+    if (participation?.status === 'pending_review') {
+      return copy.pendingReviewTitle;
+    }
+    if (participation?.status === 'approved') {
+      return copy.statusCompleted;
+    }
+    if (participation?.status === 'rejected') {
+      return copy.statusRejected;
+    }
+    if (participation?.status === 'in_progress') {
+      return copy.continueCapture;
+    }
+    return copy.participate;
+  })();
 
   const rulesText =
     event.type === 'place_auth' ? copy.placeAuthRules : copy.objectSightRules;
@@ -96,11 +123,14 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
   const targetTitle = event.type === 'place_auth' ? copy.targetPlace : copy.targetObject;
 
   const handleParticipate = async () => {
-    if (remainingMs <= 0 || checking || alreadySubmitted) {
+    if (!canCapture) {
       return;
     }
     const within = await assertWithinRadius(event);
     if (!within) {
+      return;
+    }
+    if (beginParticipation(event) === 'blocked') {
       return;
     }
     navigation.navigate('EventGameCamera', { eventId: event.id });
@@ -143,6 +173,11 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
             {copy.statusTitle}
           </Text>
           <Text className="mt-1 text-base font-bold text-brand-text">{statusLabel}</Text>
+          {participation?.status === 'rejected' ? (
+            <Text className="mt-2 text-xs leading-relaxed text-brand-muted">
+              {copy.rejectedHint}
+            </Text>
+          ) : null}
         </View>
 
         <View className="mt-4 rounded-2xl border border-brand-border bg-brand-surface p-4">
@@ -193,16 +228,10 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
         style={{ paddingBottom: insets.bottom + 12 }}>
         <Pressable
           accessibilityRole="button"
-          disabled={remainingMs <= 0 || checking || alreadySubmitted}
+          disabled={!canCapture}
           onPress={handleParticipate}
           className="items-center rounded-2xl bg-brand-primary py-4 active:opacity-90 disabled:opacity-50">
-          <Text className="text-base font-bold text-white">
-            {checking
-              ? copy.checkingLocation
-              : alreadySubmitted
-                ? copy.pendingReviewTitle
-                : copy.participate}
-          </Text>
+          <Text className="text-base font-bold text-white">{participateLabel}</Text>
         </Pressable>
       </View>
     </View>

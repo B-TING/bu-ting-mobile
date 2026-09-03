@@ -190,6 +190,10 @@ export function useEventZoneScreen({ navigation }: UseEventZoneScreenParams) {
     navigation.navigate('EventGameDetail', { eventId });
   };
 
+  const handleOpenParticipationHistory = () => {
+    navigation.navigate('EventParticipationHistory');
+  };
+
   const handleJoinMission = () => {
     if (selectedZoneGameEvent) {
       handleOpenGameDetail(selectedZoneGameEvent.id);
@@ -235,6 +239,7 @@ export function useEventZoneScreen({ navigation }: UseEventZoneScreenParams) {
     handleEnterChat,
     handleJoinChat,
     handleOpenGameDetail,
+    handleOpenParticipationHistory,
     handleJoinMission,
   };
 }

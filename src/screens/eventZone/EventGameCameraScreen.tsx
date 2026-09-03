@@ -26,7 +26,6 @@ import {
   useEventParticipationStore,
   useZoneEventStore,
 } from '../../stores';
-import type { EventParticipationRecord } from '../../types/eventParticipation';
 import {
   hasCameraPermission,
   requestCameraPermission,
@@ -37,10 +36,6 @@ type Props = NativeStackScreenProps<RootStackParamList, 'EventGameCamera'>;
 
 type CapturePhase = 'ready' | 'preview' | 'submitting' | 'pending';
 
-function createParticipationId(): string {
-  return `ep-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
 export function EventGameCameraScreen({ navigation, route }: Props) {
   const { eventId } = route.params;
   const insets = useSafeAreaInsets();
@@ -49,7 +44,7 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
   const { checking, assertWithinRadius } = useEventAuthRadiusGate();
 
   const activeEventsByZone = useZoneEventStore(s => s.activeEventsByZone);
-  const upsertRecord = useEventParticipationStore(s => s.upsertRecord);
+  const submitForReview = useEventParticipationStore(s => s.submitForReview);
   const event = useMemo(
     () => Object.values(activeEventsByZone).find(item => item?.id === eventId),
     [activeEventsByZone, eventId],
@@ -159,23 +154,7 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
 
     setPhase('submitting');
 
-    if (event.type !== 'place_auth' && event.type !== 'object_sight') {
-      return;
-    }
-
-    const now = new Date().toISOString();
-    const record: EventParticipationRecord = {
-      id: createParticipationId(),
-      eventId: event.id,
-      zoneId: event.zoneId,
-      eventType: event.type,
-      eventTitleKo: event.titleKo,
-      status: 'pending_review',
-      localImageUri: imageUri,
-      createdAt: now,
-      submittedAt: now,
-    };
-    upsertRecord(record);
+    submitForReview(event, imageUri);
     setPhase('pending');
   };
 

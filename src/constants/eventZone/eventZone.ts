@@ -428,6 +428,7 @@ export const EVENT_ZONE_COPY: Record<
     surpriseMissionBadge: string;
     devEventTrigger: string;
     devEventTriggerA11y: string;
+    participationHistory: string;
     eventToast: (zoneName: string, eventTitle: string) => string;
   }
 > = {
@@ -458,6 +459,7 @@ export const EVENT_ZONE_COPY: Record<
     surpriseMissionBadge: '번개 미션',
     devEventTrigger: '🎲 이벤트 발생',
     devEventTriggerA11y: '개발용 번개 이벤트 발생',
+    participationHistory: '참여 이력',
     eventToast: (zoneName, eventTitle) => `${zoneName}에 ${eventTitle} 이벤트 발생!`,
   },
   en: {
@@ -487,6 +489,7 @@ export const EVENT_ZONE_COPY: Record<
     surpriseMissionBadge: 'Flash mission',
     devEventTrigger: '🎲 Trigger event',
     devEventTriggerA11y: 'Dev random event trigger',
+    participationHistory: 'Participation history',
     eventToast: (zoneName, eventTitle) => `${eventTitle} started in ${zoneName}!`,
   },
   ja: {
@@ -516,6 +519,7 @@ export const EVENT_ZONE_COPY: Record<
     surpriseMissionBadge: 'サプライズミッション',
     devEventTrigger: '🎲 イベント発生',
     devEventTriggerA11y: '開発用ランダムイベント',
+    participationHistory: '参加履歴',
     eventToast: (zoneName, eventTitle) => `${zoneName}で${eventTitle}が始まりました!`,
   },
   zh: {
@@ -545,6 +549,7 @@ export const EVENT_ZONE_COPY: Record<
     surpriseMissionBadge: '闪电任务',
     devEventTrigger: '🎲 触发活动',
     devEventTriggerA11y: '开发用随机活动',
+    participationHistory: '参与记录',
     eventToast: (zoneName, eventTitle) => `${zoneName}开始了${eventTitle}!`,
   },
 };

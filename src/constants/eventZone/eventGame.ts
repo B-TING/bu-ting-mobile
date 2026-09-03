@@ -160,6 +160,13 @@ export const EVENT_GAME_COPY: Record<
     statusInProgress: string;
     statusCompleted: string;
     statusPendingReview: string;
+    statusRejected: string;
+    historyTitle: string;
+    historyEmpty: string;
+    historySubmittedAt: (timestamp: string) => string;
+    historyStartedAt: (timestamp: string) => string;
+    continueCapture: string;
+    rejectedHint: string;
     rulesTitle: string;
     rewardTitle: string;
     rewardHint: string;
@@ -234,6 +241,13 @@ export const EVENT_GAME_COPY: Record<
     statusInProgress: '참여 중',
     statusCompleted: '미션 완료',
     statusPendingReview: '검수 대기 중',
+    statusRejected: '반려됨',
+    historyTitle: '내 이벤트 참여 이력',
+    historyEmpty: '아직 참여한 이벤트가 없어요.',
+    historySubmittedAt: timestamp => `제출 ${timestamp}`,
+    historyStartedAt: timestamp => `시작 ${timestamp}`,
+    continueCapture: '촬영 이어하기',
+    rejectedHint: '관리자 검수 결과 반려되었어요.',
     rulesTitle: '참여 방법',
     rewardTitle: '보상',
     rewardHint: '미션 성공 시 구역 배지와 포인트가 지급됩니다. (목업)',
@@ -315,6 +329,13 @@ export const EVENT_GAME_COPY: Record<
     statusInProgress: 'In progress',
     statusCompleted: 'Completed',
     statusPendingReview: 'Pending review',
+    statusRejected: 'Rejected',
+    historyTitle: 'My event participation',
+    historyEmpty: 'No event participation yet.',
+    historySubmittedAt: timestamp => `Submitted ${timestamp}`,
+    historyStartedAt: timestamp => `Started ${timestamp}`,
+    continueCapture: 'Continue capture',
+    rejectedHint: 'Your submission was rejected after review.',
     rulesTitle: 'How to play',
     rewardTitle: 'Reward',
     rewardHint: 'Earn zone badges and points on success. (Mock)',
@@ -395,6 +416,13 @@ export const EVENT_GAME_COPY: Record<
     statusInProgress: '参加中',
     statusCompleted: 'ミッション完了',
     statusPendingReview: '審査待ち',
+    statusRejected: '却下',
+    historyTitle: 'イベント参加履歴',
+    historyEmpty: 'まだ参加したイベントがありません。',
+    historySubmittedAt: timestamp => `提出 ${timestamp}`,
+    historyStartedAt: timestamp => `開始 ${timestamp}`,
+    continueCapture: '撮影を続ける',
+    rejectedHint: '管理者の審査で却下されました。',
     rulesTitle: '参加方法',
     rewardTitle: '報酬',
     rewardHint: '成功時にエリアバッジとポイントを獲得（モック）',
@@ -473,6 +501,13 @@ export const EVENT_GAME_COPY: Record<
     statusInProgress: '进行中',
     statusCompleted: '任务完成',
     statusPendingReview: '审核中',
+    statusRejected: '已驳回',
+    historyTitle: '我的活动参与记录',
+    historyEmpty: '还没有参与过活动。',
+    historySubmittedAt: timestamp => `提交 ${timestamp}`,
+    historyStartedAt: timestamp => `开始 ${timestamp}`,
+    continueCapture: '继续拍摄',
+    rejectedHint: '管理员审核未通过。',
     rulesTitle: '参与方式',
     rewardTitle: '奖励',
     rewardHint: '成功后获得区域徽章和积分。（模拟）',
