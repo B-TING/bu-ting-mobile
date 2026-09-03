@@ -64,3 +64,16 @@ export function isWithinAuthRadius(
 ): boolean {
   return evaluateAuthRadius(user, event).status === 'inside';
 }
+
+/** 1km 이상은 km, 미만은 m. */
+export function formatAuthDistanceM(distanceM: number): string {
+  if (!Number.isFinite(distanceM) || distanceM < 0) {
+    return '—';
+  }
+  if (distanceM >= 1000) {
+    const km = distanceM / 1000;
+    const value = km >= 10 ? Math.round(km).toString() : km.toFixed(1);
+    return `${value}km`;
+  }
+  return `${Math.round(distanceM)}m`;
+}

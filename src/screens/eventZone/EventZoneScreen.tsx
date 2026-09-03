@@ -164,8 +164,13 @@ export function EventZoneScreen({ navigation }: Props) {
 
       {/* 하단 시트 — 흰 배경, 상단 라운드 */}
       <View
-        className="overflow-hidden rounded-t-[24px] bg-white"
-        style={{ flex: 1 - MAP_FLEX }}>
+        style={{
+          flex: 1 - MAP_FLEX,
+          backgroundColor: 'white',
+          borderTopLeftRadius: 24,
+          borderTopRightRadius: 24,
+          overflow: 'hidden',
+        }}>
         {selectedZone ? (
           <EventZoneZoneDetailPanel
             zone={selectedZone}

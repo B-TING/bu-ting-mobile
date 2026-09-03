@@ -3,8 +3,13 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { BackButton } from '../../components/shared/buttons/BackButton';
-import { AppIcon } from '../../components/shared/icons/AppIcon';
+import { EventActionButton } from '../../components/eventZone/EventActionButton';
+import { EventCallout } from '../../components/eventZone/EventCallout';
+import { EventGameHero } from '../../components/eventZone/EventGameHero';
+import { EventInfoCard } from '../../components/eventZone/EventInfoCard';
+import { EventMissionCard } from '../../components/eventZone/EventMissionCard';
+import { EventNavHeader } from '../../components/eventZone/EventNavHeader';
+import { EventStatRow } from '../../components/eventZone/EventStatRow';
 import {
   EVENT_ZONE_BY_ID,
   eventZoneName,
@@ -15,7 +20,6 @@ import {
   isPhase1EventGame,
   resolveEventAuthTarget,
 } from '../../constants/eventZone/eventGame';
-import { ZONE_EVENT_TYPE_META } from '../../constants/eventZone/zoneEvents';
 import { useEventAuthRadiusGate } from '../../hooks/eventZone/useEventAuthRadiusGate';
 import { useAppLanguage, useCopy } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
@@ -53,18 +57,17 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
   if (!event || !isPhase1EventGame(event)) {
     return (
       <View
-        className="flex-1 items-center justify-center bg-brand-background px-6"
+        className="flex-1 items-center justify-center bg-[#F8FAFC] px-6"
         style={{ paddingTop: insets.top }}>
-        <Text className="text-center text-brand-muted">{zoneCopy.eventEnded}</Text>
+        <Text className="text-center text-[#64748B]">{zoneCopy.eventEnded}</Text>
         <Pressable onPress={() => navigation.goBack()} className="mt-4">
-          <Text className="font-semibold text-brand-primary">{copy.done}</Text>
+          <Text className="font-semibold text-[#0077B6]">{copy.done}</Text>
         </Pressable>
       </View>
     );
   }
 
   const zone = EVENT_ZONE_BY_ID[event.zoneId];
-  const meta = ZONE_EVENT_TYPE_META[event.type];
   const landmark = zone.landmarks.find(item => item.id === event.targetLandmarkId);
   const objectLabel = eventGameObjectLabel(event, language);
   const authTarget = resolveEventAuthTarget(event);
@@ -72,18 +75,10 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
   const typeLabel = event.type === 'place_auth' ? copy.typePlaceAuth : copy.typeObjectSight;
 
   const statusLabel = (() => {
-    if (!participation) {
-      return copy.statusNotJoined;
-    }
-    if (participation.status === 'pending_review') {
-      return copy.statusPendingReview;
-    }
-    if (participation.status === 'approved') {
-      return copy.statusCompleted;
-    }
-    if (participation.status === 'rejected') {
-      return copy.statusRejected;
-    }
+    if (!participation) return copy.statusNotJoined;
+    if (participation.status === 'pending_review') return copy.statusPendingReview;
+    if (participation.status === 'approved') return copy.statusCompleted;
+    if (participation.status === 'rejected') return copy.statusRejected;
     return copy.statusInProgress;
   })();
 
@@ -99,140 +94,127 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
     (participation == null || participation.status === 'in_progress');
 
   const participateLabel = (() => {
-    if (checking) {
-      return copy.checkingLocation;
-    }
-    if (participation?.status === 'pending_review') {
-      return copy.pendingReviewTitle;
-    }
-    if (participation?.status === 'approved') {
-      return copy.statusCompleted;
-    }
-    if (participation?.status === 'rejected') {
-      return copy.statusRejected;
-    }
-    if (participation?.status === 'in_progress') {
-      return copy.continueCapture;
-    }
+    if (checking) return copy.checkingLocation;
+    if (participation?.status === 'pending_review') return copy.pendingReviewTitle;
+    if (participation?.status === 'approved') return copy.statusCompleted;
+    if (participation?.status === 'rejected') return copy.statusRejected;
+    if (participation?.status === 'in_progress') return copy.continueCapture;
     return copy.participate;
   })();
 
   const rulesText =
     event.type === 'place_auth' ? copy.placeAuthRules : copy.objectSightRules;
 
-  const targetTitle = event.type === 'place_auth' ? copy.targetPlace : copy.targetObject;
-
   const handleParticipate = async () => {
-    if (!canCapture) {
-      return;
-    }
+    if (!canCapture) return;
     const within = await assertWithinRadius(event);
-    if (!within) {
-      return;
-    }
-    if (beginParticipation(event) === 'blocked') {
-      return;
-    }
+    if (!within) return;
+    if (beginParticipation(event) === 'blocked') return;
     navigation.navigate('EventGameCamera', { eventId: event.id });
   };
 
+  const statItems = [
+    { label: copy.statusTitle, value: statusLabel },
+    ...(authTarget ? [{ label: copy.radiusTitle, value: copy.radiusLabel(authTarget.radiusM) }] : []),
+    { label: language === 'ko' ? '남은 시간' : 'Remaining', value: remainingMs > 0 ? remainingText : '-' },
+  ];
+
   return (
-    <View className="flex-1 bg-brand-background" style={{ paddingTop: insets.top }}>
-      <View className="flex-row items-center border-b border-brand-border bg-brand-surface px-4 py-3">
-        <BackButton
-          accessibilityLabel={language === 'ko' ? '뒤로' : 'Back'}
-          onPress={() => navigation.goBack()}
+    <View className="flex-1 bg-[#F8FAFC]" style={{ paddingTop: insets.top }}>
+      {/* 헤더 */}
+      <View className="border-b border-[#E2E8F0] bg-white px-2">
+        <EventNavHeader
+          title={copy.detailTitle}
+          subtitle={eventZoneName(zone, language)}
+          onBack={() => navigation.goBack()}
+          backAccessibilityLabel={language === 'ko' ? '뒤로' : 'Back'}
         />
-        <Text className="flex-1 text-lg font-bold text-brand-text">{copy.detailTitle}</Text>
       </View>
 
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 24 }}>
-        <View className="rounded-3xl border border-pink-200 bg-pink-50 p-5">
-          <View className="flex-row items-center gap-2">
-            <Text className="text-3xl">{meta.emoji}</Text>
-            <View className="rounded-full bg-pink-600 px-2.5 py-0.5">
-              <Text className="text-[10px] font-bold text-white">{typeLabel}</Text>
-            </View>
-          </View>
-          <Text className="mt-2 text-xl font-bold text-brand-text">{event.titleKo}</Text>
-          <Text className="mt-1 text-sm text-brand-muted">
-            {eventZoneName(zone, language)} · {event.descriptionKo}
-          </Text>
-          <View className="mt-3 flex-row items-center gap-1.5">
-            <AppIcon name="timer" size={14} color="#DB2777" />
-            <Text className="text-xs font-semibold text-pink-600">
-              {remainingMs > 0 ? copy.remainingLabel(remainingText) : zoneCopy.eventEnded}
-            </Text>
-          </View>
-        </View>
+        contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 24, gap: 12 }}>
 
-        <View className="mt-4 rounded-2xl border border-brand-border bg-brand-surface p-4">
-          <Text className="text-xs font-semibold uppercase tracking-wide text-brand-muted">
-            {copy.statusTitle}
-          </Text>
-          <Text className="mt-1 text-base font-bold text-brand-text">{statusLabel}</Text>
-          {participation?.status === 'rejected' ? (
-            <Text className="mt-2 text-xs leading-relaxed text-brand-muted">
-              {copy.rejectedHint}
-            </Text>
-          ) : null}
-        </View>
+        {/* 히어로 */}
+        <EventGameHero label={event.titleKo} />
 
-        <View className="mt-4 rounded-2xl border border-brand-border bg-brand-surface p-4">
-          <Text className="text-sm font-bold text-brand-text">{copy.rulesTitle}</Text>
-          <Text className="mt-2 text-sm leading-relaxed text-brand-muted">{rulesText}</Text>
-        </View>
+        {/* 미션 카드 */}
+        <EventMissionCard
+          event={event}
+          language={language}
+          endsInLabel={copy.remainingLabel}
+          endedLabel={zoneCopy.eventEnded}
+        />
 
-        <View className="mt-4 rounded-2xl border border-brand-border bg-brand-surface p-4">
-          <Text className="text-sm font-bold text-brand-text">{targetTitle}</Text>
-          {event.type === 'place_auth' && landmark ? (
-            <View className="mt-3 flex-row items-center gap-3">
-              <Text className="text-2xl">{landmark.emoji}</Text>
-              <View className="flex-1">
-                <Text className="text-base font-semibold text-brand-text">
-                  {landmarkName(landmark, language)}
-                </Text>
-                <Text className="mt-0.5 text-xs text-brand-muted">
-                  GPS {landmark.location.lat.toFixed(4)}, {landmark.location.lng.toFixed(4)}
-                </Text>
-              </View>
-            </View>
-          ) : (
-            <View className="mt-3 flex-row items-center gap-3">
-              <Text className="text-2xl">🔍</Text>
-              <Text className="flex-1 text-base font-semibold text-brand-text">{objectLabel}</Text>
-            </View>
-          )}
-        </View>
+        {/* 타입 칩 + 통계 */}
+        <EventStatRow items={statItems} />
 
+        {/* 상태 안내 callout */}
+        {participation?.status === 'rejected' ? (
+          <EventCallout
+            tone="warning"
+            title={copy.statusRejected}
+            body={copy.rejectedHint}
+          />
+        ) : participation?.status === 'pending_review' ? (
+          <EventCallout
+            tone="info"
+            title={copy.pendingReviewTitle}
+            body={copy.pendingReviewMessage}
+          />
+        ) : participation?.status === 'approved' ? (
+          <EventCallout
+            tone="event"
+            title={copy.statusCompleted}
+            body={copy.pendingReviewMessage}
+          />
+        ) : null}
+
+        {/* 규칙 */}
+        <EventInfoCard
+          label={copy.rulesTitle}
+          title={typeLabel}
+          body={rulesText}
+          tone="default"
+        />
+
+        {/* 타겟 */}
+        {event.type === 'place_auth' && landmark ? (
+          <EventInfoCard
+            label={copy.targetPlace}
+            title={`${landmark.emoji ?? '📍'} ${landmarkName(landmark, language)}`}
+            body={`GPS ${landmark.location.lat.toFixed(4)}, ${landmark.location.lng.toFixed(4)}`}
+            tone="default"
+          />
+        ) : event.type === 'object_sight' ? (
+          <EventInfoCard
+            label={copy.targetObject}
+            title={`📷 ${objectLabel}`}
+            tone="default"
+          />
+        ) : null}
+
+        {/* 반경 */}
         {authTarget ? (
-          <View className="mt-4 rounded-2xl border border-brand-border bg-brand-surface p-4">
-            <Text className="text-sm font-bold text-brand-text">{copy.radiusTitle}</Text>
-            <Text className="mt-2 text-base font-semibold text-brand-primary">
-              {copy.radiusLabel(authTarget.radiusM)}
-            </Text>
-            <Text className="mt-1 text-xs leading-relaxed text-brand-muted">
-              {copy.radiusHint}
-            </Text>
-            <Text className="mt-2 text-[11px] text-brand-muted">
-              {authTarget.latitude.toFixed(5)}, {authTarget.longitude.toFixed(5)}
-            </Text>
-          </View>
+          <EventInfoCard
+            label={copy.radiusTitle}
+            title={copy.radiusLabel(authTarget.radiusM)}
+            body={copy.radiusHint}
+            tone="success"
+          />
         ) : null}
       </ScrollView>
 
+      {/* 하단 CTA */}
       <View
-        className="border-t border-brand-border bg-brand-surface px-4 pt-3"
+        className="border-t border-[#E2E8F0] bg-white px-4 pt-3"
         style={{ paddingBottom: insets.bottom + 12 }}>
-        <Pressable
-          accessibilityRole="button"
+        <EventActionButton
+          label={participateLabel}
+          variant={canCapture ? 'event' : 'ghost'}
           disabled={!canCapture}
           onPress={handleParticipate}
-          className="items-center rounded-2xl bg-brand-primary py-4 active:opacity-90 disabled:opacity-50">
-          <Text className="text-base font-bold text-white">{participateLabel}</Text>
-        </Pressable>
+        />
       </View>
     </View>
   );
