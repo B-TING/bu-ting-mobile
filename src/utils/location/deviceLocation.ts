@@ -41,9 +41,9 @@ export function getCurrentCoordinates(): Promise<EventZoneCoordinate | null> {
         () => resolve(null),
         {
           enableHighAccuracy,
-          timeout: enableHighAccuracy ? 12_000 : 8_000,
-          // 구역 판별은 캐시된(옛) 부산 좌표로 오인되면 안 됨
-          maximumAge: 0,
+          timeout: enableHighAccuracy ? 8_000 : 5_000,
+          // 10초 이내 캐시 재사용으로 응답 속도 개선 (구역 판별 오차 허용 범위)
+          maximumAge: 10_000,
         },
       );
     });

@@ -1,20 +1,27 @@
 import { useCallback, useRef, useState } from 'react';
-import { Alert } from 'react-native';
 
 import { useLocationConsent } from '../../components/shared/modals';
-import { useCopy } from '../../i18n';
 import type { ZoneEvent } from '../../types/eventZone';
 import { checkEventAuthLocation } from '../../utils/eventZone/checkEventAuthLocation';
 
-/** 참여·촬영 전에 GPS 반경을 검사하고, 실패 시 Alert. */
+export type RadiusGateResult =
+  | { status: 'inside' }
+  | { status: 'outside'; distanceM: number | null; radiusM: number }
+  | { status: 'consent_denied' }
+  | { status: 'permission_denied' }
+  | { status: 'location_unavailable' };
+
+/** 참여·촬영 전에 GPS 반경을 검사한다. 결과는 onResult 콜백으로 전달. */
 export function useEventAuthRadiusGate() {
-  const copy = useCopy('eventGame');
   const { ensureLocationConsent } = useLocationConsent();
   const [checking, setChecking] = useState(false);
   const checkingRef = useRef(false);
 
   const assertWithinRadius = useCallback(
-    async (event: ZoneEvent): Promise<boolean> => {
+    async (
+      event: ZoneEvent,
+      onResult?: (result: RadiusGateResult) => void,
+    ): Promise<boolean> => {
       if (checkingRef.current) {
         return false;
       }
@@ -22,12 +29,10 @@ export function useEventAuthRadiusGate() {
       checkingRef.current = true;
       setChecking(true);
       try {
-        const result = await checkEventAuthLocation(
-          event,
-          ensureLocationConsent,
-        );
+        const result = await checkEventAuthLocation(event, ensureLocationConsent);
 
         if (result.status === 'inside') {
+          onResult?.({ status: 'inside' });
           return true;
         }
 
@@ -35,39 +40,28 @@ export function useEventAuthRadiusGate() {
           const distanceM = Number.isFinite(result.distanceM)
             ? Math.round(result.distanceM)
             : null;
-          Alert.alert(
-            copy.outOfRadiusTitle,
-            distanceM != null
-              ? copy.outOfRadiusMessage(distanceM, result.radiusM)
-              : copy.outOfRadiusHint,
-          );
+          onResult?.({ status: 'outside', distanceM, radiusM: result.radiusM });
           return false;
         }
 
-        if (
-          result.status === 'consent_denied' ||
-          result.status === 'permission_denied'
-        ) {
-          Alert.alert(copy.locationDeniedTitle, copy.locationDeniedMessage);
+        if (result.status === 'consent_denied') {
+          onResult?.({ status: 'consent_denied' });
           return false;
         }
 
-        if (result.status === 'location_unavailable') {
-          Alert.alert(
-            copy.locationUnavailableTitle,
-            copy.locationUnavailableMessage,
-          );
+        if (result.status === 'permission_denied') {
+          onResult?.({ status: 'permission_denied' });
           return false;
         }
 
-        Alert.alert(copy.outOfRadiusTitle, copy.outOfRadiusHint);
+        onResult?.({ status: 'location_unavailable' });
         return false;
       } finally {
         checkingRef.current = false;
         setChecking(false);
       }
     },
-    [copy, ensureLocationConsent],
+    [ensureLocationConsent],
   );
 
   return { checking, assertWithinRadius };

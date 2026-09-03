@@ -104,10 +104,8 @@ export function EventZoneChatList({
             .slice(0, 2)
             .map(l => `${l.emoji ?? '📍'} ${landmarkName(l, language)}`)
             .join('  ');
-          const summary = isEventRoom
-            ? activeEvent.titleKo
-            : eventZoneSummary(zone, language);
-          const landmarksText = isEventRoom ? undefined : landmarkPills;
+          const summary = eventZoneSummary(zone, language);
+          const landmarksText = landmarkPills;
 
           return (
             <EventZoneCard
