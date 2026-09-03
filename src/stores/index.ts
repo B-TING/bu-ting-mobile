@@ -29,6 +29,7 @@ export { useTravelRecordBookmarkStore } from './useTravelRecordBookmarkStore';
 export { useLockerBookmarkStore } from './useLockerBookmarkStore';
 export { useZoneEventStore } from './useZoneEventStore';
 export { useEventParticipationStore } from './useEventParticipationStore';
+export { getCachedCoordinates, useLocationStore } from './useLocationStore';
 export {
   selectAllZoneChatMemberCounts,
   selectZoneChatMemberCount,

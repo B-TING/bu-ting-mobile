@@ -1,4 +1,5 @@
 import type { LocationConsentResult } from '../../components/shared/modals/LocationConsentProvider';
+import { getCachedCoordinates, useLocationStore } from '../../stores/useLocationStore';
 import type { ZoneEvent } from '../../types/eventZone';
 import {
   getCurrentCoordinates,
@@ -33,9 +34,14 @@ export async function checkEventAuthLocation(
     return { status: 'permission_denied' };
   }
 
-  const coords = await getCurrentCoordinates();
+  const cached = getCachedCoordinates();
+  const coords = cached ?? (await getCurrentCoordinates());
   if (!coords) {
     return { status: 'location_unavailable' };
+  }
+
+  if (!cached) {
+    useLocationStore.getState().setCoords(coords);
   }
 
   return evaluateAuthRadius(coords, event);

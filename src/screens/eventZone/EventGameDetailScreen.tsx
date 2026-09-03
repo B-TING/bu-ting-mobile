@@ -25,6 +25,7 @@ import {
 } from '../../constants/eventZone/eventGame';
 import type { RadiusGateResult } from '../../hooks/eventZone/useEventAuthRadiusGate';
 import { useEventAuthRadiusGate } from '../../hooks/eventZone/useEventAuthRadiusGate';
+import { useLocationCache } from '../../hooks/location/useLocationCache';
 import { useAppLanguage, useCopy } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
 import {
@@ -107,6 +108,7 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
   const copy = useCopy('eventGame');
   const zoneCopy = useCopy('eventZone');
   const { checking, assertWithinRadius } = useEventAuthRadiusGate();
+  useLocationCache();
 
   const [radiusModal, setRadiusModal] = useState<RadiusModalConfig | null>(null);
 

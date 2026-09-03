@@ -20,6 +20,7 @@ import {
   isCameraEventGame,
 } from '../../constants/eventZone/eventGame';
 import { useEventAuthRadiusGate } from '../../hooks/eventZone/useEventAuthRadiusGate';
+import { useLocationCache } from '../../hooks/location/useLocationCache';
 import { useAppLanguage, useCopy } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
 import {
@@ -42,6 +43,7 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
   const language = useAppLanguage();
   const copy = useCopy('eventGame');
   const { checking, assertWithinRadius } = useEventAuthRadiusGate();
+  useLocationCache();
 
   const activeEventsByZone = useZoneEventStore(s => s.activeEventsByZone);
   const submitForReview = useEventParticipationStore(s => s.submitForReview);

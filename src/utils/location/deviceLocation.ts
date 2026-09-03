@@ -27,6 +27,22 @@ export async function requestFineLocationPermission(): Promise<LocationPermissio
   }
 }
 
+/** 이미 허용된 경우만. 폴링에서 권한 다이얼로그를 띄우지 않는다. */
+export async function checkFineLocationPermission(): Promise<LocationPermissionResult> {
+  if (Platform.OS !== 'android') {
+    return 'granted';
+  }
+
+  try {
+    const granted = await PermissionsAndroid.check(
+      PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+    );
+    return granted ? 'granted' : 'denied';
+  } catch {
+    return 'unavailable';
+  }
+}
+
 /** 앱 사용 중(foreground) 현재 좌표. 실패 시 null. */
 export function getCurrentCoordinates(): Promise<EventZoneCoordinate | null> {
   const readOnce = (enableHighAccuracy: boolean) =>

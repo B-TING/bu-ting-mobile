@@ -19,6 +19,7 @@ import {
   isPhase1EventGame,
 } from '../../constants/eventZone/eventGame';
 import { isZoneEventActive } from '../../constants/eventZone/zoneEvents';
+import { useLocationCache } from '../location/useLocationCache';
 import { useCurrentEventZone } from '../useCurrentEventZone';
 import { useAllZoneChatMemberCounts } from '../useZoneChatRoomSummary';
 import { useAppLanguage, useCopy } from '../../i18n';
@@ -35,6 +36,7 @@ type UseEventZoneScreenParams = {
 
 export function useEventZoneScreen({ navigation }: UseEventZoneScreenParams) {
   const isFocused = useIsFocused();
+  useLocationCache();
   const language = useAppLanguage();
   const copy = useCopy('eventZone');
   const gameCopy = useCopy('eventGame');
