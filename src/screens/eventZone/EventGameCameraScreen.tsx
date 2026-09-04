@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Image,
   Modal,
   Pressable,
@@ -13,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '../../components/shared/buttons/BackButton';
 import { AppIcon } from '../../components/shared/icons/AppIcon';
+import { useAppAlert } from '../../components/shared/modals';
 import { MediaPermissionDisclosure } from '../../components/review/modals/MediaPermissionDisclosure';
 import { ICON_COLOR_WHITE } from '../../constants/icons';
 import {
@@ -42,6 +42,7 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const language = useAppLanguage();
   const copy = useCopy('eventGame');
+  const { alert } = useAppAlert();
   const { checking, assertWithinRadius } = useEventAuthRadiusGate();
   useLocationCache();
 
@@ -100,7 +101,7 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
       return;
     }
     if (result.status === 'error') {
-      Alert.alert(copy.captureFailed, result.message);
+      alert({ title: copy.captureFailed, message: result.message });
       return;
     }
 
@@ -125,7 +126,10 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
       return;
     }
     if (result !== 'granted') {
-      Alert.alert(copy.cameraPermissionTitle, copy.cameraPermissionMessage);
+      alert({
+        title: copy.cameraPermissionTitle,
+        message: copy.cameraPermissionMessage,
+      });
       return;
     }
     await openSystemCamera();
