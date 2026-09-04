@@ -6,7 +6,7 @@ import { LOCATION_POLL_INTERVAL_MS } from '../../utils/location/locationCache';
 import { refreshLocationCacheIfPermitted } from '../../utils/location/refreshLocationCache';
 
 /**
- * #182 이벤트 화면 포그라운드에서만 위치를 주기 갱신한다.
+ * #182 홈·이벤트 화면이 포커스일 때만 위치를 주기 갱신한다.
  * watchPosition 추적은 하지 않는다.
  */
 export function useLocationCache() {
