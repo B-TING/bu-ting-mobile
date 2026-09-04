@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   type PlanScheduleTabHandle,
   type ScheduleModalState,
-} from '../../components/plan/tabs/PlanScheduleTab';
+} from '../../components/plan/schedule/planScheduleTypes';
 import { useAppAlert } from '../../components/shared/modals';
 import { useCopy } from '../../i18n';
 import { useBusanSearchLocationWhen } from '../usePlaceMapUserLocation';

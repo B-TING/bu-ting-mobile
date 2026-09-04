@@ -430,7 +430,7 @@ export function selectSelectableHomePlans(state: PlanState): TravelPlan[] {
 /** 플랜 가계부 — 없으면 공유 EMPTY (매 호출 새 [] 금지) */
 export function selectBudgetForPlan(planId: string) {
   return (state: PlanState): BudgetEntry[] =>
-    state.budgetByPlan[planId] ?? EMPTY_BUDGET;
+    state.budgetByPlan?.[planId] ?? EMPTY_BUDGET;
 }
 
 /** 오프라인 열람용 — 현재 API origin · 일정 내용 우선, 활성 일정, 최근 생성 순 */

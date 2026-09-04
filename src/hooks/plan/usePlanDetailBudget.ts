@@ -8,17 +8,19 @@ import {
   expenseCreateResponseToBudgetEntry,
 } from '../../services/travel/travelExpenseMapper';
 import { createTravelExpense } from '../../services/travel/travelExpenseService';
-import { EMPTY_BUDGET, usePlanStore } from '../../stores';
+import { usePlanStore } from '../../stores';
 import type {
   TravelExpenseSummaryResponse,
   TravelSettlementResponse,
 } from '../../types/travelApi';
-import type { TravelPlan } from '../../types/travelPlan';
+import type { BudgetEntry, TravelPlan } from '../../types/travelPlan';
 import {
   buildMemberSummariesFromBudgetEntries,
   buildTransfersFromMemberSummaries,
   pickCurrencyMemberSummaries,
 } from '../../utils/plan/budgetSettlementPreview';
+
+const EMPTY_BUDGET: BudgetEntry[] = [];
 
 type UsePlanDetailBudgetParams = {
   plan: TravelPlan | null;
@@ -56,7 +58,7 @@ export function usePlanDetailBudget({
 }: UsePlanDetailBudgetParams) {
   const copy = useCopy('planDetail');
   const { alert } = useAppAlert();
-  const budgetEntries = usePlanStore(s => s.budgetByPlan[planId] ?? EMPTY_BUDGET);
+  const budgetEntries = usePlanStore(s => s.budgetByPlan?.[planId] ?? EMPTY_BUDGET);
   const addBudgetEntry = usePlanStore(s => s.addBudgetEntry);
 
   const [budgetModalOpen, setBudgetModalOpen] = useState(false);
