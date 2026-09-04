@@ -1,10 +1,6 @@
-import type { LocationConsentResult } from '../../components/shared/modals/LocationConsentProvider';
-import { getCachedCoordinates, useLocationStore } from '../../stores/useLocationStore';
+import type { LocationConsentResult } from '../../components/shared/modals';
 import type { ZoneEvent } from '../../types/eventZone';
-import {
-  getCurrentCoordinates,
-  requestFineLocationPermission,
-} from '../location/deviceLocation';
+import { acquireDeviceCoordinates } from '../location/acquireDeviceCoordinates';
 import {
   evaluateAuthRadius,
   type AuthRadiusEvaluation,
@@ -17,32 +13,17 @@ export type EventAuthLocationCheck =
   | { status: 'location_unavailable' };
 
 /**
- * 동의 → 권한 → GPS → 인증 반경 판정.
+ * 동의 → 권한 → GPS(캐시 우선) → 인증 반경 판정.
  * Phase 1: 반경 안에서만 참여·촬영 허용.
  */
 export async function checkEventAuthLocation(
   event: ZoneEvent,
   ensureLocationConsent: () => Promise<LocationConsentResult>,
 ): Promise<EventAuthLocationCheck> {
-  const consent = await ensureLocationConsent();
-  if (consent !== 'accepted') {
-    return { status: 'consent_denied' };
+  const acquired = await acquireDeviceCoordinates({ ensureLocationConsent });
+  if (!acquired.ok) {
+    return { status: acquired.reason };
   }
 
-  const permission = await requestFineLocationPermission();
-  if (permission !== 'granted') {
-    return { status: 'permission_denied' };
-  }
-
-  const cached = getCachedCoordinates();
-  const coords = cached ?? (await getCurrentCoordinates());
-  if (!coords) {
-    return { status: 'location_unavailable' };
-  }
-
-  if (!cached) {
-    useLocationStore.getState().setCoords(coords);
-  }
-
-  return evaluateAuthRadius(coords, event);
+  return evaluateAuthRadius(acquired.coords, event);
 }

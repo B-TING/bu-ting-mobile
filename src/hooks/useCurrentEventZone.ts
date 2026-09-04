@@ -2,19 +2,13 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { useLocationConsent } from '../components/shared/modals';
 import { DEFAULT_USER_LOCATION_BUSAN } from '../constants/eventZone/eventZone';
-import {
-  getCachedCoordinates,
-  useLocationStore,
-} from '../stores/useLocationStore';
+import { useLocationStore } from '../stores/useLocationStore';
 import type { EventZoneCoordinate, EventZoneId } from '../types/eventZone';
 import {
   isInsideBusanBounds,
   resolveEventZoneFromCoordinate,
 } from '../utils/eventZone/zoneResolver';
-import {
-  getCurrentCoordinates,
-  requestFineLocationPermission,
-} from '../utils/location/deviceLocation';
+import { acquireDeviceCoordinates } from '../utils/location/acquireDeviceCoordinates';
 
 export type CurrentEventZoneStatus = 'loading' | 'ready' | 'fallback';
 
@@ -31,9 +25,10 @@ export type CurrentEventZoneState = {
 /**
  * 채팅 구역·홈 위젯용 현재 위치/구역.
  * - LocationStore 캐시/폴링과 연동 (#182)
+ * - 좌표 확보는 `acquireDeviceCoordinates` 단일 파이프라인
  * - 동의·권한·GPS 성공 + 부산 안 → 해당 구역
  * - 부산 밖 → zoneId null (미소속)
- * - 거절/실패 → zoneId null + usedFallback (부산에 있다고 표시하지 않음)
+ * - 거절/실패 → zoneId null + usedFallback
  */
 export function useCurrentEventZone(): CurrentEventZoneState {
   const { ensureLocationConsent } = useLocationConsent();
@@ -59,51 +54,12 @@ export function useCurrentEventZone(): CurrentEventZoneState {
     (async () => {
       setBootStatus('loading');
 
-      const consent = await ensureLocationConsent();
+      const acquired = await acquireDeviceCoordinates({ ensureLocationConsent });
       if (cancelled) {
         return;
       }
 
-      if (consent !== 'accepted') {
-        setBootStatus('fallback');
-        return;
-      }
-
-      const permission = await requestFineLocationPermission();
-      if (cancelled) {
-        return;
-      }
-
-      if (permission !== 'granted') {
-        setBootStatus('fallback');
-        return;
-      }
-
-      // 폴링이 먼저 채웠을 수 있음
-      const existing = useLocationStore.getState().coords;
-      if (existing) {
-        setBootStatus('ready');
-        return;
-      }
-
-      const cached = getCachedCoordinates();
-      const next = cached ?? (await getCurrentCoordinates());
-      if (cancelled) {
-        return;
-      }
-
-      if (!next) {
-        setBootStatus('fallback');
-        return;
-      }
-
-      if (!cached) {
-        useLocationStore.getState().setCoords(next);
-      }
-      if (cancelled) {
-        return;
-      }
-      setBootStatus('ready');
+      setBootStatus(acquired.ok ? 'ready' : 'fallback');
     })().catch(() => {
       if (cancelled) {
         return;

@@ -8,6 +8,7 @@ import { refreshLocationCacheIfPermitted } from '../../utils/location/refreshLoc
 /**
  * #182 홈·이벤트 화면이 포커스일 때만 위치를 주기 갱신한다.
  * watchPosition 추적은 하지 않는다.
+ * 대화형 확보(동의 다이얼로그)는 `acquireDeviceCoordinates`를 쓴다.
  */
 export function useLocationCache() {
   const isFocused = useIsFocused();
