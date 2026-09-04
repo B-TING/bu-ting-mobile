@@ -1,6 +1,16 @@
 import { Text, View } from 'react-native';
 
 import { cn } from '../../utils/common/cn';
+import {
+  BRAND_PRIMARY,
+  BRAND_SELECTED,
+  BRAND_TEXT,
+  EVENT_PINK_BG,
+  EVENT_PINK_BORDER,
+  EVENT_PINK_DARK,
+  FEEDBACK_AMBER,
+  FEEDBACK_AMBER_BG,
+} from './eventZoneTheme';
 
 export type EventCalloutTone = 'warning' | 'event' | 'info';
 
@@ -10,29 +20,35 @@ type EventCalloutProps = {
   tone?: EventCalloutTone;
 };
 
-// Figma Callout: Event=bg#FDF2F8/border#F9A8D4/title#BE185D, Info=bg#E8F4FC/border#0077B6/title#0077B6, Warning=bg#FFF7ED/border#B45309/title#B45309
-const TONE_CLASS: Record<EventCalloutTone, { wrap: string; title: string }> = {
+const TONE_STYLE: Record<
+  EventCalloutTone,
+  { wrap: { borderColor: string; backgroundColor: string }; title: { color: string } }
+> = {
   event: {
-    wrap: 'border border-[#F9A8D4] bg-[#FDF2F8]',
-    title: 'text-[#BE185D]',
+    wrap: { borderColor: EVENT_PINK_BORDER, backgroundColor: EVENT_PINK_BG },
+    title: { color: EVENT_PINK_DARK },
   },
   info: {
-    wrap: 'border border-[#0077B6] bg-[#E8F4FC]',
-    title: 'text-[#0077B6]',
+    wrap: { borderColor: BRAND_PRIMARY, backgroundColor: BRAND_SELECTED },
+    title: { color: BRAND_PRIMARY },
   },
   warning: {
-    wrap: 'border border-[#B45309] bg-[#FFF7ED]',
-    title: 'text-[#B45309]',
+    wrap: { borderColor: FEEDBACK_AMBER, backgroundColor: FEEDBACK_AMBER_BG },
+    title: { color: FEEDBACK_AMBER },
   },
 };
 
 export function EventCallout({ title, body, tone = 'warning' }: EventCalloutProps) {
-  const styles = TONE_CLASS[tone];
+  const styles = TONE_STYLE[tone];
 
   return (
-    <View className={cn('gap-1.5 rounded-2xl px-3.5 py-3', styles.wrap)}>
-      <Text className={cn('text-[13px] font-bold leading-5', styles.title)}>{title}</Text>
-      <Text className="text-xs leading-[18px] text-[#1E293B]">{body}</Text>
+    <View className={cn('gap-1.5 rounded-2xl border px-3.5 py-3')} style={styles.wrap}>
+      <Text className="text-[13px] font-bold leading-5" style={styles.title}>
+        {title}
+      </Text>
+      <Text className="text-xs leading-[18px]" style={{ color: BRAND_TEXT }}>
+        {body}
+      </Text>
     </View>
   );
 }

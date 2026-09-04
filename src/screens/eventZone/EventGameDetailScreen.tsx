@@ -14,6 +14,20 @@ import { EventMissionCard } from '../../components/eventZone/EventMissionCard';
 import { EventNavHeader } from '../../components/eventZone/EventNavHeader';
 import { EventStatRow } from '../../components/eventZone/EventStatRow';
 import {
+  BRAND_MUTED,
+  BRAND_PAGE_BG,
+  BRAND_PRIMARY,
+  EVENT_PINK_BG,
+  EVENT_PINK_BORDER,
+  EVENT_PINK_DARK,
+  FEEDBACK_AMBER,
+  FEEDBACK_AMBER_BG,
+  FEEDBACK_AMBER_BORDER,
+  FEEDBACK_INFO,
+  FEEDBACK_INFO_BG,
+  FEEDBACK_INFO_BORDER,
+} from '../../components/eventZone/eventZoneTheme';
+import {
   EVENT_ZONE_BY_ID,
   eventZoneName,
   landmarkName,
@@ -95,9 +109,9 @@ const TONE_STYLE: Record<
   'warning' | 'info' | 'event',
   { bg: string; border: string; title: string }
 > = {
-  warning: { bg: '#FFF7ED', border: '#FED7AA', title: '#B45309' },
-  info:    { bg: '#EFF6FF', border: '#BFDBFE', title: '#0077B6' },
-  event:   { bg: '#FDF2F8', border: '#F9A8D4', title: '#BE185D' },
+  warning: { bg: FEEDBACK_AMBER_BG, border: FEEDBACK_AMBER_BORDER, title: FEEDBACK_AMBER },
+  info: { bg: FEEDBACK_INFO_BG, border: FEEDBACK_INFO_BORDER, title: FEEDBACK_INFO },
+  event: { bg: EVENT_PINK_BG, border: EVENT_PINK_BORDER, title: EVENT_PINK_DARK },
 };
 
 // ─── Screen ────────────────────────────────────────────────────────
@@ -127,11 +141,11 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
   if (!event || !isPhase1EventGame(event)) {
     return (
       <View
-        className="flex-1 items-center justify-center bg-[#F8FAFC] px-6"
-        style={{ paddingTop: insets.top }}>
-        <Text className="text-center text-[#64748B]">{zoneCopy.eventEnded}</Text>
+        className="flex-1 items-center justify-center px-6"
+        style={{ paddingTop: insets.top, backgroundColor: BRAND_PAGE_BG }}>
+        <Text className="text-center" style={{ color: BRAND_MUTED }}>{zoneCopy.eventEnded}</Text>
         <Pressable onPress={() => navigation.goBack()} className="mt-4">
-          <Text className="font-semibold text-[#0077B6]">{copy.done}</Text>
+          <Text className="font-semibold" style={{ color: BRAND_PRIMARY }}>{copy.done}</Text>
         </Pressable>
       </View>
     );

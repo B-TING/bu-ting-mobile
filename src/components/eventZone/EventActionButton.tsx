@@ -1,6 +1,14 @@
 import { Pressable, Text } from 'react-native';
 
 import { cn } from '../../utils/common/cn';
+import {
+  BRAND_BORDER,
+  BRAND_MUTED,
+  BRAND_PRIMARY,
+  BRAND_SURFACE,
+  BRAND_TEXT,
+  EVENT_PINK,
+} from './eventZoneTheme';
 
 export type EventActionButtonVariant = 'event' | 'primary' | 'ghost' | 'disabled';
 
@@ -12,21 +20,22 @@ type EventActionButtonProps = {
   accessibilityLabel?: string;
 };
 
-// Figma Button: Primary=bg-#0077B6, Event=bg-#DB2777, Ghost=border-#E2E8F0 bg-white text-#1E293B, Disabled=bg-#E2E8F0 text-#64748B
-// min-h=48, rounded-xl(12px), text 15px bold
-const VARIANT_CLASS: Record<
+const VARIANT_STYLE: Record<
   EventActionButtonVariant,
-  { wrap: string; text: string }
+  {
+    wrap: { backgroundColor: string; borderColor?: string; borderWidth?: number };
+    text: { color: string };
+  }
 > = {
-  event: { wrap: 'bg-[#DB2777]', text: 'text-white' },
-  primary: { wrap: 'bg-[#0077B6]', text: 'text-white' },
+  event: { wrap: { backgroundColor: EVENT_PINK }, text: { color: '#FFFFFF' } },
+  primary: { wrap: { backgroundColor: BRAND_PRIMARY }, text: { color: '#FFFFFF' } },
   ghost: {
-    wrap: 'border border-[#E2E8F0] bg-white',
-    text: 'text-[#1E293B]',
+    wrap: { backgroundColor: BRAND_SURFACE, borderColor: BRAND_BORDER, borderWidth: 1 },
+    text: { color: BRAND_TEXT },
   },
   disabled: {
-    wrap: 'bg-[#E2E8F0]',
-    text: 'text-[#64748B]',
+    wrap: { backgroundColor: BRAND_BORDER },
+    text: { color: BRAND_MUTED },
   },
 };
 
@@ -38,7 +47,7 @@ export function EventActionButton({
   accessibilityLabel,
 }: EventActionButtonProps) {
   const effectiveVariant = disabled ? 'disabled' : variant;
-  const styles = VARIANT_CLASS[effectiveVariant];
+  const styles = VARIANT_STYLE[effectiveVariant];
 
   return (
     <Pressable
@@ -49,10 +58,12 @@ export function EventActionButton({
       onPress={onPress}
       className={cn(
         'min-h-[48px] items-center justify-center rounded-xl px-4 py-3 active:opacity-90',
-        styles.wrap,
         disabled && 'opacity-60',
-      )}>
-      <Text className={cn('text-[15px] font-bold leading-[21px]', styles.text)}>{label}</Text>
+      )}
+      style={styles.wrap}>
+      <Text className="text-[15px] font-bold leading-[21px]" style={styles.text}>
+        {label}
+      </Text>
     </Pressable>
   );
 }

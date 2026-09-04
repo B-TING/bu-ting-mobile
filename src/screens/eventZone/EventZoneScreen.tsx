@@ -8,13 +8,15 @@ import {
 } from '../../components/eventGame';
 import { BusanZoneMap } from '../../components/eventZone/BusanZoneMap';
 import {
-  EVENT_PINK,
   EventZoneChatList,
   EventZoneMapBadge,
   EventZoneZoneDetailPanel,
+} from '../../components/eventZone/EventZoneSections';
+import {
+  EVENT_PINK,
   PLANNING_CHIP_BG,
   PLANNING_CHIP_TEXT,
-} from '../../components/eventZone/EventZoneSections';
+} from '../../components/eventZone/eventZoneTheme';
 import { BackButton } from '../../components/shared/buttons/BackButton';
 import { AppIcon } from '../../components/shared/icons/AppIcon';
 import { ICON_COLOR_WHITE } from '../../constants/icons';
