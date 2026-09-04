@@ -9,6 +9,7 @@ import { EVENT_ZONE_BY_ID, eventZoneName } from '../../constants/eventZone/event
 import { useAppLanguage, useCopy } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
 import { useEventParticipationStore } from '../../stores';
+import { sortParticipationRecordsNewestFirst } from '../../stores/useEventParticipationStore';
 import {
   formatParticipationTimestamp,
   participationStatusLabel,
@@ -32,10 +33,7 @@ export function EventParticipationHistoryScreen({ navigation }: Props) {
   const copy = useCopy('eventGame');
   const rawRecords = useEventParticipationStore(s => s.records);
   const records = useMemo(
-    () =>
-      rawRecords
-        .slice()
-        .sort((a, b) => Date.parse(b.submittedAt ?? b.createdAt) - Date.parse(a.submittedAt ?? a.createdAt)),
+    () => sortParticipationRecordsNewestFirst(rawRecords),
     [rawRecords],
   );
 

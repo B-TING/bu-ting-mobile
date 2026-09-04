@@ -14,7 +14,9 @@ export {
 export {
   emptyWizardAnswers,
   hydrateRoutePlaceInfo,
+  EMPTY_BUDGET,
   selectActivePlan,
+  selectBudgetForPlan,
   selectHomeFeaturedPlan,
   selectSelectableHomePlans,
   selectLatestLocalPlan,
@@ -28,7 +30,12 @@ export {
 export { useTravelRecordBookmarkStore } from './useTravelRecordBookmarkStore';
 export { useLockerBookmarkStore } from './useLockerBookmarkStore';
 export { useZoneEventStore } from './useZoneEventStore';
-export { useEventParticipationStore } from './useEventParticipationStore';
+export {
+  EMPTY_PARTICIPATION_RECORDS,
+  selectParticipationRecords,
+  sortParticipationRecordsNewestFirst,
+  useEventParticipationStore,
+} from './useEventParticipationStore';
 export { getCachedCoordinates, useLocationStore } from './useLocationStore';
 export {
   selectAllZoneChatMemberCounts,
@@ -36,7 +43,7 @@ export {
   selectZoneChatRoomId,
   useZoneChatMemberStore,
 } from './useZoneChatMemberStore';
-export { usePlaceBookmarkStore } from './usePlaceBookmarkStore';
+export { usePlaceBookmarkStore, selectBookmarkedIdsForType } from './usePlaceBookmarkStore';
 export {
   isPlaceSearchNoResultsError,
   isPlaceSearchNoResultsMessage,

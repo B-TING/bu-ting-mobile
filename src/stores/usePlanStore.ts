@@ -17,6 +17,8 @@ import {
 } from '../utils/plan/selectLatestLocalPlan';
 import { isServerBackedPlan } from '../utils/plan/serverBackedPlan';
 
+export const EMPTY_BUDGET: BudgetEntry[] = [];
+
 type PlanState = {
   plans: TravelPlan[];
   activePlanId: string | null;
@@ -325,7 +327,7 @@ export const usePlanStore = create<PlanState>()(
             [planId]: entries,
           },
         })),
-      getBudgetForPlan: planId => get().budgetByPlan[planId] ?? [],
+      getBudgetForPlan: planId => get().budgetByPlan[planId] ?? EMPTY_BUDGET,
       completePlan: planId =>
         set(state => {
           // 완료 여행은 로컬(오프라인) 목록에서 제거
@@ -423,6 +425,12 @@ export function selectHomeFeaturedPlan(state: PlanState): TravelPlan | null {
 /** 홈에서 바꿀 수 있는 예정·진행·완료 서버 연동 여행 */
 export function selectSelectableHomePlans(state: PlanState): TravelPlan[] {
   return getSelectableHomePlans(state.plans);
+}
+
+/** 플랜 가계부 — 없으면 공유 EMPTY (매 호출 새 [] 금지) */
+export function selectBudgetForPlan(planId: string) {
+  return (state: PlanState): BudgetEntry[] =>
+    state.budgetByPlan[planId] ?? EMPTY_BUDGET;
 }
 
 /** 오프라인 열람용 — 현재 API origin · 일정 내용 우선, 활성 일정, 최근 생성 순 */

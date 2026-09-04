@@ -6,6 +6,8 @@ import type {
 } from '../types/eventParticipation';
 import type { EventZoneId, ZoneEvent } from '../types/eventZone';
 
+export const EMPTY_PARTICIPATION_RECORDS: EventParticipationRecord[] = [];
+
 type EventParticipationState = {
   records: EventParticipationRecord[];
   upsertRecord: (record: EventParticipationRecord) => void;
@@ -17,7 +19,9 @@ type EventParticipationState = {
   beginParticipation: (event: ZoneEvent) => 'ok' | 'blocked';
   submitForReview: (event: ZoneEvent, localImageUri: string) => void;
   getByEventId: (eventId: string) => EventParticipationRecord | undefined;
+  /** imperative only — React 셀렉터로 쓰지 말 것 (정렬 복사본) */
   listAll: () => EventParticipationRecord[];
+  /** imperative only — React 셀렉터로 쓰지 말 것 */
   listByZone: (zoneId: EventZoneId) => EventParticipationRecord[];
   clearAll: () => void;
 };
@@ -32,9 +36,13 @@ function isPhase1AuthEvent(
   return event.type === 'place_auth' || event.type === 'object_sight';
 }
 
-function sortRecordsNewestFirst(
+/** 제출/생성 시각 기준 최신순. React에서는 records 구독 + useMemo로 사용. */
+export function sortParticipationRecordsNewestFirst(
   records: EventParticipationRecord[],
 ): EventParticipationRecord[] {
+  if (records.length === 0) {
+    return EMPTY_PARTICIPATION_RECORDS;
+  }
   return [...records].sort((a, b) => {
     const aTime = Date.parse(a.submittedAt ?? a.createdAt);
     const bTime = Date.parse(b.submittedAt ?? b.createdAt);
@@ -44,7 +52,7 @@ function sortRecordsNewestFirst(
 
 export const useEventParticipationStore = create<EventParticipationState>()(
   (set, get) => ({
-    records: [],
+    records: EMPTY_PARTICIPATION_RECORDS,
     upsertRecord: record =>
       set(state => {
         const index = state.records.findIndex(
@@ -111,11 +119,15 @@ export const useEventParticipationStore = create<EventParticipationState>()(
     },
     getByEventId: eventId =>
       get().records.find(item => item.eventId === eventId),
-    listAll: () => sortRecordsNewestFirst(get().records),
+    listAll: () => sortParticipationRecordsNewestFirst(get().records),
     listByZone: zoneId =>
-      sortRecordsNewestFirst(
+      sortParticipationRecordsNewestFirst(
         get().records.filter(item => item.zoneId === zoneId),
       ),
-    clearAll: () => set({ records: [] }),
+    clearAll: () => set({ records: EMPTY_PARTICIPATION_RECORDS }),
   }),
 );
+
+export function selectParticipationRecords(state: EventParticipationState) {
+  return state.records;
+}
