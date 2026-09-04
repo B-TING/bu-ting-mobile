@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -44,6 +44,14 @@ export function EventParticipationHistoryScreen({ navigation }: Props) {
           title={copy.historyTitle}
           onBack={() => navigation.goBack()}
           backAccessibilityLabel={language === 'ko' ? '뒤로' : 'Back'}
+          rightAccessory={
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => navigation.navigate('EventAlbum')}
+              className="rounded-xl border border-[#E2E8F0] bg-white px-3 py-2 active:opacity-80">
+              <Text className="text-[12px] font-bold text-[#0077B6]">{copy.albumOpen}</Text>
+            </Pressable>
+          }
         />
       </View>
 

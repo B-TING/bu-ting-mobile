@@ -1,4 +1,5 @@
 import type { NavbarTab } from '../components/shared/navigation/Navbar';
+import type { EventZoneId } from '../types/eventZone';
 import type { PlaceContentTypeId } from '../types/placesApi';
 import type { WizardPickedPlace } from '../types/planWizard';
 
@@ -41,6 +42,7 @@ export type RootStackParamList = {
   EventGameCamera: { eventId: string };
   EventGameMukjjippa: { eventId: string };
   EventParticipationHistory: undefined;
+  EventAlbum: { zoneId?: EventZoneId; eventId?: string } | undefined;
 };
 
 export type SetupPhase = 'language' | 'login' | 'onboarding' | 'main';

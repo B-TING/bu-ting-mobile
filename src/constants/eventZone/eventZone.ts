@@ -429,6 +429,7 @@ export const EVENT_ZONE_COPY: Record<
     devEventTrigger: string;
     devEventTriggerA11y: string;
     participationHistory: string;
+    eventAlbum: string;
     eventToast: (zoneName: string, eventTitle: string) => string;
   }
 > = {
@@ -460,6 +461,7 @@ export const EVENT_ZONE_COPY: Record<
     devEventTrigger: '🎲 이벤트 발생',
     devEventTriggerA11y: '개발용 번개 이벤트 발생',
     participationHistory: '참여 이력',
+    eventAlbum: '앨범',
     eventToast: (zoneName, eventTitle) => `${zoneName}에 ${eventTitle} 이벤트 발생!`,
   },
   en: {
@@ -490,6 +492,7 @@ export const EVENT_ZONE_COPY: Record<
     devEventTrigger: '🎲 Trigger event',
     devEventTriggerA11y: 'Dev random event trigger',
     participationHistory: 'Participation history',
+    eventAlbum: 'Album',
     eventToast: (zoneName, eventTitle) => `${eventTitle} started in ${zoneName}!`,
   },
   ja: {
@@ -520,6 +523,7 @@ export const EVENT_ZONE_COPY: Record<
     devEventTrigger: '🎲 イベント発生',
     devEventTriggerA11y: '開発用ランダムイベント',
     participationHistory: '参加履歴',
+    eventAlbum: 'アルバム',
     eventToast: (zoneName, eventTitle) => `${zoneName}で${eventTitle}が始まりました!`,
   },
   zh: {
@@ -550,6 +554,7 @@ export const EVENT_ZONE_COPY: Record<
     devEventTrigger: '🎲 触发活动',
     devEventTriggerA11y: '开发用随机活动',
     participationHistory: '参与记录',
+    eventAlbum: '相册',
     eventToast: (zoneName, eventTitle) => `${zoneName}开始了${eventTitle}!`,
   },
 };

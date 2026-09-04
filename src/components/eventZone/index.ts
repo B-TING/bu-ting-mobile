@@ -7,6 +7,7 @@ export {
   EventZoneZoneDetailPanel,
 } from './EventZoneSections';
 export { ZoneChatMessageBubble } from './ZoneChatMessageBubble';
+export { EventAlbumCard } from './EventAlbumCard';
 export { EventActionButton } from './EventActionButton';
 export { EventCallout } from './EventCallout';
 export { EventChip } from './EventChip';

@@ -62,6 +62,7 @@ export function EventZoneScreen({ navigation }: Props) {
     handleJoinChat,
     handleOpenGameDetail,
     handleOpenParticipationHistory,
+    handleOpenEventAlbum,
     handleJoinMission,
   } = useEventZoneScreen({ navigation });
 
@@ -224,6 +225,8 @@ export function EventZoneScreen({ navigation }: Props) {
               onJoinPress={handleJoinChat}
               historyLabel={copy.participationHistory}
               onHistoryPress={handleOpenParticipationHistory}
+              albumLabel={copy.eventAlbum}
+              onAlbumPress={handleOpenEventAlbum}
               embedded
             />
           </View>

@@ -36,6 +36,12 @@ export {
   sortParticipationRecordsNewestFirst,
   useEventParticipationStore,
 } from './useEventParticipationStore';
+export {
+  EMPTY_ALBUM_POSTS,
+  selectVisibleAlbumPosts,
+  sortAlbumPosts,
+  useEventAlbumStore,
+} from './useEventAlbumStore';
 export { getCachedCoordinates, useLocationStore } from './useLocationStore';
 export {
   selectAllZoneChatMemberCounts,

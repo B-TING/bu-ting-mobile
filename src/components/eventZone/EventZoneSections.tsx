@@ -125,6 +125,8 @@ type EventZoneChatListProps = {
   onJoinPress: (roomId: string) => void;
   historyLabel?: string;
   onHistoryPress?: () => void;
+  albumLabel?: string;
+  onAlbumPress?: () => void;
   surpriseMissionBadge?: string;
   embedded?: boolean;
 };
@@ -142,6 +144,8 @@ export function EventZoneChatList({
   onJoinPress,
   historyLabel,
   onHistoryPress,
+  albumLabel,
+  onAlbumPress,
   surpriseMissionBadge,
   embedded = false,
 }: EventZoneChatListProps) {
@@ -173,20 +177,36 @@ export function EventZoneChatList({
             style={{ color: BRAND_TEXT }}>
             {title}
           </Text>
-          {historyLabel && onHistoryPress ? (
-            <Pressable
-              accessibilityRole="button"
-              onPress={onHistoryPress}
-              className="flex-row items-center gap-1 rounded-full border bg-white px-3 py-1.5 active:opacity-80"
-              style={{ borderColor: BRAND_BORDER }}>
-              <AppIcon name="clipboardList" size={14} color={ICON_COLOR_MUTED} />
-              <Text
-                className="text-xs font-semibold"
-                style={{ color: BRAND_PRIMARY }}>
-                {historyLabel}
-              </Text>
-            </Pressable>
-          ) : null}
+          <View className="flex-row items-center gap-2">
+            {albumLabel && onAlbumPress ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={onAlbumPress}
+                className="flex-row items-center gap-1 rounded-full border bg-white px-3 py-1.5 active:opacity-80"
+                style={{ borderColor: BRAND_BORDER }}>
+                <AppIcon name="camera" size={14} color={ICON_COLOR_MUTED} />
+                <Text
+                  className="text-xs font-semibold"
+                  style={{ color: BRAND_PRIMARY }}>
+                  {albumLabel}
+                </Text>
+              </Pressable>
+            ) : null}
+            {historyLabel && onHistoryPress ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={onHistoryPress}
+                className="flex-row items-center gap-1 rounded-full border bg-white px-3 py-1.5 active:opacity-80"
+                style={{ borderColor: BRAND_BORDER }}>
+                <AppIcon name="clipboardList" size={14} color={ICON_COLOR_MUTED} />
+                <Text
+                  className="text-xs font-semibold"
+                  style={{ color: BRAND_PRIMARY }}>
+                  {historyLabel}
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
         </View>
       </View>
       <ScrollView

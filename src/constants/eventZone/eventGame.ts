@@ -230,6 +230,26 @@ export const EVENT_GAME_COPY: Record<
     mukjjippaHandPaper: string;
     mukjjippaRevealing: string;
     mukjjippaRoundContinue: string;
+    albumTitle: string;
+    albumSubtitle: string;
+    albumEmpty: string;
+    albumSortLatest: string;
+    albumSortMostLiked: string;
+    albumLike: string;
+    albumComment: string;
+    albumCommentCount: (n: number) => string;
+    albumAddComment: string;
+    albumCommentsTitle: string;
+    albumCommentPlaceholder: string;
+    albumCommentCancel: string;
+    albumVisibilityPublic: string;
+    albumVisibilityPrivate: string;
+    albumMakePublic: string;
+    albumMakePrivate: string;
+    albumPrivateBadge: string;
+    albumGuestName: string;
+    albumLoginRequired: string;
+    albumOpen: string;
   }
 > = {
   ko: {
@@ -319,6 +339,26 @@ export const EVENT_GAME_COPY: Record<
     mukjjippaHandPaper: '빠',
     mukjjippaRevealing: '공개 중…',
     mukjjippaRoundContinue: '계속!',
+    albumTitle: '이벤트 앨범',
+    albumSubtitle: '승인된 인증 피드',
+    albumEmpty: '아직 공개된 인증이 없어요.',
+    albumSortLatest: '최신',
+    albumSortMostLiked: '좋아요',
+    albumLike: '좋아요',
+    albumComment: '댓글',
+    albumCommentCount: n => `${n}`,
+    albumAddComment: '댓글 작성',
+    albumCommentsTitle: '댓글',
+    albumCommentPlaceholder: '댓글을 입력하세요',
+    albumCommentCancel: '닫기',
+    albumVisibilityPublic: '공개',
+    albumVisibilityPrivate: '비공개',
+    albumMakePublic: '공개로 변경',
+    albumMakePrivate: '비공개로 변경',
+    albumPrivateBadge: '비공개',
+    albumGuestName: '여행자',
+    albumLoginRequired: '댓글을 쓰려면 로그인이 필요해요.',
+    albumOpen: '앨범 보기',
   },
   en: {
     nearbyEventBanner: 'An event is happening at your current location!',
@@ -406,6 +446,26 @@ export const EVENT_GAME_COPY: Record<
     mukjjippaHandPaper: 'Paper',
     mukjjippaRevealing: 'Revealing…',
     mukjjippaRoundContinue: 'Continue!',
+    albumTitle: 'Event album',
+    albumSubtitle: 'Approved check-in feed',
+    albumEmpty: 'No public check-ins yet.',
+    albumSortLatest: 'Latest',
+    albumSortMostLiked: 'Most liked',
+    albumLike: 'Like',
+    albumComment: 'Comment',
+    albumCommentCount: n => `${n}`,
+    albumAddComment: 'Add comment',
+    albumCommentsTitle: 'Comments',
+    albumCommentPlaceholder: 'Write a comment',
+    albumCommentCancel: 'Close',
+    albumVisibilityPublic: 'Public',
+    albumVisibilityPrivate: 'Private',
+    albumMakePublic: 'Make public',
+    albumMakePrivate: 'Make private',
+    albumPrivateBadge: 'Private',
+    albumGuestName: 'Traveler',
+    albumLoginRequired: 'Log in to leave a comment.',
+    albumOpen: 'View album',
   },
   ja: {
     nearbyEventBanner: '現在地でイベントが発生しました！',
@@ -491,6 +551,26 @@ export const EVENT_GAME_COPY: Record<
     mukjjippaHandPaper: 'パー',
     mukjjippaRevealing: '公開中…',
     mukjjippaRoundContinue: '続行！',
+    albumTitle: 'イベントアルバム',
+    albumSubtitle: '承認済み認証フィード',
+    albumEmpty: 'まだ公開された認証がありません。',
+    albumSortLatest: '新着',
+    albumSortMostLiked: 'いいね',
+    albumLike: 'いいね',
+    albumComment: 'コメント',
+    albumCommentCount: n => `${n}`,
+    albumAddComment: 'コメントする',
+    albumCommentsTitle: 'コメント',
+    albumCommentPlaceholder: 'コメントを入力',
+    albumCommentCancel: '閉じる',
+    albumVisibilityPublic: '公開',
+    albumVisibilityPrivate: '非公開',
+    albumMakePublic: '公開にする',
+    albumMakePrivate: '非公開にする',
+    albumPrivateBadge: '非公開',
+    albumGuestName: '旅行者',
+    albumLoginRequired: 'コメントにはログインが必要です。',
+    albumOpen: 'アルバムを見る',
   },
   zh: {
     nearbyEventBanner: '您当前位置发生了活动！',
@@ -573,5 +653,25 @@ export const EVENT_GAME_COPY: Record<
     mukjjippaHandPaper: '布',
     mukjjippaRevealing: '揭晓中…',
     mukjjippaRoundContinue: '继续！',
+    albumTitle: '活动相册',
+    albumSubtitle: '已通过认证的动态',
+    albumEmpty: '还没有公开的认证。',
+    albumSortLatest: '最新',
+    albumSortMostLiked: '最多赞',
+    albumLike: '赞',
+    albumComment: '评论',
+    albumCommentCount: n => `${n}`,
+    albumAddComment: '写评论',
+    albumCommentsTitle: '评论',
+    albumCommentPlaceholder: '输入评论',
+    albumCommentCancel: '关闭',
+    albumVisibilityPublic: '公开',
+    albumVisibilityPrivate: '私密',
+    albumMakePublic: '设为公开',
+    albumMakePrivate: '设为私密',
+    albumPrivateBadge: '私密',
+    albumGuestName: '旅行者',
+    albumLoginRequired: '评论需要登录。',
+    albumOpen: '查看相册',
   },
 };
