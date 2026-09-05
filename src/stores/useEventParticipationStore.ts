@@ -16,8 +16,15 @@ type EventParticipationState = {
     status: EventParticipationStatus,
     patch?: Partial<Pick<EventParticipationRecord, 'localImageUri' | 'submittedAt'>>,
   ) => void;
-  beginParticipation: (event: ZoneEvent) => 'ok' | 'blocked';
-  submitForReview: (event: ZoneEvent, localImageUri: string) => void;
+  beginParticipation: (
+    event: ZoneEvent,
+    targetId?: string | null,
+  ) => 'ok' | 'blocked';
+  submitForReview: (
+    event: ZoneEvent,
+    localImageUri: string,
+    targetId?: string | null,
+  ) => void;
   getByEventId: (eventId: string) => EventParticipationRecord | undefined;
   /** imperative only — React 셀렉터로 쓰지 말 것 (정렬 복사본) */
   listAll: () => EventParticipationRecord[];
@@ -32,8 +39,8 @@ function createParticipationId(): string {
 
 function isPhase1AuthEvent(
   event: ZoneEvent,
-): event is ZoneEvent & { type: 'place_auth' | 'object_sight' } {
-  return event.type === 'place_auth' || event.type === 'object_sight';
+): event is ZoneEvent & { type: 'PLACE_AUTH' | 'OBJECT_AUTH' } {
+  return event.type === 'PLACE_AUTH' || event.type === 'OBJECT_AUTH';
 }
 
 /** 제출/생성 시각 기준 최신순. React에서는 records 구독 + useMemo로 사용. */
@@ -71,7 +78,7 @@ export const useEventParticipationStore = create<EventParticipationState>()(
           item.id === id ? { ...item, ...patch, status } : item,
         ),
       })),
-    beginParticipation: event => {
+    beginParticipation: (event, targetId) => {
       if (!isPhase1AuthEvent(event)) {
         return 'blocked';
       }
@@ -91,6 +98,7 @@ export const useEventParticipationStore = create<EventParticipationState>()(
         zoneId: event.zoneId,
         eventType: event.type,
         eventTitleKo: event.titleKo,
+        targetId: targetId ?? existing?.targetId,
         status: 'in_progress',
         localImageUri: existing?.localImageUri,
         createdAt: existing?.createdAt ?? now,
@@ -98,7 +106,7 @@ export const useEventParticipationStore = create<EventParticipationState>()(
       });
       return 'ok';
     },
-    submitForReview: (event, localImageUri) => {
+    submitForReview: (event, localImageUri, targetId) => {
       if (!isPhase1AuthEvent(event)) {
         return;
       }
@@ -111,6 +119,7 @@ export const useEventParticipationStore = create<EventParticipationState>()(
         zoneId: event.zoneId,
         eventType: event.type,
         eventTitleKo: event.titleKo,
+        targetId: targetId ?? existing?.targetId,
         status: 'pending_review',
         localImageUri,
         createdAt: existing?.createdAt ?? now,

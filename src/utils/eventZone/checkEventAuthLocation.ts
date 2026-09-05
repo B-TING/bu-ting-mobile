@@ -19,11 +19,12 @@ export type EventAuthLocationCheck =
 export async function checkEventAuthLocation(
   event: ZoneEvent,
   ensureLocationConsent: () => Promise<LocationConsentResult>,
+  targetId?: string | null,
 ): Promise<EventAuthLocationCheck> {
   const acquired = await acquireDeviceCoordinates({ ensureLocationConsent });
   if (!acquired.ok) {
     return { status: acquired.reason };
   }
 
-  return evaluateAuthRadius(acquired.coords, event);
+  return evaluateAuthRadius(acquired.coords, event, targetId);
 }

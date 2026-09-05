@@ -36,19 +36,21 @@ export const ZONE_EVENT_TYPE_META: Record<
     defaultDurationMinutes: 30,
     descriptionKo: '다른 구역 유저와 실시간 대결! 알림을 켠 유저 대상.',
   },
-  place_auth: {
+  PLACE_AUTH: {
     labelKo: '장소 인증 미션',
     emoji: '📍',
     defaultDurationMinutes: 45,
-    descriptionKo: '목표 장소에서 사진을 촬영해 GPS 장소 인증을 완료하세요.',
+    descriptionKo:
+      '목표 장소 반경 안에서 촬영·제출하세요. GPS 1차 통과 후 관리자 검수로 확정됩니다.',
   },
-  object_sight: {
+  OBJECT_AUTH: {
     labelKo: '사물 인증 미션',
     emoji: '🔍',
     defaultDurationMinutes: 30,
-    descriptionKo: '목표 사물을 찾아 촬영하면 AI 사물 인증을 완료하세요.',
+    descriptionKo:
+      '목표 사물을 반경 안에서 촬영·제출하세요. GPS 1차 통과 후 관리자 검수로 확정됩니다.',
   },
-  mukjjippa: {
+  MUKJJIPPA: {
     labelKo: '묵찌빠 대결',
     emoji: '✊',
     defaultDurationMinutes: 20,

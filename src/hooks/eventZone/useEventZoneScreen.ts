@@ -196,10 +196,6 @@ export function useEventZoneScreen({ navigation }: UseEventZoneScreenParams) {
     navigation.navigate('EventParticipationHistory');
   };
 
-  const handleOpenEventAlbum = () => {
-    navigation.navigate('EventAlbum', focusZoneId ? { zoneId: focusZoneId } : undefined);
-  };
-
   const handleJoinMission = () => {
     if (selectedZoneGameEvent) {
       handleOpenGameDetail(selectedZoneGameEvent.id);
@@ -246,7 +242,6 @@ export function useEventZoneScreen({ navigation }: UseEventZoneScreenParams) {
     handleJoinChat,
     handleOpenGameDetail,
     handleOpenParticipationHistory,
-    handleOpenEventAlbum,
     handleJoinMission,
   };
 }

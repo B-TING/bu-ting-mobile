@@ -4,7 +4,7 @@ import { useEventParticipationStore } from '../src/stores/useEventParticipationS
 
 const baseEvent: ZoneEvent = {
   id: 'evt-history-1',
-  type: 'place_auth',
+  type: 'PLACE_AUTH',
   zoneId: 'HAEUNDAE_GIJANG',
   titleKo: '테스트 이벤트',
   descriptionKo: '설명',
@@ -18,11 +18,16 @@ describe('useEventParticipationStore', () => {
   });
 
   it('tracks in_progress then pending_review for one event', () => {
-    expect(useEventParticipationStore.getState().beginParticipation(baseEvent)).toBe('ok');
+    expect(
+      useEventParticipationStore.getState().beginParticipation(baseEvent, 't1'),
+    ).toBe('ok');
     const inProgress = useEventParticipationStore.getState().getByEventId(baseEvent.id);
     expect(inProgress?.status).toBe('in_progress');
+    expect(inProgress?.targetId).toBe('t1');
 
-    useEventParticipationStore.getState().submitForReview(baseEvent, 'file://photo.jpg');
+    useEventParticipationStore
+      .getState()
+      .submitForReview(baseEvent, 'file://photo.jpg', 't1');
     const pending = useEventParticipationStore.getState().getByEventId(baseEvent.id);
     expect(pending?.status).toBe('pending_review');
     expect(pending?.localImageUri).toBe('file://photo.jpg');
@@ -39,7 +44,7 @@ describe('useEventParticipationStore', () => {
       id: 'old',
       eventId: 'evt-old',
       zoneId: 'HAEUNDAE_GIJANG',
-      eventType: 'place_auth',
+      eventType: 'PLACE_AUTH',
       eventTitleKo: 'Old',
       status: 'pending_review',
       createdAt: '2026-01-01T00:00:00.000Z',
@@ -49,7 +54,7 @@ describe('useEventParticipationStore', () => {
       id: 'new',
       eventId: 'evt-new',
       zoneId: 'YEONGDO',
-      eventType: 'object_sight',
+      eventType: 'OBJECT_AUTH',
       eventTitleKo: 'New',
       status: 'in_progress',
       createdAt: '2026-02-01T00:00:00.000Z',

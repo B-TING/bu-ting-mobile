@@ -9,7 +9,7 @@ const basePost = (overrides: Partial<EventAlbumPost>): EventAlbumPost => ({
   eventId: 'e1',
   zoneId: 'SUYEONG_NAMGU',
   eventTitleKo: '테스트',
-  eventType: 'place_auth',
+  eventType: 'PLACE_AUTH',
   authorId: 'u1',
   authorNickname: '테스터',
   likeCount: 0,

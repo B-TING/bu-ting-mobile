@@ -39,9 +39,11 @@ export type RootStackParamList = {
   EventZone: undefined;
   EventZoneChat: { roomId: string };
   EventGameDetail: { eventId: string };
-  EventGameCamera: { eventId: string };
+  EventGameCamera: { eventId: string; targetId: string };
+  /** Phase 3+ — 네비 미등록 */
   EventGameMukjjippa: { eventId: string };
   EventParticipationHistory: undefined;
+  /** Phase 2 — 네비 미등록 */
   EventAlbum: { zoneId?: EventZoneId; eventId?: string } | undefined;
 };
 

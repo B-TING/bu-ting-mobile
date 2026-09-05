@@ -198,7 +198,7 @@ export const useEventAlbumStore = create<EventAlbumState>()((set, get) => ({
       eventId: 'demo-my-event',
       zoneId: 'SUYEONG_NAMGU',
       eventTitleKo: '광안대교 야경 담기',
-      eventType: 'place_auth',
+      eventType: 'PLACE_AUTH',
       authorId: author.userId,
       authorNickname: author.nickname,
       content: '내 인증 게시물 (데모)',

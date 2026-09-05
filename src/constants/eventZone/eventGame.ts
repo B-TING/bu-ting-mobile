@@ -1,54 +1,47 @@
 import type { AppLanguage } from '../../types/user';
-import type { EventGameType, EventZoneId, ZoneEvent } from '../../types/eventZone';
+import type {
+  EventGameType,
+  EventZoneId,
+  ZoneEvent,
+  ZoneEventAuthTarget,
+} from '../../types/eventZone';
 import { EVENT_ZONE_BY_ID } from './eventZone';
 import { buildMockZoneEvent } from './zoneEvents';
 
 /** Phase 1: 장소·사물 인증만 (묵찌빠는 Phase 3+) */
-export const PHASE1_EVENT_GAME_TYPES: Array<'place_auth' | 'object_sight'> = [
-  'place_auth',
-  'object_sight',
+export const PHASE1_EVENT_GAME_TYPES: Array<'PLACE_AUTH' | 'OBJECT_AUTH'> = [
+  'PLACE_AUTH',
+  'OBJECT_AUTH',
 ];
 
 /** @deprecated Phase 1에서는 PHASE1_EVENT_GAME_TYPES 사용 */
 export const EVENT_GAME_TYPES: EventGameType[] = [
-  'place_auth',
-  'object_sight',
-  'mukjjippa',
+  'PLACE_AUTH',
+  'OBJECT_AUTH',
+  'MUKJJIPPA',
 ];
 
 /** 기본 인증 반경 (m) — Notion auth_target.radius_m */
 export const DEFAULT_AUTH_RADIUS_M = 150;
 
-const MOCK_OBJECTS = [
-  {
-    labelKo: '핑크색 우체통',
-    labelEn: 'pink mailbox',
-    labelJa: 'ピンクのポスト',
-    labelZh: '粉色邮筒',
-  },
-  {
-    labelKo: '부산 시티 투어 버스',
-    labelEn: 'Busan city tour bus',
-    labelJa: '釜山シティツアーバス',
-    labelZh: '釜山城市观光巴士',
-  },
-  {
-    labelKo: '해운대 조형물',
-    labelEn: 'Haeundae sculpture',
-    labelJa: '海雲台のオブジェ',
-    labelZh: '海云台雕塑',
-  },
+const MOCK_SLOT_LETTERS = ['A', 'B', 'C', 'D'] as const;
+
+/** 백엔드 이벤트 콘텐츠(사물명) — 한국어 고정 */
+const MOCK_OBJECTS_KO = [
+  '핑크색 우체통',
+  '부산 시티 투어 버스',
+  '해운대 조형물',
 ] as const;
 
 export function isEventGameType(type: string): type is EventGameType {
   return (
-    type === 'place_auth' || type === 'object_sight' || type === 'mukjjippa'
+    type === 'PLACE_AUTH' || type === 'OBJECT_AUTH' || type === 'MUKJJIPPA'
   );
 }
 
 /** Phase 1 화면에서 다루는 인증 게임인지 */
 export function isPhase1EventGame(event: ZoneEvent): boolean {
-  return event.type === 'place_auth' || event.type === 'object_sight';
+  return event.type === 'PLACE_AUTH' || event.type === 'OBJECT_AUTH';
 }
 
 export function isEventGame(event: ZoneEvent): boolean {
@@ -56,14 +49,15 @@ export function isEventGame(event: ZoneEvent): boolean {
 }
 
 export function isCameraEventGame(event: ZoneEvent): boolean {
-  return event.type === 'place_auth' || event.type === 'object_sight';
+  return event.type === 'PLACE_AUTH' || event.type === 'OBJECT_AUTH';
 }
 
-export function resolveEventAuthTarget(event: ZoneEvent): {
-  latitude: number;
-  longitude: number;
-  radiusM: number;
-} | null {
+/** 슬롯 내 인증 타겟 목록 (authTargets 우선, 없으면 레거시 단일 필드 폴백) */
+export function listEventAuthTargets(event: ZoneEvent): ZoneEventAuthTarget[] {
+  if (event.authTargets != null && event.authTargets.length > 0) {
+    return event.authTargets;
+  }
+
   const zone = EVENT_ZONE_BY_ID[event.zoneId];
   const landmark =
     (event.targetLandmarkId
@@ -73,14 +67,40 @@ export function resolveEventAuthTarget(event: ZoneEvent): {
   const latitude = event.authLatitude ?? landmark?.location.lat;
   const longitude = event.authLongitude ?? landmark?.location.lng;
   if (latitude == null || longitude == null) {
-    return null;
+    return [];
   }
 
-  return {
-    latitude,
-    longitude,
-    radiusM: event.authRadiusM ?? DEFAULT_AUTH_RADIUS_M,
-  };
+  return [
+    {
+      targetId: landmark?.id ?? `${event.id}-legacy-target`,
+      kind: event.type === 'OBJECT_AUTH' ? 'OBJECT' : 'PLACE',
+      placeNameKo: landmark?.nameKo ?? event.titleKo,
+      landmarkId: landmark?.id,
+      latitude,
+      longitude,
+      radiusM: event.authRadiusM ?? DEFAULT_AUTH_RADIUS_M,
+      objectLabelKo: event.targetObjectLabelKo,
+      emoji: landmark?.emoji,
+    },
+  ];
+}
+
+/**
+ * 선택한 인증 타겟 좌표·반경.
+ * targetId 없으면 타겟이 1개일 때만 반환 (n개면 선택 필수).
+ */
+export function resolveEventAuthTarget(
+  event: ZoneEvent,
+  targetId?: string | null,
+): ZoneEventAuthTarget | null {
+  const targets = listEventAuthTargets(event);
+  if (targets.length === 0) {
+    return null;
+  }
+  if (targetId) {
+    return targets.find(item => item.targetId === targetId) ?? null;
+  }
+  return targets.length === 1 ? targets[0] : null;
 }
 
 export function buildMockGameEvent(
@@ -88,38 +108,43 @@ export function buildMockGameEvent(
   type: EventGameType,
 ): ZoneEvent {
   const zone = EVENT_ZONE_BY_ID[zoneId];
-  const landmark = zone.landmarks[0];
   const base = buildMockZoneEvent(zoneId, type);
-  const authFields =
-    landmark != null
-      ? {
-          authLatitude: landmark.location.lat,
-          authLongitude: landmark.location.lng,
-          authRadiusM: DEFAULT_AUTH_RADIUS_M,
-        }
-      : { authRadiusM: DEFAULT_AUTH_RADIUS_M };
 
-  if (type === 'place_auth') {
-    return {
-      ...base,
-      targetLandmarkId: landmark?.id,
-      ...authFields,
-    };
-  }
-
-  if (type === 'mukjjippa') {
+  if (type === 'MUKJJIPPA') {
     return base;
   }
 
-  const object = MOCK_OBJECTS[Math.floor(Math.random() * MOCK_OBJECTS.length)];
+  const landmarks = zone.landmarks.slice(0, Math.max(1, Math.min(3, zone.landmarks.length)));
+  const slotLetter =
+    MOCK_SLOT_LETTERS[Math.floor(Math.random() * MOCK_SLOT_LETTERS.length)];
+  const slotCode = `1-${slotLetter}`;
+
+  const authTargets: ZoneEventAuthTarget[] = landmarks.map((landmark, index) => ({
+    targetId: `${type}-${landmark.id}`,
+    kind: type === 'OBJECT_AUTH' ? 'OBJECT' : 'PLACE',
+    placeNameKo: landmark.nameKo,
+    landmarkId: landmark.id,
+    latitude: landmark.location.lat,
+    longitude: landmark.location.lng,
+    radiusM: DEFAULT_AUTH_RADIUS_M,
+    objectLabelKo:
+      type === 'OBJECT_AUTH'
+        ? MOCK_OBJECTS_KO[index % MOCK_OBJECTS_KO.length]
+        : undefined,
+    emoji: landmark.emoji,
+  }));
+
+  const first = authTargets[0];
   return {
     ...base,
-    targetLandmarkId: landmark?.id,
-    targetObjectLabelKo: object.labelKo,
-    targetObjectLabelEn: object.labelEn,
-    targetObjectLabelJa: object.labelJa,
-    targetObjectLabelZh: object.labelZh,
-    ...authFields,
+    roundNo: 1,
+    slotCode,
+    authTargets,
+    targetLandmarkId: first?.landmarkId,
+    targetObjectLabelKo: first?.objectLabelKo,
+    authLatitude: first?.latitude,
+    authLongitude: first?.longitude,
+    authRadiusM: first?.radiusM ?? DEFAULT_AUTH_RADIUS_M,
   };
 }
 
@@ -131,17 +156,14 @@ export function buildRandomMockGameEvent(zoneId: EventZoneId): ZoneEvent {
   return buildMockGameEvent(zoneId, type);
 }
 
-export function eventGameObjectLabel(event: ZoneEvent, language: AppLanguage): string {
-  if (language === 'en') {
-    return event.targetObjectLabelEn ?? event.targetObjectLabelKo ?? '';
-  }
-  if (language === 'ja') {
-    return event.targetObjectLabelJa ?? event.targetObjectLabelKo ?? '';
-  }
-  if (language === 'zh') {
-    return event.targetObjectLabelZh ?? event.targetObjectLabelKo ?? '';
-  }
-  return event.targetObjectLabelKo ?? '';
+/** 이벤트 콘텐츠(사물명 등)는 백엔드 한국어 고정 — UI 언어와 무관 */
+export function eventGameObjectLabel(
+  event: ZoneEvent,
+  _language?: AppLanguage,
+  targetId?: string | null,
+): string {
+  const target = resolveEventAuthTarget(event, targetId);
+  return target?.objectLabelKo ?? event.targetObjectLabelKo ?? '';
 }
 
 /** @deprecated Phase 1 본 플로우에서는 사용하지 않음 — 검수 대기만 표시 */
@@ -176,6 +198,9 @@ export const EVENT_GAME_COPY: Record<
     mukjjippaRules: string;
     targetPlace: string;
     targetObject: string;
+    selectTargetHint: string;
+    selectTargetRequired: string;
+    slotLabel: (code: string) => string;
     targetOpponent: string;
     targetOpponentHint: string;
     radiusTitle: string;
@@ -273,13 +298,16 @@ export const EVENT_GAME_COPY: Record<
     rewardHint: '미션 성공 시 구역 배지와 포인트가 지급됩니다. (목업)',
     participate: '이벤트 참여',
     placeAuthRules:
-      '목표 장소 근처에서 사진을 촬영하면 GPS 기반으로 장소 인증이 완료됩니다.',
+      '목표 장소 반경 안에서만 촬영·제출할 수 있어요. GPS는 1차 통과이고, 최종 성공은 관리자 이미지 검수 후 확정됩니다.',
     objectSightRules:
-      '목표 사물을 찾아 촬영하면 AI 기반으로 사물 인증이 완료됩니다.',
+      '안내된 사물을 반경 안에서 촬영·제출하세요. GPS는 1차 통과이고, 최종 성공은 관리자 이미지 검수 후 확정됩니다.',
     mukjjippaRules:
       '처음엔 공격권 없이 가위바위보를 합니다. 이긴 사람이 공격권을 가져가고, 공격권을 가진 사람과 상대가 같은 손을 내면 공격권 보유자의 승리로 게임이 끝납니다. (목업: 상대는 랜덤)',
     targetPlace: '목표 장소',
     targetObject: '목표 사물',
+    selectTargetHint: '인증할 장소를 하나 선택하세요',
+    selectTargetRequired: '장소를 선택한 뒤 참여해 주세요',
+    slotLabel: code => `슬롯 ${code}`,
     targetOpponent: '대결 상대',
     targetOpponentHint: '다른 구역 유저와 랜덤 매칭 (목업)',
     radiusTitle: '인증 반경',
@@ -381,13 +409,16 @@ export const EVENT_GAME_COPY: Record<
     rewardHint: 'Earn zone badges and points on success. (Mock)',
     participate: 'Join event',
     placeAuthRules:
-      'Take a photo near the target place to complete GPS place verification.',
+      'You can only shoot and submit inside the target radius. GPS is the first gate; final success is after admin image review.',
     objectSightRules:
-      'Find and photograph the target object. AI will verify your shot.',
+      'Photograph the listed object inside the radius. GPS is the first gate; final success is after admin image review.',
     mukjjippaRules:
       'Start with no attack right. Winner of rock-paper-scissors gets attack. If the attacker and opponent play the same hand, the attacker wins. (Mock: opponent plays randomly)',
     targetPlace: 'Target place',
     targetObject: 'Target object',
+    selectTargetHint: 'Choose one place to authenticate',
+    selectTargetRequired: 'Select a place before joining',
+    slotLabel: code => `Slot ${code}`,
     targetOpponent: 'Opponent',
     targetOpponentHint: 'Random match with another zone (mock)',
     radiusTitle: 'Auth radius',
@@ -487,12 +518,17 @@ export const EVENT_GAME_COPY: Record<
     rewardTitle: '報酬',
     rewardHint: '成功時にエリアバッジとポイントを獲得（モック）',
     participate: 'イベント参加',
-    placeAuthRules: '目標スポット付近で撮影するとGPSで場所認証が完了します。',
-    objectSightRules: '案内された物体を撮影するとAIが認識して判定します。',
+    placeAuthRules:
+      '目標地点の半径内でのみ撮影・提出できます。GPSは一次通過で、最終成功は管理者の画像審査後に確定します。',
+    objectSightRules:
+      '案内された物体を半径内で撮影・提出してください。GPSは一次通過で、最終成功は管理者の画像審査後に確定します。',
     mukjjippaRules:
       '最初は攻撃権なしでじゃんけん。勝った人が攻撃権を持ち、攻撃権のある人と相手が同じ手なら攻撃権者の勝ちです。（モック：相手はランダム）',
     targetPlace: '目標スポット',
     targetObject: '目標物体',
+    selectTargetHint: '認証する場所を1つ選んでください',
+    selectTargetRequired: '場所を選んでから参加してください',
+    slotLabel: code => `スロット ${code}`,
     targetOpponent: '対戦相手',
     targetOpponentHint: '他エリアのユーザーとランダム対戦（モック）',
     radiusTitle: '認証半径',
@@ -592,12 +628,17 @@ export const EVENT_GAME_COPY: Record<
     rewardTitle: '奖励',
     rewardHint: '成功后获得区域徽章和积分。（模拟）',
     participate: '参与活动',
-    placeAuthRules: '在目标地点附近拍照，通过GPS完成地点认证。',
-    objectSightRules: '找到并拍摄指定物体，AI将识别并判定是否成功。',
+    placeAuthRules:
+      '仅可在目标点半径内拍摄并提交。GPS为第一关，最终成功需管理员图片审核通过。',
+    objectSightRules:
+      '请在半径内拍摄指定物体并提交。GPS为第一关，最终成功需管理员图片审核通过。',
     mukjjippaRules:
       '开局无人拥有攻击权，先猜拳。胜者获得攻击权；拥有攻击权的人与对手出相同手势则攻击方获胜。（模拟：对手随机）',
     targetPlace: '目标地点',
     targetObject: '目标物体',
+    selectTargetHint: '请选择一处认证地点',
+    selectTargetRequired: '请先选择地点后再参与',
+    slotLabel: code => `时段 ${code}`,
     targetOpponent: '对战对手',
     targetOpponentHint: '与其他区域用户随机匹配（模拟）',
     radiusTitle: '认证半径',

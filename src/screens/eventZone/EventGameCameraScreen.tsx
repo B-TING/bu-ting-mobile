@@ -38,7 +38,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'EventGameCamera'>;
 type CapturePhase = 'ready' | 'preview' | 'submitting' | 'pending';
 
 export function EventGameCameraScreen({ navigation, route }: Props) {
-  const { eventId } = route.params;
+  const { eventId, targetId } = route.params;
   const insets = useSafeAreaInsets();
   const language = useAppLanguage();
   const copy = useCopy('eventGame');
@@ -69,9 +69,9 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
     return null;
   }
 
-  const objectLabel = eventGameObjectLabel(event, language);
+  const objectLabel = eventGameObjectLabel(event, language, targetId);
   const hintText =
-    event.type === 'place_auth'
+    event.type === 'PLACE_AUTH'
       ? copy.cameraHintPlace
       : copy.cameraHintObject(objectLabel);
 
@@ -140,7 +140,7 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
       return;
     }
 
-    const within = await assertWithinRadius(event);
+    const within = await assertWithinRadius(event, undefined, targetId);
     if (!within) {
       return;
     }
@@ -160,7 +160,7 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
 
     setPhase('submitting');
 
-    submitForReview(event, imageUri);
+    submitForReview(event, imageUri, targetId);
     setPhase('pending');
   };
 

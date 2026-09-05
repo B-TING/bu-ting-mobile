@@ -11,8 +11,8 @@ export const ALPHA_FEATURE_BLOCKS = {
   importPlan: false,
   /** 팀원(일행) 초대 — QR 표시 + 인앱 스캔 합류 */
   invite: false,
-  /** 구역 이벤트 (구역 채팅방은 유지) */
-  zoneEvent: false,
+  /** 구역 이벤트 (구역 채팅방은 유지) — Phase 1 API 연동 전 차단 */
+  zoneEvent: true,
   /** 일정 AI 생성 (`auto`) — API 연동 작업 중 */
   planAi: false,
   /** 일정 후보 선택. API가 플랜 1개만 반환해 막음 */

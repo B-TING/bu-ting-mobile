@@ -11,8 +11,10 @@ export type EventParticipationRecord = {
   id: string;
   eventId: string;
   zoneId: EventZoneId;
-  eventType: Extract<ZoneEventType, 'place_auth' | 'object_sight'>;
+  eventType: Extract<ZoneEventType, 'PLACE_AUTH' | 'OBJECT_AUTH'>;
   eventTitleKo: string;
+  /** 슬롯 내 선택한 인증 타겟 */
+  targetId?: string;
   status: EventParticipationStatus;
   /** 로컬 촬영 URI (업로드·fileKey 없음) */
   localImageUri?: string;

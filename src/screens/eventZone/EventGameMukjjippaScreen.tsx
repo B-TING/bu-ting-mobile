@@ -67,7 +67,7 @@ export function EventGameMukjjippaScreen({ navigation, route }: Props) {
   const revealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (!event || !isEventGame(event) || event.type !== 'mukjjippa') {
+    if (!event || !isEventGame(event) || event.type !== 'MUKJJIPPA') {
       navigation.goBack();
     }
   }, [event, navigation]);
@@ -80,7 +80,7 @@ export function EventGameMukjjippaScreen({ navigation, route }: Props) {
     };
   }, []);
 
-  if (!event || !isEventGame(event) || event.type !== 'mukjjippa') {
+  if (!event || !isEventGame(event) || event.type !== 'MUKJJIPPA') {
     return null;
   }
 

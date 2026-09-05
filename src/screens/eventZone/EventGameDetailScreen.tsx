@@ -30,12 +30,11 @@ import {
 import {
   EVENT_ZONE_BY_ID,
   eventZoneName,
-  landmarkName,
 } from '../../constants/eventZone/eventZone';
 import {
-  eventGameObjectLabel,
-  isPhase1EventGame,
+  listEventAuthTargets,
   resolveEventAuthTarget,
+  isPhase1EventGame,
 } from '../../constants/eventZone/eventGame';
 import type { RadiusGateResult } from '../../hooks/eventZone/useEventAuthRadiusGate';
 import { useEventAuthRadiusGate } from '../../hooks/eventZone/useEventAuthRadiusGate';
@@ -138,6 +137,26 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
 
   const remainingMs = useZoneEventRemaining(event);
 
+  const authTargets = useMemo(
+    () => (event ? listEventAuthTargets(event) : []),
+    [event],
+  );
+
+  const [selectedTargetId, setSelectedTargetId] = useState<string | null>(null);
+
+  const effectiveTargetId = useMemo(() => {
+    if (participation?.targetId) {
+      return participation.targetId;
+    }
+    if (selectedTargetId) {
+      return selectedTargetId;
+    }
+    if (authTargets.length === 1) {
+      return authTargets[0].targetId;
+    }
+    return null;
+  }, [authTargets, participation?.targetId, selectedTargetId]);
+
   if (!event || !isPhase1EventGame(event)) {
     return (
       <View
@@ -152,11 +171,15 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
   }
 
   const zone = EVENT_ZONE_BY_ID[event.zoneId];
-  const landmark = zone.landmarks.find(item => item.id === event.targetLandmarkId);
-  const objectLabel = eventGameObjectLabel(event, language);
-  const authTarget = resolveEventAuthTarget(event);
+  const authTarget = resolveEventAuthTarget(event, effectiveTargetId);
   const remainingText = formatZoneEventRemaining(remainingMs, language);
-  const typeLabel = event.type === 'place_auth' ? copy.typePlaceAuth : copy.typeObjectSight;
+  const typeLabel = event.type === 'PLACE_AUTH' ? copy.typePlaceAuth : copy.typeObjectSight;
+  const targetLocked =
+    participation != null &&
+    (participation.status === 'pending_review' ||
+      participation.status === 'approved' ||
+      participation.status === 'rejected' ||
+      (participation.status === 'in_progress' && participation.targetId != null));
 
   const statusLabel = (() => {
     if (!participation) return copy.statusNotJoined;
@@ -175,6 +198,7 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
     remainingMs > 0 &&
     !checking &&
     !participationBlocked &&
+    effectiveTargetId != null &&
     (participation == null || participation.status === 'in_progress');
 
   const participateLabel = (() => {
@@ -183,51 +207,54 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
     if (participation?.status === 'approved') return copy.statusCompleted;
     if (participation?.status === 'rejected') return copy.statusRejected;
     if (participation?.status === 'in_progress') return copy.continueCapture;
+    if (effectiveTargetId == null) return copy.selectTargetRequired;
     return copy.participate;
   })();
 
   const rulesText =
-    event.type === 'place_auth' ? copy.placeAuthRules : copy.objectSightRules;
+    event.type === 'PLACE_AUTH' ? copy.placeAuthRules : copy.objectSightRules;
 
   const handleParticipate = async () => {
-    if (!canCapture) return;
-    const within = await assertWithinRadius(event, result => {
-      const config = buildRadiusModalConfig(result, copy);
-      if (config) setRadiusModal(config);
-    });
+    if (!canCapture || !effectiveTargetId) return;
+    const within = await assertWithinRadius(
+      event,
+      result => {
+        const config = buildRadiusModalConfig(result, copy);
+        if (config) setRadiusModal(config);
+      },
+      effectiveTargetId,
+    );
     if (!within) return;
-    if (beginParticipation(event) === 'blocked') return;
-    navigation.navigate('EventGameCamera', { eventId: event.id });
+    if (beginParticipation(event, effectiveTargetId) === 'blocked') return;
+    navigation.navigate('EventGameCamera', {
+      eventId: event.id,
+      targetId: effectiveTargetId,
+    });
   };
 
   const statItems = [
     { label: copy.statusTitle, value: statusLabel },
-    ...(authTarget ? [{ label: copy.radiusTitle, value: copy.radiusLabel(authTarget.radiusM) }] : []),
-    { label: language === 'ko' ? '남은 시간' : 'Remaining', value: remainingMs > 0 ? remainingText : '-' },
+    ...(event.slotCode
+      ? [{ label: language === 'ko' ? '슬롯' : 'Slot', value: event.slotCode }]
+      : []),
+    ...(authTarget
+      ? [{ label: copy.radiusTitle, value: copy.radiusLabel(authTarget.radiusM) }]
+      : []),
+    {
+      label: language === 'ko' ? '남은 시간' : 'Remaining',
+      value: remainingMs > 0 ? remainingText : '-',
+    },
   ];
 
   return (
     <View className="flex-1 bg-[#F8FAFC]" style={{ paddingTop: insets.top }}>
-      {/* 헤더 */}
       <View className="border-b border-[#E2E8F0] bg-white px-2">
         <EventNavHeader
           title={copy.detailTitle}
           subtitle={eventZoneName(zone, language)}
           onBack={() => navigation.goBack()}
           backAccessibilityLabel={language === 'ko' ? '뒤로' : 'Back'}
-          rightAccessory={
-            <Pressable
-              accessibilityRole="button"
-              onPress={() =>
-                navigation.navigate('EventAlbum', {
-                  eventId: event.id,
-                  zoneId: event.zoneId,
-                })
-              }
-              className="rounded-xl border border-[#E2E8F0] bg-white px-3 py-2 active:opacity-80">
-              <Text className="text-[12px] font-bold text-[#0077B6]">{copy.albumOpen}</Text>
-            </Pressable>
-          }
+          rightAccessory={undefined}
         />
       </View>
 
@@ -253,16 +280,58 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
 
         <EventInfoCard label={copy.rulesTitle} title={typeLabel} body={rulesText} tone="default" />
 
-        {event.type === 'place_auth' && landmark ? (
+        {event.slotCode ? (
           <EventInfoCard
-            label={copy.targetPlace}
-            title={`${landmark.emoji ?? '📍'} ${landmarkName(landmark, language)}`}
-            body={`GPS ${landmark.location.lat.toFixed(4)}, ${landmark.location.lng.toFixed(4)}`}
+            label={copy.slotLabel(event.slotCode)}
+            title={event.titleKo}
+            body={copy.selectTargetHint}
             tone="default"
           />
-        ) : event.type === 'object_sight' ? (
-          <EventInfoCard label={copy.targetObject} title={`📷 ${objectLabel}`} tone="default" />
         ) : null}
+
+        <View className="rounded-2xl border border-[#E2E8F0] bg-white px-3.5 py-3">
+          <Text className="text-[12px] font-semibold uppercase tracking-wide text-[#64748B]">
+            {event.type === 'PLACE_AUTH' ? copy.targetPlace : copy.targetObject}
+          </Text>
+          <Text className="mt-1 text-[13px] leading-[18px] text-[#475569]">
+            {copy.selectTargetHint}
+          </Text>
+          <View className="mt-3 gap-2">
+            {authTargets.map(target => {
+              const selected = effectiveTargetId === target.targetId;
+              const title =
+                event.type === 'OBJECT_AUTH' && target.objectLabelKo
+                  ? `${target.emoji ?? '📷'} ${target.objectLabelKo}`
+                  : `${target.emoji ?? '📍'} ${target.placeNameKo}`;
+              const body =
+                event.type === 'OBJECT_AUTH'
+                  ? target.placeNameKo
+                  : `GPS ${target.latitude.toFixed(4)}, ${target.longitude.toFixed(4)}`;
+              return (
+                <Pressable
+                  key={target.targetId}
+                  disabled={targetLocked}
+                  onPress={() => setSelectedTargetId(target.targetId)}
+                  className="rounded-xl border px-3 py-3 active:opacity-80"
+                  style={{
+                    borderColor: selected ? EVENT_PINK_BORDER : '#E2E8F0',
+                    backgroundColor: selected ? EVENT_PINK_BG : '#FFFFFF',
+                    opacity: targetLocked && !selected ? 0.55 : 1,
+                  }}>
+                  <Text
+                    className="text-[14px] font-bold leading-5"
+                    style={{ color: selected ? EVENT_PINK_DARK : '#0F172A' }}>
+                    {title}
+                  </Text>
+                  <Text className="mt-1 text-[12px] leading-[17px] text-[#64748B]">{body}</Text>
+                  <Text className="mt-1 text-[12px] text-[#94A3B8]">
+                    {copy.radiusLabel(target.radiusM)}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
 
         {authTarget ? (
           <EventInfoCard
@@ -274,7 +343,6 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
         ) : null}
       </ScrollView>
 
-      {/* 하단 CTA */}
       <View
         className="border-t border-[#E2E8F0] bg-white px-4 pt-3"
         style={{ paddingBottom: insets.bottom + 12 }}>
@@ -286,7 +354,6 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
         />
       </View>
 
-      {/* 반경 체크 결과 모달 */}
       <Modal
         visible={radiusModal != null}
         transparent
@@ -304,7 +371,6 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
                   borderWidth: 1,
                   borderColor: TONE_STYLE[radiusModal.tone].border,
                 }}>
-                {/* 상단 아이콘 + 제목 */}
                 <View className="items-center px-6 pt-8 pb-4">
                   <View
                     style={{
@@ -326,7 +392,6 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
                     {radiusModal.body}
                   </Text>
                 </View>
-                {/* 구분선 + 확인 버튼 */}
                 <View className="border-t border-[#E2E8F0]">
                   <Pressable
                     onPress={() => setRadiusModal(null)}

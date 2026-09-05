@@ -44,14 +44,7 @@ export function EventParticipationHistoryScreen({ navigation }: Props) {
           title={copy.historyTitle}
           onBack={() => navigation.goBack()}
           backAccessibilityLabel={language === 'ko' ? '뒤로' : 'Back'}
-          rightAccessory={
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => navigation.navigate('EventAlbum')}
-              className="rounded-xl border border-[#E2E8F0] bg-white px-3 py-2 active:opacity-80">
-              <Text className="text-[12px] font-bold text-[#0077B6]">{copy.albumOpen}</Text>
-            </Pressable>
-          }
+          rightAccessory={undefined}
         />
       </View>
 
@@ -75,7 +68,7 @@ export function EventParticipationHistoryScreen({ navigation }: Props) {
             if (!zone) return null;
             const statusLabel = participationStatusLabel(record.status, copy);
             const typeLabel =
-              record.eventType === 'place_auth' ? copy.typePlaceAuth : copy.typeObjectSight;
+              record.eventType === 'PLACE_AUTH' ? copy.typePlaceAuth : copy.typeObjectSight;
             const timestamp = formatParticipationTimestamp(
               record.submittedAt ?? record.createdAt,
               language,

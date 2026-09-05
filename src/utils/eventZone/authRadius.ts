@@ -28,8 +28,9 @@ export function distanceMetersBetween(
 export function evaluateAuthRadius(
   user: EventZoneCoordinate | null | undefined,
   event: ZoneEvent,
+  targetId?: string | null,
 ): AuthRadiusEvaluation {
-  const target = resolveEventAuthTarget(event);
+  const target = resolveEventAuthTarget(event, targetId);
   if (!target) {
     return { status: 'no_target' };
   }
@@ -61,8 +62,9 @@ export function evaluateAuthRadius(
 export function isWithinAuthRadius(
   user: EventZoneCoordinate,
   event: ZoneEvent,
+  targetId?: string | null,
 ): boolean {
-  return evaluateAuthRadius(user, event).status === 'inside';
+  return evaluateAuthRadius(user, event, targetId).status === 'inside';
 }
 
 /** 1km 이상은 km, 미만은 m. */

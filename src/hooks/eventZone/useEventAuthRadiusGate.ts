@@ -21,6 +21,7 @@ export function useEventAuthRadiusGate() {
     async (
       event: ZoneEvent,
       onResult?: (result: RadiusGateResult) => void,
+      targetId?: string | null,
     ): Promise<boolean> => {
       if (checkingRef.current) {
         return false;
@@ -29,7 +30,11 @@ export function useEventAuthRadiusGate() {
       checkingRef.current = true;
       setChecking(true);
       try {
-        const result = await checkEventAuthLocation(event, ensureLocationConsent);
+        const result = await checkEventAuthLocation(
+          event,
+          ensureLocationConsent,
+          targetId,
+        );
 
         if (result.status === 'inside') {
           onResult?.({ status: 'inside' });

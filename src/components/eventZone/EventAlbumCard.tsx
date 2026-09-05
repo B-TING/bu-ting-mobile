@@ -49,7 +49,7 @@ export function EventAlbumCard({
   const zone = EVENT_ZONE_BY_ID[post.zoneId];
   const zoneLabel = zone ? eventZoneName(zone, language) : post.zoneId;
   const typeLabel =
-    post.eventType === 'place_auth' ? copy.typePlaceAuth : copy.typeObjectSight;
+    post.eventType === 'PLACE_AUTH' ? copy.typePlaceAuth : copy.typeObjectSight;
   const isPrivate = post.visibility === 'private';
 
   return (

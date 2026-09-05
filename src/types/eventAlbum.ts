@@ -4,7 +4,7 @@ export type EventAlbumVisibility = 'public' | 'private';
 
 export type EventAlbumSort = 'latest' | 'most_liked';
 
-export type EventAlbumAuthType = Extract<ZoneEventType, 'place_auth' | 'object_sight'>;
+export type EventAlbumAuthType = Extract<ZoneEventType, 'PLACE_AUTH' | 'OBJECT_AUTH'>;
 
 export type EventAlbumComment = {
   id: string;
