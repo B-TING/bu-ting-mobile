@@ -116,6 +116,7 @@ export const TEST_ID = {
   },
   eventZone: {
     screen: 'eventZone.screen',
+    chatScreen: 'eventZone.chatScreen',
   },
   helpdesk: {
     screen: 'helpdesk.screen',
