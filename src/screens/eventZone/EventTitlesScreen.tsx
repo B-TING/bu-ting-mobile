@@ -13,6 +13,7 @@ import {
   BRAND_TEXT,
 } from '../../components/eventZone/eventZoneTheme';
 import { EVENT_ZONE_BY_ID, eventZoneName } from '../../constants/eventZone/eventZone';
+import { TEST_ID } from '../../constants/e2e/testIds';
 import { useEventTitlesScreen } from '../../hooks/eventZone/useEventTitlesScreen';
 import { useAppLanguage } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
@@ -52,7 +53,10 @@ export function EventTitlesScreen({ navigation }: Props) {
     : highlightZoneId ?? '';
 
   return (
-    <View className="flex-1 bg-[#F8FAFC]" style={{ paddingTop: insets.top }}>
+    <View
+      testID={TEST_ID.eventZone.titlesScreen}
+      className="flex-1 bg-[#F8FAFC]"
+      style={{ paddingTop: insets.top }}>
       <View className="border-b border-[#E2E8F0] bg-white px-2">
         <EventNavHeader
           title={copy.screenTitle}

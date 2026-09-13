@@ -1,0 +1,61 @@
+appId: com.butingmobile
+name: Event zone hub — album, titles, history
+tags:
+  - main
+---
+- runFlow: ../../shared/enter-main.yaml
+- tapOn:
+    id: home.eventZoneMap
+    point: 15%, 50%
+- runFlow: ../../shared/dismiss-optional.yaml
+- extendedWaitUntil:
+    visible:
+      id: eventZone.screen
+    timeout: 20000
+- scrollUntilVisible:
+    element:
+      id: eventZone.album
+    direction: DOWN
+    timeout: 8000
+- tapOn:
+    id: eventZone.album
+- extendedWaitUntil:
+    visible:
+      id: eventZone.albumScreen
+    timeout: 15000
+- tapOn:
+    id: nav.back
+- extendedWaitUntil:
+    visible:
+      id: eventZone.screen
+    timeout: 10000
+- tapOn:
+    id: eventZone.titles
+- extendedWaitUntil:
+    visible:
+      id: eventZone.titlesScreen
+    timeout: 15000
+- tapOn:
+    id: nav.back
+- extendedWaitUntil:
+    visible:
+      id: eventZone.screen
+    timeout: 10000
+- tapOn:
+    id: eventZone.history
+- extendedWaitUntil:
+    visible:
+      id: eventZone.historyScreen
+    timeout: 15000
+- tapOn:
+    id: nav.back
+- extendedWaitUntil:
+    visible:
+      id: eventZone.screen
+    timeout: 10000
+- tapOn:
+    id: nav.back
+- extendedWaitUntil:
+    visible:
+      id: home.screen
+    timeout: 10000

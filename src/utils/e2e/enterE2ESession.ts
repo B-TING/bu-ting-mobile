@@ -1,12 +1,20 @@
 import { LogBox } from 'react-native';
 
-import { TEST_ID } from '../../constants/e2e/testIds';
 import { useAppStore } from '../../stores/useAppStore';
 import { useAuthStore } from '../../stores/useAuthStore';
+import type { WizardPickedPlace } from '../../types/planWizard';
 import type { OnboardingProfile } from '../../types/user';
+import { E2E_ACCESS_TOKEN, E2E_USER_ID } from './e2eSession';
 
-export const E2E_USER_ID = 'e2e-qa-user';
-export const E2E_ACCESS_TOKEN = 'e2e-local-token';
+export { E2E_ACCESS_TOKEN, E2E_USER_ID, isE2EAccessToken } from './e2eSession';
+
+/** 장소 API 없이 AI 위저드 실패 경로를 돌리기 위한 고정 관광지 */
+export const E2E_WIZARD_PLACE: WizardPickedPlace = {
+  placeId: '126081',
+  placeName: '해동용궁사',
+  location: { lat: 35.1882, lng: 129.2232 },
+  address: '부산 기장군 기장읍 용궁길 86',
+};
 
 const E2E_PROFILE: OnboardingProfile = {
   travelStyle: 'planned',

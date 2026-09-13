@@ -8,6 +8,7 @@ import { ApiClientError } from '../../services/api/apiClient';
 import { fetchMyPointLedger, fetchMyRewards } from '../../services/user/userRewardsService';
 import { selectReusableAccessToken, useAuthStore } from '../../stores/useAuthStore';
 import type { PointLedgerItem, UserRewardsSummary } from '../../types/userRewardsApi';
+import { isE2EAccessToken } from '../../utils/e2e/e2eSession';
 
 const PAGE_SIZE = 20;
 
@@ -30,7 +31,7 @@ export function useEventRewardsScreen(navigation: Navigation) {
 
   const loadLedger = useCallback(
     async (reset: boolean) => {
-      if (!accessToken) {
+      if (!accessToken || isE2EAccessToken(accessToken)) {
         setLedger([]);
         setHasNext(false);
         cursorRef.current = null;
@@ -48,7 +49,7 @@ export function useEventRewardsScreen(navigation: Navigation) {
   );
 
   const load = useCallback(async () => {
-    if (!accessToken) {
+    if (!accessToken || isE2EAccessToken(accessToken)) {
       setSummary(EMPTY_SUMMARY);
       setLedger([]);
       setHasNext(false);

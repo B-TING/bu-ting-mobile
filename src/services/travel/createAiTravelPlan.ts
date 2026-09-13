@@ -1,6 +1,7 @@
 import type { PlanWizardAnswers } from '../../types/planWizard';
 import type { PlanMember, TravelPlan } from '../../types/travelPlan';
 import type { OnboardingProfile } from '../../types/user';
+import { isE2EAccessToken } from '../../utils/e2e/e2eSession';
 import { applyWizardPlaceTypes } from './planPlaceSync';
 import {
   toAiTravelPlanGenerateRequest,
@@ -55,6 +56,9 @@ export async function createAiTravelPlan(
   }
   if (answers.selectedAttractions.length < 1) {
     throw new AiTravelPlanError('가고 싶은 관광지를 1곳 이상 선택해 주세요.');
+  }
+  if (isE2EAccessToken(accessToken)) {
+    throw new AiTravelPlanError('AI 일정 생성에 실패했습니다.');
   }
 
   const constraints = wizardAnswersToConstraints(answers);

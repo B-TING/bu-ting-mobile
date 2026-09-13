@@ -24,6 +24,7 @@ import {
   E2E_ACCESS_TOKEN,
   E2E_USER_ID,
   enterE2ESession,
+  isE2EAccessToken,
 } from '../src/utils/e2e/enterE2ESession';
 
 function collectStaticIds(value: unknown, acc: string[] = []): string[] {
@@ -54,6 +55,11 @@ describe('E2E test IDs', () => {
       'planWizard.option.companionType.solo',
     );
     expect(TEST_ID.planWizard.generationManual).toBe('planWizard.generation.manual');
+    expect(TEST_ID.planWizard.e2eSeedPlace).toBe('planWizard.e2eSeedPlace');
+    expect(TEST_ID.mypage.titles).toBe('mypage.titles');
+    expect(TEST_ID.eventZone.albumScreen).toBe('eventZone.albumScreen');
+    expect(TEST_ID.onboarding.featureGuide).toBe('onboarding.featureGuide');
+    expect(TEST_ID.onboarding.featureSkip).toBe('onboarding.featureSkip');
   });
 });
 
@@ -71,5 +77,13 @@ describe('enterE2ESession', () => {
     expect(useAuthStore.getState().accessToken).toBe(E2E_ACCESS_TOKEN);
     expect(useAuthStore.getState().user?.nickname).toBe('E2E');
     expect(selectIsAuthenticated(useAuthStore.getState())).toBe(true);
+  });
+});
+
+describe('isE2EAccessToken', () => {
+  it('matches only the local E2E token in __DEV__', () => {
+    expect(isE2EAccessToken(E2E_ACCESS_TOKEN)).toBe(true);
+    expect(isE2EAccessToken('real-token')).toBe(false);
+    expect(isE2EAccessToken(null)).toBe(false);
   });
 });

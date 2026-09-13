@@ -16,6 +16,7 @@ import { useAuthStore } from '../../stores';
 import { selectReusableAccessToken } from '../../stores/useAuthStore';
 import type { TravelRecord, TravelRecordComment } from '../../types/travelReview';
 import type { AppLanguage } from '../../types/user';
+import { isE2EAccessToken } from '../../utils/e2e/e2eSession';
 import { isTravelRecordPublic } from '../../utils/review/travelReview';
 
 type UseTravelogueFeedScreenParams = {
@@ -46,6 +47,10 @@ export function useTravelogueFeedScreen({
     : insets.bottom + 16;
 
   const loadFeed = useCallback(async () => {
+    if (isE2EAccessToken(accessToken)) {
+      setTravelRecords([]);
+      return;
+    }
     const page = await fetchTravelRecordFeed(
       { size: 20, sort: 'LATEST' },
       accessToken,

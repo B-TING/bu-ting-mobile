@@ -2,6 +2,7 @@ import { Modal, Pressable, Text, View } from 'react-native';
 
 import { appModalStyles } from './appModalStyles';
 import { AppModalActions, type AppModalAction } from './AppModalActions';
+import { TEST_ID } from '../../../constants/e2e/testIds';
 
 export type AppAlertButton = AppModalAction;
 
@@ -29,7 +30,7 @@ export function AppAlertModal({
             onClose();
           },
         }))
-      : [{ label: 'OK', onPress: onClose, variant: 'primary' }];
+      : [{ label: 'OK', onPress: onClose, variant: 'primary', testID: TEST_ID.alert.confirm }];
 
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>

@@ -22,6 +22,7 @@ import {
 } from '../../components/shared/modals';
 import { AppIcon } from '../../components/shared/icons/AppIcon';
 import { ICON_COLOR_PRIMARY } from '../../constants/icons';
+import { TEST_ID } from '../../constants/e2e/testIds';
 import { useEventAlbumScreen } from '../../hooks/eventZone/useEventAlbumScreen';
 import { useAppLanguage } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
@@ -247,7 +248,10 @@ export function EventAlbumScreen({ navigation, route }: Props) {
   ];
 
   return (
-    <View className="flex-1 bg-[#F8FAFC]" style={{ paddingTop: insets.top }}>
+    <View
+      testID={TEST_ID.eventZone.albumScreen}
+      className="flex-1 bg-[#F8FAFC]"
+      style={{ paddingTop: insets.top }}>
       <View className="border-b border-[#E2E8F0] bg-white px-2">
         <EventNavHeader
           title={

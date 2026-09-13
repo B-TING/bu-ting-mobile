@@ -1,0 +1,24 @@
+appId: com.butingmobile
+name: Event zone chat — enter from home widget
+tags:
+  - main
+---
+- runFlow: ../../shared/enter-main.yaml
+- scrollUntilVisible:
+    element:
+      id: home.eventZoneChat
+    direction: DOWN
+    timeout: 8000
+- tapOn:
+    id: home.eventZoneChat
+- runFlow: ../../shared/dismiss-optional.yaml
+- extendedWaitUntil:
+    visible:
+      id: eventZone.chatScreen
+    timeout: 20000
+- tapOn:
+    id: nav.back
+- extendedWaitUntil:
+    visible:
+      id: home.screen
+    timeout: 10000

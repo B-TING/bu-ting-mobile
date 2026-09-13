@@ -3,6 +3,11 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { useAppAlert, useFeatureUnavailableAlert } from '../../components/shared/modals';
 import {
+  ALPHA_FEATURE_LABELS,
+  isAlphaFeatureBlocked,
+} from '../../constants/common/alphaFeatureBlocks';
+import { TEST_ID } from '../../constants/e2e/testIds';
+import {
   TRAVEL_CONSTRAINT_NONE_ID,
   dayCountBetween,
   isValidIsoDate,
@@ -10,10 +15,6 @@ import {
   PLAN_WIZARD_STEPS,
   TRAVEL_TITLE_MAX_LENGTH,
 } from '../../constants/plan/planWizard';
-import {
-  ALPHA_FEATURE_LABELS,
-  isAlphaFeatureBlocked,
-} from '../../constants/common/alphaFeatureBlocks';
 import { useAppLanguage, useCopy } from '../../i18n';
 import type { RootStackParamList, WizardPlacePickKind } from '../../navigation/types';
 import { navigateToMainTab } from '../../navigation/navigateToMainTab';
@@ -30,6 +31,8 @@ import { selectAuthUser, selectReusableAccessToken } from '../../stores/useAuthS
 import { PLACE_CONTENT_TYPE } from '../../types/placesApi';
 import type { CompanionGroupType } from '../../types/planWizard';
 import type { PlanMember, TravelPlan } from '../../types/travelPlan';
+import { E2E_WIZARD_PLACE } from '../../utils/e2e/enterE2ESession';
+import { isE2EAccessToken } from '../../utils/e2e/e2eSession';
 
 function defaultDates() {
   const start = new Date();
@@ -225,6 +228,23 @@ export function usePlanWizardScreen({
     });
   };
 
+  const seedE2EAttraction = () => {
+    if (!__DEV__) {
+      return;
+    }
+    setAnswers(prev => {
+      if (prev.selectedAttractions.some(item => item.placeId === E2E_WIZARD_PLACE.placeId)) {
+        return prev;
+      }
+      const selectedAttractions = [...prev.selectedAttractions, E2E_WIZARD_PLACE];
+      return {
+        ...prev,
+        selectedAttractions,
+        attractionIds: selectedAttractions.map(item => item.placeId),
+      };
+    });
+  };
+
   const openPlaceMapPick = (kind: WizardPlacePickKind) => {
     navigation.navigate('PlaceMapSearch', {
       contentTypeId:
@@ -259,6 +279,23 @@ export function usePlanWizardScreen({
     });
   };
 
+  const showAiFailAndLeave = (message?: string) => {
+    alert({
+      title: copy.createAiError,
+      message,
+      buttons: [
+        {
+          label: 'OK',
+          variant: 'primary',
+          testID: TEST_ID.alert.confirm,
+          onPress: () => {
+            setTimeout(leaveWizard, 100);
+          },
+        },
+      ],
+    });
+  };
+
   const wizardMembers = (): PlanMember[] => [
     {
       userId: user?.userId ?? 'local-user',
@@ -285,6 +322,11 @@ export function usePlanWizardScreen({
         return;
       }
 
+      if (isE2EAccessToken(accessToken)) {
+        showAiFailAndLeave();
+        return;
+      }
+
       if (answers.generationMode === 'manual') {
         const plan = await createManualTravelPlan({
           accessToken,
@@ -306,8 +348,7 @@ export function usePlanWizardScreen({
       const message =
         error instanceof Error ? error.message : copy.createManualError;
       if (answers.generationMode === 'auto') {
-        alert({ title: copy.createAiError, message });
-        leaveWizard();
+        showAiFailAndLeave(message);
         return;
       }
       alert({ title: copy.createManualError, message });
@@ -349,6 +390,7 @@ export function usePlanWizardScreen({
     loading,
     openPlaceMapPick,
     removePickedAttraction,
+    seedE2EAttraction,
     canProceed,
     toggleId,
     toggleCompanionType,

@@ -6,6 +6,7 @@ import {
   eventZoneSummary,
   landmarkName,
 } from '../../constants/eventZone/eventZone';
+import { TEST_ID } from '../../constants/e2e/testIds';
 import { ICON_COLOR_MUTED } from '../../constants/icons';
 import { AppIcon } from '../shared/icons/AppIcon';
 import { EventZoneCard } from './EventZoneCard';
@@ -196,6 +197,7 @@ export function EventZoneChatList({
           <View className="flex-row flex-wrap items-center justify-end gap-2">
             {titlesLabel && onTitlesPress ? (
               <Pressable
+                testID={TEST_ID.eventZone.titles}
                 accessibilityRole="button"
                 onPress={onTitlesPress}
                 className="flex-row items-center gap-1 rounded-full border bg-white px-3 py-1.5 active:opacity-80"
@@ -210,6 +212,7 @@ export function EventZoneChatList({
             ) : null}
             {albumLabel && onAlbumPress ? (
               <Pressable
+                testID={TEST_ID.eventZone.album}
                 accessibilityRole="button"
                 onPress={onAlbumPress}
                 className="flex-row items-center gap-1 rounded-full border bg-white px-3 py-1.5 active:opacity-80"
@@ -224,6 +227,7 @@ export function EventZoneChatList({
             ) : null}
             {historyLabel && onHistoryPress ? (
               <Pressable
+                testID={TEST_ID.eventZone.history}
                 accessibilityRole="button"
                 onPress={onHistoryPress}
                 className="flex-row items-center gap-1 rounded-full border bg-white px-3 py-1.5 active:opacity-80"

@@ -1,0 +1,43 @@
+appId: com.butingmobile
+name: My page — notification settings roundtrip
+tags:
+  - main
+---
+- runFlow: ../../shared/enter-main.yaml
+- tapOn:
+    id: appBar.profile
+- waitForAnimationToEnd:
+    timeout: 4000
+- extendedWaitUntil:
+    visible:
+      id: mypage.screen
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      id: mypage.notifications
+    direction: DOWN
+    timeout: 8000
+- tapOn:
+    id: mypage.notifications
+- extendedWaitUntil:
+    visible:
+      id: notificationSettings.screen
+    timeout: 10000
+- extendedWaitUntil:
+    visible:
+      id: notificationSettings.master
+    timeout: 8000
+- assertVisible:
+    id: notificationSettings.eventMission
+- assertVisible:
+    id: notificationSettings.eventReview
+- assertVisible:
+    id: notificationSettings.zoneChat
+- tapOn:
+    id: notificationSettings.master
+- tapOn:
+    id: nav.back
+- extendedWaitUntil:
+    visible:
+      id: mypage.screen
+    timeout: 10000

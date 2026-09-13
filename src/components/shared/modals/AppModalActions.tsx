@@ -55,6 +55,7 @@ type AppModalPrimaryFooterProps = {
   cancelLabel: string;
   onCancel: () => void;
   className?: string;
+  cancelTestID?: string;
 };
 
 export function AppModalPrimaryFooter({
@@ -64,6 +65,7 @@ export function AppModalPrimaryFooter({
   cancelLabel,
   onCancel,
   className,
+  cancelTestID,
 }: AppModalPrimaryFooterProps) {
   return (
     <View className={cn('px-5 pt-2', className)}>
@@ -82,7 +84,10 @@ export function AppModalPrimaryFooter({
           {confirmLabel}
         </Text>
       </Pressable>
-      <Pressable onPress={onCancel} className="items-center py-2 active:opacity-80">
+      <Pressable
+        onPress={onCancel}
+        testID={cancelTestID}
+        className="items-center py-2 active:opacity-80">
         <Text className="text-sm font-semibold text-brand-muted">{cancelLabel}</Text>
       </Pressable>
     </View>

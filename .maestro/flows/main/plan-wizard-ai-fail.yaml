@@ -1,0 +1,110 @@
+appId: com.butingmobile
+name: Plan wizard — AI generate fails and returns home
+tags:
+  - main
+---
+- runFlow: ../../shared/enter-main.yaml
+- tapOn:
+    id: home.heroCta
+- extendedWaitUntil:
+    visible:
+      id: planWizard.step.title
+    timeout: 10000
+- tapOn:
+    id: planWizard.titleInput
+- inputText: E2E 여행
+- tapOn:
+    id: planWizard.step.title
+- tapOn:
+    id: planWizard.next
+
+- extendedWaitUntil:
+    visible:
+      id: planWizard.step.dates
+    timeout: 8000
+- tapOn:
+    id: planWizard.next
+
+- assertVisible:
+    id: planWizard.step.companions
+- tapOn:
+    id: planWizard.next
+
+- assertVisible:
+    id: planWizard.step.companionType
+- tapOn:
+    id: planWizard.option.companionType.solo
+- tapOn:
+    id: planWizard.next
+
+- assertVisible:
+    id: planWizard.step.travelStyle
+- tapOn:
+    id: planWizard.option.travelStyle.culture
+- tapOn:
+    id: planWizard.next
+
+- assertVisible:
+    id: planWizard.step.constraints
+- tapOn:
+    id: planWizard.option.constraints.none
+- tapOn:
+    id: planWizard.next
+
+- assertVisible:
+    id: planWizard.step.attractions
+- tapOn:
+    id: planWizard.e2eSeedPlace
+- tapOn:
+    id: planWizard.next
+
+- assertVisible:
+    id: planWizard.step.foods
+- tapOn:
+    id: planWizard.option.foods.milmyeon
+- tapOn:
+    id: planWizard.next
+
+- assertVisible:
+    id: planWizard.step.accommodation
+- tapOn:
+    id: planWizard.accommodation.area
+- scrollUntilVisible:
+    element:
+      id: planWizard.option.accommodationArea.haeundae
+    direction: DOWN
+    timeout: 5000
+- tapOn:
+    id: planWizard.option.accommodationArea.haeundae
+- tapOn:
+    id: planWizard.next
+
+- assertVisible:
+    id: planWizard.step.generationMode
+- scrollUntilVisible:
+    element:
+      id: planWizard.generation.auto
+    direction: DOWN
+    timeout: 5000
+- tapOn:
+    id: planWizard.generation.auto
+- tapOn:
+    id: planWizard.next
+# 가짜 토큰이라 생성 실패. 빈 여행 삭제 후 홈으로 나간다
+- extendedWaitUntil:
+    visible:
+      id: alert.confirm
+    timeout: 25000
+- tapOn:
+    id: alert.confirm
+- runFlow: ../../shared/dismiss-optional.yaml
+- waitForAnimationToEnd:
+    timeout: 4000
+- extendedWaitUntil:
+    visible:
+      id: main.screen
+    timeout: 10000
+- extendedWaitUntil:
+    visible:
+      id: home.screen
+    timeout: 10000

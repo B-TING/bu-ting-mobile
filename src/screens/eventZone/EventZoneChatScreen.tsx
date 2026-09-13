@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ZoneChatMessageBubble } from '../../components/eventZone/ZoneChatMessageBubble';
 import { BackButton } from '../../components/shared/buttons/BackButton';
+import { TEST_ID } from '../../constants/e2e/testIds';
 import {
   chatRoomTitle,
   chatRoomTopic,
@@ -49,6 +50,7 @@ export function EventZoneChatScreen({ navigation, route }: Props) {
   if (!room) {
     return (
       <View
+        testID={TEST_ID.eventZone.chatScreen}
         className="flex-1 items-center justify-center bg-brand-background px-6"
         style={{ paddingTop: insets.top }}>
         <Text className="text-center text-brand-text">
@@ -65,6 +67,7 @@ export function EventZoneChatScreen({ navigation, route }: Props) {
 
   return (
     <View
+      testID={TEST_ID.eventZone.chatScreen}
       className="flex-1 bg-brand-background"
       style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
       <View className="border-b border-brand-border bg-brand-surface px-4 py-3">

@@ -4,6 +4,7 @@ import { ICON_COLOR_WHITE } from '../../constants/icons';
 import { cn } from '../../utils/common/cn';
 import { AppIcon } from '../shared/icons/AppIcon';
 import { AppModal } from '../shared/modals';
+import { TEST_ID } from '../../constants/e2e/testIds';
 
 type AccountSettingsCopy = {
   title: string;
@@ -94,7 +95,8 @@ export function AccountSettingsModal({
       title={copy.title}
       maxHeight="85%"
       showHandle
-      backdropDismiss={!deletingAccount}>
+      backdropDismiss={!deletingAccount}
+      testID={TEST_ID.mypage.accountModal}>
       <ScrollView
         className="px-5"
         showsVerticalScrollIndicator={false}
