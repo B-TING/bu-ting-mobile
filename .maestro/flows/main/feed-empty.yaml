@@ -1,0 +1,15 @@
+appId: com.butingmobile
+name: Feed — empty state
+tags:
+  - main
+---
+- runFlow: ../../shared/enter-main.yaml
+- runFlow:
+    file: ../../shared/switch-tab.yaml
+    env:
+      TAB: navbar.tab.feed
+      SCREEN: feed.screen
+- extendedWaitUntil:
+    visible:
+      id: feed.empty
+    timeout: 20000

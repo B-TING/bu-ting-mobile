@@ -285,16 +285,17 @@ export function useOnboardingScreen({ navigation, mode }: UseOnboardingScreenPar
       const qIndex = questionIndexForStep(flowSteps, step);
       const skipDelta = isEditMode ? 1 : 2;
       const nextStep = step + skipDelta;
+      const keepAnswer = canProceed();
       if (nextStep >= stepCount) {
         const finalAnswers =
-          qIndex !== null && qIndex >= 0
+          qIndex !== null && qIndex >= 0 && !keepAnswer
             ? applyQuestionSkip(answers, qIndex)
             : answers;
         setAnswers(finalAnswers);
         showThankYouThenComplete(finalAnswers);
         return;
       }
-      if (qIndex !== null && qIndex >= 0) {
+      if (qIndex !== null && qIndex >= 0 && !keepAnswer) {
         setAnswers(prev => applyQuestionSkip(prev, qIndex));
       }
       setStep(nextStep);

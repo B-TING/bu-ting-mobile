@@ -1,0 +1,36 @@
+appId: com.butingmobile
+name: Setup — login offline empty
+tags:
+  - setup
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: language.screen
+    timeout: 45000
+- tapOn:
+    id: language.option.ko
+- tapOn:
+    id: language.continue
+- extendedWaitUntil:
+    visible:
+      id: onboarding.screen
+    timeout: 15000
+- tapOn:
+    id: onboarding.skipAll
+- extendedWaitUntil:
+    visible:
+      id: login.screen
+    timeout: 20000
+- waitForAnimationToEnd:
+    timeout: 4000
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: login.offline
+      - extendedWaitUntil:
+          visible:
+            id: login.error
+          timeout: 5000

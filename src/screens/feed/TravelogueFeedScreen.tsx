@@ -136,6 +136,7 @@ export function TravelogueFeedScreen({ navigation, embeddedInMainTabs = false }:
       ) : travelRecords.length === 0 ? (
           <View
             testID={TEST_ID.feed.empty}
+            collapsable={false}
             className="flex-1 items-center justify-center px-6"
             style={{ paddingBottom: bottomPadding }}>
           <View className="items-center rounded-2xl border-2 border-dashed border-brand-border bg-brand-surface px-6 py-12">

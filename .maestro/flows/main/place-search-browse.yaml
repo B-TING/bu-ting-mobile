@@ -1,0 +1,32 @@
+appId: com.butingmobile
+name: Place map search — category and keyword
+tags:
+  - main
+---
+- runFlow: ../../shared/enter-main.yaml
+- tapOn:
+    id: home.quickAccess.hotels
+- runFlow: ../../shared/dismiss-optional.yaml
+- extendedWaitUntil:
+    visible:
+      id: placeSearch.screen
+    timeout: 20000
+- assertVisible:
+    id: placeSearch.keyword
+- tapOn:
+    id: placeSearch.category.39
+- tapOn:
+    id: placeSearch.category.15
+- tapOn:
+    id: placeSearch.keyword
+- inputText: 해운대
+- tapOn:
+    id: placeSearch.search
+- assertVisible:
+    id: placeSearch.screen
+- tapOn:
+    id: nav.back
+- extendedWaitUntil:
+    visible:
+      id: home.screen
+    timeout: 10000

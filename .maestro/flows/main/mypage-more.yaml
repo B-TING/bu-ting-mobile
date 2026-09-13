@@ -1,0 +1,100 @@
+appId: com.butingmobile
+name: My page — titles, rewards, nickname, account, preferences
+tags:
+  - main
+---
+- runFlow: ../../shared/enter-main.yaml
+- tapOn:
+    id: appBar.profile
+- waitForAnimationToEnd:
+    timeout: 4000
+- extendedWaitUntil:
+    visible:
+      id: mypage.screen
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      id: mypage.titles
+    direction: DOWN
+    timeout: 8000
+- tapOn:
+    id: mypage.titles
+- extendedWaitUntil:
+    visible:
+      id: eventZone.titlesScreen
+    timeout: 15000
+- tapOn:
+    id: nav.back
+- extendedWaitUntil:
+    visible:
+      id: mypage.screen
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      id: mypage.rewards
+    direction: DOWN
+    timeout: 8000
+- tapOn:
+    id: mypage.rewards
+- extendedWaitUntil:
+    visible:
+      id: eventZone.rewardsScreen
+    timeout: 15000
+- tapOn:
+    id: nav.back
+- extendedWaitUntil:
+    visible:
+      id: mypage.screen
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      id: mypage.nickname
+    direction: DOWN
+    timeout: 8000
+- tapOn:
+    id: mypage.nickname
+- extendedWaitUntil:
+    visible:
+      id: mypage.nicknameModal
+    timeout: 8000
+- tapOn:
+    id: mypage.nicknameCancel
+- extendedWaitUntil:
+    visible:
+      id: mypage.screen
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      id: mypage.logout
+    direction: DOWN
+    timeout: 8000
+- tapOn:
+    id: mypage.account
+- waitForAnimationToEnd:
+    timeout: 4000
+- extendedWaitUntil:
+    visible:
+      id: mypage.accountModal
+    timeout: 8000
+- back
+- extendedWaitUntil:
+    visible:
+      id: mypage.screen
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      id: mypage.preferences
+    direction: UP
+    timeout: 8000
+- tapOn:
+    id: mypage.preferences
+- extendedWaitUntil:
+    visible:
+      id: onboarding.screen
+    timeout: 10000
+- tapOn:
+    id: onboarding.skipAll
+- extendedWaitUntil:
+    visible:
+      id: mypage.screen
+    timeout: 10000

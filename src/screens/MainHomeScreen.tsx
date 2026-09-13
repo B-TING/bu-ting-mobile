@@ -77,7 +77,11 @@ export function MainHomeScreen({
   });
 
   return (
-    <View testID={TEST_ID.home.screen} className="flex-1 bg-brand-background" style={layout.screen}>
+    <View
+      testID={TEST_ID.home.screen}
+      collapsable={false}
+      className="flex-1 bg-brand-background"
+      style={layout.screen}>
       <ScrollView
         ref={scrollRef}
         className="flex-1"

@@ -55,6 +55,7 @@ export function PlanWizardScreen(props: Props) {
     loading,
     openPlaceMapPick,
     removePickedAttraction,
+    seedE2EAttraction,
     canProceed,
     toggleId,
     toggleCompanionType,
@@ -215,6 +216,16 @@ export function PlanWizardScreen(props: Props) {
               className="mt-2 items-center rounded-2xl border-2 border-brand-primary bg-brand-surface px-4 py-3.5 active:opacity-90">
               <Text className="text-base font-bold text-brand-primary">{copy.pickPlace}</Text>
             </Pressable>
+            {__DEV__ ? (
+              <Pressable
+                testID={TEST_ID.planWizard.e2eSeedPlace}
+                onPress={seedE2EAttraction}
+                accessibilityRole="button"
+                accessibilityLabel="E2E seed place"
+                className="mt-3 items-center py-2 active:opacity-70">
+                <Text className="text-xs font-medium text-brand-muted">E2E: 장소 추가</Text>
+              </Pressable>
+            ) : null}
           </ScrollView>
         );
       case 'foods':

@@ -301,11 +301,13 @@ export function MyPageScreen({ navigation }: Props) {
                 icon="star"
                 label={copy.zoneTitles}
                 onPress={() => navigation.navigate('EventTitles')}
+                testID={TEST_ID.mypage.titles}
               />
               <SettingsRow
                 icon="ticket"
                 label={copy.myRewards}
                 onPress={() => navigation.navigate('EventRewards')}
+                testID={TEST_ID.mypage.rewards}
               />
               <SettingsRow
                 icon="bell"

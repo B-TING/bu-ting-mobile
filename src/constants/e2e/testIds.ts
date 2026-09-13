@@ -20,6 +20,8 @@ export const TEST_ID = {
     next: 'onboarding.next',
     back: 'onboarding.back',
     thankYou: 'onboarding.thankYou',
+    featureGuide: 'onboarding.featureGuide',
+    featureSkip: 'onboarding.featureSkip',
     option: (value: string) => `onboarding.option.${value}`,
   },
   login: {
@@ -71,6 +73,12 @@ export const TEST_ID = {
     preferences: 'mypage.preferences',
     nickname: 'mypage.nickname',
     notifications: 'mypage.notifications',
+    titles: 'mypage.titles',
+    rewards: 'mypage.rewards',
+    nicknameModal: 'mypage.nicknameModal',
+    nicknameCancel: 'mypage.nicknameCancel',
+    accountModal: 'mypage.accountModal',
+    logoutConfirm: 'mypage.logoutConfirm',
   },
   notificationSettings: {
     screen: 'notificationSettings.screen',
@@ -92,6 +100,7 @@ export const TEST_ID = {
     accArea: 'planWizard.accommodation.area',
     generationAuto: 'planWizard.generation.auto',
     generationManual: 'planWizard.generation.manual',
+    e2eSeedPlace: 'planWizard.e2eSeedPlace',
     next: 'planWizard.next',
     back: 'planWizard.back',
     step: (id: string) => `planWizard.step.${id}`,
@@ -117,6 +126,13 @@ export const TEST_ID = {
   eventZone: {
     screen: 'eventZone.screen',
     chatScreen: 'eventZone.chatScreen',
+    album: 'eventZone.album',
+    titles: 'eventZone.titles',
+    history: 'eventZone.history',
+    albumScreen: 'eventZone.albumScreen',
+    titlesScreen: 'eventZone.titlesScreen',
+    rewardsScreen: 'eventZone.rewardsScreen',
+    historyScreen: 'eventZone.historyScreen',
   },
   helpdesk: {
     screen: 'helpdesk.screen',

@@ -3,6 +3,7 @@ import type { NavigationProp } from '@react-navigation/native';
 import { useFocusEffect } from '@react-navigation/native';
 
 import { useAppAlert, useFeatureUnavailableAlert } from '../../components/shared/modals';
+import { TEST_ID } from '../../constants/e2e/testIds';
 import {
   ALPHA_FEATURE_LABELS,
   isAlphaFeatureBlocked,
@@ -191,6 +192,7 @@ export function useMyPageScreen({ navigation }: UseMyPageScreenParams) {
         {
           label: copy.logout,
           variant: 'danger',
+          testID: TEST_ID.mypage.logoutConfirm,
           onPress: () => {
             void logoutSession().then(goToLogin);
           },

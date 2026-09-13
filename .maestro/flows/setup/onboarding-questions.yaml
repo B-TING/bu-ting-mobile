@@ -1,0 +1,64 @@
+appId: com.butingmobile
+name: Setup — answer onboarding questions
+tags:
+  - setup
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: language.screen
+    timeout: 45000
+- tapOn:
+    id: language.option.ko
+- tapOn:
+    id: language.continue
+- extendedWaitUntil:
+    visible:
+      id: onboarding.screen
+    timeout: 15000
+- tapOn:
+    id: onboarding.next
+- waitForAnimationToEnd:
+    timeout: 2000
+
+- runFlow:
+    file: ../../shared/answer-onboarding-question.yaml
+    env:
+      OPTION: onboarding.option.planned
+- runFlow:
+    file: ../../shared/answer-onboarding-question.yaml
+    env:
+      OPTION: onboarding.option.relaxed
+- runFlow:
+    file: ../../shared/answer-onboarding-question.yaml
+    env:
+      OPTION: onboarding.option.solo
+- runFlow:
+    file: ../../shared/answer-onboarding-question.yaml
+    env:
+      OPTION: onboarding.option.light
+- runFlow:
+    file: ../../shared/answer-onboarding-question.yaml
+    env:
+      OPTION: onboarding.option.food
+- runFlow:
+    file: ../../shared/answer-onboarding-question.yaml
+    env:
+      OPTION: onboarding.option.novice
+
+- tapOn:
+    id: onboarding.skipAll
+    optional: true
+- tapOn:
+    id: onboarding.featureSkip
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: onboarding.thankYou
+    timeout: 8000
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: login.screen
+    timeout: 15000

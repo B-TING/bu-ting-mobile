@@ -3,6 +3,7 @@ import { TextInput, View } from 'react-native';
 
 import { cn } from '../../utils/common/cn';
 import { AppModal, AppModalPrimaryFooter } from '../shared/modals';
+import { TEST_ID } from '../../constants/e2e/testIds';
 
 type NicknameEditModalProps = {
   visible: boolean;
@@ -44,7 +45,8 @@ export function NicknameEditModal({
       title={copy.title}
       keyboardAware
       backdropDismiss={!saving}
-      showHandle>
+      showHandle
+      testID={TEST_ID.mypage.nicknameModal}>
       <View className="px-5 pb-2">
         <TextInput
           value={nickname}
@@ -66,6 +68,7 @@ export function NicknameEditModal({
         confirmDisabled={!canSave}
         cancelLabel={copy.cancel}
         onCancel={onClose}
+        cancelTestID={TEST_ID.mypage.nicknameCancel}
       />
     </AppModal>
   );

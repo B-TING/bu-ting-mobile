@@ -21,6 +21,7 @@ jest.mock('../src/utils/api/apiServerOrigin', () => ({
 }));
 
 import { createAiTravelPlan } from '../src/services/travel/createAiTravelPlan';
+import { E2E_ACCESS_TOKEN } from '../src/utils/e2e/e2eSession';
 import type { PlanWizardAnswers } from '../src/types/planWizard';
 
 const answers = (): PlanWizardAnswers => ({
@@ -177,6 +178,20 @@ describe('createAiTravelPlan', () => {
     ).rejects.toThrow('일정 생성 시간이 초과되었습니다. 다시 시도해 주세요.');
 
     expect(mockLeaveTravelTeam).toHaveBeenCalledWith('token', 'travel-1');
+  });
+
+  it('does not call travel APIs for the local E2E token', async () => {
+    await expect(
+      createAiTravelPlan({
+        accessToken: E2E_ACCESS_TOKEN,
+        answers: answers(),
+        members,
+      }),
+    ).rejects.toThrow('AI 일정 생성에 실패했습니다.');
+
+    expect(mockCreateTravel).not.toHaveBeenCalled();
+    expect(mockGenerateAiTravelPlans).not.toHaveBeenCalled();
+    expect(mockLeaveTravelTeam).not.toHaveBeenCalled();
   });
 
   it('still reports the AI error if discarding the empty travel fails', async () => {

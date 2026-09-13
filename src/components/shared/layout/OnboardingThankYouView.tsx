@@ -33,6 +33,9 @@ export function OnboardingThankYouView({
   return (
     <View
       testID={TEST_ID.onboarding.thankYou}
+      collapsable={false}
+      accessible
+      accessibilityLabel={TEST_ID.onboarding.thankYou}
       className="flex-1 bg-brand-background px-8"
       style={[layout.screen, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 24 }]}>
       {onBack && backLabel ? (

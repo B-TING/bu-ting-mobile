@@ -1,0 +1,13 @@
+appId: com.butingmobile
+name: Shared answer one onboarding question
+tags:
+  - shared
+---
+# OPTION: onboarding.option.*
+# 답을 고른 뒤 건너뛰면 기능 가이드만 생략한다. skip 뒤에 길게 기다리면 감사 화면이 지나간다.
+- tapOn:
+    id: ${OPTION}
+- waitForAnimationToEnd:
+    timeout: 1500
+- tapOn:
+    id: onboarding.skipStep

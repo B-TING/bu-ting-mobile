@@ -332,8 +332,8 @@ npm test
 실제 기기·에뮬레이터에서 설정 플로우와 메인 탐색을 QA합니다. **debug 빌드**가 필요합니다. `__DEV__`에서만 보이는 `E2E: 메인으로`로 OAuth 없이 홈에 들어갑니다.
 
 1. [Maestro CLI](https://docs.maestro.dev/getting-started/installing-maestro)를 설치합니다. Windows는 `maestro.zip`을 `%USERPROFILE%\maestro`에 풀면 `npm run e2e`가 PATH 없이 찾습니다.
-2. Metro를 띄운 뒤 debug 앱을 설치합니다. `npm start`와 `npm run android`는 터미널을 나눠 실행하세요.
-3. 플로우를 실행합니다.
+2. Metro를 띄운 뒤 debug 앱을 설치합니다. USB는 `npm start` + `npm run android`. Wi‑Fi 무선 디버깅은 `npm run start:lan` + Dev Menu에서 Debug server host를 PC LAN IP로 맞춘 뒤 `adb connect IP:연결포트` (페어링 포트 아님).
+3. `adb devices`가 `device`인지 확인한 뒤 플로우를 실행합니다. 무선 ADB가 mDNS 이름만 보여도 `npm run e2e`가 IP:포트로 다시 붙입니다.
 
 ```bash
 npm run e2e:smoke   # 언어·온보딩·로그인 UI + 홈/탭

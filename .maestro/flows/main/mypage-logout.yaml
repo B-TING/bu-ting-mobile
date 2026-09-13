@@ -1,0 +1,31 @@
+appId: com.butingmobile
+name: My page — logout to login
+tags:
+  - main
+---
+- runFlow: ../../shared/enter-main.yaml
+- tapOn:
+    id: appBar.profile
+- waitForAnimationToEnd:
+    timeout: 4000
+- extendedWaitUntil:
+    visible:
+      id: mypage.screen
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      id: mypage.logout
+    direction: DOWN
+    timeout: 8000
+- tapOn:
+    id: mypage.logout
+- extendedWaitUntil:
+    visible:
+      id: mypage.logoutConfirm
+    timeout: 8000
+- tapOn:
+    id: mypage.logoutConfirm
+- extendedWaitUntil:
+    visible:
+      id: login.screen
+    timeout: 15000

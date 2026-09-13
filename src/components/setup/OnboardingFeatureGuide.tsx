@@ -11,6 +11,7 @@ import { PrimaryButton } from '../shared/buttons/PrimaryButton';
 import { AppBar } from '../shared/navigation/AppBar';
 import type { NavbarTab } from '../shared/navigation/Navbar';
 import { layout } from '../../constants/common/layout';
+import { TEST_ID } from '../../constants/e2e/testIds';
 import type { FeatureStepContent } from '../../constants/setup/onboarding';
 import { resolveOnboardingGuideTarget } from '../../constants/setup/onboardingGuideTargets';
 import { MainTabNavigationContext } from '../../navigation/mainTabNavigation';
@@ -136,7 +137,11 @@ function OnboardingFeatureGuideInner({
           title={current.title[language]}
           description={current.description[language]}
           controls={
-            <View style={{ flex: 1 }} pointerEvents="box-none">
+            <View
+              testID={TEST_ID.onboarding.featureGuide}
+              collapsable={false}
+              style={{ flex: 1 }}
+              pointerEvents="box-none">
               <View
                 className="flex-row items-center justify-between px-5"
                 style={{ paddingTop: Math.max(insets.top, 12) + 8 }}
@@ -150,16 +155,28 @@ function OnboardingFeatureGuideInner({
                 ) : (
                   <View />
                 )}
-                <Pressable onPress={onSkip} hitSlop={12} accessibilityRole="button">
-                  <Text className="text-sm font-semibold text-white">{skipLabel}</Text>
-                </Pressable>
               </View>
               <View style={{ flex: 1 }} pointerEvents="none" />
               <View
                 className="px-5 pb-2"
                 style={{ paddingBottom: Math.max(insets.bottom, 12) }}
                 pointerEvents="box-none">
-                <PrimaryButton label={nextLabel} onPress={handleNext} />
+                <Pressable
+                  onPress={onSkip}
+                  testID={TEST_ID.onboarding.featureSkip}
+                  collapsable={false}
+                  accessible
+                  accessibilityRole="button"
+                  accessibilityLabel={skipLabel}
+                  hitSlop={12}
+                  className="mb-3 min-h-[44px] self-end items-center justify-center rounded-full bg-black/55 px-4 py-2">
+                  <Text className="text-sm font-semibold text-white">{skipLabel}</Text>
+                </Pressable>
+                <PrimaryButton
+                  testID={TEST_ID.onboarding.next}
+                  label={nextLabel}
+                  onPress={handleNext}
+                />
               </View>
             </View>
           }

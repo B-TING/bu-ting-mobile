@@ -28,6 +28,7 @@ export type AppModalProps = {
   backdropDismiss?: boolean;
   overlayAccessory?: ReactNode;
   contentStyle?: StyleProp<ViewStyle>;
+  testID?: string;
 };
 
 export function AppModal({
@@ -44,6 +45,7 @@ export function AppModal({
   backdropDismiss = true,
   overlayAccessory,
   contentStyle,
+  testID,
 }: AppModalProps) {
   const insets = useSafeAreaInsets();
   const [keyboardInset, setKeyboardInset] = useState(0);
@@ -92,6 +94,10 @@ export function AppModal({
         {overlayAccessory}
 
         <View
+          testID={testID}
+          collapsable={false}
+          accessible={Boolean(testID)}
+          accessibilityLabel={testID}
           style={[
             appModalStyles.sheet,
             maxHeight != null ? { maxHeight } : null,
