@@ -182,6 +182,8 @@ export const EVENT_GAME_COPY: Record<
     statusCompleted: string;
     statusPendingReview: string;
     statusRejected: string;
+    statusCancelled: string;
+    cancelledHint: string;
     historyTitle: string;
     historyEmpty: string;
     historySubmittedAt: (timestamp: string) => string;
@@ -345,6 +347,8 @@ export const EVENT_GAME_COPY: Record<
     statusCompleted: '미션 완료',
     statusPendingReview: '검수 대기 중',
     statusRejected: '반려됨',
+    statusCancelled: '취소됨',
+    cancelledHint: '참여를 취소했어요. 다시 참여할 수 있어요.',
     historyTitle: '내 이벤트 참여 이력',
     historyEmpty: '아직 참여한 이벤트가 없어요.',
     historySubmittedAt: timestamp => `제출 ${timestamp}`,
@@ -515,6 +519,8 @@ export const EVENT_GAME_COPY: Record<
     statusCompleted: 'Completed',
     statusPendingReview: 'Pending review',
     statusRejected: 'Rejected',
+    statusCancelled: 'Cancelled',
+    cancelledHint: 'You cancelled this participation. You can join again.',
     historyTitle: 'My event participation',
     historyEmpty: 'No event participation yet.',
     historySubmittedAt: timestamp => `Submitted ${timestamp}`,
@@ -684,6 +690,8 @@ export const EVENT_GAME_COPY: Record<
     statusCompleted: 'ミッション完了',
     statusPendingReview: '審査待ち',
     statusRejected: '却下',
+    statusCancelled: 'キャンセル済み',
+    cancelledHint: '参加をキャンセルしました。もう一度参加できます。',
     historyTitle: 'イベント参加履歴',
     historyEmpty: 'まだ参加したイベントがありません。',
     historySubmittedAt: timestamp => `提出 ${timestamp}`,
@@ -853,6 +861,8 @@ export const EVENT_GAME_COPY: Record<
     statusCompleted: '任务完成',
     statusPendingReview: '审核中',
     statusRejected: '已驳回',
+    statusCancelled: '已取消',
+    cancelledHint: '已取消本次参与。可以再次参加。',
     historyTitle: '我的活动参与记录',
     historyEmpty: '还没有参与过活动。',
     historySubmittedAt: timestamp => `提交 ${timestamp}`,

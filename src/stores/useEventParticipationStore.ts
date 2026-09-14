@@ -69,6 +69,9 @@ function isCameraReentryBlocked(
   if (existing?.status === 'pending_review' || existing?.status === 'approved') {
     return true;
   }
+  if (existing?.status === 'cancelled') {
+    return false;
+  }
   if (existing?.status === 'rejected') {
     const sameId = participationId === existing.id;
     const allowed = sameId && existing.canResubmit === true;

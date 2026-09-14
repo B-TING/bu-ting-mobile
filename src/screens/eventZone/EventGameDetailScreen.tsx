@@ -265,6 +265,7 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
     : participation?.status;
   const targetLocked =
     displayStatus != null &&
+    displayStatus !== 'cancelled' &&
     !canResubmit &&
     (displayStatus === 'pending_review' ||
       displayStatus === 'approved' ||
@@ -273,6 +274,7 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
 
   const statusLabel = (() => {
     if (!displayStatus) return copy.statusNotJoined;
+    if (displayStatus === 'cancelled') return copy.statusCancelled;
     if (displayStatus === 'pending_review') return copy.statusPendingReview;
     if (displayStatus === 'approved') return copy.statusCompleted;
     if (displayStatus === 'rejected' && canResubmit) return copy.resubmit;
@@ -287,7 +289,10 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
 
   const remainingAttempts = event.myRemainingAttempts;
   const attemptsExhausted =
-    remainingAttempts === 0 && displayStatus !== 'in_progress' && !canResubmit;
+    remainingAttempts === 0 &&
+    displayStatus !== 'in_progress' &&
+    displayStatus !== 'cancelled' &&
+    !canResubmit;
   const baseRewardTitle = formatRewardSummary(event.baseReward, copy);
   const excellenceRewardTitle = formatRewardSummary(event.excellenceReward, copy);
   const deadlineText = event.deadline ? formatDeadline(event.deadline, language) : null;
@@ -301,7 +306,10 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
     !participationBlocked &&
     !attemptsExhausted &&
     isServerTargetId(effectiveTargetId) &&
-    (displayStatus == null || displayStatus === 'in_progress' || canResubmit);
+    (displayStatus == null ||
+      displayStatus === 'in_progress' ||
+      displayStatus === 'cancelled' ||
+      canResubmit);
 
   const canCancel =
     Boolean(accessToken) &&
@@ -342,7 +350,9 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
     if (!within) return;
 
     const resumeId =
-      canResubmit && serverParticipationId
+      canResubmit &&
+      displayStatus === 'rejected' &&
+      serverParticipationId
         ? serverParticipationId
         : isServerParticipationId(event.myOpenParticipationId) &&
             (participation?.status === 'in_progress' ||
@@ -498,6 +508,8 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
             title={copy.statusRejected}
             body={participation?.rejectionReason || copy.rejectedHint}
           />
+        ) : displayStatus === 'cancelled' ? (
+          <EventCallout tone="info" title={copy.statusCancelled} body={copy.cancelledHint} />
         ) : displayStatus === 'pending_review' ? (
           <EventCallout tone="info" title={copy.pendingReviewTitle} body={copy.pendingReviewMessage} />
         ) : displayStatus === 'approved' ? (
