@@ -80,6 +80,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     settlementMemberSummaries,
     settlementForDisplay,
     settlementLoading,
+    settlementRefreshing,
     settlementError,
     confirming,
     budgetEntries,
@@ -339,6 +340,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
                 settlement={settlementForDisplay}
                 memberSummaries={settlementMemberSummaries}
                 settlementLoading={settlementLoading}
+                settlementRefreshing={settlementRefreshing}
                 settlementError={settlementError}
                 canConfirmSettlement={canConfirmSettlement}
                 confirmingSettlement={confirming}

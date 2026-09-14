@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Animated, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Animated, Pressable, Text, View } from 'react-native';
 
-import { ICON_COLOR_WHITE } from '../../../constants/icons';
+import { ICON_COLOR_PRIMARY, ICON_COLOR_WHITE } from '../../../constants/icons';
 import { AppIcon } from '../../shared/icons/AppIcon';
-
 import { BudgetDateChips } from '../budget/BudgetDateChips';
 import { BudgetCategoryBadge } from '../budget/BudgetCategoryBadge';
 import { BudgetSettlementSection } from '../budget/BudgetSettlementSection';
@@ -39,6 +38,7 @@ type PlanBudgetTabProps = {
   settlement?: TravelSettlementResponse | null;
   memberSummaries?: TravelExpenseMemberSummary[];
   settlementLoading?: boolean;
+  settlementRefreshing?: boolean;
   settlementError?: string | null;
   canConfirmSettlement?: boolean;
   confirmingSettlement?: boolean;
@@ -224,6 +224,7 @@ export function PlanBudgetTab({
   settlement = null,
   memberSummaries = [],
   settlementLoading = false,
+  settlementRefreshing = false,
   settlementError = null,
   canConfirmSettlement = false,
   confirmingSettlement = false,
@@ -280,7 +281,12 @@ export function PlanBudgetTab({
 
       <View className="mt-2 px-4 pt-1.5" style={{ paddingBottom: listBottomPadding }}>
         <View className="gap-1">
-          <Text className="mb-2 text-sm font-bold text-brand-text">{copy.budgetExpenseList}</Text>
+          <View className="mb-2 flex-row items-center justify-between">
+            <Text className="text-sm font-bold text-brand-text">{copy.budgetExpenseList}</Text>
+            {settlementRefreshing ? (
+              <ActivityIndicator color={ICON_COLOR_PRIMARY} size="small" />
+            ) : null}
+          </View>
 
           {dateTabs.length > 0 && selectedDate ? (
             <BudgetDateChips
@@ -334,6 +340,7 @@ export function PlanBudgetTab({
               settlement={settlement}
               memberSummaries={memberSummaries}
               loading={settlementLoading}
+              refreshing={settlementRefreshing}
               error={settlementError}
               canConfirm={canConfirmSettlement}
               confirming={confirmingSettlement}
