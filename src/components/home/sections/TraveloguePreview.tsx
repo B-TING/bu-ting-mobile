@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { ICON_COLOR_PRIMARY } from '../../../constants/icons';
@@ -10,6 +11,7 @@ import {
 import { GUIDE_TARGET } from '../../guide/guideTypes';
 import { GuideTarget } from '../../guide/GuideTarget';
 import { AppIcon } from '../../shared/icons/AppIcon';
+import { ResolvedRemoteImage } from '../../shared/media/ResolvedRemoteImage';
 import { StarRating } from '../../shared/rating/StarRating';
 
 type TraveloguePreviewProps = {
@@ -32,6 +34,13 @@ export function TraveloguePreview({
   onTraveloguePress,
   onFeedPress,
 }: TraveloguePreviewProps) {
+  const coverUri = latestTravelogue?.coverImageUrl ?? null;
+  const [coverFailed, setCoverFailed] = useState(false);
+
+  useEffect(() => {
+    setCoverFailed(false);
+  }, [coverUri]);
+
   if (loading) {
     return (
       <GuideTarget id={GUIDE_TARGET.traveloguePreview} className="mb-4">
@@ -66,6 +75,7 @@ export function TraveloguePreview({
   }
 
   const rating = travelRecordOverallRating(latestTravelogue);
+  const icon = travelRecordThumbnailIcon(latestTravelogue);
 
   return (
     <GuideTarget id={GUIDE_TARGET.traveloguePreview} className="mb-4">
@@ -84,12 +94,19 @@ export function TraveloguePreview({
         onPress={onTraveloguePress}
         className="mb-1 flex-row overflow-hidden rounded-2xl border border-brand-border bg-brand-surface p-3 active:opacity-90"
         accessibilityRole="button">
-        <View className="mr-3 h-20 w-20 items-center justify-center rounded-xl bg-sky-100">
-          <AppIcon
-            name={travelRecordThumbnailIcon(latestTravelogue)}
-            size={32}
-            color={ICON_COLOR_PRIMARY}
-          />
+        <View className="mr-3 h-20 w-20 overflow-hidden rounded-xl bg-brand-selected">
+          {coverUri && !coverFailed ? (
+            <ResolvedRemoteImage
+              uri={coverUri}
+              style={{ width: '100%', height: '100%' }}
+              resizeMode="cover"
+              onError={() => setCoverFailed(true)}
+            />
+          ) : (
+            <View className="h-full w-full items-center justify-center">
+              <AppIcon name={icon} size={32} color={ICON_COLOR_PRIMARY} />
+            </View>
+          )}
         </View>
         <View className="flex-1 justify-center">
           <Text className="mb-1 text-[10px] font-bold tracking-wide text-brand-primary">
