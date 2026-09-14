@@ -59,9 +59,19 @@ export type KakaoMapPolygonOverlay = {
   zIndex?: number;
 };
 
+/** 부산 내 현재 위치 마커 */
+export type KakaoMapUserLocationOverlay = {
+  kind: 'user';
+  id: string;
+  lat: number;
+  lng: number;
+  zIndex?: number;
+};
+
 export type KakaoMapOverlay =
   | KakaoMapNumberedMarkerOverlay
   | KakaoMapRatingMarkerOverlay
   | KakaoMapLockerMarkerOverlay
   | KakaoMapPolylineOverlay
-  | KakaoMapPolygonOverlay;
+  | KakaoMapPolygonOverlay
+  | KakaoMapUserLocationOverlay;

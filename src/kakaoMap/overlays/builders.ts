@@ -1,12 +1,26 @@
 import { getScheduleDayColor } from '../../constants/plan/scheduleDayColors';
 import type { SubwayLockerStation } from '../../types/subwayLocker';
+import type { EventZoneCoordinate } from '../../types/eventZone';
 import { getSubwayLineColor } from '../../constants/locker/subwayLineColors';
 import type { RouteItem } from '../../types/travelPlan';
-import type { KakaoMapOverlay } from './types';
+import type { KakaoMapOverlay, KakaoMapUserLocationOverlay } from './types';
 import type {
   ScheduleMapLineOverlay,
   ScheduleMapMarkerOverlay,
 } from './scheduleOverlays';
+
+export function kakaoUserLocationOverlay(
+  location: EventZoneCoordinate,
+  id = 'user-location',
+): KakaoMapUserLocationOverlay {
+  return {
+    kind: 'user',
+    id,
+    lat: location.lat,
+    lng: location.lng,
+    zIndex: 20,
+  };
+}
 
 function parseStrokeColor(hex: string): { color: string; opacity: number } {
   if (hex.length === 9 && hex.startsWith('#')) {

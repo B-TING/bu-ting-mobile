@@ -5,6 +5,7 @@ import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 import { EventZoneLayerToggle } from '../../components/kakaoMap/EventZoneLayerToggle';
 import { useAppStore } from '../../stores';
 import { KAKAO_MAP_JS_KEY } from '../config';
+import { useKakaoUserLocationOverlay } from '../hooks/useKakaoUserLocationOverlay';
 import type { KakaoMapOverlay } from '../overlays/types';
 import { kakaoOverlaysFromEventZones } from '../overlays/zoneOverlays';
 import {
@@ -37,6 +38,8 @@ type KakaoMapShellProps = {
   viewportInsetReady?: boolean;
   /** 6개 행사 구역 색상·구분선 토글 (기본 꺼짐) */
   eventZoneToggle?: boolean;
+  /** 부산 내 현재 위치 마커 (기본 true) */
+  showUserLocation?: boolean;
 };
 
 function pointsSignature(points: MapPoint[]): string {
@@ -71,6 +74,7 @@ export function KakaoMapShell({
   focusPanOffsetY = 0,
   viewportInsetReady = true,
   eventZoneToggle = true,
+  showUserLocation = true,
 }: KakaoMapShellProps) {
   const webViewRef = useRef<WebView>(null);
   const mapReadyRef = useRef(false);
@@ -80,14 +84,25 @@ export function KakaoMapShell({
   const [eventZonesVisible, setEventZonesVisible] = useState(false);
   const language = useAppStore(state => state.language) ?? 'ko';
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const userLocationOverlay = useKakaoUserLocationOverlay(showUserLocation);
 
   const zoneOverlays = useMemo(() => kakaoOverlaysFromEventZones(), []);
   const mergedOverlays = useMemo(() => {
-    if (!eventZoneToggle || !eventZonesVisible) {
-      return overlays;
+    const base =
+      !eventZoneToggle || !eventZonesVisible
+        ? overlays
+        : [...zoneOverlays, ...overlays];
+    if (!userLocationOverlay) {
+      return base;
     }
-    return [...zoneOverlays, ...overlays];
-  }, [eventZoneToggle, eventZonesVisible, overlays, zoneOverlays]);
+    return [...base, userLocationOverlay];
+  }, [
+    eventZoneToggle,
+    eventZonesVisible,
+    overlays,
+    zoneOverlays,
+    userLocationOverlay,
+  ]);
 
   const mapWidth = size === 'fullscreen' ? screenWidth : screenWidth - (size === 'fill' ? 0 : 48);
   const mapHeight =
