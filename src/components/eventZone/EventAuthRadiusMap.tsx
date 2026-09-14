@@ -12,8 +12,11 @@ type EventAuthRadiusMapProps = {
   accentColor?: string;
 };
 
+/** 반경 원이 맵에 크게 보이도록 span 계산 (작을수록 확대) */
 function cameraKmForRadius(radiusM: number): number {
-  return Math.max(0.8, Math.min(4, (radiusM * 3.2) / 1000));
+  const diameterKm = (Math.max(radiusM, 30) * 2) / 1000;
+  // 원 지름의 ~1.4배 시야 → 150m 반경이면 약 0.4km → 카카오 level 4
+  return Math.max(0.15, Math.min(2, diameterKm * 1.4));
 }
 
 /** 이벤트 인증 타겟 + 반경을 카카오맵에 표시 */
