@@ -9,6 +9,8 @@ import type { AppLanguage } from '../../../types/user';
 import { routeItemToBusanPlaceFallback } from '../../../utils/places/placeModelBridge';
 import { shouldFetchRoutePlaceDetail } from '../../../utils/places/routePlaceDetail';
 import { PlaceDetailPanel } from '../../places/PlaceDetailPanel';
+import { GoogleGIcon } from '../../setup/icons/GoogleGIcon';
+import { KakaoSymbolIcon } from '../../setup/icons/KakaoSymbolIcon';
 import { StarRating } from '../../shared/rating/StarRating';
 import { RouteMemoEditor } from './RouteMemoEditor';
 
@@ -22,6 +24,8 @@ type ScheduleRouteDetailPanelProps = {
   onToggleVisited: () => void;
   onWriteReview?: () => void;
   onSaveMemo?: (memo: string | undefined) => void | Promise<void>;
+  onDirectionsFromMeGoogle?: () => void;
+  onDirectionsFromMeKakao?: () => void;
   layout?: 'default' | 'sheetHeader';
 };
 
@@ -33,6 +37,8 @@ export function ScheduleRouteDetailPanel({
   onToggleVisited,
   onWriteReview,
   onSaveMemo,
+  onDirectionsFromMeGoogle,
+  onDirectionsFromMeKakao,
   layout = 'default',
 }: ScheduleRouteDetailPanelProps) {
   const searchCopy = useCopy('placeSearch');
@@ -79,6 +85,36 @@ export function ScheduleRouteDetailPanel({
           </Pressable>
         ) : null}
       </View>
+
+      {onDirectionsFromMeGoogle || onDirectionsFromMeKakao ? (
+        <View className="mt-3">
+          <Text className="mb-2 text-xs font-bold text-brand-muted">{copy.directions}</Text>
+          <View className="flex-row flex-wrap gap-1.5">
+            {onDirectionsFromMeGoogle ? (
+              <Pressable
+                onPress={onDirectionsFromMeGoogle}
+                accessibilityLabel={copy.directionsFromMeGoogleButton}
+                className="flex-row items-center rounded-lg border border-brand-primary bg-brand-selected px-2 py-1.5 active:opacity-90">
+                <GoogleGIcon size={14} />
+                <Text className="ml-1 text-xs font-semibold text-brand-primary">
+                  {copy.directionsFromMeGoogleButton}
+                </Text>
+              </Pressable>
+            ) : null}
+            {onDirectionsFromMeKakao ? (
+              <Pressable
+                onPress={onDirectionsFromMeKakao}
+                accessibilityLabel={copy.directionsFromMeKakaoButton}
+                className="flex-row items-center rounded-lg border border-[#F9E000] bg-[#FFFBE6] px-2 py-1.5 active:opacity-90">
+                <KakaoSymbolIcon size={14} color="#3C1E1E" />
+                <Text className="ml-1 text-xs font-semibold text-[#3C1E1E]">
+                  {copy.directionsFromMeKakaoButton}
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
+        </View>
+      ) : null}
 
       {memoSection}
 

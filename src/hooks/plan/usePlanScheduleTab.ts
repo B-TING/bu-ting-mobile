@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { useAppAlert, useFeatureUnavailableAlert } from '../../components/shared/modals';
+import {
+  useAppAlert,
+  useFeatureUnavailableAlert,
+  useLocationConsent,
+} from '../../components/shared/modals';
 import type { RebootPhase } from '../../components/plan/schedule/ScheduleRouteSlot';
 import type {
   ScheduleModalState,
@@ -28,6 +32,7 @@ import {
   openKakaoLegDirections,
   type LegDirectionsInput,
 } from '../../utils/map/mapDirections';
+import { acquireDeviceCoordinates } from '../../utils/location/acquireDeviceCoordinates';
 
 type Copy = CopyFor<'planDetail'>;
 
@@ -89,6 +94,7 @@ export function usePlanScheduleTab({
 }: UsePlanScheduleTabParams) {
   const { alert } = useAppAlert();
   const { showUnavailable } = useFeatureUnavailableAlert();
+  const { ensureLocationConsent } = useLocationConsent();
   const reorderRoutes = usePlanStore(s => s.reorderRoutesInPlan);
   const updateLegMode = usePlanStore(s => s.updateRouteLegMode);
   const optimizeDayRouteLocal = usePlanStore(s => s.optimizeDayRoute);
@@ -202,6 +208,60 @@ export function usePlanScheduleTab({
       buildLegDirectionsInput,
       copy.directionsFailed,
       copy.directionsUnavailable,
+      onNotify,
+    ],
+  );
+
+  const openDirectionsFromMyLocation = useCallback(
+    (provider: 'google' | 'kakao', to: RouteItem) => {
+      void (async () => {
+        const acquired = await acquireDeviceCoordinates({ ensureLocationConsent });
+        if (!acquired.ok) {
+          onNotify?.(
+            acquired.reason === 'location_unavailable'
+              ? copy.directionsLocationUnavailable
+              : copy.directionsLocationDenied,
+          );
+          return;
+        }
+
+        const input: LegDirectionsInput = {
+          from: {
+            lat: acquired.coords.lat,
+            lng: acquired.coords.lng,
+            name: copy.directionsMyLocationLabel,
+          },
+          to: {
+            lat: to.location.lat,
+            lng: to.location.lng,
+            name: to.placeName,
+            address: to.placeInfo?.address,
+          },
+          mode: to.legMode ?? 'walk',
+        };
+
+        if (!isLegDirectionsInputValid(input)) {
+          onNotify?.(copy.directionsUnavailable);
+          return;
+        }
+
+        const open =
+          provider === 'google' ? openGoogleLegDirections : openKakaoLegDirections;
+        const result = await open(input);
+        if (result === 'invalid') {
+          onNotify?.(copy.directionsUnavailable);
+        } else if (result === 'failed') {
+          onNotify?.(copy.directionsFailed);
+        }
+      })();
+    },
+    [
+      copy.directionsFailed,
+      copy.directionsLocationDenied,
+      copy.directionsLocationUnavailable,
+      copy.directionsMyLocationLabel,
+      copy.directionsUnavailable,
+      ensureLocationConsent,
       onNotify,
     ],
   );
@@ -515,6 +575,7 @@ export function usePlanScheduleTab({
     dismissInteractiveUi,
     openPickModal,
     openLegDirectionsWithProvider,
+    openDirectionsFromMyLocation,
     updateLegMode,
     onToggleVisited,
     onWriteReview,

@@ -41,6 +41,8 @@ type ScheduleTabRouteListProps = {
   onLegModeChange: (itemId: string, mode: TravelLegMode) => void;
   onGoogleDirections: (from: RouteItem, to: RouteItem) => void;
   onKakaoDirections: (from: RouteItem, to: RouteItem) => void;
+  onFromMeGoogleDirections?: (to: RouteItem) => void;
+  onFromMeKakaoDirections?: (to: RouteItem) => void;
   guardReadOnly: () => boolean;
 };
 
@@ -68,6 +70,8 @@ export function ScheduleTabRouteList({
   onLegModeChange,
   onGoogleDirections,
   onKakaoDirections,
+  onFromMeGoogleDirections,
+  onFromMeKakaoDirections,
   guardReadOnly,
 }: ScheduleTabRouteListProps) {
   const dayColor = getScheduleDayColor(dayNumber);
@@ -112,6 +116,24 @@ export function ScheduleTabRouteList({
 
         return (
           <View key={route.itemId}>
+            {prevRoute == null &&
+            (onFromMeGoogleDirections || onFromMeKakaoDirections) ? (
+              <TravelLegRow
+                googleLabel={copy.directionsFromMeGoogleButton}
+                kakaoLabel={copy.directionsFromMeKakaoButton}
+                lineColor={zoneColor}
+                onGooglePress={
+                  onFromMeGoogleDirections
+                    ? () => onFromMeGoogleDirections(route)
+                    : undefined
+                }
+                onKakaoPress={
+                  onFromMeKakaoDirections
+                    ? () => onFromMeKakaoDirections(route)
+                    : undefined
+                }
+              />
+            ) : null}
             {prevRoute != null ? (
               <TravelLegRow
                 googleLabel={copy.directionsGoogleButton}
