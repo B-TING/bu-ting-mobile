@@ -5,7 +5,8 @@ export type EventParticipationStatus =
   | 'in_progress'
   | 'pending_review'
   | 'approved'
-  | 'rejected';
+  | 'rejected'
+  | 'cancelled';
 
 export type EventParticipationRecord = {
   id: string;

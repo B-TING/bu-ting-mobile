@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { useAppAlert, useFeatureUnavailableAlert } from '../../components/shared/modals';
+import {
+  useAppAlert,
+  useFeatureUnavailableAlert,
+  useLocationConsent,
+} from '../../components/shared/modals';
 import type { RebootPhase } from '../../components/plan/schedule/ScheduleRouteSlot';
 import type {
   ScheduleModalState,
@@ -28,6 +32,7 @@ import {
   openKakaoLegDirections,
   type LegDirectionsInput,
 } from '../../utils/map/mapDirections';
+import { acquireDeviceCoordinates } from '../../utils/location/acquireDeviceCoordinates';
 
 type Copy = CopyFor<'planDetail'>;
 
@@ -44,7 +49,10 @@ export type UsePlanScheduleTabParams = {
   onQuickRating: (route: RouteItem, rating: number) => void;
   onDeleteRoute: (route: RouteItem) => void;
   onSaveRouteMemo?: (route: RouteItem, memo: string | undefined) => void | Promise<void>;
-  onReorderRoutes?: (dayNumber: number, orderedItemIds: string[]) => void | Promise<void>;
+  onReorderRoutes?: (
+    dayNumber: number,
+    orderedItemIds: string[],
+  ) => void | boolean | Promise<void | boolean>;
   onOptimizeDayRoute?: (dayNumber: number) => void | Promise<void>;
   onRouteRemoved?: (itemId: string) => void;
   onScheduleModalChange: (modal: ScheduleModalState) => void;
@@ -86,6 +94,7 @@ export function usePlanScheduleTab({
 }: UsePlanScheduleTabParams) {
   const { alert } = useAppAlert();
   const { showUnavailable } = useFeatureUnavailableAlert();
+  const { ensureLocationConsent } = useLocationConsent();
   const reorderRoutes = usePlanStore(s => s.reorderRoutesInPlan);
   const updateLegMode = usePlanStore(s => s.updateRouteLegMode);
   const optimizeDayRouteLocal = usePlanStore(s => s.optimizeDayRoute);
@@ -115,11 +124,14 @@ export function usePlanScheduleTab({
   const day =
     plan.itinerary.find(d => d.dayNumber === selectedDay) ?? plan.itinerary[0];
 
-  const routeIdSetKey = useMemo(() => {
+  // Order-sensitive: sync/rollback that only changes sequence must reset orderedIds.
+  const routeOrderKey = useMemo(() => {
     if (!day) {
       return '';
     }
-    return [...day.routes.map(r => r.itemId)].sort().join('|');
+    return sortedRoutes(day.routes)
+      .map(r => r.itemId)
+      .join('|');
   }, [day]);
 
   const dayRoutes = useMemo(() => {
@@ -200,6 +212,60 @@ export function usePlanScheduleTab({
     ],
   );
 
+  const openDirectionsFromMyLocation = useCallback(
+    (provider: 'google' | 'kakao', to: RouteItem) => {
+      void (async () => {
+        const acquired = await acquireDeviceCoordinates({ ensureLocationConsent });
+        if (!acquired.ok) {
+          onNotify?.(
+            acquired.reason === 'location_unavailable'
+              ? copy.directionsLocationUnavailable
+              : copy.directionsLocationDenied,
+          );
+          return;
+        }
+
+        const input: LegDirectionsInput = {
+          from: {
+            lat: acquired.coords.lat,
+            lng: acquired.coords.lng,
+            name: copy.directionsMyLocationLabel,
+          },
+          to: {
+            lat: to.location.lat,
+            lng: to.location.lng,
+            name: to.placeName,
+            address: to.placeInfo?.address,
+          },
+          mode: to.legMode ?? 'walk',
+        };
+
+        if (!isLegDirectionsInputValid(input)) {
+          onNotify?.(copy.directionsUnavailable);
+          return;
+        }
+
+        const open =
+          provider === 'google' ? openGoogleLegDirections : openKakaoLegDirections;
+        const result = await open(input);
+        if (result === 'invalid') {
+          onNotify?.(copy.directionsUnavailable);
+        } else if (result === 'failed') {
+          onNotify?.(copy.directionsFailed);
+        }
+      })();
+    },
+    [
+      copy.directionsFailed,
+      copy.directionsLocationDenied,
+      copy.directionsLocationUnavailable,
+      copy.directionsMyLocationLabel,
+      copy.directionsUnavailable,
+      ensureLocationConsent,
+      onNotify,
+    ],
+  );
+
   const slotCopy = useMemo(
     () => ({
       markVisited: copy.markVisited,
@@ -251,7 +317,7 @@ export function usePlanScheduleTab({
     } else {
       setOrderedIds([]);
     }
-  }, [selectedDay, routeIdSetKey, day]);
+  }, [selectedDay, routeOrderKey, day]);
 
   const clearReboot = useCallback(() => {
     setReboot(null);
@@ -347,12 +413,22 @@ export function usePlanScheduleTab({
       if (indexA < 0 || indexB < 0) {
         return;
       }
+      const previous = [...base];
       const next = [...base];
       next[indexA] = idB;
       next[indexB] = idA;
       setOrderedIds(next);
       if (onReorderRoutes) {
-        onReorderRoutes(day.dayNumber, next);
+        void Promise.resolve(onReorderRoutes(day.dayNumber, next)).then(
+          ok => {
+            if (ok === false) {
+              setOrderedIds(previous);
+            }
+          },
+          () => {
+            setOrderedIds(previous);
+          },
+        );
       } else {
         reorderRoutes(planId, day.dayNumber, next);
       }
@@ -499,6 +575,7 @@ export function usePlanScheduleTab({
     dismissInteractiveUi,
     openPickModal,
     openLegDirectionsWithProvider,
+    openDirectionsFromMyLocation,
     updateLegMode,
     onToggleVisited,
     onWriteReview,

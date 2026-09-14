@@ -16,6 +16,8 @@ type BudgetSettlementSectionProps = {
   settlement: TravelSettlementResponse | null;
   memberSummaries: TravelExpenseMemberSummary[];
   loading?: boolean;
+  /** 기존 데이터 유지한 채 갱신 중 */
+  refreshing?: boolean;
   error?: string | null;
   canConfirm?: boolean;
   confirming?: boolean;
@@ -109,6 +111,7 @@ export function BudgetSettlementSection({
   settlement,
   memberSummaries,
   loading = false,
+  refreshing = false,
   error = null,
   canConfirm = false,
   confirming = false,
@@ -120,7 +123,9 @@ export function BudgetSettlementSection({
   const hasBalances = memberSummaries.length > 0;
   const hasTransfers = transfers.length > 0;
   const empty = !loading && !error && !hasBalances && !hasTransfers;
-  const showInitialLoading = loading && !hasBalances && !hasTransfers && !settlement;
+  const showInitialLoading =
+    loading && !refreshing && !hasBalances && !hasTransfers && !settlement;
+  const showRefreshSpinner = refreshing || (loading && !showInitialLoading);
 
   return (
     <View className="mt-4 overflow-hidden rounded-2xl border border-brand-border bg-brand-surface">
@@ -134,7 +139,7 @@ export function BudgetSettlementSection({
           </Text>
         </View>
         <View className="flex-row items-center gap-2">
-          {loading && !showInitialLoading ? (
+          {showRefreshSpinner ? (
             <ActivityIndicator color={ICON_COLOR_PRIMARY} size="small" />
           ) : null}
           <View
@@ -222,9 +227,9 @@ export function BudgetSettlementSection({
         {!confirmed && canConfirm && onConfirm ? (
           <Pressable
             onPress={onConfirm}
-            disabled={confirming || empty || loading}
+            disabled={confirming || empty || loading || refreshing}
             className={`mt-3 items-center rounded-2xl bg-brand-primary py-3 active:opacity-90 ${
-              confirming || empty || loading ? 'opacity-50' : ''
+              confirming || empty || loading || refreshing ? 'opacity-50' : ''
             }`}>
             <View className="flex-row items-center gap-1.5">
               {confirming ? (

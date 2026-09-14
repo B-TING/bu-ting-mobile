@@ -57,6 +57,7 @@ import {
   isRetakeRequiredSubmitError,
   zoneEventSubmitErrorCopy,
 } from '../../utils/eventZone/zoneEventSubmitError';
+import { leaveEventAuthFlowToZone } from '../../utils/eventZone/leaveEventAuthFlowToZone';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EventGameCamera'>;
 
@@ -150,6 +151,21 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
       navigation.goBack();
     }
   }, [event, navigation, participationId]);
+
+  useEffect(() => {
+    if (phase !== 'pending' && phase !== 'success') {
+      return;
+    }
+    const unsubscribe = navigation.addListener('beforeRemove', e => {
+      const actionType = e.data.action.type;
+      if (actionType !== 'GO_BACK' && actionType !== 'POP') {
+        return;
+      }
+      e.preventDefault();
+      leaveEventAuthFlowToZone(navigation);
+    });
+    return unsubscribe;
+  }, [navigation, phase]);
 
   useEffect(() => {
     let cancelled = false;
@@ -419,7 +435,15 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
       handleRetake();
       return;
     }
-    navigation.navigate('EventZone');
+    leaveEventAuthFlowToZone(navigation);
+  };
+
+  const handleCameraBack = () => {
+    if (phase === 'pending' || phase === 'success') {
+      leaveEventAuthFlowToZone(navigation);
+      return;
+    }
+    navigation.goBack();
   };
 
   const busy = checking || phase === 'submitting';
@@ -451,7 +475,7 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
         <View className="rounded-full bg-black/50">
           <BackButton
             accessibilityLabel={language === 'ko' ? '뒤로' : 'Back'}
-            onPress={() => navigation.goBack()}
+            onPress={handleCameraBack}
           />
         </View>
         <View className="rounded-full bg-black/50 px-3 py-1.5">

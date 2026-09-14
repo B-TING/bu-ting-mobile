@@ -7,10 +7,10 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EventActionButton } from '../../components/eventZone/EventActionButton';
+import { EventAuthRadiusMap } from '../../components/eventZone/EventAuthRadiusMap';
 import { EventCallout } from '../../components/eventZone/EventCallout';
 import { EventGameHero } from '../../components/eventZone/EventGameHero';
 import { EventInfoCard } from '../../components/eventZone/EventInfoCard';
-import { EventMissionCard } from '../../components/eventZone/EventMissionCard';
 import { EventNavHeader } from '../../components/eventZone/EventNavHeader';
 import { EventStatRow } from '../../components/eventZone/EventStatRow';
 import {
@@ -41,19 +41,22 @@ import type { RadiusGateResult } from '../../hooks/eventZone/useEventAuthRadiusG
 import { useEventAuthRadiusGate } from '../../hooks/eventZone/useEventAuthRadiusGate';
 import { useJoinZoneEvent } from '../../hooks/eventZone/useJoinZoneEvent';
 import { useCancelZoneEvent } from '../../hooks/eventZone/useCancelZoneEvent';
-import { useHydrateMyEventParticipations, useHydrateZoneEventDetail } from '../../hooks/eventZone/useHydrateZoneEvents';
+import {
+  useHydrateMyEventParticipations,
+  useHydrateZoneEventDetail,
+} from '../../hooks/eventZone/useHydrateZoneEvents';
 import { useLocationCache } from '../../hooks/location/useLocationCache';
 import { useAppLanguage, useCopy } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
-import {
-  useEventParticipationStore,
-  useZoneEventStore,
-} from '../../stores';
+import { useEventParticipationStore, useZoneEventStore } from '../../stores';
 import { getCachedCoordinates } from '../../stores/useLocationStore';
 import { resolveEventAuthUserCoords } from '../../utils/eventZone/checkEventAuthLocation';
 import { useAppAlert } from '../../components/shared/modals';
 import { zoneEventTypeCode } from '../../constants/eventZone/zoneEvents';
-import { isServerTargetId, mapParticipationStatus } from '../../services/eventZone/zoneEventMapper';
+import {
+  isServerTargetId,
+  mapParticipationStatus,
+} from '../../services/eventZone/zoneEventMapper';
 import {
   formatZoneEventRemaining,
   useZoneEventRemaining,
@@ -75,7 +78,13 @@ function formatDeadline(iso: string, language: AppLanguage): string {
     return iso;
   }
   const locale =
-    language === 'ko' ? 'ko-KR' : language === 'ja' ? 'ja-JP' : language === 'zh' ? 'zh-CN' : 'en-US';
+    language === 'ko'
+      ? 'ko-KR'
+      : language === 'ja'
+      ? 'ja-JP'
+      : language === 'zh'
+      ? 'zh-CN'
+      : 'en-US';
   return new Date(at).toLocaleString(locale, {
     month: 'short',
     day: 'numeric',
@@ -115,7 +124,10 @@ function buildRadiusModalConfig(
     };
   }
 
-  if (result.status === 'consent_denied' || result.status === 'permission_denied') {
+  if (
+    result.status === 'consent_denied' ||
+    result.status === 'permission_denied'
+  ) {
     return {
       icon: 'alertTriangle',
       iconColor: '#0077B6',
@@ -140,9 +152,21 @@ const TONE_STYLE: Record<
   'warning' | 'info' | 'event',
   { bg: string; border: string; title: string }
 > = {
-  warning: { bg: FEEDBACK_AMBER_BG, border: FEEDBACK_AMBER_BORDER, title: FEEDBACK_AMBER },
-  info: { bg: FEEDBACK_INFO_BG, border: FEEDBACK_INFO_BORDER, title: FEEDBACK_INFO },
-  event: { bg: EVENT_PINK_BG, border: EVENT_PINK_BORDER, title: EVENT_PINK_DARK },
+  warning: {
+    bg: FEEDBACK_AMBER_BG,
+    border: FEEDBACK_AMBER_BORDER,
+    title: FEEDBACK_AMBER,
+  },
+  info: {
+    bg: FEEDBACK_INFO_BG,
+    border: FEEDBACK_INFO_BORDER,
+    title: FEEDBACK_INFO,
+  },
+  event: {
+    bg: EVENT_PINK_BG,
+    border: EVENT_PINK_BORDER,
+    title: EVENT_PINK_DARK,
+  },
 };
 
 function formatRewardSummary(
@@ -185,12 +209,16 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
   const { alert } = useAppAlert();
   useLocationCache();
 
-  const [radiusModal, setRadiusModal] = useState<RadiusModalConfig | null>(null);
+  const [radiusModal, setRadiusModal] = useState<RadiusModalConfig | null>(
+    null,
+  );
 
   const activeEventsByZone = useZoneEventStore(s => s.activeEventsByZone);
   const { loading: detailLoading } = useHydrateZoneEventDetail(eventId);
   useHydrateMyEventParticipations(eventId);
-  const beginParticipation = useEventParticipationStore(s => s.beginParticipation);
+  const beginParticipation = useEventParticipationStore(
+    s => s.beginParticipation,
+  );
   const participation = useEventParticipationStore(s =>
     s.records.find(item => item.eventId === eventId),
   );
@@ -202,7 +230,12 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
   const remainingMs = useZoneEventRemaining(event);
 
   const authTargets = useMemo(
-    () => (event ? listEventAuthTargets(event).filter(item => isServerTargetId(item.targetId)) : []),
+    () =>
+      event
+        ? listEventAuthTargets(event).filter(item =>
+            isServerTargetId(item.targetId),
+          )
+        : [],
     [event],
   );
 
@@ -211,17 +244,23 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
   const canResubmit = Boolean(
     event?.myParticipation?.canResubmit ?? participation?.canResubmit,
   );
-  const serverParticipationId = isServerParticipationId(event?.myParticipation?.participationId)
+  const serverParticipationId = isServerParticipationId(
+    event?.myParticipation?.participationId,
+  )
     ? event.myParticipation.participationId
     : isServerParticipationId(participation?.id)
-      ? participation.id
-      : undefined;
+    ? participation.id
+    : undefined;
 
   const effectiveTargetId = useMemo(() => {
     if (selectedTargetId && isServerTargetId(selectedTargetId)) {
       return selectedTargetId;
     }
-    if (!canResubmit && participation?.targetId && isServerTargetId(participation.targetId)) {
+    if (
+      !canResubmit &&
+      participation?.targetId &&
+      isServerTargetId(participation.targetId)
+    ) {
       return participation.targetId;
     }
     if (authTargets.length === 1) {
@@ -234,7 +273,8 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
     return (
       <View
         className="flex-1 items-center justify-center px-6"
-        style={{ paddingTop: insets.top, backgroundColor: BRAND_PAGE_BG }}>
+        style={{ paddingTop: insets.top, backgroundColor: BRAND_PAGE_BG }}
+      >
         <Text className="text-center" style={{ color: BRAND_MUTED }}>
           …
         </Text>
@@ -246,10 +286,15 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
     return (
       <View
         className="flex-1 items-center justify-center px-6"
-        style={{ paddingTop: insets.top, backgroundColor: BRAND_PAGE_BG }}>
-        <Text className="text-center" style={{ color: BRAND_MUTED }}>{zoneCopy.eventEnded}</Text>
+        style={{ paddingTop: insets.top, backgroundColor: BRAND_PAGE_BG }}
+      >
+        <Text className="text-center" style={{ color: BRAND_MUTED }}>
+          {zoneCopy.eventEnded}
+        </Text>
         <Pressable onPress={() => navigation.goBack()} className="mt-4">
-          <Text className="font-semibold" style={{ color: BRAND_PRIMARY }}>{copy.done}</Text>
+          <Text className="font-semibold" style={{ color: BRAND_PRIMARY }}>
+            {copy.done}
+          </Text>
         </Pressable>
       </View>
     );
@@ -259,12 +304,15 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
   const authTarget = resolveEventAuthTarget(event, effectiveTargetId);
   const remainingText = formatZoneEventRemaining(remainingMs, language);
   const typeLabel =
-    zoneEventTypeCode(event) === 'PLACE_AUTH' ? copy.typePlaceAuth : copy.typeObjectSight;
+    zoneEventTypeCode(event) === 'PLACE_AUTH'
+      ? copy.typePlaceAuth
+      : copy.typeObjectSight;
   const displayStatus = event.myParticipation
     ? mapParticipationStatus(event.myParticipation.status)
     : participation?.status;
   const targetLocked =
     displayStatus != null &&
+    displayStatus !== 'cancelled' &&
     !canResubmit &&
     (displayStatus === 'pending_review' ||
       displayStatus === 'approved' ||
@@ -273,6 +321,7 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
 
   const statusLabel = (() => {
     if (!displayStatus) return copy.statusNotJoined;
+    if (displayStatus === 'cancelled') return copy.statusCancelled;
     if (displayStatus === 'pending_review') return copy.statusPendingReview;
     if (displayStatus === 'approved') return copy.statusCompleted;
     if (displayStatus === 'rejected' && canResubmit) return copy.resubmit;
@@ -287,10 +336,18 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
 
   const remainingAttempts = event.myRemainingAttempts;
   const attemptsExhausted =
-    remainingAttempts === 0 && displayStatus !== 'in_progress' && !canResubmit;
+    remainingAttempts === 0 &&
+    displayStatus !== 'in_progress' &&
+    displayStatus !== 'cancelled' &&
+    !canResubmit;
   const baseRewardTitle = formatRewardSummary(event.baseReward, copy);
-  const excellenceRewardTitle = formatRewardSummary(event.excellenceReward, copy);
-  const deadlineText = event.deadline ? formatDeadline(event.deadline, language) : null;
+  const excellenceRewardTitle = formatRewardSummary(
+    event.excellenceReward,
+    copy,
+  );
+  const deadlineText = event.deadline
+    ? formatDeadline(event.deadline, language)
+    : null;
   const deadlinePassed = remainingMs <= 0;
 
   const canCapture =
@@ -301,7 +358,10 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
     !participationBlocked &&
     !attemptsExhausted &&
     isServerTargetId(effectiveTargetId) &&
-    (displayStatus == null || displayStatus === 'in_progress' || canResubmit);
+    (displayStatus == null ||
+      displayStatus === 'in_progress' ||
+      displayStatus === 'cancelled' ||
+      canResubmit);
 
   const canCancel =
     Boolean(accessToken) &&
@@ -342,18 +402,22 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
     if (!within) return;
 
     const resumeId =
-      canResubmit && serverParticipationId
+      canResubmit && displayStatus === 'rejected' && serverParticipationId
         ? serverParticipationId
         : isServerParticipationId(event.myOpenParticipationId) &&
-            (participation?.status === 'in_progress' ||
-              event.myParticipation?.status === 'JOINED')
-          ? event.myOpenParticipationId
-          : isServerParticipationId(participation?.id) && participation?.status === 'in_progress'
-            ? participation.id
-            : undefined;
+          (participation?.status === 'in_progress' ||
+            event.myParticipation?.status === 'JOINED')
+        ? event.myOpenParticipationId
+        : isServerParticipationId(participation?.id) &&
+          participation?.status === 'in_progress'
+        ? participation.id
+        : undefined;
 
     const goToCamera = (participationId: string) => {
-      if (beginParticipation(event, effectiveTargetId, participationId) === 'blocked') {
+      if (
+        beginParticipation(event, effectiveTargetId, participationId) ===
+        'blocked'
+      ) {
         return;
       }
       navigation.navigate('EventGameCamera', {
@@ -374,7 +438,10 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
       effectiveTargetId,
     );
     if (!coords) {
-      const config = buildRadiusModalConfig({ status: 'location_unavailable' }, copy);
+      const config = buildRadiusModalConfig(
+        { status: 'location_unavailable' },
+        copy,
+      );
       if (config) setRadiusModal(config);
       return;
     }
@@ -441,7 +508,12 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
       ? [{ label: language === 'ko' ? '슬롯' : 'Slot', value: event.slotCode }]
       : []),
     ...(authTarget
-      ? [{ label: copy.radiusTitle, value: copy.radiusLabel(authTarget.radiusM) }]
+      ? [
+          {
+            label: copy.radiusTitle,
+            value: copy.radiusLabel(authTarget.radiusM),
+          },
+        ]
       : []),
     {
       label: language === 'ko' ? '남은 시간' : 'Remaining',
@@ -465,8 +537,11 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
                   zoneId: event.zoneId,
                 })
               }
-              className="rounded-full border border-[#E2E8F0] bg-white px-3 py-1.5 active:opacity-80">
-              <Text className="text-xs font-semibold text-[#0077B6]">{copy.albumOpen}</Text>
+              className="rounded-full border border-[#E2E8F0] bg-white px-3 py-1.5 active:opacity-80"
+            >
+              <Text className="text-xs font-semibold text-[#0077B6]">
+                {copy.albumOpen}
+              </Text>
             </Pressable>
           }
         />
@@ -474,21 +549,37 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
 
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 24, gap: 12 }}>
-        <EventGameHero label={event.titleKo} />
-        <EventMissionCard
-          event={event}
-          language={language}
-          endsInLabel={copy.remainingLabel}
-          endedLabel={zoneCopy.eventEnded}
+        contentContainerStyle={{
+          padding: 16,
+          paddingBottom: insets.bottom + 24,
+          gap: 12,
+        }}
+      >
+        <EventGameHero
+          label={event.titleKo}
+          imageUrl={authTarget?.exampleImageUrl}
         />
+        {authTarget ? (
+          <EventAuthRadiusMap
+            target={authTarget}
+            title={copy.radiusTitle}
+            subtitle={`${copy.radiusLabel(authTarget.radiusM)} · ${
+              copy.radiusHint
+            }`}
+            accentColor={BRAND_PRIMARY}
+          />
+        ) : null}
         <EventStatRow items={statItems} />
 
         {deadlineText ? (
           <EventCallout
             tone={deadlinePassed ? 'warning' : 'info'}
             title={copy.deadlineLabel}
-            body={deadlinePassed ? copy.deadlinePassed : copy.deadlineUntil(deadlineText)}
+            body={
+              deadlinePassed
+                ? copy.deadlinePassed
+                : copy.deadlineUntil(deadlineText)
+            }
           />
         ) : null}
 
@@ -498,15 +589,25 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
             title={copy.statusRejected}
             body={participation?.rejectionReason || copy.rejectedHint}
           />
+        ) : displayStatus === 'cancelled' ? (
+          <EventCallout
+            tone="info"
+            title={copy.statusCancelled}
+            body={copy.cancelledHint}
+          />
         ) : displayStatus === 'pending_review' ? (
-          <EventCallout tone="info" title={copy.pendingReviewTitle} body={copy.pendingReviewMessage} />
+          <EventCallout
+            tone="info"
+            title={copy.pendingReviewTitle}
+            body={copy.pendingReviewMessage}
+          />
         ) : displayStatus === 'approved' ? (
           <EventCallout
             tone="event"
             title={copy.statusCompleted}
             body={
-              event.type === 'OBJECT_AUTH' && authTarget?.placeName
-                ? copy.successObject(authTarget.placeName)
+              event.type === 'OBJECT_AUTH' && authTarget?.placeNameKo
+                ? copy.successObject(authTarget.placeNameKo)
                 : copy.successPlace
             }
           />
@@ -523,10 +624,19 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
         ) : null}
 
         {canResubmit && displayStatus === 'rejected' ? (
-          <EventCallout tone="info" title={copy.resubmit} body={copy.resubmitHint} />
+          <EventCallout
+            tone="info"
+            title={copy.resubmit}
+            body={copy.resubmitHint}
+          />
         ) : null}
 
-        <EventInfoCard label={copy.rulesTitle} title={typeLabel} body={rulesText} tone="default" />
+        <EventInfoCard
+          label={copy.rulesTitle}
+          title={typeLabel}
+          body={rulesText}
+          tone="default"
+        />
 
         {baseRewardTitle ? (
           <EventInfoCard
@@ -585,7 +695,9 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
               const body =
                 event.type === 'OBJECT_AUTH'
                   ? target.placeNameKo
-                  : `GPS ${target.latitude.toFixed(4)}, ${target.longitude.toFixed(4)}`;
+                  : `GPS ${target.latitude.toFixed(
+                      4,
+                    )}, ${target.longitude.toFixed(4)}`;
               return (
                 <Pressable
                   key={target.targetId}
@@ -596,13 +708,17 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
                     borderColor: selected ? EVENT_PINK_BORDER : '#E2E8F0',
                     backgroundColor: selected ? EVENT_PINK_BG : '#FFFFFF',
                     opacity: targetLocked && !selected ? 0.55 : 1,
-                  }}>
+                  }}
+                >
                   <Text
                     className="text-[14px] font-bold leading-5"
-                    style={{ color: selected ? EVENT_PINK_DARK : '#0F172A' }}>
+                    style={{ color: selected ? EVENT_PINK_DARK : '#0F172A' }}
+                  >
                     {title}
                   </Text>
-                  <Text className="mt-1 text-[12px] leading-[17px] text-[#64748B]">{body}</Text>
+                  <Text className="mt-1 text-[12px] leading-[17px] text-[#64748B]">
+                    {body}
+                  </Text>
                   <Text className="mt-1 text-[12px] text-[#94A3B8]">
                     {copy.radiusLabel(target.radiusM)}
                   </Text>
@@ -611,20 +727,12 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
             })}
           </View>
         </View>
-
-        {authTarget ? (
-          <EventInfoCard
-            label={copy.radiusTitle}
-            title={copy.radiusLabel(authTarget.radiusM)}
-            body={copy.radiusHint}
-            tone="success"
-          />
-        ) : null}
       </ScrollView>
 
       <View
         className="gap-2 border-t border-[#E2E8F0] bg-white px-4 pt-3"
-        style={{ paddingBottom: insets.bottom + 12 }}>
+        style={{ paddingBottom: insets.bottom + 12 }}
+      >
         <EventActionButton
           label={participateLabel}
           variant={canCapture ? 'event' : 'ghost'}
@@ -645,10 +753,12 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
         visible={radiusModal != null}
         transparent
         animationType="fade"
-        onRequestClose={() => setRadiusModal(null)}>
+        onRequestClose={() => setRadiusModal(null)}
+      >
         <Pressable
           className="flex-1 items-center justify-center bg-black/50 px-6"
-          onPress={() => setRadiusModal(null)}>
+          onPress={() => setRadiusModal(null)}
+        >
           <Pressable onPress={e => e.stopPropagation()}>
             {radiusModal ? (
               <View
@@ -657,7 +767,8 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
                   backgroundColor: TONE_STYLE[radiusModal.tone].bg,
                   borderWidth: 1,
                   borderColor: TONE_STYLE[radiusModal.tone].border,
-                }}>
+                }}
+              >
                 <View className="items-center px-6 pt-8 pb-4">
                   <View
                     style={{
@@ -667,12 +778,18 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
                       backgroundColor: radiusModal.iconBg,
                       alignItems: 'center',
                       justifyContent: 'center',
-                    }}>
-                    <AppIcon name={radiusModal.icon} size={28} color={radiusModal.iconColor} />
+                    }}
+                  >
+                    <AppIcon
+                      name={radiusModal.icon}
+                      size={28}
+                      color={radiusModal.iconColor}
+                    />
                   </View>
                   <Text
                     className="mt-4 text-center text-[17px] font-bold leading-6"
-                    style={{ color: TONE_STYLE[radiusModal.tone].title }}>
+                    style={{ color: TONE_STYLE[radiusModal.tone].title }}
+                  >
                     {radiusModal.title}
                   </Text>
                   <Text className="mt-2 text-center text-[13px] leading-[20px] text-[#475569]">
@@ -682,10 +799,12 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
                 <View className="border-t border-[#E2E8F0]">
                   <Pressable
                     onPress={() => setRadiusModal(null)}
-                    className="items-center py-4 active:opacity-70">
+                    className="items-center py-4 active:opacity-70"
+                  >
                     <Text
                       className="text-[15px] font-bold"
-                      style={{ color: TONE_STYLE[radiusModal.tone].title }}>
+                      style={{ color: TONE_STYLE[radiusModal.tone].title }}
+                    >
                       {copy.done}
                     </Text>
                   </Pressable>

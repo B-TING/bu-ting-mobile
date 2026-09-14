@@ -4,9 +4,11 @@ import {
   BUSAN_SVG_VIEWBOX,
   EVENT_ZONE_DISTRICT_IDS,
 } from '../../constants/eventZone/busanMapPaths';
+import { BUSAN_DISTRICT_BOUNDARIES } from '../../constants/eventZone/busanDistrictBoundaries';
 import { BUSAN_MAP_BOUNDS, EVENT_ZONES } from '../../constants/eventZone/eventZone';
 import type { EventZoneCoordinate, EventZoneId } from '../../types/eventZone';
 import type { RouteItem } from '../../types/travelPlan';
+import { pointInFlattenedBoundaryRings } from '../geo/pointInPolygon';
 
 /** lat/lng ↔ busan.svg 보정 (자갈치·해운대 기준 2점 보간) */
 const MAP_PROJECTION = {
@@ -127,8 +129,19 @@ export function resolveEventZoneFromAddress(address: string): EventZoneId | null
   return DISTRICT_ID_TO_ZONE[districtId] ?? null;
 }
 
-/** GPS 좌표를 busan.svg 상 위치로 투영한 뒤, 가장 가까운 행정구역 → 이벤트 존 반환 */
-export function resolveEventZoneFromCoordinate(
+/** 행정 경계(PIP)로 구·군 ID — 경계 밖/미매칭이면 null */
+export function resolveDistrictIdFromCoordinate(
+  location: EventZoneCoordinate,
+): string | null {
+  for (const boundary of BUSAN_DISTRICT_BOUNDARIES) {
+    if (pointInFlattenedBoundaryRings(location, boundary.rings)) {
+      return boundary.districtId;
+    }
+  }
+  return null;
+}
+
+function resolveEventZoneByNearestLabel(
   location: EventZoneCoordinate,
 ): EventZoneId {
   const mapPoint = projectLatLngToMapPoint(location);
@@ -151,6 +164,23 @@ export function resolveEventZoneFromCoordinate(
   }
 
   return bestZone;
+}
+
+/**
+ * GPS → 이벤트 존.
+ * 1) 행정구역 폴리곤(PIP)  2) 실패 시 SVG 라벨 최근접 (해안·경계 fallback)
+ */
+export function resolveEventZoneFromCoordinate(
+  location: EventZoneCoordinate,
+): EventZoneId {
+  const districtId = resolveDistrictIdFromCoordinate(location);
+  if (districtId) {
+    const zoneId = DISTRICT_ID_TO_ZONE[districtId];
+    if (zoneId) {
+      return zoneId;
+    }
+  }
+  return resolveEventZoneByNearestLabel(location);
 }
 
 /** 일정 장소: 주소 우선, 없거나 미상이면 좌표로 판별 */

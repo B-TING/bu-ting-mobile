@@ -35,14 +35,19 @@ export type {
   KakaoMapLockerMarkerOverlay,
   KakaoMapPolylineOverlay,
   KakaoMapPolygonOverlay,
+  KakaoMapUserLocationOverlay,
+  KakaoMapCircleOverlay,
 } from './overlays/types';
 export {
   kakaoOverlaysFromSchedule,
   kakaoOverlaysFromRoutes,
   kakaoOverlaysFromPlaces,
   kakaoOverlaysFromLockerStations,
+  kakaoUserLocationOverlay,
+  kakaoOverlaysFromAuthTarget,
 } from './overlays/builders';
 export { kakaoOverlaysFromEventZones } from './overlays/zoneOverlays';
+export { useKakaoUserLocationOverlay } from './hooks/useKakaoUserLocationOverlay';
 export {
   buildScheduleMapOverlays,
   filterValidCoordinates,

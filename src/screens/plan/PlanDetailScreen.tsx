@@ -80,6 +80,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     settlementMemberSummaries,
     settlementForDisplay,
     settlementLoading,
+    settlementRefreshing,
     settlementError,
     confirming,
     budgetEntries,
@@ -128,6 +129,8 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
     closeScheduleModal,
     requestCompletePlan,
     syncExpenses,
+    isPlanSyncing,
+    handleRefreshPlan,
     handlePublished,
     handleViewFeed,
     handleViewTravelRecord,
@@ -223,7 +226,25 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
           </Pressable>
         ) : null}
         {isApiPlan && !offlineMode ? (
-          <PlanSyncStatusDot offline={isPlanOfflineSync} />
+          <>
+            <Pressable
+              onPress={handleRefreshPlan}
+              disabled={isPlanSyncing}
+              hitSlop={8}
+              className={`ml-1 h-9 w-9 items-center justify-center rounded-full ${
+                isPlanSyncing ? 'opacity-50' : 'active:opacity-80'
+              }`}
+              accessibilityRole="button"
+              accessibilityState={{ busy: isPlanSyncing, disabled: isPlanSyncing }}
+              accessibilityLabel={copy.refreshPlanA11y}>
+              {isPlanSyncing ? (
+                <ActivityIndicator size="small" color={ICON_COLOR_PRIMARY} />
+              ) : (
+                <AppIcon name="refreshCw" size={18} color={ICON_COLOR_DEFAULT} />
+              )}
+            </Pressable>
+            <PlanSyncStatusDot offline={isPlanOfflineSync} />
+          </>
         ) : null}
       </View>
 
@@ -319,6 +340,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
                 settlement={settlementForDisplay}
                 memberSummaries={settlementMemberSummaries}
                 settlementLoading={settlementLoading}
+                settlementRefreshing={settlementRefreshing}
                 settlementError={settlementError}
                 canConfirmSettlement={canConfirmSettlement}
                 confirmingSettlement={confirming}

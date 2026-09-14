@@ -23,45 +23,54 @@ const DEFAULT_LNG_DELTA = 0.03;
 
 const FOCUS_LAT_DELTA = 0.008;
 const FOCUS_LNG_DELTA = 0.012;
-/** 단일 장소 포커스 시 카카오맵 줌 (3=광역, 5=동네, 8=블록) */
-const FOCUS_ZOOM_LEVEL = 8;
+/** 단일 장소 포커스 — 카카오 level (작을수록 확대). 4 ≈ 100~200m */
+const FOCUS_ZOOM_LEVEL = 4;
 
 /** 일정 Day 선택 시 지도 스케일 (km) */
 export const SCHEDULE_DAY_FOCUS_KM_SPAN = 4;
-/** 카카오맵 level 7 ≈ 4km, level 8 ≈ 2km (부산 위도 기준) */
-export const SCHEDULE_DAY_FOCUS_ZOOM_LEVEL = 9;
+/** 카카오맵 level 8 ≈ 2~4km (부산 위도 기준). 숫자는 작을수록 확대 */
+export const SCHEDULE_DAY_FOCUS_ZOOM_LEVEL = 8;
 
 export function toMapCoordinate(point: MapPoint) {
   return { latitude: point.lat, longitude: point.lng };
 }
 
-/** kmSpan → 카카오맵 level (숫자가 클수록 확대) */
+/**
+ * kmSpan → 카카오맵 level.
+ * 카카오 API: 숫자가 작을수록 확대 (1 ≈ 20m, 14 ≈ 전국).
+ */
 export function kmSpanToZoomLevel(kmSpan: number): number {
   if (kmSpan >= 100) {
-    return 3;
+    return 13;
   }
   if (kmSpan >= 50) {
-    return 4;
+    return 12;
   }
   if (kmSpan >= 20) {
-    return 5;
+    return 11;
   }
   if (kmSpan >= 10) {
-    return 6;
-  }
-  if (kmSpan >= 4) {
-    return 7;
-  }
-  if (kmSpan >= 2) {
-    return 8;
-  }
-  if (kmSpan >= 1) {
-    return 9;
-  }
-  if (kmSpan >= 0.5) {
     return 10;
   }
-  return 11;
+  if (kmSpan >= 4) {
+    return 8;
+  }
+  if (kmSpan >= 2) {
+    return 7;
+  }
+  if (kmSpan >= 1) {
+    return 6;
+  }
+  if (kmSpan >= 0.5) {
+    return 5;
+  }
+  if (kmSpan >= 0.25) {
+    return 4;
+  }
+  if (kmSpan >= 0.1) {
+    return 3;
+  }
+  return 2;
 }
 
 function latDeltaToZoomLevel(latDelta: number): number {

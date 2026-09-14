@@ -111,7 +111,7 @@ export function usePlanDetailScreen({
     !offlineMode &&
     (!embeddedInMainTabs || mainTabs?.activeTab === 'route');
 
-  const { syncFromServer } = useApiTravelPlanSync({
+  const { syncFromServer, isSyncing: isPlanSyncing } = useApiTravelPlanSync({
     planId,
     enabled: syncEnabled,
     accessToken,
@@ -122,12 +122,21 @@ export function usePlanDetailScreen({
     accessToken,
     enabled: syncEnabled,
   });
+
+  const handleRefreshPlan = useCallback(() => {
+    if (!isApiPlan || offlineMode || isPlanSyncing) {
+      return;
+    }
+    void syncFromServer({ force: true });
+    void syncMembers();
+  }, [isApiPlan, offlineMode, isPlanSyncing, syncFromServer, syncMembers]);
   const {
     syncExpenses,
     refreshSettlementPreview,
     settlement,
     summary,
     settlementLoading,
+    settlementRefreshing,
     settlementError,
     confirming,
     confirmSettlement,
@@ -518,6 +527,7 @@ export function usePlanDetailScreen({
     settlementMemberSummaries: budget.settlementMemberSummaries,
     settlementForDisplay: budget.settlementForDisplay,
     settlementLoading,
+    settlementRefreshing,
     settlementError,
     confirming,
     budgetEntries: budget.budgetEntries,
@@ -566,6 +576,8 @@ export function usePlanDetailScreen({
     closeScheduleModal: schedule.closeScheduleModal,
     requestCompletePlan: reviews.requestCompletePlan,
     syncExpenses,
+    isPlanSyncing,
+    handleRefreshPlan,
     handlePublished,
     handleViewFeed,
     handleViewTravelRecord,

@@ -32,8 +32,12 @@ async function loadBudgetEntriesFromApi(
   accessToken: string,
   travelId: string,
   planId: string,
+  onListReady?: (entries: BudgetEntry[]) => void,
 ): Promise<BudgetEntry[]> {
   const listItems = await fetchAllTravelExpenses(accessToken, travelId);
+  const listEntries = listItems.map(item => expenseListItemToBudgetEntry(item, planId));
+  onListReady?.(listEntries);
+
   if (listItems.length === 0) {
     return [];
   }
@@ -67,11 +71,18 @@ export function useTravelExpensesSync({
   const setBudgetEntries = usePlanStore(s => s.setBudgetEntries);
   const [settlement, setSettlement] = useState<TravelSettlementResponse | null>(null);
   const [summary, setSummary] = useState<TravelExpenseSummaryResponse | null>(null);
+  /** 캐시 없을 때만 전체 로딩 UI */
   const [settlementLoading, setSettlementLoading] = useState(false);
+  /** 기존 데이터 유지한 채 백그라운드 갱신 */
+  const [settlementRefreshing, setSettlementRefreshing] = useState(false);
   const [settlementError, setSettlementError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   /** 오래된 in-flight 동기화가 최신 정산을 덮어쓰지 않도록 */
   const syncGenerationRef = useRef(0);
+  const settlementRef = useRef(settlement);
+  const summaryRef = useRef(summary);
+  settlementRef.current = settlement;
+  summaryRef.current = summary;
 
   const fetchSettlementPreview = useCallback(
     async (token: string, id: string) => {
@@ -96,6 +107,31 @@ export function useTravelExpensesSync({
     [],
   );
 
+  const beginSyncIndicators = useCallback(
+    (targetPlanId: string) => {
+      const existingEntries =
+        usePlanStore.getState().budgetByPlan?.[targetPlanId] ?? [];
+      const hasExisting =
+        existingEntries.length > 0 ||
+        settlementRef.current != null ||
+        summaryRef.current != null;
+      if (hasExisting) {
+        setSettlementRefreshing(true);
+        setSettlementLoading(false);
+      } else {
+        setSettlementLoading(true);
+        setSettlementRefreshing(false);
+      }
+      setSettlementError(null);
+    },
+    [],
+  );
+
+  const endSyncIndicators = useCallback(() => {
+    setSettlementLoading(false);
+    setSettlementRefreshing(false);
+  }, []);
+
   /** 지출 추가/수정 직후 — 정산·요약만 빠르게 재조회 */
   const refreshSettlementPreview = useCallback(async () => {
     if (!enabled || !accessToken || !travelId || !planId) {
@@ -108,8 +144,7 @@ export function useTravelExpensesSync({
     }
 
     const generation = ++syncGenerationRef.current;
-    setSettlementLoading(true);
-    setSettlementError(null);
+    beginSyncIndicators(planId);
 
     try {
       const { settlementData, summaryData } = await fetchSettlementPreview(
@@ -136,10 +171,18 @@ export function useTravelExpensesSync({
       setSettlementError(error instanceof Error ? error.message : 'sync failed');
     } finally {
       if (generation === syncGenerationRef.current) {
-        setSettlementLoading(false);
+        endSyncIndicators();
       }
     }
-  }, [accessToken, enabled, fetchSettlementPreview, planId, travelId]);
+  }, [
+    accessToken,
+    beginSyncIndicators,
+    enabled,
+    endSyncIndicators,
+    fetchSettlementPreview,
+    planId,
+    travelId,
+  ]);
 
   const syncExpenses = useCallback(async () => {
     if (!enabled || !accessToken || !travelId || !planId) {
@@ -152,21 +195,28 @@ export function useTravelExpensesSync({
     }
 
     const generation = ++syncGenerationRef.current;
-    setSettlementLoading(true);
-    setSettlementError(null);
+    beginSyncIndicators(planId);
 
     try {
-      // 경비 목록을 먼저 맞춘 뒤 정산/요약을 조회해, 느린 상세 로딩 중 추가된 지출과 미리보기가 어긋나지 않게 함
-      const entries = await loadBudgetEntriesFromApi(accessToken, travelId, planId);
+      // 목록 먼저 반영(SWR) → N+1 상세는 후속. 정산 미리보기는 목록 직후 병렬.
+      const previewPromise = fetchSettlementPreview(accessToken, travelId);
+      const entries = await loadBudgetEntriesFromApi(
+        accessToken,
+        travelId,
+        planId,
+        listEntries => {
+          if (generation !== syncGenerationRef.current) {
+            return;
+          }
+          setBudgetEntries(planId, listEntries);
+        },
+      );
       if (generation !== syncGenerationRef.current) {
         return;
       }
       setBudgetEntries(planId, entries);
 
-      const { settlementData, summaryData } = await fetchSettlementPreview(
-        accessToken,
-        travelId,
-      );
+      const { settlementData, summaryData } = await previewPromise;
       if (generation !== syncGenerationRef.current) {
         return;
       }
@@ -187,10 +237,19 @@ export function useTravelExpensesSync({
       setSettlementError(error instanceof Error ? error.message : 'sync failed');
     } finally {
       if (generation === syncGenerationRef.current) {
-        setSettlementLoading(false);
+        endSyncIndicators();
       }
     }
-  }, [accessToken, enabled, fetchSettlementPreview, planId, setBudgetEntries, travelId]);
+  }, [
+    accessToken,
+    beginSyncIndicators,
+    enabled,
+    endSyncIndicators,
+    fetchSettlementPreview,
+    planId,
+    setBudgetEntries,
+    travelId,
+  ]);
 
   const confirmSettlement = useCallback(async (): Promise<TravelSettlementResponse | null> => {
     if (!enabled || !accessToken || !travelId) {
@@ -226,6 +285,7 @@ export function useTravelExpensesSync({
     settlement,
     summary,
     settlementLoading,
+    settlementRefreshing,
     settlementError,
     confirming,
     confirmSettlement,

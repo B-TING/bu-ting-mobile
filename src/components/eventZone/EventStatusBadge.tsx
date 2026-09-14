@@ -11,6 +11,7 @@ const STATUS_STYLE: Record<
   pending_review: { bg: '#FFF7ED', text: '#B45309' },
   approved: { bg: '#ECFDF5', text: '#047857' },
   rejected: { bg: '#FEF2F2', text: '#DC2626' },
+  cancelled: { bg: '#F1F5F9', text: '#64748B' },
 };
 
 type EventStatusBadgeProps = {

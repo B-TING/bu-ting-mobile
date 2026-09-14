@@ -40,6 +40,7 @@ export const PARTICIPATION_STATUS_STYLES: Record<
   pending_review: { backgroundColor: '#DBEAFE', textColor: '#1D4ED8' },
   approved: { backgroundColor: '#DCFCE7', textColor: '#15803D' },
   rejected: { backgroundColor: '#FEE2E2', textColor: '#B91C1C' },
+  cancelled: { backgroundColor: '#F1F5F9', textColor: '#64748B' },
 };
 
 export function participationStatusLabel(
@@ -49,6 +50,7 @@ export function participationStatusLabel(
     statusPendingReview: string;
     statusCompleted: string;
     statusRejected: string;
+    statusCancelled: string;
   },
 ): string {
   switch (status) {
@@ -60,6 +62,8 @@ export function participationStatusLabel(
       return copy.statusCompleted;
     case 'rejected':
       return copy.statusRejected;
+    case 'cancelled':
+      return copy.statusCancelled;
     default:
       return copy.statusInProgress;
   }

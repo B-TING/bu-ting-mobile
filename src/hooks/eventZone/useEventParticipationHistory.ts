@@ -22,6 +22,7 @@ function toApiStatus(status: EventParticipationStatus | undefined): string | und
   if (status === 'pending_review') return 'SUBMITTED,UNDER_REVIEW';
   if (status === 'approved') return 'SUCCESS';
   if (status === 'rejected') return 'FAIL,REVOKED';
+  if (status === 'cancelled') return 'CANCELLED';
   return undefined;
 }
 

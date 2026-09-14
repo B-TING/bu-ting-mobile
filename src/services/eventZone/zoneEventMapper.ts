@@ -378,8 +378,11 @@ export function mapParticipationStatus(
   if (status === 'SUCCESS') {
     return 'approved';
   }
-  if (status === 'FAIL' || status === 'REVOKED' || status === 'CANCELLED') {
+  if (status === 'FAIL' || status === 'REVOKED') {
     return 'rejected';
+  }
+  if (status === 'CANCELLED') {
+    return 'cancelled';
   }
   if (status === 'JOINED') {
     return 'in_progress';
@@ -387,12 +390,17 @@ export function mapParticipationStatus(
   return 'pending_review';
 }
 
-/** submit 응답: SUCCESS는 확정, UNDER_REVIEW/SUBMITTED는 검수 대기. */
+/** submit 응답: SUCCESS는 확정, UNDER_REVIEW/SUBMITTED는 검수 대기. CANCELLED는 submit 경로에 없음. */
 export function mapSubmitParticipationStatus(
   status: string | null | undefined,
 ): 'pending_review' | 'approved' | 'rejected' {
-  const mapped = mapParticipationStatus(status);
-  return mapped === 'in_progress' ? 'pending_review' : mapped;
+  if (status === 'SUCCESS') {
+    return 'approved';
+  }
+  if (status === 'FAIL' || status === 'REVOKED') {
+    return 'rejected';
+  }
+  return 'pending_review';
 }
 
 function mapPhase1TypeCode(
@@ -412,9 +420,6 @@ export function mapHistoryItemToRecord(
   const zoneId = dto.event?.zone?.zoneId;
   const eventType = mapPhase1TypeCode(dto.event?.typeCode);
   if (!participationId || !eventId || !isEventZoneId(zoneId) || !eventType) {
-    return null;
-  }
-  if (asString(dto.status) === 'CANCELLED') {
     return null;
   }
   const joinedAt = asString(dto.joinedAt) || new Date().toISOString();
@@ -536,9 +541,6 @@ export function mapParticipationToRecord(
   const zoneId = dto.zoneId;
   const eventType = mapPhase1TypeCode(dto.typeCode);
   if (!participationId || !eventId || !isEventZoneId(zoneId) || !eventType) {
-    return null;
-  }
-  if (asString(dto.status) === 'CANCELLED') {
     return null;
   }
   const joinedAt = asString(dto.joinedAt) || new Date().toISOString();

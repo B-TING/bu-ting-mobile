@@ -20,6 +20,7 @@ import {
   type MukjjippaAttacker,
   type MukjjippaHand,
 } from '../../utils/eventZone/mukjjippa';
+import { leaveEventAuthFlowToZone } from '../../utils/eventZone/leaveEventAuthFlowToZone';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EventGameMukjjippa'>;
 
@@ -245,7 +246,7 @@ export function EventGameMukjjippaScreen({ navigation, route }: Props) {
                 </Pressable>
               ) : null}
               <Pressable
-                onPress={() => navigation.navigate('EventZone')}
+                onPress={() => leaveEventAuthFlowToZone(navigation)}
                 className="flex-1 items-center rounded-2xl bg-brand-primary py-3 active:opacity-90">
                 <Text className="font-bold text-white">{copy.done}</Text>
               </Pressable>

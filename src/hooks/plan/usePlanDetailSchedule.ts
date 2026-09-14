@@ -346,15 +346,20 @@ export function usePlanDetailSchedule({
       if (isApiPlan && accessToken && route.apiPlanPlaceId) {
         void updatePlanPlaceVisitedOnApi(accessToken, route, nextVisited).catch(error => {
           toggleVisited(planId, itemId);
-          if (__DEV__) {
-            console.warn('[PlanDetail] visited PATCH failed', error);
-          }
+          lockScheduleOnApiError(error);
+          const message =
+            error instanceof Error
+              ? error.message
+              : '방문 상태 변경에 실패했습니다.';
+          alert({ title: '방문 상태 변경 실패', message });
         });
       }
     },
     [
       accessToken,
+      alert,
       isApiPlan,
+      lockScheduleOnApiError,
       notifyScheduleReadOnly,
       plan,
       planId,
@@ -462,16 +467,16 @@ export function usePlanDetailSchedule({
   );
 
   const handleReorderRoutes = useCallback(
-    async (dayNumber: number, orderedItemIds: string[]) => {
+    async (dayNumber: number, orderedItemIds: string[]): Promise<boolean> => {
       if (!planId || viewOnly) {
-        return;
+        return false;
       }
 
       const day = enrichedPlan?.itinerary.find(d => d.dayNumber === dayNumber);
       const apiPlanId = day?.apiPlanId;
       if (!isApiPlan || !accessToken || !apiPlanId) {
         reorderRoutes(planId, dayNumber, orderedItemIds);
-        return;
+        return true;
       }
 
       try {
@@ -486,12 +491,14 @@ export function usePlanDetailSchedule({
 
         await updatePlanPlaceOrderOnApi(accessToken, apiPlanId, orderedRoutes);
         await syncFromServer();
+        return true;
       } catch (error) {
         lockScheduleOnApiError(error);
         const message =
           error instanceof Error ? error.message : '순서 변경에 실패했습니다.';
         alert({ title: '순서 변경 실패', message });
         await syncFromServer();
+        return false;
       }
     },
     [

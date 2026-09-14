@@ -255,6 +255,47 @@ window.renderKakaoMapOverlays = function (overlays) {
       lockerOverlay.setMap(window.kakaoMap);
       window.kakaoMapOverlayRefs.push(lockerOverlay);
     }
+
+    if (overlay.kind === 'user') {
+      var userWrap = document.createElement('div');
+      userWrap.style.cssText = 'position:relative;width:28px;height:28px;pointer-events:none;';
+      var userPulse = document.createElement('div');
+      userPulse.style.cssText =
+        'position:absolute;left:50%;top:50%;width:28px;height:28px;margin:-14px 0 0 -14px;' +
+        'border-radius:50%;background:rgba(0,119,182,0.22);';
+      var userDot = document.createElement('div');
+      userDot.style.cssText =
+        'position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;' +
+        'border-radius:50%;background:#0077B6;border:2.5px solid #FFFFFF;' +
+        'box-shadow:0 1px 4px rgba(15,23,42,0.35);';
+      userWrap.appendChild(userPulse);
+      userWrap.appendChild(userDot);
+      var userOverlay = new kakao.maps.CustomOverlay({
+        position: new kakao.maps.LatLng(overlay.lat, overlay.lng),
+        content: userWrap,
+        yAnchor: 0.5,
+        xAnchor: 0.5,
+        zIndex: overlay.zIndex != null ? overlay.zIndex : 20,
+      });
+      userOverlay.setMap(window.kakaoMap);
+      window.kakaoMapOverlayRefs.push(userOverlay);
+    }
+
+    if (overlay.kind === 'circle' && overlay.radiusMeters > 0) {
+      var circle = new kakao.maps.Circle({
+        center: new kakao.maps.LatLng(overlay.lat, overlay.lng),
+        radius: overlay.radiusMeters,
+        strokeWeight: overlay.strokeWeight != null ? overlay.strokeWeight : 2,
+        strokeColor: overlay.strokeColor || '#0077B6',
+        strokeOpacity: overlay.strokeOpacity != null ? overlay.strokeOpacity : 0.85,
+        strokeStyle: 'solid',
+        fillColor: overlay.fillColor || '#0077B6',
+        fillOpacity: overlay.fillOpacity != null ? overlay.fillOpacity : 0.14,
+        zIndex: overlay.zIndex != null ? overlay.zIndex : 2,
+      });
+      circle.setMap(window.kakaoMap);
+      window.kakaoMapOverlayRefs.push(circle);
+    }
   });
 
   return true;

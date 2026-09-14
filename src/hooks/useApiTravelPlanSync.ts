@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -36,43 +36,49 @@ export function useApiTravelPlanSync({
     [setPlanOfflineSync],
   );
   const syncingRef = useRef(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
-  const syncFromServer = useCallback(async (): Promise<TravelPlan | null> => {
-    if (!enabled || !accessToken || !planId) {
-      return findCurrentPlan(planId);
-    }
-
-    const localPlan = usePlanStore.getState().plans.find(p => p.planId === planId);
-    if (!localPlan || localPlan.source !== 'api' || !isPlanForCurrentApiServer(localPlan)) {
-      unlockPlanSchedule(planId);
-      return localPlan && isPlanForCurrentApiServer(localPlan) ? localPlan : null;
-    }
-
-    if (syncingRef.current) {
-      return localPlan;
-    }
-
-    syncingRef.current = true;
-    try {
-      const { plan, scheduleLocked } = await trySyncTravelPlanFromApi(
-        accessToken,
-        localPlan,
-      );
-      markPlanOfflineSync(planId, scheduleLocked);
-      if (!scheduleLocked) {
-        // 일정 sync와 멤버 sync가 동시에 돌면, 늦게 끝난 일정 sync가
-        // 멤버 목록을 예전 스냅샷으로 덮어쓸 수 있어 최신 store 멤버를 유지한다.
-        const latest = usePlanStore.getState().plans.find(p => p.planId === planId);
-        upsertPlan({
-          ...plan,
-          members: latest?.members ?? plan.members,
-        });
+  const syncFromServer = useCallback(
+    async (options?: { force?: boolean }): Promise<TravelPlan | null> => {
+      if ((!enabled && !options?.force) || !accessToken || !planId) {
+        return findCurrentPlan(planId);
       }
-      return plan;
-    } finally {
-      syncingRef.current = false;
-    }
-  }, [enabled, accessToken, planId, upsertPlan, markPlanOfflineSync]);
+
+      const localPlan = usePlanStore.getState().plans.find(p => p.planId === planId);
+      if (!localPlan || localPlan.source !== 'api' || !isPlanForCurrentApiServer(localPlan)) {
+        unlockPlanSchedule(planId);
+        return localPlan && isPlanForCurrentApiServer(localPlan) ? localPlan : null;
+      }
+
+      if (syncingRef.current) {
+        return localPlan;
+      }
+
+      syncingRef.current = true;
+      setIsSyncing(true);
+      try {
+        const { plan, scheduleLocked } = await trySyncTravelPlanFromApi(
+          accessToken,
+          localPlan,
+        );
+        markPlanOfflineSync(planId, scheduleLocked);
+        if (!scheduleLocked) {
+          // 일정 sync와 멤버 sync가 동시에 돌면, 늦게 끝난 일정 sync가
+          // 멤버 목록을 예전 스냅샷으로 덮어쓸 수 있어 최신 store 멤버를 유지한다.
+          const latest = usePlanStore.getState().plans.find(p => p.planId === planId);
+          upsertPlan({
+            ...plan,
+            members: latest?.members ?? plan.members,
+          });
+        }
+        return plan;
+      } finally {
+        syncingRef.current = false;
+        setIsSyncing(false);
+      }
+    },
+    [enabled, accessToken, planId, upsertPlan, markPlanOfflineSync],
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -91,5 +97,5 @@ export function useApiTravelPlanSync({
     }, [enabled, syncFromServer]),
   );
 
-  return { syncFromServer };
+  return { syncFromServer, isSyncing };
 }

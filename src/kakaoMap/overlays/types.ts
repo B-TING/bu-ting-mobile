@@ -59,9 +59,35 @@ export type KakaoMapPolygonOverlay = {
   zIndex?: number;
 };
 
+/** 부산 내 현재 위치 마커 */
+export type KakaoMapUserLocationOverlay = {
+  kind: 'user';
+  id: string;
+  lat: number;
+  lng: number;
+  zIndex?: number;
+};
+
+/** 인증 반경 등 원형 오버레이 (radiusMeters) */
+export type KakaoMapCircleOverlay = {
+  kind: 'circle';
+  id: string;
+  lat: number;
+  lng: number;
+  radiusMeters: number;
+  fillColor?: string;
+  fillOpacity?: number;
+  strokeColor?: string;
+  strokeOpacity?: number;
+  strokeWeight?: number;
+  zIndex?: number;
+};
+
 export type KakaoMapOverlay =
   | KakaoMapNumberedMarkerOverlay
   | KakaoMapRatingMarkerOverlay
   | KakaoMapLockerMarkerOverlay
   | KakaoMapPolylineOverlay
-  | KakaoMapPolygonOverlay;
+  | KakaoMapPolygonOverlay
+  | KakaoMapUserLocationOverlay
+  | KakaoMapCircleOverlay;

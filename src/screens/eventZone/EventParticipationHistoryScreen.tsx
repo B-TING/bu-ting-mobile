@@ -40,6 +40,7 @@ function resultToneForStatus(
   if (status === 'approved') return 'primary';
   if (status === 'rejected') return 'danger';
   if (status === 'pending_review') return 'warning';
+  if (status === 'cancelled') return 'muted';
   return 'muted';
 }
 
@@ -94,6 +95,7 @@ export function EventParticipationHistoryScreen({ navigation }: Props) {
     { key: 'pending_review', label: copy.statusPendingReview },
     { key: 'approved', label: copy.statusCompleted },
     { key: 'rejected', label: copy.statusRejected },
+    { key: 'cancelled', label: copy.statusCancelled },
   ];
 
   const typeChips: { key: HistoryEventTypeFilter | undefined; label: string }[] = [

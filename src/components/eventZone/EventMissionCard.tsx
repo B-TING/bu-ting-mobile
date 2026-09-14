@@ -26,19 +26,27 @@ export function EventMissionCard({
   return (
     <View
       className="rounded-2xl border px-3.5 py-3"
-      style={{ borderColor: EVENT_PINK_BORDER, backgroundColor: EVENT_PINK_BG }}>
+      style={{ borderColor: EVENT_PINK_BORDER, backgroundColor: EVENT_PINK_BG }}
+    >
       <View className="flex-row items-center gap-2">
-        <Text className="text-[13px] leading-[18px]" style={{ color: EVENT_PINK_DARK }}>
+        <Text
+          className="text-[13px] leading-[18px]"
+          style={{ color: EVENT_PINK_DARK }}
+        >
           ⚡
         </Text>
         <Text
           className="flex-1 text-[14px] font-bold leading-5"
           style={{ color: EVENT_PINK_DARK }}
-          numberOfLines={2}>
+          numberOfLines={2}
+        >
           {event.titleKo}
         </Text>
       </View>
-      <Text className="mt-1.5 text-xs leading-[17px]" style={{ color: EVENT_PINK_BODY }}>
+      <Text
+        className="mt-1.5 text-xs leading-[17px]"
+        style={{ color: EVENT_PINK_BODY }}
+      >
         {event.descriptionKo}
       </Text>
       <EventRemainingLabel

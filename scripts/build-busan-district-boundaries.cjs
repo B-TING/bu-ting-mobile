@@ -103,9 +103,11 @@ function geometryToRings(geometry) {
   }
 
   if (geometry.type === 'MultiPolygon') {
+    // Keep each polygon's exterior (+ holes) as separate groups flattened for
+    // Kakao paths, but drop degenerate rings (<4 verts after simplify).
     return geometry.coordinates
       .flatMap(polygon => polygon.map(convertRing))
-      .filter(ring => ring.length >= 3);
+      .filter(ring => ring.length >= 4);
   }
 
   return [];

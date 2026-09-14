@@ -1,12 +1,65 @@
 import { getScheduleDayColor } from '../../constants/plan/scheduleDayColors';
 import type { SubwayLockerStation } from '../../types/subwayLocker';
+import type { EventZoneCoordinate } from '../../types/eventZone';
 import { getSubwayLineColor } from '../../constants/locker/subwayLineColors';
 import type { RouteItem } from '../../types/travelPlan';
-import type { KakaoMapOverlay } from './types';
+import type { KakaoMapOverlay, KakaoMapUserLocationOverlay } from './types';
 import type {
   ScheduleMapLineOverlay,
   ScheduleMapMarkerOverlay,
 } from './scheduleOverlays';
+
+export function kakaoUserLocationOverlay(
+  location: EventZoneCoordinate,
+  id = 'user-location',
+): KakaoMapUserLocationOverlay {
+  return {
+    kind: 'user',
+    id,
+    lat: location.lat,
+    lng: location.lng,
+    zIndex: 20,
+  };
+}
+
+/** 인증 타겟 핀 + 반경 원 */
+export function kakaoOverlaysFromAuthTarget(input: {
+  targetId: string;
+  lat: number;
+  lng: number;
+  radiusM: number;
+  label?: string;
+  color?: string;
+}): KakaoMapOverlay[] {
+  const color = input.color ?? '#0077B6';
+  return [
+    {
+      kind: 'circle',
+      id: `auth-radius-${input.targetId}`,
+      lat: input.lat,
+      lng: input.lng,
+      radiusMeters: input.radiusM,
+      fillColor: color,
+      fillOpacity: 0.14,
+      strokeColor: color,
+      strokeOpacity: 0.9,
+      strokeWeight: 2,
+      zIndex: 2,
+    },
+    {
+      kind: 'numbered',
+      id: `auth-target-${input.targetId}`,
+      lat: input.lat,
+      lng: input.lng,
+      order: 1,
+      color,
+      size: 30,
+      zIndex: 8,
+      active: true,
+      label: input.label,
+    },
+  ];
+}
 
 function parseStrokeColor(hex: string): { color: string; opacity: number } {
   if (hex.length === 9 && hex.startsWith('#')) {

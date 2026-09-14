@@ -33,7 +33,10 @@ type PlanScheduleTabProps = {
   onQuickRating: (route: RouteItem, rating: number) => void;
   onDeleteRoute: (route: RouteItem) => void;
   onSaveRouteMemo?: (route: RouteItem, memo: string | undefined) => void | Promise<void>;
-  onReorderRoutes?: (dayNumber: number, orderedItemIds: string[]) => void | Promise<void>;
+  onReorderRoutes?: (
+    dayNumber: number,
+    orderedItemIds: string[],
+  ) => void | boolean | Promise<void | boolean>;
   onOptimizeDayRoute?: (dayNumber: number) => void | Promise<void>;
   onRouteRemoved?: (itemId: string) => void;
   onScheduleModalChange: (modal: ScheduleModalState) => void;
@@ -126,6 +129,12 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
             ? undefined
             : memo => schedule.onSaveRouteMemo?.(schedule.focusedRoute!, memo)
         }
+        onDirectionsFromMeGoogle={() =>
+          schedule.openDirectionsFromMyLocation('google', schedule.focusedRoute!)
+        }
+        onDirectionsFromMeKakao={() =>
+          schedule.openDirectionsFromMyLocation('kakao', schedule.focusedRoute!)
+        }
       />
     ) : null;
 
@@ -179,6 +188,12 @@ export const PlanScheduleTab = forwardRef<PlanScheduleTabHandle, PlanScheduleTab
             }
             onKakaoDirections={(from, to) =>
               schedule.openLegDirectionsWithProvider('kakao', from, to)
+            }
+            onFromMeGoogleDirections={to =>
+              schedule.openDirectionsFromMyLocation('google', to)
+            }
+            onFromMeKakaoDirections={to =>
+              schedule.openDirectionsFromMyLocation('kakao', to)
             }
             guardReadOnly={schedule.guardReadOnly}
           />

@@ -195,8 +195,11 @@ describe('mapHistoryItemToRecord', () => {
     expect(record?.submissions?.[0]?.submissionId).toBe('sub-1');
   });
 
-  it('skips cancelled rows', () => {
-    expect(mapHistoryItemToRecord({ ...historyBase, status: 'CANCELLED' })).toBeNull();
+  it('maps cancelled participation instead of skipping', () => {
+    const record = mapHistoryItemToRecord({ ...historyBase, status: 'CANCELLED' });
+    expect(record).not.toBeNull();
+    expect(record?.status).toBe('cancelled');
+    expect(record?.canResubmit).toBe(true);
   });
 
   it('maps participation mediaUrl onto the record', () => {

@@ -20,6 +20,11 @@ export const PLAN_DETAIL_COPY: Record<
     directionsKakaoButton: string;
     directionsFailed: string;
     directionsUnavailable: string;
+    directionsFromMeGoogleButton: string;
+    directionsFromMeKakaoButton: string;
+    directionsMyLocationLabel: string;
+    directionsLocationDenied: string;
+    directionsLocationUnavailable: string;
     mapPlaceholder: string;
     mapPlaceholderSub: string;
     mapTapHint: string;
@@ -203,6 +208,7 @@ export const PLAN_DETAIL_COPY: Record<
     dayDuration: (m: string) => string;
     dayZoneCount: (n: number) => string;
     offlineSyncNotice: string;
+    refreshPlanA11y: string;
   }
 > = {
   ko: {
@@ -213,6 +219,11 @@ export const PLAN_DETAIL_COPY: Record<
     directionsKakaoButton: '카카오맵에서 경로 보기',
     directionsFailed: '지도 앱을 열지 못했습니다.',
     directionsUnavailable: '길찾기에 필요한 위치 정보가 없습니다.',
+    directionsFromMeGoogleButton: '내 위치 → 구글',
+    directionsFromMeKakaoButton: '내 위치 → 카카오',
+    directionsMyLocationLabel: '내 위치',
+    directionsLocationDenied: '위치 권한이 없어 길찾기를 시작할 수 없습니다.',
+    directionsLocationUnavailable: '현재 위치를 확인할 수 없습니다.',
     mapPlaceholder: '카카오맵',
     mapPlaceholderSub: '일정·장소 위치',
     mapTapHint: '탭하여 크게 보기',
@@ -407,6 +418,7 @@ export const PLAN_DETAIL_COPY: Record<
     dayZoneCount: n => `방문 영역 ${n}곳`,
     offlineSyncNotice:
       '서버 동기화에 실패해 저장된 정보를 표시합니다. 이 상태에서는 일정 수정이 불가능합니다.',
+    refreshPlanA11y: '일정 새로고침',
   },
   en: {
     routeOptimize: 'Optimize route',
@@ -416,6 +428,11 @@ export const PLAN_DETAIL_COPY: Record<
     directionsKakaoButton: 'View route on Kakao Map',
     directionsFailed: 'Could not open a maps app.',
     directionsUnavailable: 'Location data is missing for directions.',
+    directionsFromMeGoogleButton: 'From me → Google',
+    directionsFromMeKakaoButton: 'From me → Kakao',
+    directionsMyLocationLabel: 'My location',
+    directionsLocationDenied: 'Location permission is required to start directions.',
+    directionsLocationUnavailable: 'Could not determine your current location.',
     mapPlaceholder: 'Kakao Map',
     mapPlaceholderSub: 'Trip stops and places',
     mapTapHint: 'Tap to expand map',
@@ -612,6 +629,7 @@ export const PLAN_DETAIL_COPY: Record<
     dayZoneCount: n => `${n} zone${n === 1 ? '' : 's'}`,
     offlineSyncNotice:
       'Server sync failed. Showing saved data. Schedule edits are unavailable until sync recovers.',
+    refreshPlanA11y: 'Refresh schedule',
   },
   ja: {
     routeOptimize: 'ルート最適化',
@@ -621,6 +639,11 @@ export const PLAN_DETAIL_COPY: Record<
     directionsKakaoButton: 'カカオマップで経路を見る',
     directionsFailed: '地図アプリを開けませんでした。',
     directionsUnavailable: '道順に必要な位置情報がありません。',
+    directionsFromMeGoogleButton: '現在地 → Google',
+    directionsFromMeKakaoButton: '現在地 → カカオ',
+    directionsMyLocationLabel: '現在地',
+    directionsLocationDenied: '位置情報の許可がないため道順を開始できません。',
+    directionsLocationUnavailable: '現在地を確認できませんでした。',
     mapPlaceholder: 'Googleマップ',
     mapPlaceholderSub: '日程・スポットの位置',
     mapTapHint: 'タップで拡大',
@@ -817,6 +840,7 @@ export const PLAN_DETAIL_COPY: Record<
     dayZoneCount: n => `訪問エリア ${n}箇所`,
     offlineSyncNotice:
       'サーバー同期に失敗したため、保存済みの情報を表示しています。この状態では日程の編集はできません。',
+    refreshPlanA11y: '日程を更新',
   },
   zh: {
     routeOptimize: '优化路线',
@@ -826,6 +850,11 @@ export const PLAN_DETAIL_COPY: Record<
     directionsKakaoButton: '在 Kakao 地图查看路线',
     directionsFailed: '无法打开地图应用。',
     directionsUnavailable: '缺少导航所需的位置信息。',
+    directionsFromMeGoogleButton: '从我的位置 → Google',
+    directionsFromMeKakaoButton: '从我的位置 → Kakao',
+    directionsMyLocationLabel: '我的位置',
+    directionsLocationDenied: '未授予位置权限，无法开始导航。',
+    directionsLocationUnavailable: '无法确认当前位置。',
     mapPlaceholder: 'Google 地图',
     mapPlaceholderSub: '行程与地点位置',
     mapTapHint: '点击放大地图',
@@ -1019,5 +1048,6 @@ export const PLAN_DETAIL_COPY: Record<
     dayZoneCount: n => `访问 ${n} 个区域`,
     offlineSyncNotice:
       '服务器同步失败，正在显示已保存的信息。此状态下无法修改行程。',
+    refreshPlanA11y: '刷新行程',
   },
 };
