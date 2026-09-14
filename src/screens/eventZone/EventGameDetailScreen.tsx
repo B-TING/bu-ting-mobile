@@ -7,6 +7,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EventActionButton } from '../../components/eventZone/EventActionButton';
+import { EventAuthRadiusMap } from '../../components/eventZone/EventAuthRadiusMap';
 import { EventCallout } from '../../components/eventZone/EventCallout';
 import { EventGameHero } from '../../components/eventZone/EventGameHero';
 import { EventInfoCard } from '../../components/eventZone/EventInfoCard';
@@ -625,11 +626,11 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
         </View>
 
         {authTarget ? (
-          <EventInfoCard
-            label={copy.radiusTitle}
-            title={copy.radiusLabel(authTarget.radiusM)}
-            body={copy.radiusHint}
-            tone="success"
+          <EventAuthRadiusMap
+            target={authTarget}
+            title={copy.radiusTitle}
+            subtitle={`${copy.radiusLabel(authTarget.radiusM)} · ${copy.radiusHint}`}
+            accentColor={BRAND_PRIMARY}
           />
         ) : null}
       </ScrollView>

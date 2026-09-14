@@ -280,6 +280,22 @@ window.renderKakaoMapOverlays = function (overlays) {
       userOverlay.setMap(window.kakaoMap);
       window.kakaoMapOverlayRefs.push(userOverlay);
     }
+
+    if (overlay.kind === 'circle' && overlay.radiusMeters > 0) {
+      var circle = new kakao.maps.Circle({
+        center: new kakao.maps.LatLng(overlay.lat, overlay.lng),
+        radius: overlay.radiusMeters,
+        strokeWeight: overlay.strokeWeight != null ? overlay.strokeWeight : 2,
+        strokeColor: overlay.strokeColor || '#0077B6',
+        strokeOpacity: overlay.strokeOpacity != null ? overlay.strokeOpacity : 0.85,
+        strokeStyle: 'solid',
+        fillColor: overlay.fillColor || '#0077B6',
+        fillOpacity: overlay.fillOpacity != null ? overlay.fillOpacity : 0.14,
+        zIndex: overlay.zIndex != null ? overlay.zIndex : 2,
+      });
+      circle.setMap(window.kakaoMap);
+      window.kakaoMapOverlayRefs.push(circle);
+    }
   });
 
   return true;

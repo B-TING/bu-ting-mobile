@@ -68,10 +68,26 @@ export type KakaoMapUserLocationOverlay = {
   zIndex?: number;
 };
 
+/** 인증 반경 등 원형 오버레이 (radiusMeters) */
+export type KakaoMapCircleOverlay = {
+  kind: 'circle';
+  id: string;
+  lat: number;
+  lng: number;
+  radiusMeters: number;
+  fillColor?: string;
+  fillOpacity?: number;
+  strokeColor?: string;
+  strokeOpacity?: number;
+  strokeWeight?: number;
+  zIndex?: number;
+};
+
 export type KakaoMapOverlay =
   | KakaoMapNumberedMarkerOverlay
   | KakaoMapRatingMarkerOverlay
   | KakaoMapLockerMarkerOverlay
   | KakaoMapPolylineOverlay
   | KakaoMapPolygonOverlay
-  | KakaoMapUserLocationOverlay;
+  | KakaoMapUserLocationOverlay
+  | KakaoMapCircleOverlay;

@@ -36,6 +36,7 @@ export type {
   KakaoMapPolylineOverlay,
   KakaoMapPolygonOverlay,
   KakaoMapUserLocationOverlay,
+  KakaoMapCircleOverlay,
 } from './overlays/types';
 export {
   kakaoOverlaysFromSchedule,
@@ -43,6 +44,7 @@ export {
   kakaoOverlaysFromPlaces,
   kakaoOverlaysFromLockerStations,
   kakaoUserLocationOverlay,
+  kakaoOverlaysFromAuthTarget,
 } from './overlays/builders';
 export { kakaoOverlaysFromEventZones } from './overlays/zoneOverlays';
 export { useKakaoUserLocationOverlay } from './hooks/useKakaoUserLocationOverlay';
