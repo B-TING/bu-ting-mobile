@@ -33,7 +33,10 @@ type PlanScheduleTabProps = {
   onQuickRating: (route: RouteItem, rating: number) => void;
   onDeleteRoute: (route: RouteItem) => void;
   onSaveRouteMemo?: (route: RouteItem, memo: string | undefined) => void | Promise<void>;
-  onReorderRoutes?: (dayNumber: number, orderedItemIds: string[]) => void | Promise<void>;
+  onReorderRoutes?: (
+    dayNumber: number,
+    orderedItemIds: string[],
+  ) => void | boolean | Promise<void | boolean>;
   onOptimizeDayRoute?: (dayNumber: number) => void | Promise<void>;
   onRouteRemoved?: (itemId: string) => void;
   onScheduleModalChange: (modal: ScheduleModalState) => void;

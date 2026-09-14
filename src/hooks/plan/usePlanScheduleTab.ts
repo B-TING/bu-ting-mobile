@@ -44,7 +44,10 @@ export type UsePlanScheduleTabParams = {
   onQuickRating: (route: RouteItem, rating: number) => void;
   onDeleteRoute: (route: RouteItem) => void;
   onSaveRouteMemo?: (route: RouteItem, memo: string | undefined) => void | Promise<void>;
-  onReorderRoutes?: (dayNumber: number, orderedItemIds: string[]) => void | Promise<void>;
+  onReorderRoutes?: (
+    dayNumber: number,
+    orderedItemIds: string[],
+  ) => void | boolean | Promise<void | boolean>;
   onOptimizeDayRoute?: (dayNumber: number) => void | Promise<void>;
   onRouteRemoved?: (itemId: string) => void;
   onScheduleModalChange: (modal: ScheduleModalState) => void;
@@ -115,11 +118,14 @@ export function usePlanScheduleTab({
   const day =
     plan.itinerary.find(d => d.dayNumber === selectedDay) ?? plan.itinerary[0];
 
-  const routeIdSetKey = useMemo(() => {
+  // Order-sensitive: sync/rollback that only changes sequence must reset orderedIds.
+  const routeOrderKey = useMemo(() => {
     if (!day) {
       return '';
     }
-    return [...day.routes.map(r => r.itemId)].sort().join('|');
+    return sortedRoutes(day.routes)
+      .map(r => r.itemId)
+      .join('|');
   }, [day]);
 
   const dayRoutes = useMemo(() => {
@@ -251,7 +257,7 @@ export function usePlanScheduleTab({
     } else {
       setOrderedIds([]);
     }
-  }, [selectedDay, routeIdSetKey, day]);
+  }, [selectedDay, routeOrderKey, day]);
 
   const clearReboot = useCallback(() => {
     setReboot(null);
@@ -347,12 +353,22 @@ export function usePlanScheduleTab({
       if (indexA < 0 || indexB < 0) {
         return;
       }
+      const previous = [...base];
       const next = [...base];
       next[indexA] = idB;
       next[indexB] = idA;
       setOrderedIds(next);
       if (onReorderRoutes) {
-        onReorderRoutes(day.dayNumber, next);
+        void Promise.resolve(onReorderRoutes(day.dayNumber, next)).then(
+          ok => {
+            if (ok === false) {
+              setOrderedIds(previous);
+            }
+          },
+          () => {
+            setOrderedIds(previous);
+          },
+        );
       } else {
         reorderRoutes(planId, day.dayNumber, next);
       }
