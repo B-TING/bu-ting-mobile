@@ -203,6 +203,7 @@ export const PLAN_DETAIL_COPY: Record<
     dayDuration: (m: string) => string;
     dayZoneCount: (n: number) => string;
     offlineSyncNotice: string;
+    refreshPlanA11y: string;
   }
 > = {
   ko: {
@@ -407,6 +408,7 @@ export const PLAN_DETAIL_COPY: Record<
     dayZoneCount: n => `방문 영역 ${n}곳`,
     offlineSyncNotice:
       '서버 동기화에 실패해 저장된 정보를 표시합니다. 이 상태에서는 일정 수정이 불가능합니다.',
+    refreshPlanA11y: '일정 새로고침',
   },
   en: {
     routeOptimize: 'Optimize route',
@@ -612,6 +614,7 @@ export const PLAN_DETAIL_COPY: Record<
     dayZoneCount: n => `${n} zone${n === 1 ? '' : 's'}`,
     offlineSyncNotice:
       'Server sync failed. Showing saved data. Schedule edits are unavailable until sync recovers.',
+    refreshPlanA11y: 'Refresh schedule',
   },
   ja: {
     routeOptimize: 'ルート最適化',
@@ -817,6 +820,7 @@ export const PLAN_DETAIL_COPY: Record<
     dayZoneCount: n => `訪問エリア ${n}箇所`,
     offlineSyncNotice:
       'サーバー同期に失敗したため、保存済みの情報を表示しています。この状態では日程の編集はできません。',
+    refreshPlanA11y: '日程を更新',
   },
   zh: {
     routeOptimize: '优化路线',
@@ -1019,5 +1023,6 @@ export const PLAN_DETAIL_COPY: Record<
     dayZoneCount: n => `访问 ${n} 个区域`,
     offlineSyncNotice:
       '服务器同步失败，正在显示已保存的信息。此状态下无法修改行程。',
+    refreshPlanA11y: '刷新行程',
   },
 };
