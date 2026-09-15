@@ -1,11 +1,11 @@
 import { EVENT_ZONE_DISTRICT_IDS } from '../../constants/eventZone/busanMapPaths';
-import { BUSAN_DISTRICT_BOUNDARIES } from '../../constants/eventZone/busanDistrictBoundaries';
+import { BUSAN_DISTRICT_BOUNDARIES_DRAW } from '../../constants/eventZone/busanDistrictBoundariesDraw';
 import { EVENT_ZONES, KAKAO_ZONE_POLYGON_OFFSET } from '../../constants/eventZone/eventZone';
 import type { EventZoneCoordinate } from '../../types/eventZone';
 import type { KakaoMapPolygonOverlay } from './types';
 
 const boundariesByDistrictId = Object.fromEntries(
-  BUSAN_DISTRICT_BOUNDARIES.map(boundary => [boundary.districtId, boundary]),
+  BUSAN_DISTRICT_BOUNDARIES_DRAW.map(boundary => [boundary.districtId, boundary]),
 );
 
 function applyPolygonOffset(point: EventZoneCoordinate): EventZoneCoordinate {

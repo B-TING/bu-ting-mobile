@@ -49,9 +49,11 @@ export function getCurrentCoordinates(): Promise<EventZoneCoordinate | null> {
     new Promise<EventZoneCoordinate | null>(resolve => {
       Geolocation.getCurrentPosition(
         position => {
+          const accuracy = position.coords.accuracy;
           resolve({
             lat: position.coords.latitude,
             lng: position.coords.longitude,
+            accuracyMeters: accuracy > 0 ? accuracy : undefined,
           });
         },
         () => resolve(null),

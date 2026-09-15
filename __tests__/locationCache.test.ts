@@ -1,5 +1,8 @@
 import { getCachedCoordinates, useLocationStore } from '../src/stores/useLocationStore';
-import { isFreshLocationCache } from '../src/utils/location/locationCache';
+import {
+  isAccurateEnoughForZone,
+  isFreshLocationCache,
+} from '../src/utils/location/locationCache';
 
 describe('isFreshLocationCache', () => {
   it('rejects missing timestamp', () => {
@@ -32,5 +35,19 @@ describe('getCachedCoordinates', () => {
   it('returns null when older than maxAge', () => {
     useLocationStore.getState().setCoords({ lat: 35.15, lng: 129.16 }, Date.now() - 60_000);
     expect(getCachedCoordinates(45_000)).toBeNull();
+  });
+});
+
+describe('isAccurateEnoughForZone', () => {
+  it('accepts missing accuracy', () => {
+    expect(isAccurateEnoughForZone(undefined)).toBe(true);
+  });
+
+  it('accepts accuracy within the zone threshold', () => {
+    expect(isAccurateEnoughForZone(120)).toBe(true);
+  });
+
+  it('rejects coarse accuracy', () => {
+    expect(isAccurateEnoughForZone(800)).toBe(false);
   });
 });

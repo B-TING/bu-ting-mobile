@@ -5,10 +5,16 @@ import { DEFAULT_USER_LOCATION_BUSAN } from '../constants/eventZone/eventZone';
 import { useLocationStore } from '../stores/useLocationStore';
 import type { EventZoneCoordinate, EventZoneId } from '../types/eventZone';
 import {
-  isInsideBusanBounds,
-  resolveEventZoneFromCoordinate,
-} from '../utils/eventZone/zoneResolver';
+  confirmUserZone,
+  peekCommittedUserZone,
+  resetUserZoneHysteresis,
+} from '../utils/eventZone/userZoneHysteresis';
+import { resolveUserEventZone } from '../utils/eventZone/zoneResolver';
 import { acquireDeviceCoordinates } from '../utils/location/acquireDeviceCoordinates';
+import {
+  isAccurateEnoughForZone,
+  isFreshLocationCache,
+} from '../utils/location/locationCache';
 
 export type CurrentEventZoneStatus = 'loading' | 'ready' | 'fallback';
 
@@ -26,17 +32,18 @@ export type CurrentEventZoneState = {
  * 채팅 구역·홈 위젯용 현재 위치/구역.
  * - LocationStore 캐시/폴링과 연동 (#182)
  * - 좌표 확보는 `acquireDeviceCoordinates` 단일 파이프라인
- * - 동의·권한·GPS 성공 + 부산 안 → 해당 구역
- * - 부산 밖 → zoneId null (미소속)
- * - 거절/실패 → zoneId null + usedFallback
+ * - 소속: 구 폴리곤 PIP → 변 200m. 맵 상자·라벨 최근접 없음
+ * - 신선·정확 좌표만 존 갱신. 전환은 연속 2샘플
+ * - 거절/실패/만료 → zoneId null + usedFallback
  */
 export function useCurrentEventZone(): CurrentEventZoneState {
   const { ensureLocationConsent } = useLocationConsent();
   const coords = useLocationStore(s => s.coords);
-  /** 캐시가 없을 때만 쓰는 부트스트랩 상태 */
+  const updatedAt = useLocationStore(s => s.updatedAt);
   const [bootStatus, setBootStatus] = useState<CurrentEventZoneStatus>(
     coords ? 'ready' : 'loading',
   );
+  const [zoneId, setZoneId] = useState<EventZoneId | null>(null);
 
   useEffect(() => {
     if (coords) {
@@ -72,15 +79,41 @@ export function useCurrentEventZone(): CurrentEventZoneState {
     };
   }, [ensureLocationConsent]);
 
+  const isFresh = isFreshLocationCache(updatedAt);
+  const isAccurate = isAccurateEnoughForZone(coords?.accuracyMeters);
+
+  useEffect(() => {
+    if (!coords || !isFresh) {
+      resetUserZoneHysteresis();
+      setZoneId(null);
+      return;
+    }
+
+    if (!isAccurate) {
+      setZoneId(peekCommittedUserZone());
+      return;
+    }
+
+    const sampleKey = `${updatedAt}:${coords.lat}:${coords.lng}`;
+    setZoneId(confirmUserZone(resolveUserEventZone(coords), sampleKey));
+  }, [coords, updatedAt, isFresh, isAccurate]);
+
   return useMemo((): CurrentEventZoneState => {
-    if (coords) {
+    if (coords && isFresh) {
       return {
-        zoneId: isInsideBusanBounds(coords)
-          ? resolveEventZoneFromCoordinate(coords)
-          : null,
+        zoneId,
         location: coords,
         usedFallback: false,
         status: 'ready',
+      };
+    }
+
+    if (coords && !isFresh) {
+      return {
+        zoneId: null,
+        location: coords,
+        usedFallback: true,
+        status: 'fallback',
       };
     }
 
@@ -99,5 +132,5 @@ export function useCurrentEventZone(): CurrentEventZoneState {
       usedFallback: true,
       status: 'fallback',
     };
-  }, [bootStatus, coords]);
+  }, [bootStatus, coords, isFresh, zoneId]);
 }

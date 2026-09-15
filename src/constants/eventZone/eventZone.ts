@@ -6,13 +6,10 @@ import type {
   EventZoneId,
   EventZoneLandmark,
 } from '../../types/eventZone';
+import { BUSAN_DISTRICT_EXTENT } from './busanDistrictBoundaries';
 
-export const BUSAN_MAP_BOUNDS = {
-  minLat: 35.04,
-  maxLat: 35.3,
-  minLng: 128.92,
-  maxLng: 129.24,
-} as const;
+/** 맵 카메라용 대략 상자. 사용자 소속 판정에는 쓰지 않는다. */
+export const BUSAN_MAP_BOUNDS = BUSAN_DISTRICT_EXTENT;
 
 /**
  * 카카오맵 행사 구역 폴리곤 미세 위치 보정.
