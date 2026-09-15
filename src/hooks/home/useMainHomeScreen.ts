@@ -48,6 +48,7 @@ type UseMainHomeScreenParams = {
   suppressNavbarClearance?: boolean;
   forceShowRebootFab?: boolean;
   guideScrollTargetId?: string | null;
+  suppressLocationPrompt?: boolean;
 };
 
 export function useMainHomeScreen({
@@ -55,8 +56,9 @@ export function useMainHomeScreen({
   suppressNavbarClearance = false,
   forceShowRebootFab = false,
   guideScrollTargetId = null,
+  suppressLocationPrompt = false,
 }: UseMainHomeScreenParams) {
-  useLocationCache();
+  useLocationCache({ enabled: !suppressLocationPrompt });
   const insets = useSafeAreaInsets();
   const { goToTab, activeTab } = useMainTabNavigation();
   const { alert } = useAppAlert();

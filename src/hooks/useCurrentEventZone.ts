@@ -28,6 +28,14 @@ export type CurrentEventZoneState = {
   status: CurrentEventZoneStatus;
 };
 
+export type UseCurrentEventZoneOptions = {
+  /**
+   * false면 동의 모달·GPS 요청 없이 캐시만 쓴다.
+   * 온보딩 가이드처럼 메인 홈을 미리보기할 때 사용.
+   */
+  requestLocation?: boolean;
+};
+
 /**
  * 채팅 구역·홈 위젯용 현재 위치/구역.
  * - LocationStore 캐시/폴링과 연동 (#182)
@@ -36,13 +44,19 @@ export type CurrentEventZoneState = {
  * - 신선·정확 좌표만 존 갱신. 전환은 연속 2샘플
  * - 거절/실패/만료 → zoneId null + usedFallback
  */
-export function useCurrentEventZone(): CurrentEventZoneState {
+export function useCurrentEventZone(
+  options?: UseCurrentEventZoneOptions,
+): CurrentEventZoneState {
+  const requestLocation = options?.requestLocation ?? true;
   const { ensureLocationConsent } = useLocationConsent();
   const coords = useLocationStore(s => s.coords);
   const updatedAt = useLocationStore(s => s.updatedAt);
-  const [bootStatus, setBootStatus] = useState<CurrentEventZoneStatus>(
-    coords ? 'ready' : 'loading',
-  );
+  const [bootStatus, setBootStatus] = useState<CurrentEventZoneStatus>(() => {
+    if (coords) {
+      return 'ready';
+    }
+    return requestLocation ? 'loading' : 'fallback';
+  });
   const [zoneId, setZoneId] = useState<EventZoneId | null>(null);
 
   useEffect(() => {
@@ -52,6 +66,13 @@ export function useCurrentEventZone(): CurrentEventZoneState {
   }, [coords]);
 
   useEffect(() => {
+    if (!requestLocation) {
+      if (!useLocationStore.getState().coords) {
+        setBootStatus('fallback');
+      }
+      return;
+    }
+
     if (useLocationStore.getState().coords) {
       return;
     }
@@ -77,7 +98,7 @@ export function useCurrentEventZone(): CurrentEventZoneState {
     return () => {
       cancelled = true;
     };
-  }, [ensureLocationConsent]);
+  }, [ensureLocationConsent, requestLocation]);
 
   const isFresh = isFreshLocationCache(updatedAt);
   const isAccurate = isAccurateEnoughForZone(coords?.accuracyMeters);

@@ -10,12 +10,13 @@ import { refreshLocationCacheIfPermitted } from '../../utils/location/refreshLoc
  * watchPosition 추적은 하지 않는다.
  * 대화형 확보(동의 다이얼로그)는 `acquireDeviceCoordinates`를 쓴다.
  */
-export function useLocationCache() {
+export function useLocationCache(options?: { enabled?: boolean }) {
+  const enabled = options?.enabled ?? true;
   const isFocused = useIsFocused();
   const disclosureAccepted = useLocationConsentStore(s => s.disclosureAccepted);
 
   useEffect(() => {
-    if (!isFocused || !disclosureAccepted) {
+    if (!enabled || !isFocused || !disclosureAccepted) {
       return;
     }
 
@@ -29,5 +30,5 @@ export function useLocationCache() {
     return () => {
       clearInterval(intervalId);
     };
-  }, [isFocused, disclosureAccepted]);
+  }, [enabled, isFocused, disclosureAccepted]);
 }
