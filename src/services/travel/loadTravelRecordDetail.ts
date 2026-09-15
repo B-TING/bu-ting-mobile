@@ -5,11 +5,7 @@ import type {
 } from '../../types/travelRecordApi';
 import { mapTravelRecordResponse } from '../../types/travelRecordApi';
 import type { PlaceReview, TravelRecord, TravelRecordPlace } from '../../types/travelReview';
-import {
-  mediaFromApiUrls,
-  resolveDisplayMediaUrl,
-  resolveReviewMediaList,
-} from '../../utils/media/resolveMediaUrl';
+import { mediaFromApiUrls } from '../../utils/media/resolveMediaUrl';
 import {
   fetchMyTravelRecord,
   fetchPlaceReview,
@@ -20,7 +16,6 @@ import {
 async function mapDtoToPlaceReview(
   dto: PlaceReviewResponse,
   place: TravelRecordPlace,
-  accessToken?: string | null,
 ): Promise<PlaceReview> {
   return {
     placeReviewId: dto.placeReviewId,
@@ -33,16 +28,13 @@ async function mapDtoToPlaceReview(
     createdAt: dto.createdAt,
     updatedAt: dto.updatedAt,
     placeName: place.placeName,
-    media: await resolveReviewMediaList(
-      mediaFromApiUrls(dto.placeReviewId, dto.mediaUrls),
-      accessToken,
-    ),
+    // Presign은 화면에 마운트될 때 ResolvedRemote* 가 한다 (상세 OOM 방지).
+    media: mediaFromApiUrls(dto.placeReviewId, dto.mediaUrls),
   };
 }
 
 async function mapSummaryItemToPlaceReview(
   item: PlaceReviewSummaryItemResponse,
-  accessToken?: string | null,
 ): Promise<PlaceReview> {
   return {
     placeReviewId: item.placeReviewId,
@@ -55,10 +47,7 @@ async function mapSummaryItemToPlaceReview(
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
     placeName: item.placeName,
-    media: await resolveReviewMediaList(
-      mediaFromApiUrls(item.placeReviewId, item.mediaUrls),
-      accessToken,
-    ),
+    media: mediaFromApiUrls(item.placeReviewId, item.mediaUrls),
   };
 }
 
@@ -92,7 +81,7 @@ async function fetchPlaceReviewsForRecord(options: {
         }
         try {
           const dto = await fetchPlaceReview(accessToken!, travelId!, planPlaceId);
-          return mapDtoToPlaceReview(dto, place, accessToken);
+          return mapDtoToPlaceReview(dto, place);
         } catch {
           return null;
         }
@@ -128,7 +117,7 @@ async function fetchPlaceReviewsForRecord(options: {
     }
     for (const item of summary.reviews) {
       if (item.travelRecordId === travelRecord.travelRecordId) {
-        matched.push(await mapSummaryItemToPlaceReview(item, accessToken));
+        matched.push(await mapSummaryItemToPlaceReview(item));
       }
     }
   }
@@ -178,23 +167,8 @@ export async function loadTravelRecordDetail(
 
   let record = mapTravelRecordResponse(dto);
 
-  if (record.coverImageUrl) {
-    record = {
-      ...record,
-      coverImageUrl: await resolveDisplayMediaUrl(record.coverImageUrl, {
-        accessToken,
-      }),
-    };
-  }
-
-  if (record.imageUrls.length > 0) {
-    const resolvedImageUrls = await Promise.all(
-      record.imageUrls.map(uri =>
-        resolveDisplayMediaUrl(uri, { accessToken }),
-      ),
-    );
-    record = { ...record, imageUrls: resolvedImageUrls };
-  }
+  // cover/imageUrls Presign은 캐러셀·이미지 마운트 시점으로 미룬다.
+  // 여기서 Promise.all 하면 원본을 한꺼번에 받아 메모리 압박이 난다.
 
   const placeReviews = await fetchPlaceReviewsForRecord({
     travelRecord: record,
