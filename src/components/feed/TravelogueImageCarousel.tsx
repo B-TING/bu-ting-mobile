@@ -19,6 +19,9 @@ import { AppIcon } from '../shared/icons/AppIcon';
 import { ResolvedRemoteImage } from '../shared/media/ResolvedRemoteImage';
 import { ReviewVideoSlide } from '../shared/media/ReviewVideoViews';
 
+/** 활성 슬라이드 ±N만 Image/Video 마운트 (나머지는 빈 슬롯). */
+const CAROUSEL_MOUNT_RADIUS = 1;
+
 type TravelogueImageCarouselProps = {
   travelRecord: TravelRecord;
   images?: ReviewMedia[];
@@ -49,6 +52,62 @@ function Placeholder({
   );
 }
 
+function CarouselSlide({
+  item,
+  index,
+  activeIndex,
+  imageWidth,
+  imageHeight,
+  onPress,
+  onMediaError,
+}: {
+  item: ReviewMedia;
+  index: number;
+  activeIndex: number;
+  imageWidth: number;
+  imageHeight: number;
+  onPress?: () => void;
+  onMediaError: (mediaId: string) => void;
+}) {
+  const shouldMount = Math.abs(index - activeIndex) <= CAROUSEL_MOUNT_RADIUS;
+
+  return (
+    <View style={{ width: imageWidth, height: imageHeight }} className="bg-brand-selected">
+      {!shouldMount ? null : item.type === 'video' ? (
+        <ReviewVideoSlide
+          uri={item.uri}
+          fileKey={item.fileKey}
+          width={imageWidth}
+          height={imageHeight}
+          active={index === activeIndex}
+          onError={() => onMediaError(item.mediaId)}
+        />
+      ) : onPress ? (
+        <Pressable
+          onPress={onPress}
+          accessibilityRole="button"
+          style={{ width: imageWidth, height: imageHeight }}>
+          <ResolvedRemoteImage
+            uri={item.uri}
+            fileKey={item.fileKey}
+            style={styles.image}
+            resizeMode="cover"
+            onError={() => onMediaError(item.mediaId)}
+          />
+        </Pressable>
+      ) : (
+        <ResolvedRemoteImage
+          uri={item.uri}
+          fileKey={item.fileKey}
+          style={styles.image}
+          resizeMode="cover"
+          onError={() => onMediaError(item.mediaId)}
+        />
+      )}
+    </View>
+  );
+}
+
 export function TravelogueImageCarousel({
   travelRecord,
   images: imagesProp,
@@ -67,6 +126,10 @@ export function TravelogueImageCarousel({
 
   const visibleMedia = mediaItems.filter(item => !failedIds[item.mediaId]);
 
+  const markFailed = (mediaId: string) => {
+    setFailedIds(prev => ({ ...prev, [mediaId]: true }));
+  };
+
   const content =
     visibleMedia.length === 0 ? (
       <Placeholder
@@ -80,6 +143,15 @@ export function TravelogueImageCarousel({
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
+          onScroll={event => {
+            const index = Math.round(
+              event.nativeEvent.contentOffset.x / imageWidth,
+            );
+            if (index !== activeIndex && index >= 0 && index < visibleMedia.length) {
+              setActiveIndex(index);
+            }
+          }}
+          scrollEventThrottle={16}
           onMomentumScrollEnd={event => {
             const index = Math.round(
               event.nativeEvent.contentOffset.x / imageWidth,
@@ -87,47 +159,16 @@ export function TravelogueImageCarousel({
             setActiveIndex(index);
           }}>
           {visibleMedia.map((item, index) => (
-            <View
+            <CarouselSlide
               key={item.mediaId}
-              style={{ width: imageWidth, height: imageHeight }}>
-              {item.type === 'video' ? (
-                <ReviewVideoSlide
-                  uri={item.uri}
-                  fileKey={item.fileKey}
-                  width={imageWidth}
-                  height={imageHeight}
-                  active={index === activeIndex}
-                  onError={() => {
-                    setFailedIds(prev => ({ ...prev, [item.mediaId]: true }));
-                  }}
-                />
-              ) : onPress ? (
-                <Pressable
-                  onPress={onPress}
-                  accessibilityRole="button"
-                  style={{ width: imageWidth, height: imageHeight }}>
-                  <ResolvedRemoteImage
-                    uri={item.uri}
-                    fileKey={item.fileKey}
-                    style={styles.image}
-                    resizeMode="cover"
-                    onError={() => {
-                      setFailedIds(prev => ({ ...prev, [item.mediaId]: true }));
-                    }}
-                  />
-                </Pressable>
-              ) : (
-                <ResolvedRemoteImage
-                  uri={item.uri}
-                  fileKey={item.fileKey}
-                  style={styles.image}
-                  resizeMode="cover"
-                  onError={() => {
-                    setFailedIds(prev => ({ ...prev, [item.mediaId]: true }));
-                  }}
-                />
-              )}
-            </View>
+              item={item}
+              index={index}
+              activeIndex={activeIndex}
+              imageWidth={imageWidth}
+              imageHeight={imageHeight}
+              onPress={onPress}
+              onMediaError={markFailed}
+            />
           ))}
         </ScrollView>
         {visibleMedia.length > 1 ? (

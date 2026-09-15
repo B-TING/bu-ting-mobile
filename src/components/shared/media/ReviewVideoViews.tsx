@@ -23,14 +23,16 @@ type ReviewVideoThumbProps = {
   size?: number;
 };
 
-/** 작은 썸네일 — 탭 시 전체 화면 재생 */
+/**
+ * 작은 썸네일 — Video 인스턴스를 만들지 않는다 (OOM 방지).
+ * 탭 시 모달에서만 재생한다.
+ */
 export function ReviewVideoThumb({
   uri,
   fileKey,
   size = 56,
 }: ReviewVideoThumbProps) {
   const [open, setOpen] = useState(false);
-  const [failed, setFailed] = useState(false);
 
   return (
     <>
@@ -40,22 +42,9 @@ export function ReviewVideoThumb({
         className="relative overflow-hidden rounded-xl bg-brand-selected active:opacity-90"
         accessibilityRole="button"
         accessibilityLabel="Play video">
-        {!failed ? (
-          <ResolvedRemoteVideo
-            uri={uri}
-            fileKey={fileKey}
-            style={FILL}
-            paused
-            muted
-            repeat={false}
-            resizeMode="cover"
-            onError={() => setFailed(true)}
-          />
-        ) : (
-          <View className="h-full w-full items-center justify-center">
-            <AppIcon name="film" size={18} color={ICON_COLOR_MUTED} />
-          </View>
-        )}
+        <View className="h-full w-full items-center justify-center bg-brand-selected">
+          <AppIcon name="film" size={18} color={ICON_COLOR_MUTED} />
+        </View>
         <View className="absolute inset-0 items-center justify-center bg-black/25">
           <View className="h-7 w-7 items-center justify-center rounded-full bg-black/55">
             <AppIcon name="play" size={14} color={ICON_COLOR_WHITE} />
@@ -85,7 +74,7 @@ type ReviewVideoSlideProps = {
   onError?: () => void;
 };
 
-/** 피드/상세 캐러셀 영상 슬라이드 — 활성 시 음소거 자동재생, 탭으로 일시정지 */
+/** 피드/상세 캐러셀 영상 — 활성일 때만 Video 마운트 */
 export function ReviewVideoSlide({
   uri,
   fileKey,
@@ -109,6 +98,16 @@ export function ReviewVideoSlide({
         className="items-center justify-center bg-brand-selected">
         <AppIcon name="film" size={32} color={ICON_COLOR_MUTED} />
         <Text className="mt-2 text-xs text-brand-muted">VIDEO</Text>
+      </View>
+    );
+  }
+
+  if (!active) {
+    return (
+      <View style={{ width, height }} className="items-center justify-center bg-black">
+        <View className="h-16 w-16 items-center justify-center rounded-full bg-black/50">
+          <AppIcon name="play" size={32} color={ICON_COLOR_WHITE} />
+        </View>
       </View>
     );
   }

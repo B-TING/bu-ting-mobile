@@ -1,13 +1,17 @@
 import {
+  BUSAN_DISTRICT_BOUNDARIES,
+  BUSAN_DISTRICT_EXTENT,
+} from '../../constants/eventZone/busanDistrictBoundaries';
+import {
   BUSAN_DISTRICT_BY_ID,
   BUSAN_DISTRICT_LABEL_CENTERS,
   BUSAN_SVG_VIEWBOX,
   EVENT_ZONE_DISTRICT_IDS,
 } from '../../constants/eventZone/busanMapPaths';
-import { BUSAN_DISTRICT_BOUNDARIES } from '../../constants/eventZone/busanDistrictBoundaries';
-import { BUSAN_MAP_BOUNDS, EVENT_ZONES } from '../../constants/eventZone/eventZone';
+import { EVENT_ZONES } from '../../constants/eventZone/eventZone';
 import type { EventZoneCoordinate, EventZoneId } from '../../types/eventZone';
 import type { RouteItem } from '../../types/travelPlan';
+import { distanceMetersToRings, expandLatLngByMeters } from '../geo/distanceToRing';
 import { pointInFlattenedBoundaryRings } from '../geo/pointInPolygon';
 
 /** lat/lng ↔ busan.svg 보정 (자갈치·해운대 기준 2점 보간) */
@@ -62,12 +66,53 @@ const DISTRICT_ID_TO_ZONE = Object.fromEntries(
   ),
 ) as Record<string, EventZoneId>;
 
+/** 해안·구 경계 틈. PIP 실패 시 이 거리 안이면 그 구. */
+export const USER_ZONE_EDGE_MAX_METERS = 200;
+
+type DistrictBBox = {
+  districtId: string;
+  minLat: number;
+  maxLat: number;
+  minLng: number;
+  maxLng: number;
+};
+
+const DISTRICT_BBOXES: DistrictBBox[] = BUSAN_DISTRICT_BOUNDARIES.map(boundary => {
+  let minLat = Infinity;
+  let maxLat = -Infinity;
+  let minLng = Infinity;
+  let maxLng = -Infinity;
+  for (const ring of boundary.rings) {
+    for (const point of ring) {
+      if (point.lat < minLat) minLat = point.lat;
+      if (point.lat > maxLat) maxLat = point.lat;
+      if (point.lng < minLng) minLng = point.lng;
+      if (point.lng > maxLng) maxLng = point.lng;
+    }
+  }
+  return { districtId: boundary.districtId, minLat, maxLat, minLng, maxLng };
+});
+
+function bboxMayReach(
+  bbox: DistrictBBox,
+  location: EventZoneCoordinate,
+  meters: number,
+): boolean {
+  const { latPad, lngPad } = expandLatLngByMeters(meters, location.lat);
+  return (
+    location.lat >= bbox.minLat - latPad &&
+    location.lat <= bbox.maxLat + latPad &&
+    location.lng >= bbox.minLng - lngPad &&
+    location.lng <= bbox.maxLng + lngPad
+  );
+}
+
 export function isInsideBusanBounds(location: EventZoneCoordinate): boolean {
   return (
-    location.lat >= BUSAN_MAP_BOUNDS.minLat &&
-    location.lat <= BUSAN_MAP_BOUNDS.maxLat &&
-    location.lng >= BUSAN_MAP_BOUNDS.minLng &&
-    location.lng <= BUSAN_MAP_BOUNDS.maxLng
+    location.lat >= BUSAN_DISTRICT_EXTENT.minLat &&
+    location.lat <= BUSAN_DISTRICT_EXTENT.maxLat &&
+    location.lng >= BUSAN_DISTRICT_EXTENT.minLng &&
+    location.lng <= BUSAN_DISTRICT_EXTENT.maxLng
   );
 }
 
@@ -139,6 +184,65 @@ export function resolveDistrictIdFromCoordinate(
     }
   }
   return null;
+}
+
+export function resolveEventZoneFromDistrictPolygon(
+  location: EventZoneCoordinate,
+): EventZoneId | null {
+  const districtId = resolveDistrictIdFromCoordinate(location);
+  if (!districtId) {
+    return null;
+  }
+  return DISTRICT_ID_TO_ZONE[districtId] ?? null;
+}
+
+const BOUNDARY_BY_ID = Object.fromEntries(
+  BUSAN_DISTRICT_BOUNDARIES.map(boundary => [boundary.districtId, boundary]),
+);
+
+function resolveNearestDistrictIdWithinMeters(
+  location: EventZoneCoordinate,
+  maxMeters: number,
+): string | null {
+  let bestId: string | null = null;
+  let bestDist = maxMeters;
+
+  for (const bbox of DISTRICT_BBOXES) {
+    if (!bboxMayReach(bbox, location, maxMeters)) {
+      continue;
+    }
+    const boundary = BOUNDARY_BY_ID[bbox.districtId];
+    if (!boundary) {
+      continue;
+    }
+    const dist = distanceMetersToRings(location, boundary.rings);
+    if (dist < bestDist) {
+      bestDist = dist;
+      bestId = bbox.districtId;
+    }
+  }
+  return bestId;
+}
+
+/**
+ * 현재 위치 → 채팅 존.
+ * PIP → 폴리곤 변 200m → 아니면 null. 맵 상자·SVG 라벨은 쓰지 않는다.
+ */
+export function resolveUserEventZone(
+  location: EventZoneCoordinate,
+): EventZoneId | null {
+  const inside = resolveEventZoneFromDistrictPolygon(location);
+  if (inside) {
+    return inside;
+  }
+  const nearId = resolveNearestDistrictIdWithinMeters(
+    location,
+    USER_ZONE_EDGE_MAX_METERS,
+  );
+  if (!nearId) {
+    return null;
+  }
+  return DISTRICT_ID_TO_ZONE[nearId] ?? null;
 }
 
 function resolveEventZoneByNearestLabel(

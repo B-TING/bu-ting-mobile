@@ -13,6 +13,8 @@ export type ChatZone = EventZoneId;
 export type EventZoneCoordinate = {
   lat: number;
   lng: number;
+  /** GPS 수평 정확도(m). 기기 좌표만 채운다. */
+  accuracyMeters?: number;
 };
 
 export type EventZoneMapPoint = {

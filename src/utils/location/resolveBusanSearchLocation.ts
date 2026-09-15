@@ -1,6 +1,6 @@
 import { DEFAULT_USER_LOCATION_BUSAN } from '../../constants/eventZone/eventZone';
 import type { EventZoneCoordinate } from '../../types/eventZone';
-import { isInsideBusanBounds } from '../eventZone/zoneResolver';
+import { resolveUserEventZone } from '../eventZone/zoneResolver';
 import type { LocationConsentResult } from '../../components/shared/modals';
 import { acquireDeviceCoordinates } from './acquireDeviceCoordinates';
 
@@ -16,7 +16,7 @@ export async function resolveBusanSearchLocation(
   ensureLocationConsent: () => Promise<LocationConsentResult>,
 ): Promise<BusanSearchLocationResult> {
   const acquired = await acquireDeviceCoordinates({ ensureLocationConsent });
-  if (!acquired.ok || !isInsideBusanBounds(acquired.coords)) {
+  if (!acquired.ok || resolveUserEventZone(acquired.coords) == null) {
     return { location: DEFAULT_USER_LOCATION_BUSAN, status: 'fallback' };
   }
 

@@ -25,6 +25,8 @@ type Props = {
   forceShowRebootFab?: boolean;
   /** 온보딩 가이드: 해당 타깃이 보이도록 홈 스크롤 */
   guideScrollTargetId?: string | null;
+  /** 온보딩 등: 위치 동의 모달·GPS 요청 억제 */
+  suppressLocationPrompt?: boolean;
 };
 
 export function MainHomeScreen({
@@ -32,6 +34,7 @@ export function MainHomeScreen({
   suppressNavbarClearance = false,
   forceShowRebootFab = false,
   guideScrollTargetId = null,
+  suppressLocationPrompt = false,
 }: Props) {
   const {
     scrollRef,
@@ -74,6 +77,7 @@ export function MainHomeScreen({
     suppressNavbarClearance,
     forceShowRebootFab,
     guideScrollTargetId,
+    suppressLocationPrompt,
   });
 
   return (
@@ -119,6 +123,7 @@ export function MainHomeScreen({
           <HomeEventZoneSection
             onMapPress={goToEventZone}
             onEnterChat={goToEventZoneChat}
+            requestLocation={!suppressLocationPrompt}
           />
 
           <EventsSectionMock

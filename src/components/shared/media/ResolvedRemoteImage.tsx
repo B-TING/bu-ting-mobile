@@ -21,6 +21,8 @@ type ResolvedRemoteImageProps = {
   fileKey?: string | null;
   style?: StyleProp<ImageStyle>;
   resizeMode?: 'cover' | 'contain' | 'stretch' | 'center' | 'repeat';
+  /** Android: resize면 표시 크기에 맞게 다운샘플 (썸네일 OOM 완화) */
+  resizeMethod?: 'auto' | 'resize' | 'scale';
   onError?: (event: NativeSyntheticEvent<ImageErrorEventData>) => void;
 };
 
@@ -40,6 +42,7 @@ export function ResolvedRemoteImage({
   fileKey,
   style,
   resizeMode = 'cover',
+  resizeMethod = 'resize',
   onError,
 }: ResolvedRemoteImageProps) {
   const accessToken = useAuthStore(selectReusableAccessToken);
@@ -85,6 +88,7 @@ export function ResolvedRemoteImage({
       source={{ uri: displayUri }}
       style={style}
       resizeMode={resizeMode}
+      resizeMethod={resizeMethod}
       onError={event => {
         if (!retried) {
           setRetried(true);

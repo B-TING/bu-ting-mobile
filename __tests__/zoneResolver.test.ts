@@ -1,6 +1,8 @@
 import {
   resolveDistrictIdFromCoordinate,
   resolveEventZoneFromCoordinate,
+  resolveEventZoneFromDistrictPolygon,
+  resolveUserEventZone,
 } from '../src/utils/eventZone/zoneResolver';
 
 describe('resolveEventZoneFromCoordinate (PIP + label fallback)', () => {
@@ -66,5 +68,32 @@ describe('resolveEventZoneFromCoordinate (PIP + label fallback)', () => {
       expect(resolveDistrictIdFromCoordinate({ lat, lng })).toBe(districtId);
     }
     expect(resolveEventZoneFromCoordinate({ lat, lng })).toBe(zoneId);
+  });
+});
+
+describe('resolveUserEventZone (PIP + 200m, no map AABB / label)', () => {
+  const GIJANG_EAST = { lat: 35.318, lng: 129.258 };
+  const ULSAN = { lat: 35.538, lng: 129.311 };
+  const SUYEONG = { lat: 35.1654, lng: 129.1098 };
+
+  it('keeps 기장 even when the old map AABB would exclude it', () => {
+    expect(GIJANG_EAST.lat > 35.3 || GIJANG_EAST.lng > 129.24).toBe(true);
+    expect(resolveUserEventZone(GIJANG_EAST)).toBe('HAEUNDAE_GIJANG');
+  });
+
+  it('returns null far outside Busan instead of nearest SVG label', () => {
+    expect(resolveUserEventZone(ULSAN)).toBeNull();
+    expect(resolveEventZoneFromDistrictPolygon(ULSAN)).toBeNull();
+  });
+
+  it('still resolves a swimming-gu interior point', () => {
+    expect(resolveUserEventZone(SUYEONG)).toBe('SUYEONG_NAMGU');
+  });
+
+  it('uses the 200m edge fallback just outside a district ring', () => {
+    // 수영 내부에서 남동으로 나와 PIP 밖·약 7m 지점.
+    const justOutside = { lat: 35.1567, lng: 129.1185 };
+    expect(resolveDistrictIdFromCoordinate(justOutside)).toBeNull();
+    expect(resolveUserEventZone(justOutside)).toBe('SUYEONG_NAMGU');
   });
 });

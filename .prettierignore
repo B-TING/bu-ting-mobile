@@ -6,3 +6,5 @@ coverage/
 vendor/
 *.lock
 package-lock.json
+src/constants/eventZone/busanDistrictBoundaries.ts
+src/constants/eventZone/busanDistrictBoundariesDraw.ts

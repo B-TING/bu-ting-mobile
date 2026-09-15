@@ -129,6 +129,7 @@ function OnboardingFeatureGuideInner({
             suppressNavbarClearance
             forceShowRebootFab={forceShowRebootFab}
             guideScrollTargetId={guideSpec.targetId}
+            suppressLocationPrompt
           />
         </View>
 

@@ -29,6 +29,8 @@ const CHAT_PANEL_WIDTH_RATIO = 0.54;
 type HomeEventZoneSectionProps = {
   onMapPress: () => void;
   onEnterChat: (zoneId: EventZoneId) => void;
+  /** false면 위치 동의 모달·GPS 요청 없이 미리보기만 */
+  requestLocation?: boolean;
 };
 
 const panelShadow = StyleSheet.create({
@@ -44,11 +46,14 @@ const panelShadow = StyleSheet.create({
 export function HomeEventZoneSection({
   onMapPress,
   onEnterChat,
+  requestLocation = true,
 }: HomeEventZoneSectionProps) {
   const language = useAppLanguage();
   const copy = useCopy('homeEventZone');
   const zoneCopy = useCopy('eventZone');
-  const { zoneId: userZoneId, usedFallback, status } = useCurrentEventZone();
+  const { zoneId: userZoneId, usedFallback, status } = useCurrentEventZone({
+    requestLocation,
+  });
 
   /** 부산 밖이거나 위치를 모를 때 → 미소속, 구역 미리보기 캐러셀 */
   const isUnaffiliated = userZoneId == null;

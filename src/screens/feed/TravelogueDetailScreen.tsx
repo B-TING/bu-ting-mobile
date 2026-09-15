@@ -1,11 +1,13 @@
 import {
   ActivityIndicator,
+  InteractionManager,
   Pressable,
   RefreshControl,
   ScrollView,
   Text,
   View,
 } from 'react-native';
+import { useEffect, useState } from 'react';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { ScheduleMapView } from '../../kakaoMap';
@@ -41,6 +43,52 @@ import { formatWeekdayDate } from '../../utils/geo/geo';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'TravelRecordDetail'>;
 
+/** 장소 후기 56px 썸네일 — 화면 전환 안정화 후 순차 로드 */
+function DeferredThumbImage({
+  uri,
+  fileKey,
+  delayMs,
+}: {
+  uri: string;
+  fileKey?: string | null;
+  delayMs: number;
+}) {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    const task = InteractionManager.runAfterInteractions(() => {
+      timeoutId = setTimeout(() => {
+        if (!cancelled) {
+          setReady(true);
+        }
+      }, delayMs);
+    });
+    return () => {
+      cancelled = true;
+      task.cancel?.();
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [delayMs]);
+
+  if (!ready) {
+    return <View style={{ width: '100%', height: '100%' }} />;
+  }
+
+  return (
+    <ResolvedRemoteImage
+      uri={uri}
+      fileKey={fileKey}
+      style={{ width: '100%', height: '100%' }}
+      resizeMode="cover"
+      resizeMethod="resize"
+    />
+  );
+}
+
 function PlaceReviewBlock({
   review,
   copy,
@@ -68,7 +116,7 @@ function PlaceReviewBlock({
       ) : null}
       {(review.media ?? []).length > 0 ? (
         <View className="mt-2 flex-row flex-wrap gap-2">
-          {(review.media ?? []).map(item => {
+          {(review.media ?? []).slice(0, 6).map((item, index) => {
             const isRemoteImage =
               item.type === 'image' &&
               (item.uri.startsWith('http://') || item.uri.startsWith('https://'));
@@ -87,11 +135,10 @@ function PlaceReviewBlock({
                 key={item.mediaId}
                 className="relative h-14 w-14 overflow-hidden rounded-xl bg-brand-selected">
                 {isRemoteImage ? (
-                  <ResolvedRemoteImage
+                  <DeferredThumbImage
                     uri={item.uri}
                     fileKey={item.fileKey}
-                    style={{ width: '100%', height: '100%' }}
-                    resizeMode="cover"
+                    delayMs={index * 80}
                   />
                 ) : (
                   <View className="h-full w-full items-center justify-center">
