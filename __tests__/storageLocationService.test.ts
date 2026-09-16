@@ -84,7 +84,7 @@ describe('storageLocationService', () => {
       latitude: 35.1796,
       radius: Number.NaN,
     });
-    expect(mockApiGet.mock.calls[2][0]).toContain('radius=5000');
+    expect(mockApiGet.mock.calls[2][0]).toContain('radius=20000');
   });
 
   it('returns empty array when response is null', async () => {
