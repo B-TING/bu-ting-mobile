@@ -1,8 +1,48 @@
 /** GET /api/v1/storage-locations 응답 DTO */
 
+export type StorageLockerSizeDto =
+  | 'small'
+  | 'medium'
+  | 'large'
+  | 'extraLarge'
+  | 'SMALL'
+  | 'MEDIUM'
+  | 'LARGE'
+  | 'EXTRA_LARGE'
+  | (string & {});
+
+export type StorageFeeScheduleDto =
+  | 'default'
+  | 'weekday'
+  | 'weekend'
+  | 'DEFAULT'
+  | 'WEEKDAY'
+  | 'WEEKEND'
+  | (string & {});
+
+export type StorageLockerCountsDto = {
+  small?: number | null;
+  medium?: number | null;
+  large?: number | null;
+  extraLarge?: number | null;
+  total?: number | null;
+};
+
+export type StorageFeeItemDto = {
+  size?: StorageLockerSizeDto | null;
+  amount?: number | null;
+  unit?: string | null;
+};
+
+export type StorageFeeGroupDto = {
+  schedule?: StorageFeeScheduleDto | null;
+  items?: StorageFeeItemDto[] | null;
+};
+
 export type StorageLocationResponse = {
   id?: string | number | null;
-  line?: number | null;
+  /** 숫자 1 또는 "1호선" */
+  line?: number | string | null;
   name?: string | null;
   stationName?: string | null;
   locationDetail?: string | null;
@@ -13,6 +53,10 @@ export type StorageLocationResponse = {
   lng?: number | null;
   distanceMeters?: number | null;
   distance?: number | null;
+  openNow?: boolean | null;
+  /** OpenAPI 정식 필드 */
+  counts?: StorageLockerCountsDto | null;
+  fees?: StorageFeeGroupDto[] | null;
   /** 크기별 보관함 수 — 서버 필드명 변형 대응 */
   smallCount?: number | null;
   mediumCount?: number | null;
@@ -31,13 +75,7 @@ export type StorageLocationResponse = {
   cost?: string | null;
   costRaw?: string | null;
   cabinetCost?: string | null;
-  lockers?: {
-    small?: number | null;
-    medium?: number | null;
-    large?: number | null;
-    extraLarge?: number | null;
-    total?: number | null;
-  } | null;
+  lockers?: StorageLockerCountsDto | null;
 };
 
 export type StorageLocationQuery = {
@@ -47,5 +85,6 @@ export type StorageLocationQuery = {
   radius: number;
 };
 
-export const STORAGE_SEARCH_RADIUS_DEFAULT_M = 5000;
+/** 기본 위치(남포·초량 일대)에서도 3·4호선이 들어가도록 20km */
+export const STORAGE_SEARCH_RADIUS_DEFAULT_M = 20000;
 export const STORAGE_SEARCH_RADIUS_MAX_M = 20000;

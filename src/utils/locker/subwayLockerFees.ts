@@ -45,7 +45,7 @@ export function formatLockerFeeLine(
   copy: Copy,
 ): string {
   const sizeLabel = lockerSizeLabel(size, copy);
-  const unitSuffix = unit === '3???' ? copy.feePer3Hours : '';
+  const unitSuffix = unit.includes('3시간') ? copy.feePer3Hours : '';
   return `${sizeLabel} ${amount.toLocaleString()}${copy.feeCurrency}${unitSuffix}`;
 }
 
@@ -83,6 +83,6 @@ export function formatLockerPrice(
   if (amount == null) {
     return '-';
   }
-  const unitSuffix = unit === '3???' ? copy.feePer3Hours : '';
+  const unitSuffix = unit.includes('3시간') ? copy.feePer3Hours : '';
   return `${amount.toLocaleString()}${copy.feeCurrency}${unitSuffix}`;
 }
