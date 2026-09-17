@@ -1,5 +1,6 @@
 import { BUSAN_ATTRACTIONS } from '../../constants/plan/planWizard';
 import { enrichPlaceInfo } from '../../constants/places/placeCatalog';
+import type { PlaceContentTypeId } from '../../types/placesApi';
 import type { RouteItem, RouteItemType } from '../../types/travelPlan';
 import type { AppLanguage } from '../../types/user';
 import { createId } from '../common/id';
@@ -13,6 +14,8 @@ export type RebootPlaceCandidate = {
   distanceKm: number;
   imageUrl?: string;
   address?: string;
+  /** TourAPI contentType. 일정 추가 시 RouteItemType 매핑에 사용 */
+  contentTypeId?: PlaceContentTypeId;
 };
 
 const REBOOT_NEARBY_LIMIT = 5;

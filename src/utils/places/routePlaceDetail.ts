@@ -129,6 +129,22 @@ export function routeTypeToContentTypeId(type: RouteItemType): PlaceContentTypeI
   }
 }
 
+/** TourAPI contentType → 일정 RouteItem.type (축제는 ATTRACTION으로 보관) */
+export function contentTypeIdToRouteType(
+  contentTypeId: PlaceContentTypeId | undefined,
+): RouteItemType {
+  switch (contentTypeId) {
+    case PLACE_CONTENT_TYPE.restaurant:
+      return 'RESTAURANT';
+    case PLACE_CONTENT_TYPE.accommodation:
+      return 'ACCOMMODATION';
+    case PLACE_CONTENT_TYPE.festival:
+    case PLACE_CONTENT_TYPE.attraction:
+    default:
+      return 'ATTRACTION';
+  }
+}
+
 function resolveDetailHours(detail: PlaceDetailVO): string {
   const weekday = detail.openingHours?.weekdayDescriptions?.[0]?.trim();
   if (weekday) {

@@ -34,6 +34,7 @@ import {
   candidateToRouteItem,
   type RebootPlaceCandidate,
 } from '../../utils/places/rebootPlaces';
+import { contentTypeIdToRouteType } from '../../utils/places/routePlaceDetail';
 import { usePlaceDetailCacheStore } from '../../stores/usePlaceDetailCacheStore';
 import { lockPlanScheduleIfApiError } from '../../utils/travel/scheduleApiLock';
 
@@ -425,9 +426,21 @@ export function usePlanDetailSchedule({
             freshRoute,
             candidate,
           );
-          await syncFromServer();
-          if (legMode && legMode !== pickRoute.legMode) {
-            usePlanStore.getState().updateRouteLegMode(planId, replaced.itemId, legMode);
+          const afterReplace = await syncFromServer();
+          const routeType = contentTypeIdToRouteType(candidate.contentTypeId);
+          const syncedRoute =
+            findDayRoute(afterReplace, scheduleDay.dayNumber, replaced) ??
+            getDayRoutesFromPlan(afterReplace, scheduleDay.dayNumber).find(
+              r => r.placeId === candidate.placeId,
+            ) ??
+            replaced;
+          const nextLeg = legMode ?? syncedRoute.legMode;
+          if (routeType !== syncedRoute.type || nextLeg !== syncedRoute.legMode) {
+            replaceRoute(planId, syncedRoute.itemId, {
+              ...syncedRoute,
+              type: routeType,
+              legMode: nextLeg,
+            });
           }
           closeScheduleModal();
         } catch (error) {
@@ -444,7 +457,11 @@ export function usePlanDetailSchedule({
         candidate,
         pickRoute.sequence,
         language,
-        pickRoute.type === 'LOCKER' ? 'ATTRACTION' : pickRoute.type,
+        candidate.contentTypeId
+          ? contentTypeIdToRouteType(candidate.contentTypeId)
+          : pickRoute.type === 'LOCKER'
+            ? 'ATTRACTION'
+            : pickRoute.type,
         legMode ?? pickRoute.legMode,
       );
       replaceRoute(planId, pickRoute.itemId, replacement);
@@ -576,17 +593,23 @@ export function usePlanDetailSchedule({
 
       seedCandidateRouteImage(candidate);
 
+      const routeType = contentTypeIdToRouteType(candidate.contentTypeId);
       const apiPlanId = scheduleDay.apiPlanId;
       if (isApiPlan && apiPlanId && accessToken) {
         try {
           await syncFromServer();
           await addPlanPlaceFromCandidate(accessToken, apiPlanId, candidate);
           const afterAdd = await syncFromServer();
-          if (legMode && legMode !== 'walk') {
-            const dayRoutes = getDayRoutesFromPlan(afterAdd, scheduleDay.dayNumber);
-            const added = dayRoutes.find(r => r.placeId === candidate.placeId);
-            if (added) {
-              usePlanStore.getState().updateRouteLegMode(planId, added.itemId, legMode);
+          const dayRoutes = getDayRoutesFromPlan(afterAdd, scheduleDay.dayNumber);
+          const added = dayRoutes.find(r => r.placeId === candidate.placeId);
+          if (added) {
+            const nextLeg = legMode && legMode !== 'walk' ? legMode : added.legMode;
+            if (routeType !== added.type || nextLeg !== added.legMode) {
+              replaceRoute(planId, added.itemId, {
+                ...added,
+                type: routeType,
+                legMode: nextLeg,
+              });
             }
           }
           closeScheduleModal();
@@ -604,7 +627,7 @@ export function usePlanDetailSchedule({
         candidate,
         scheduleRoutes.length + 1,
         language,
-        'ATTRACTION',
+        routeType,
         legMode ?? 'walk',
       );
       addRoute(planId, scheduleDay.dayNumber, newRoute);
@@ -620,6 +643,7 @@ export function usePlanDetailSchedule({
       language,
       lockScheduleOnApiError,
       planId,
+      replaceRoute,
       scheduleDay,
       scheduleRoutes.length,
       syncFromServer,

@@ -8,7 +8,10 @@ import {
   View,
 } from 'react-native';
 
-import { buildPlaceListMetaLine } from '../../../constants/places/placeSearch';
+import {
+  buildPlaceListMetaLine,
+  isFestivalPlaceSearch,
+} from '../../../constants/places/placeSearch';
 import { useCopy } from '../../../i18n';
 import {
   fetchPlaceDetailsForList,
@@ -30,8 +33,10 @@ import {
 } from '../../../utils/places/rebootPlaces';
 import {
   PLAN_PICK_CONTENT_TYPE,
+  PLAN_PICK_CONTENT_TYPES,
   busanPlaceToRebootCandidate,
 } from '../../../utils/places/placeModelBridge';
+import { currentMonthDateRangeYyyymmdd } from '../../../utils/places/festivalApiMapper';
 import { haversineKm } from '../../../utils/geo/geo';
 import { enrichBusanPlaceFromDetail } from '../../../utils/places/placesApiMapper';
 import { logPlacesApiError } from '../../../utils/places/placesApiLogger';
@@ -61,7 +66,7 @@ type PlacePickModalProps = {
   excludePlaceIds: string[];
   showTransportMode?: boolean;
   defaultLegMode?: TravelLegMode;
-  /** true면 관광지 검색과 동일한 location + detail API */
+  /** true면 TourAPI location/keyword/festival 검색 */
   useTourApiNearby?: boolean;
   contentTypeId?: PlaceContentTypeId;
   onClose: () => void;
@@ -72,7 +77,7 @@ function rebootCandidateToBusanPlace(candidate: RebootPlaceCandidate): BusanPlac
   return {
     id: candidate.placeId,
     contentId: candidate.placeId,
-    contentTypeId: PLAN_PICK_CONTENT_TYPE,
+    contentTypeId: candidate.contentTypeId ?? PLAN_PICK_CONTENT_TYPE,
     name: candidate.placeName,
     address: candidate.address ?? '',
     location: candidate.location,
@@ -105,10 +110,12 @@ export function PlacePickModal({
   showTransportMode = false,
   defaultLegMode = 'walk',
   useTourApiNearby = false,
-  contentTypeId = PLAN_PICK_CONTENT_TYPE,
+  contentTypeId: contentTypeIdProp = PLAN_PICK_CONTENT_TYPE,
   onClose,
   onSelect,
 }: PlacePickModalProps) {
+  const [contentTypeId, setContentTypeId] =
+    useState<PlaceContentTypeId>(contentTypeIdProp);
   const [queryDraft, setQueryDraft] = useState('');
   const [activeKeyword, setActiveKeyword] = useState<string | null>(null);
   const [keywordPlaces, setKeywordPlaces] = useState<BusanPlace[]>([]);
@@ -117,18 +124,70 @@ export function PlacePickModal({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [legMode, setLegMode] = useState<TravelLegMode>(defaultLegMode);
   const keywordRequestIdRef = useRef(0);
+  const festivalDateRange = useMemo(() => currentMonthDateRangeYyyymmdd(), []);
 
   const searchCopy = useCopy('placeSearch');
   const cacheEntry = usePlaceSearchStore(s => s.cacheByType[contentTypeId]);
   const nearbyLoading = usePlaceSearchStore(s => s.isLoading(contentTypeId));
   const searchByLocation = usePlaceSearchStore(s => s.searchByLocation);
+  const searchFestivalsByDateRange = usePlaceSearchStore(s => s.searchFestivalsByDateRange);
   const hasCacheForCenter = usePlaceSearchStore(s => s.hasCacheForCenter);
+  const hasCacheForFestivalRange = usePlaceSearchStore(s => s.hasCacheForFestivalRange);
   const mergePlaceDetails = usePlaceDetailCacheStore(s => s.mergeDetails);
 
+  const isFestivalMode = isFestivalPlaceSearch(contentTypeId);
   const isKeywordMode = useTourApiNearby && activeKeyword != null && activeKeyword.length > 0;
 
   useEffect(() => {
+    if (!visible) {
+      return;
+    }
+    setContentTypeId(contentTypeIdProp);
+    setLegMode(defaultLegMode);
+  }, [visible, contentTypeIdProp, defaultLegMode]);
+
+  const clearKeywordState = useCallback(() => {
+    keywordRequestIdRef.current += 1;
+    setQueryDraft('');
+    setActiveKeyword(null);
+    setKeywordPlaces([]);
+    setKeywordLoading(false);
+    setKeywordErrorMessage(null);
+    setSelectedId(null);
+  }, []);
+
+  const handleChangeContentType = useCallback(
+    (typeId: PlaceContentTypeId) => {
+      if (typeId === contentTypeId) {
+        return;
+      }
+      clearKeywordState();
+      setContentTypeId(typeId);
+    },
+    [clearKeywordState, contentTypeId],
+  );
+
+  useEffect(() => {
     if (!visible || !useTourApiNearby || !anchor || isKeywordMode) {
+      return;
+    }
+
+    if (isFestivalMode) {
+      if (
+        hasCacheForFestivalRange(
+          festivalDateRange.eventStartDate,
+          festivalDateRange.eventEndDate,
+        )
+      ) {
+        return;
+      }
+      void searchFestivalsByDateRange({
+        eventStartDate: festivalDateRange.eventStartDate,
+        eventEndDate: festivalDateRange.eventEndDate,
+        mapCenter: anchor,
+        serverErrorMessage: searchCopy.searchServerError,
+        refreshTooSoonMessage: searchCopy.searchRefreshTooSoon,
+      });
       return;
     }
 
@@ -149,8 +208,13 @@ export function PlacePickModal({
     contentTypeId,
     anchor,
     isKeywordMode,
+    isFestivalMode,
+    festivalDateRange.eventStartDate,
+    festivalDateRange.eventEndDate,
     hasCacheForCenter,
+    hasCacheForFestivalRange,
     searchByLocation,
+    searchFestivalsByDateRange,
     searchCopy.searchServerError,
     searchCopy.searchRefreshTooSoon,
   ]);
@@ -208,12 +272,12 @@ export function PlacePickModal({
     setSelectedId(null);
 
     try {
-        const result = await searchPlacesByKeyword({
-          keyword,
-          contentTypeId,
-          page: 1,
-          size: 20,
-        });
+      const result = await searchPlacesByKeyword({
+        keyword,
+        contentTypeId,
+        page: 1,
+        size: 20,
+      });
 
       if (requestId !== keywordRequestIdRef.current) {
         return;
@@ -287,24 +351,13 @@ export function PlacePickModal({
   ]);
 
   const handleClearKeyword = useCallback(() => {
-    keywordRequestIdRef.current += 1;
-    setQueryDraft('');
-    setActiveKeyword(null);
-    setKeywordPlaces([]);
-    setKeywordLoading(false);
-    setKeywordErrorMessage(null);
-    setSelectedId(null);
-  }, []);
+    clearKeywordState();
+  }, [clearKeywordState]);
 
   const handleClose = () => {
-    keywordRequestIdRef.current += 1;
-    setQueryDraft('');
-    setActiveKeyword(null);
-    setKeywordPlaces([]);
-    setKeywordLoading(false);
-    setKeywordErrorMessage(null);
-    setSelectedId(null);
+    clearKeywordState();
     setLegMode(defaultLegMode);
+    setContentTypeId(contentTypeIdProp);
     onClose();
   };
 
@@ -317,6 +370,10 @@ export function PlacePickModal({
     onSelect(candidate, showTransportMode ? legMode : undefined);
     handleClose();
   };
+
+  const nearbyTitle = isFestivalMode
+    ? searchCopy.festivalSummary(listPlaces.length)
+    : copy.nearbyTitle;
 
   return (
     <AppModal
@@ -355,8 +412,34 @@ export function PlacePickModal({
           </View>
         ) : null}
 
+        {useTourApiNearby ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-3">
+            {PLAN_PICK_CONTENT_TYPES.map(typeId => {
+              const selected = contentTypeId === typeId;
+              const label = searchCopy.categoryLabels[typeId];
+              return (
+                <Pressable
+                  key={typeId}
+                  onPress={() => handleChangeContentType(typeId)}
+                  accessibilityRole="button"
+                  accessibilityLabel={searchCopy.categoryTabA11y(label)}
+                  className={`mr-2 rounded-full px-3 py-1.5 ${
+                    selected ? 'bg-brand-primary' : 'bg-brand-background'
+                  }`}>
+                  <Text
+                    className={`text-xs font-semibold ${
+                      selected ? 'text-white' : 'text-brand-text'
+                    }`}>
+                    {label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        ) : null}
+
         <Text className="mb-2 text-sm font-bold text-brand-text">
-          {isKeywordMode ? copy.searchPlaceholder : copy.nearbyTitle}
+          {isKeywordMode ? copy.searchPlaceholder : nearbyTitle}
         </Text>
 
         {useTourApiNearby ? (
@@ -428,14 +511,17 @@ export function PlacePickModal({
             {isKeywordMode
               ? (keywordErrorMessage ?? searchCopy.keywordEmptySub)
               : useTourApiNearby
-                ? (cacheEntry?.error ?? searchCopy.searchNoResults)
+                ? (cacheEntry?.error ??
+                  (isFestivalMode
+                    ? searchCopy.festivalEmptySub
+                    : searchCopy.searchNoResults))
                 : copy.searchEmpty}
           </Text>
         ) : (
           listPlaces.map(place => {
             const selected = selectedId === place.contentId;
             const distLabel =
-              anchor && useTourApiNearby
+              anchor && useTourApiNearby && !isFestivalMode
                 ? copy.distance(
                     formatDistanceKm(
                       haversineKm(
