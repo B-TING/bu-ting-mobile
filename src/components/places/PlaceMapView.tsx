@@ -15,6 +15,8 @@ type PlaceMapViewProps = {
   mapTitle: string;
   mapSubtitle: string;
   captionSuffix?: (place: BusanPlace) => string | undefined;
+  /** false면 하단 카카오맵 타이틀/서브타이틀 숨김 */
+  showFooter?: boolean;
 };
 
 export function PlaceMapView({
@@ -27,6 +29,7 @@ export function PlaceMapView({
   mapTitle,
   mapSubtitle,
   captionSuffix,
+  showFooter = true,
 }: PlaceMapViewProps) {
   const placePoints = useMemo(() => places.map(place => place.location), [places]);
   const points = placePoints.length > 0 ? placePoints : mapCenter ? [mapCenter] : [];
@@ -82,7 +85,7 @@ export function PlaceMapView({
         onCenterChange={onMapCenterChange}
         size="fill"
         emptySubtitle={mapSubtitle}
-        footer={{ title: mapTitle, subtitle: mapSubtitle }}
+        footer={showFooter ? { title: mapTitle, subtitle: mapSubtitle } : undefined}
       />
     </View>
   );

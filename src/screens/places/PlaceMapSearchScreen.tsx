@@ -10,12 +10,14 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PlaceDetailSheet } from '../../components/places/PlaceDetailSheet';
+import { AddPlaceToPlanDayModal } from '../../components/places/AddPlaceToPlanDayModal';
 import { PlaceMapView } from '../../components/places/PlaceMapView';
 import { PlaceSearchListItem } from '../../components/places/PlaceSearchListItem';
 import { BackButton } from '../../components/shared/buttons/BackButton';
 import { TEST_ID } from '../../constants/e2e/testIds';
 import { buildPlaceListMetaLine } from '../../constants/places/placeSearch';
 import { usePlaceMapSearchScreen } from '../../hooks/places/usePlaceMapSearchScreen';
+import { usePlaceMapSearchPlanActions } from '../../hooks/places/usePlaceMapSearchPlanActions';
 import { useAppLanguage } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
 import { PLACE_MAP_SEARCH_TYPES } from '../../types/placesApi';
@@ -74,6 +76,23 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
     handleClearKeyword,
     handleChangeContentType,
   } = usePlaceMapSearchScreen(route.params);
+
+  const {
+    showPlanActions,
+    addModalOpen,
+    setAddModalOpen,
+    saving: addingToPlan,
+    editablePlans,
+    featuredPlanId,
+    handleOpenAddToPlan,
+    handleConfirmAddToPlan,
+    handleDirectionsGoogle,
+    handleDirectionsKakao,
+  } = usePlaceMapSearchPlanActions({
+    selectedPlace,
+    selectedDetail,
+    pickFor,
+  });
 
   const confirmWizardPick = () => {
     if (!pickFor || !selectedPlace) {
@@ -286,6 +305,25 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
             ? { label: copy.pickConfirm, onPress: confirmWizardPick }
             : null
         }
+        onAddToPlan={showPlanActions ? handleOpenAddToPlan : undefined}
+        onDirectionsFromMeGoogle={
+          showPlanActions ? handleDirectionsGoogle : undefined
+        }
+        onDirectionsFromMeKakao={
+          showPlanActions ? handleDirectionsKakao : undefined
+        }
+      />
+
+      <AddPlaceToPlanDayModal
+        visible={addModalOpen}
+        plans={editablePlans}
+        initialPlanId={featuredPlanId}
+        language={language}
+        copy={copy}
+        placeName={selectedPlace?.name ?? ''}
+        saving={addingToPlan}
+        onClose={() => setAddModalOpen(false)}
+        onConfirm={handleConfirmAddToPlan}
       />
     </View>
   );
