@@ -54,6 +54,9 @@ export const PLACE_SEARCH_COPY: Record<
     addToPlanSuccess: string;
     addToPlanFailed: string;
     addToPlanSaving: string;
+    /** 일정 픽 목록 — 상세 보기 */
+    viewDetail: string;
+    backToList: string;
     directions: string;
     directionsFromMeGoogleButton: string;
     directionsFromMeKakaoButton: string;
@@ -125,6 +128,8 @@ export const PLACE_SEARCH_COPY: Record<
     addToPlanSuccess: '일정에 추가했어요.',
     addToPlanFailed: '일정 추가에 실패했어요. 잠시 후 다시 시도해 주세요.',
     addToPlanSaving: '추가하는 중…',
+    viewDetail: '상세 정보 보기',
+    backToList: '목록으로',
     directions: '길찾기',
     directionsFromMeGoogleButton: '내 위치 → 구글',
     directionsFromMeKakaoButton: '내 위치 → 카카오',
@@ -204,6 +209,8 @@ export const PLACE_SEARCH_COPY: Record<
     addToPlanSuccess: 'Added to your itinerary.',
     addToPlanFailed: 'Could not add this place. Try again later.',
     addToPlanSaving: 'Adding…',
+    viewDetail: 'View details',
+    backToList: 'Back to list',
     directions: 'Directions',
     directionsFromMeGoogleButton: 'From me → Google',
     directionsFromMeKakaoButton: 'From me → Kakao',
@@ -283,6 +290,8 @@ export const PLACE_SEARCH_COPY: Record<
     addToPlanSuccess: '予定に追加しました。',
     addToPlanFailed: '追加に失敗しました。しばらくしてから再試行してください。',
     addToPlanSaving: '追加中…',
+    viewDetail: '詳細を見る',
+    backToList: '一覧へ',
     directions: '道順',
     directionsFromMeGoogleButton: '現在地 → Google',
     directionsFromMeKakaoButton: '現在地 → カカオ',
@@ -361,6 +370,8 @@ export const PLACE_SEARCH_COPY: Record<
     addToPlanSuccess: '已加入行程。',
     addToPlanFailed: '添加失败，请稍后再试。',
     addToPlanSaving: '添加中…',
+    viewDetail: '查看详情',
+    backToList: '返回列表',
     directions: '导航',
     directionsFromMeGoogleButton: '从我的位置 → Google',
     directionsFromMeKakaoButton: '从我的位置 → Kakao',

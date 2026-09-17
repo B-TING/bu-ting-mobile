@@ -32,6 +32,8 @@ type PlaceDetailPanelProps = {
   close?: () => void;
   /** 일정 상세 시트 — 상단 히어로 이미지 레이아웃 */
   layout?: 'default' | 'sheetHeader';
+  /** false면 상단 와이드 썸네일 숨김 */
+  showHeroImage?: boolean;
 };
 
 export function PlaceDetailPanel({
@@ -46,6 +48,7 @@ export function PlaceDetailPanel({
   footerExtra,
   close,
   layout = 'default',
+  showHeroImage = true,
 }: PlaceDetailPanelProps) {
   const defaultCopy = useCopy('placeSearch');
   const copy = copyProp ?? defaultCopy;
@@ -92,16 +95,21 @@ export function PlaceDetailPanel({
   return (
     <View>
       {headerExtra}
+      {showHeroImage ? (
+        <View
+          className="w-full overflow-hidden bg-brand-surface"
+          style={sheetHeader ? styles.sheetHero : styles.compactHero}>
+          <PlaceImage
+            imageUrl={imageUrl}
+            className="h-full w-full"
+            iconSize={sheetHeader ? 40 : 28}
+          />
+        </View>
+      ) : null}
       <View
-        className="w-full overflow-hidden bg-brand-surface"
-        style={sheetHeader ? styles.sheetHero : styles.compactHero}>
-        <PlaceImage
-          imageUrl={imageUrl}
-          className="h-full w-full"
-          iconSize={sheetHeader ? 40 : 28}
-        />
-      </View>
-      <View className="flex-row items-start justify-between gap-3 px-5 pt-5">
+        className={`flex-row items-start justify-between gap-3 px-5 ${
+          showHeroImage ? 'pt-5' : 'pt-2'
+        }`}>
         <View className="flex-1">
           <View className="flex-row items-center gap-2 justify-between">
             <Text className="text-xl font-bold text-brand-text">{place.name}</Text>
