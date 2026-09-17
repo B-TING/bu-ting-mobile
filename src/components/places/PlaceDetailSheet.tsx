@@ -5,6 +5,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Text,
   useWindowDimensions,
   View,
 } from 'react-native';
@@ -17,6 +18,8 @@ import type { PlaceDetailVO } from '../../types/googlePlaces';
 import type { AppLanguage } from '../../types/user';
 import { PrimaryButton } from '../shared/buttons/PrimaryButton';
 import { AppIcon } from '../shared/icons/AppIcon';
+import { GoogleGIcon } from '../setup/icons/GoogleGIcon';
+import { KakaoSymbolIcon } from '../setup/icons/KakaoSymbolIcon';
 import { appModalStyles } from '../shared/modals/appModalStyles';
 import { PlaceDetailPanel } from './PlaceDetailPanel';
 
@@ -39,6 +42,10 @@ type PlaceDetailSheetProps = {
   onToggleBookmark?: () => void;
   onClose: () => void;
   primaryAction?: { label: string; onPress: () => void } | null;
+  /** 위저드 픽이 아닐 때 일정 추가·길찾기 */
+  onAddToPlan?: () => void;
+  onDirectionsFromMeGoogle?: () => void;
+  onDirectionsFromMeKakao?: () => void;
 };
 
 function snapSheetHeight(
@@ -78,6 +85,9 @@ export function PlaceDetailSheet({
   onToggleBookmark,
   onClose,
   primaryAction = null,
+  onAddToPlan,
+  onDirectionsFromMeGoogle,
+  onDirectionsFromMeKakao,
 }: PlaceDetailSheetProps) {
   const { height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -146,6 +156,50 @@ export function PlaceDetailSheet({
     ],
   );
 
+  const searchActions =
+    !primaryAction && (onAddToPlan || onDirectionsFromMeGoogle || onDirectionsFromMeKakao) ? (
+      <View className="px-5 pb-1">
+        {onAddToPlan ? (
+          <Pressable
+            onPress={onAddToPlan}
+            accessibilityRole="button"
+            accessibilityLabel={copy.addToPlan}
+            className="mt-3 items-center rounded-2xl bg-brand-primary py-3 active:opacity-90">
+            <Text className="text-[15px] font-bold text-white">{copy.addToPlan}</Text>
+          </Pressable>
+        ) : null}
+        {onDirectionsFromMeGoogle || onDirectionsFromMeKakao ? (
+          <View className="mt-3">
+            <Text className="mb-2 text-xs font-bold text-brand-muted">{copy.directions}</Text>
+            <View className="flex-row flex-wrap gap-1.5">
+              {onDirectionsFromMeGoogle ? (
+                <Pressable
+                  onPress={onDirectionsFromMeGoogle}
+                  accessibilityLabel={copy.directionsFromMeGoogleButton}
+                  className="flex-row items-center rounded-lg border border-brand-primary bg-brand-selected px-2 py-1.5 active:opacity-90">
+                  <GoogleGIcon size={14} />
+                  <Text className="ml-1 text-xs font-semibold text-brand-primary">
+                    {copy.directionsFromMeGoogleButton}
+                  </Text>
+                </Pressable>
+              ) : null}
+              {onDirectionsFromMeKakao ? (
+                <Pressable
+                  onPress={onDirectionsFromMeKakao}
+                  accessibilityLabel={copy.directionsFromMeKakaoButton}
+                  className="flex-row items-center rounded-lg border border-[#F9E000] bg-[#FFFBE6] px-2 py-1.5 active:opacity-90">
+                  <KakaoSymbolIcon size={14} color="#3C1E1E" />
+                  <Text className="ml-1 text-xs font-semibold text-[#3C1E1E]">
+                    {copy.directionsFromMeKakaoButton}
+                  </Text>
+                </Pressable>
+              ) : null}
+            </View>
+          </View>
+        ) : null}
+      </View>
+    ) : null;
+
   if (!place || !visible) {
     return null;
   }
@@ -200,6 +254,7 @@ export function PlaceDetailSheet({
               bookmarked={bookmarked}
               onToggleBookmark={onToggleBookmark}
               layout="sheetHeader"
+              footerExtra={searchActions}
             />
           </ScrollView>
           {primaryAction ? (

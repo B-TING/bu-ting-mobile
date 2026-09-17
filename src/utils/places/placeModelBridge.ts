@@ -80,9 +80,10 @@ export function rebootCandidateFromRoute(route: RouteItem): RebootPlaceCandidate
 /** 일정 행선지 픽 기본 카테고리 */
 export const PLAN_PICK_CONTENT_TYPE = PLACE_CONTENT_TYPE.attraction;
 
-/** 일정 추가·교체 모달에서 고를 수 있는 카테고리 (관광지·식당·축제) */
+/** 일정 추가·교체 모달에서 고를 수 있는 카테고리 */
 export const PLAN_PICK_CONTENT_TYPES: PlaceContentTypeId[] = [
   PLACE_CONTENT_TYPE.attraction,
+  PLACE_CONTENT_TYPE.accommodation,
   PLACE_CONTENT_TYPE.restaurant,
   PLACE_CONTENT_TYPE.festival,
 ];

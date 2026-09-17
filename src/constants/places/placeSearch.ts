@@ -44,6 +44,19 @@ export const PLACE_SEARCH_COPY: Record<
     selectHint: string;
     /** 위저드 장소 선택 모드에서 상세 시트 확인 */
     pickConfirm: string;
+    /** 장소 상세 — 일정에 추가 */
+    addToPlan: string;
+    addToPlanPickTitle: string;
+    addToPlanPickSub: string;
+    addToPlanConfirm: string;
+    addToPlanCancel: string;
+    addToPlanNoPlan: string;
+    addToPlanSuccess: string;
+    addToPlanFailed: string;
+    addToPlanSaving: string;
+    directions: string;
+    directionsFromMeGoogleButton: string;
+    directionsFromMeKakaoButton: string;
     close: string;
     ratingSummary: (rating: number, count: number) => string;
     reviewsTitle: string;
@@ -103,6 +116,18 @@ export const PLACE_SEARCH_COPY: Record<
     mapSubtitle: '지도를 움직이면 다른 위치를 검색할 수 있어요',
     selectHint: '지도에서 장소를 선택하면 상세 정보를 볼 수 있어요',
     pickConfirm: '이 장소 선택',
+    addToPlan: '일정에 추가하기',
+    addToPlanPickTitle: '일정에 추가',
+    addToPlanPickSub: '플랜과 날짜를 고르면 해당 일정에 넣어요.',
+    addToPlanConfirm: '추가',
+    addToPlanCancel: '취소',
+    addToPlanNoPlan: '추가할 여행 플랜이 없어요. 먼저 플랜을 만들어 주세요.',
+    addToPlanSuccess: '일정에 추가했어요.',
+    addToPlanFailed: '일정 추가에 실패했어요. 잠시 후 다시 시도해 주세요.',
+    addToPlanSaving: '추가하는 중…',
+    directions: '길찾기',
+    directionsFromMeGoogleButton: '내 위치 → 구글',
+    directionsFromMeKakaoButton: '내 위치 → 카카오',
     close: '닫기',
     ratingSummary: (rating, count) => {
       const r = Number(rating) || 0;
@@ -170,6 +195,18 @@ export const PLACE_SEARCH_COPY: Record<
     mapSubtitle: 'Pan the map to search a different area',
     selectHint: 'Select a place on the map to see details',
     pickConfirm: 'Select this place',
+    addToPlan: 'Add to itinerary',
+    addToPlanPickTitle: 'Add to itinerary',
+    addToPlanPickSub: 'Choose a trip and day to add this place.',
+    addToPlanConfirm: 'Add',
+    addToPlanCancel: 'Cancel',
+    addToPlanNoPlan: 'No trip to add to. Create a plan first.',
+    addToPlanSuccess: 'Added to your itinerary.',
+    addToPlanFailed: 'Could not add this place. Try again later.',
+    addToPlanSaving: 'Adding…',
+    directions: 'Directions',
+    directionsFromMeGoogleButton: 'From me → Google',
+    directionsFromMeKakaoButton: 'From me → Kakao',
     close: 'Close',
     ratingSummary: (rating, count) => {
       const r = Number(rating) || 0;
@@ -237,6 +274,18 @@ export const PLACE_SEARCH_COPY: Record<
     mapSubtitle: '地図を動かすと別のエリアを検索できます',
     selectHint: '地図で場所を選ぶと詳細が表示されます',
     pickConfirm: 'この場所を選択',
+    addToPlan: '予定に追加',
+    addToPlanPickTitle: '予定に追加',
+    addToPlanPickSub: '旅行と日付を選んで予定に入れます。',
+    addToPlanConfirm: '追加',
+    addToPlanCancel: 'キャンセル',
+    addToPlanNoPlan: '追加できる旅行がありません。先にプランを作成してください。',
+    addToPlanSuccess: '予定に追加しました。',
+    addToPlanFailed: '追加に失敗しました。しばらくしてから再試行してください。',
+    addToPlanSaving: '追加中…',
+    directions: '道順',
+    directionsFromMeGoogleButton: '現在地 → Google',
+    directionsFromMeKakaoButton: '現在地 → カカオ',
     close: '閉じる',
     ratingSummary: (rating, count) => {
       const r = Number(rating) || 0;
@@ -303,6 +352,18 @@ export const PLACE_SEARCH_COPY: Record<
     mapSubtitle: '移动地图可搜索其他区域',
     selectHint: '在地图上选择地点查看详情',
     pickConfirm: '选择此地点',
+    addToPlan: '加入行程',
+    addToPlanPickTitle: '加入行程',
+    addToPlanPickSub: '选择行程和日期后加入。',
+    addToPlanConfirm: '添加',
+    addToPlanCancel: '取消',
+    addToPlanNoPlan: '没有可添加的行程。请先创建计划。',
+    addToPlanSuccess: '已加入行程。',
+    addToPlanFailed: '添加失败，请稍后再试。',
+    addToPlanSaving: '添加中…',
+    directions: '导航',
+    directionsFromMeGoogleButton: '从我的位置 → Google',
+    directionsFromMeKakaoButton: '从我的位置 → Kakao',
     close: '关闭',
     ratingSummary: (rating, count) => {
       const r = Number(rating) || 0;
