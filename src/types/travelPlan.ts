@@ -70,6 +70,8 @@ export type RouteItem = {
   isVisited: boolean;
   /** 장소별 메모 (서버 plan_place.memo) */
   memo?: string;
+  /** 백엔드 PlanPlaceSource — USER_PICKED | AUTO_FILLED */
+  placeSource?: 'USER_PICKED' | 'AUTO_FILLED';
   /** 이전 장소에서 이동할 때 사용하는 교통수단 */
   legMode?: TravelLegMode;
   placeInfo?: PlaceInfo;

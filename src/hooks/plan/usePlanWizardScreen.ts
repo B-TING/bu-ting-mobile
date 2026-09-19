@@ -115,9 +115,6 @@ export function usePlanWizardScreen({
       case 'accommodation':
         return true;
       case 'generationMode':
-        if (answers.generationMode === 'auto') {
-          return answers.selectedAttractions.length >= 1;
-        }
         return true;
       default:
         return false;
@@ -307,11 +304,6 @@ export function usePlanWizardScreen({
   const finish = async () => {
     if (answers.generationMode === 'candidates') {
       showUnavailable(ALPHA_FEATURE_LABELS.planAiCandidates);
-      return;
-    }
-
-    if (answers.generationMode === 'auto' && answers.selectedAttractions.length < 1) {
-      alert({ title: copy.createAiNeedPlaces });
       return;
     }
 

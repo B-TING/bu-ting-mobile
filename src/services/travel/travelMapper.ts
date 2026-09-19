@@ -283,6 +283,11 @@ export function travelResponseToPlan(
 }
 
 export function planPlaceToRouteItem(place: PlanPlaceResponse): RouteItem {
+  const placeSource =
+    place.source === 'USER_PICKED' || place.source === 'AUTO_FILLED'
+      ? place.source
+      : undefined;
+
   return {
     itemId: place.planPlaceId,
     apiPlanPlaceId: place.planPlaceId,
@@ -297,6 +302,7 @@ export function planPlaceToRouteItem(place: PlanPlaceResponse): RouteItem {
     },
     isVisited: Boolean(place.visited),
     memo: place.memo ?? undefined,
+    placeSource,
     placeInfo: {
       description: '',
       hours: '',
@@ -337,6 +343,7 @@ export function travelPlansResponseToPlan(
           memo: p.memo,
           scheduledTime: p.scheduledTime,
           visited: p.visited,
+          source: p.source,
         }),
       ),
   }));
