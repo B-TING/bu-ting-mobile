@@ -23,6 +23,18 @@ export type OAuthLoginResponse = {
   accessToken: string;
   tokenType: string;
   expiresIn: number;
+  /** 액세스 토큰 재발급용. 서버가 회전시키므로 재발급 때마다 새 값으로 저장해야 합니다. */
+  refreshToken?: string;
+  refreshExpiresIn?: number;
+};
+
+/** `POST /auth/refresh` 응답. 리프레시도 함께 갈립니다. */
+export type TokenRefreshResponse = {
+  accessToken: string;
+  tokenType: string;
+  expiresIn: number;
+  refreshToken: string;
+  refreshExpiresIn: number;
 };
 
 export type SignUpRequest = {
