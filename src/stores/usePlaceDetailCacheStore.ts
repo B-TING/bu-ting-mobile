@@ -29,7 +29,12 @@ type PlaceDetailCacheState = {
   fetchForRoute: (
     placeId: string,
     type: RouteItemType,
-    options?: { placeName?: string; address?: string; imageUrl?: string },
+    options?: {
+      placeName?: string;
+      address?: string;
+      imageUrl?: string;
+      contentTypeId?: string;
+    },
   ) => Promise<PlaceDetailVO | null>;
 };
 
@@ -198,6 +203,7 @@ export const usePlaceDetailCacheStore = create<PlaceDetailCacheState>()(
           placeName: route.placeName,
           address: route.placeInfo?.address,
           imageUrl: route.placeInfo?.imageUrl,
+          contentTypeId: route.contentTypeId,
         })
           .then(result => {
             if (result?.imageUrl?.trim()) {

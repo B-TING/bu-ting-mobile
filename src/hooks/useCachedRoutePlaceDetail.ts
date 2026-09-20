@@ -32,6 +32,7 @@ export function useCachedRoutePlaceDetail(
       placeName: route.placeName,
       address: route.placeInfo?.address,
       imageUrl: route.placeInfo?.imageUrl,
+      contentTypeId: route.contentTypeId,
     }).finally(() => {
       if (!cancelled) {
         setFetchSettled(true);

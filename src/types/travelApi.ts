@@ -120,6 +120,8 @@ export type PlanPlaceCreateRequest = {
   longitude?: number | null;
   provider: PlaceProviderDto;
   providerPlaceId: string;
+  /** TourAPI contentTypeId (12·14·15·25·28·32·38·39) */
+  contentTypeId?: string | null;
   durationMinutes?: number | null;
   memo?: string | null;
   scheduledTime?: string | null;
@@ -163,6 +165,8 @@ export type PlanPlaceUpdatePlaceRequest = {
   longitude?: number | null;
   provider: PlaceProviderDto;
   providerPlaceId: string;
+  /** TourAPI contentTypeId */
+  contentTypeId?: string | null;
 };
 
 export type TravelPlanPlaceDto = {
@@ -174,6 +178,8 @@ export type TravelPlanPlaceDto = {
   longitude?: number | null;
   provider: PlaceProviderDto;
   providerPlaceId: string;
+  /** TourAPI contentTypeId */
+  contentTypeId?: string | null;
   durationMinutes?: number | null;
   memo?: string | null;
   scheduledTime?: string | null;

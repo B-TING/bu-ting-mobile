@@ -140,6 +140,7 @@ export function candidateToRouteItem(
     placeId: candidate.placeId,
     placeName: candidate.placeName,
     type,
+    contentTypeId: candidate.contentTypeId,
     location: candidate.location,
     isVisited: false,
     legMode,

@@ -4,6 +4,7 @@ import type { PlanPlaceCreateRequest, PlanPlaceResponse, PlanPlaceUpdatePlaceReq
 import type { RouteItem, TravelPlan } from '../../types/travelPlan';
 import type { ManualDayPlaceSlot } from '../../utils/plan/manualPlanPlaceSlots';
 import { sortedRoutes } from '../../utils/plan/planItinerary';
+import { PLACE_CONTENT_TYPE } from '../../types/placesApi';
 import {
   createPlanPlace,
   deletePlanPlace,
@@ -112,17 +113,21 @@ function inferPlaceProvider(placeId: string): PlaceProviderDto {
 export function rebootCandidateToPlanPlaceRequest(
   candidate: RebootPlaceCandidate,
 ): PlanPlaceCreateRequest {
-  return wizardPickedPlaceToPlanPlaceRequest({
-    placeId: candidate.placeId,
-    placeName: candidate.placeName,
-    location: candidate.location,
-    address: candidate.address,
-  });
+  return {
+    ...wizardPickedPlaceToPlanPlaceRequest({
+      placeId: candidate.placeId,
+      placeName: candidate.placeName,
+      location: candidate.location,
+      address: candidate.address,
+    }),
+    contentTypeId: candidate.contentTypeId ?? PLACE_CONTENT_TYPE.attraction,
+  };
 }
 
 export function wizardPickedPlaceToPlanPlaceRequest(
   place: WizardPickedPlace,
   sequence?: number,
+  contentTypeId?: string | null,
 ): PlanPlaceCreateRequest {
   return {
     placeName: place.placeName,
@@ -131,6 +136,7 @@ export function wizardPickedPlaceToPlanPlaceRequest(
     longitude: place.location.lng,
     provider: inferPlaceProvider(place.placeId),
     providerPlaceId: place.placeId,
+    contentTypeId: contentTypeId ?? undefined,
     visited: false,
     ...(sequence == null ? {} : { sequence }),
   };
@@ -145,10 +151,15 @@ export async function seedManualWizardPlaces(
     const slots = slotsByDay[dayIndex] ?? [];
     const planId = dayPlanIds[dayIndex];
     for (let index = 0; index < slots.length; index += 1) {
+      const slot = slots[index];
+      const contentTypeId =
+        slot.type === 'ACCOMMODATION'
+          ? PLACE_CONTENT_TYPE.accommodation
+          : PLACE_CONTENT_TYPE.attraction;
       await createPlanPlace(
         accessToken,
         planId,
-        wizardPickedPlaceToPlanPlaceRequest(slots[index].place, index + 1),
+        wizardPickedPlaceToPlanPlaceRequest(slot.place, index + 1, contentTypeId),
       );
     }
   }
@@ -177,9 +188,9 @@ export function applyWizardPlaceTypes(
 export function rebootCandidateToPlanPlaceUpdatePlaceRequest(
   candidate: RebootPlaceCandidate,
 ): PlanPlaceUpdatePlaceRequest {
-  const { placeName, address, latitude, longitude, provider, providerPlaceId } =
+  const { placeName, address, latitude, longitude, provider, providerPlaceId, contentTypeId } =
     rebootCandidateToPlanPlaceRequest(candidate);
-  return { placeName, address, latitude, longitude, provider, providerPlaceId };
+  return { placeName, address, latitude, longitude, provider, providerPlaceId, contentTypeId };
 }
 
 export async function addPlanPlaceFromCandidate(

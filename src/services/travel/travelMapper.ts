@@ -31,9 +31,19 @@ import type {
 } from '../../types/travelPlan';
 import { getCurrentApiServerOrigin } from '../../utils/api/apiServerOrigin';
 import { createId } from '../../utils/common/id';
+import {
+  ALL_PLACE_CONTENT_TYPE_IDS,
+  PLACE_CONTENT_TYPE,
+  type PlaceContentTypeId,
+} from '../../types/placesApi';
+import {
+  contentTypeIdToRouteType,
+  routeTypeToContentTypeId,
+} from '../../utils/places/routePlaceDetail';
 
 export const AI_PLACE_PROVIDER: PlaceProviderDto = 'GOOGLE';
-export const AI_ATTRACTION_PLACE_TYPE = 'TOURIST_SPOT';
+/** AI selectedPlaces.type → 서버가 plan_place.contentTypeId로 저장 */
+export const AI_ATTRACTION_PLACE_TYPE = PLACE_CONTENT_TYPE.attraction;
 
 const COMPANION_MAP: Record<CompanionGroupType, CompanionTypeDto> = {
   solo: 'SOLO',
@@ -282,11 +292,28 @@ export function travelResponseToPlan(
   };
 }
 
+function normalizePlanContentTypeId(
+  value: string | null | undefined,
+): PlaceContentTypeId | undefined {
+  if (!value) {
+    return undefined;
+  }
+  const normalized = String(value).trim();
+  if (ALL_PLACE_CONTENT_TYPE_IDS.has(normalized)) {
+    return normalized as PlaceContentTypeId;
+  }
+  return undefined;
+}
+
 export function planPlaceToRouteItem(place: PlanPlaceResponse): RouteItem {
   const placeSource =
     place.source === 'USER_PICKED' || place.source === 'AUTO_FILLED'
       ? place.source
       : undefined;
+  const contentTypeId = normalizePlanContentTypeId(place.contentTypeId);
+  const type = contentTypeId
+    ? contentTypeIdToRouteType(contentTypeId)
+    : 'ATTRACTION';
 
   return {
     itemId: place.planPlaceId,
@@ -295,7 +322,8 @@ export function planPlaceToRouteItem(place: PlanPlaceResponse): RouteItem {
     sequence: place.sequence,
     placeId: place.providerPlaceId,
     placeName: place.placeName,
-    type: 'ATTRACTION',
+    type,
+    contentTypeId: contentTypeId ?? routeTypeToContentTypeId(type),
     location: {
       lat: place.latitude ?? 0,
       lng: place.longitude ?? 0,
@@ -306,7 +334,7 @@ export function planPlaceToRouteItem(place: PlanPlaceResponse): RouteItem {
     placeInfo: {
       description: '',
       hours: '',
-      category: 'attraction',
+      category: type.toLowerCase(),
       address: place.address,
       dwellMinutes: place.durationMinutes ?? undefined,
     },
@@ -339,6 +367,7 @@ export function travelPlansResponseToPlan(
           longitude: p.longitude,
           provider: p.provider,
           providerPlaceId: p.providerPlaceId,
+          contentTypeId: p.contentTypeId,
           durationMinutes: p.durationMinutes,
           memo: p.memo,
           scheduledTime: p.scheduledTime,

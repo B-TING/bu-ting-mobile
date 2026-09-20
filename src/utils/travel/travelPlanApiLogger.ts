@@ -110,6 +110,7 @@ function summarizePlanPlaceCreateRequest(body: PlanPlaceCreateRequest): Record<s
     longitude: body.longitude,
     provider: body.provider,
     providerPlaceId: body.providerPlaceId,
+    contentTypeId: body.contentTypeId,
     durationMinutes: body.durationMinutes,
     visited: body.visited,
   };
@@ -150,6 +151,7 @@ function summarizePlanPlaceUpdatePlaceRequest(
     longitude: body.longitude,
     provider: body.provider,
     providerPlaceId: body.providerPlaceId,
+    contentTypeId: body.contentTypeId,
   };
 }
 
@@ -161,6 +163,7 @@ function summarizePlanPlaceItem(item: PlanPlaceResponse): Record<string, unknown
     placeName: item.placeName,
     provider: item.provider,
     providerPlaceId: item.providerPlaceId,
+    contentTypeId: item.contentTypeId,
     visited: item.visited,
     memo: item.memo,
   };

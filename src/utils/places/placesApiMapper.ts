@@ -1,13 +1,14 @@
 import type { PlaceDetailVO, PlaceKind } from '../../types/googlePlaces';
 import type { BusanPlace } from '../../types/placeSearch';
-import type {
-  PlaceContentTypeId,
-  PlaceDetailResponseDto,
-  PlaceDetailReviewDto,
-  PlaceSearchItemDto,
-  PlaceSearchResponseDto,
+import {
+  ALL_PLACE_CONTENT_TYPE_IDS,
+  PLACE_CONTENT_TYPE,
+  type PlaceContentTypeId,
+  type PlaceDetailResponseDto,
+  type PlaceDetailReviewDto,
+  type PlaceSearchItemDto,
+  type PlaceSearchResponseDto,
 } from '../../types/placesApi';
-import { PLACE_CONTENT_TYPE } from '../../types/placesApi';
 import { formatTourismInfoRows } from './tourismDetailFormatter';
 
 function parsePriceLevel(raw?: string): number | undefined {
@@ -164,6 +165,10 @@ function contentTypeToKind(contentTypeId: string): PlaceKind {
     case PLACE_CONTENT_TYPE.restaurant:
       return 'restaurant';
     case PLACE_CONTENT_TYPE.attraction:
+    case PLACE_CONTENT_TYPE.culture:
+    case PLACE_CONTENT_TYPE.course:
+    case PLACE_CONTENT_TYPE.leisure:
+    case PLACE_CONTENT_TYPE.shopping:
       return 'attraction';
     case PLACE_CONTENT_TYPE.festival:
       return 'other';
@@ -174,13 +179,8 @@ function contentTypeToKind(contentTypeId: string): PlaceKind {
 
 function asContentTypeId(value: string | number): PlaceContentTypeId {
   const normalized = String(value);
-  if (
-    normalized === PLACE_CONTENT_TYPE.attraction ||
-    normalized === PLACE_CONTENT_TYPE.accommodation ||
-    normalized === PLACE_CONTENT_TYPE.restaurant ||
-    normalized === PLACE_CONTENT_TYPE.festival
-  ) {
-    return normalized;
+  if (ALL_PLACE_CONTENT_TYPE_IDS.has(normalized)) {
+    return normalized as PlaceContentTypeId;
   }
   return PLACE_CONTENT_TYPE.attraction;
 }

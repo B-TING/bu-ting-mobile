@@ -5,6 +5,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { getCopyForLanguage } from '../i18n';
 import { enrichPlaceInfo } from '../constants/places/placeCatalog';
 import { isTourApiContentId, routeTypeToContentTypeId } from '../utils/places/routePlaceDetail';
+import type { PlaceContentTypeId } from '../types/placesApi';
 import type { PlanWizardAnswers } from '../types/planWizard';
 import type { BudgetEntry, RouteItem, TravelLegMode, TravelPlan } from '../types/travelPlan';
 import { isPlanForCurrentApiServer } from '../utils/api/apiServerOrigin';
@@ -469,10 +470,20 @@ export function hydrateRoutePlaceInfo(
     route.placeInfo ?? enrichPlaceInfo(route.placeId, route.placeName, route.type, lang);
 
   if (isTourApiContentId(route.placeId)) {
+    const contentTypeId =
+      (route.contentTypeId as PlaceContentTypeId | undefined) ??
+      routeTypeToContentTypeId(route.type);
     const categoryLabel =
-      getCopyForLanguage('placeSearch', lang).categoryLabels[routeTypeToContentTypeId(route.type)];
+      getCopyForLanguage('placeSearch', lang).categoryLabels[contentTypeId];
     if (placeInfo.category !== categoryLabel) {
-      return { ...route, placeInfo: { ...placeInfo, category: categoryLabel } };
+      return {
+        ...route,
+        contentTypeId,
+        placeInfo: { ...placeInfo, category: categoryLabel },
+      };
+    }
+    if (!route.contentTypeId) {
+      return { ...route, contentTypeId };
     }
   }
 

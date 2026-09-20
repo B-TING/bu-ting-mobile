@@ -66,6 +66,8 @@ export type RouteItem = {
   placeId: string;
   placeName: string;
   type: RouteItemType;
+  /** TourAPI contentTypeId — 서버 plan_place.contentTypeId */
+  contentTypeId?: string;
   location: { lat: number; lng: number };
   isVisited: boolean;
   /** 장소별 메모 (서버 plan_place.memo) */

@@ -130,7 +130,7 @@ describe('toAiTravelPlanGenerateRequest', () => {
         placeName: '해동용궁사',
         latitude: 35.1882,
         longitude: 129.2232,
-        type: 'TOURIST_SPOT',
+        type: '12',
         address: '부산 기장군 기장읍 용궁길 86',
       },
     ]);

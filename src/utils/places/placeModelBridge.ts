@@ -1,10 +1,10 @@
 import type { BusanPlace } from '../../types/placeSearch';
-import { PLACE_CONTENT_TYPE } from '../../types/placesApi';
+import { PLACE_CONTENT_TYPE, PLACE_MAP_SEARCH_TYPES } from '../../types/placesApi';
 import type { PlaceContentTypeId } from '../../types/placesApi';
 import type { RouteItem } from '../../types/travelPlan';
 import { haversineKm } from '../geo/geo';
 import type { RebootPlaceCandidate } from './rebootPlaces';
-import { isTourApiContentId, routeTypeToContentTypeId } from './routePlaceDetail';
+import { isTourApiContentId, resolveContentTypeId } from './routePlaceDetail';
 
 export function routeItemToBusanPlace(route: RouteItem): BusanPlace | null {
   if (!isTourApiContentId(route.placeId)) {
@@ -14,7 +14,7 @@ export function routeItemToBusanPlace(route: RouteItem): BusanPlace | null {
   return {
     id: route.placeId,
     contentId: route.placeId,
-    contentTypeId: routeTypeToContentTypeId(route.type),
+    contentTypeId: resolveContentTypeId(route.type, route.contentTypeId),
     name: route.placeName,
     address: route.placeInfo?.address ?? '',
     location: route.location,
@@ -29,7 +29,7 @@ export function routeItemToBusanPlaceFallback(route: RouteItem): BusanPlace {
     routeItemToBusanPlace(route) ?? {
       id: route.placeId,
       contentId: route.placeId,
-      contentTypeId: routeTypeToContentTypeId(route.type),
+      contentTypeId: resolveContentTypeId(route.type, route.contentTypeId),
       name: route.placeName,
       address: route.placeInfo?.address ?? '',
       location: route.location,
@@ -80,10 +80,7 @@ export function rebootCandidateFromRoute(route: RouteItem): RebootPlaceCandidate
 /** 일정 행선지 픽 기본 카테고리 */
 export const PLAN_PICK_CONTENT_TYPE = PLACE_CONTENT_TYPE.attraction;
 
-/** 일정 추가·교체 모달에서 고를 수 있는 카테고리 */
+/** 일정 추가·교체 모달에서 고를 수 있는 카테고리 (TourAPI contentTypeId 전체) */
 export const PLAN_PICK_CONTENT_TYPES: PlaceContentTypeId[] = [
-  PLACE_CONTENT_TYPE.attraction,
-  PLACE_CONTENT_TYPE.accommodation,
-  PLACE_CONTENT_TYPE.restaurant,
-  PLACE_CONTENT_TYPE.festival,
+  ...PLACE_MAP_SEARCH_TYPES,
 ];
