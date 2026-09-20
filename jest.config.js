@@ -3,6 +3,8 @@ module.exports = {
   moduleNameMapper: {
     '\\.css$': '<rootDir>/__mocks__/styleMock.js',
     '^lucide-react-native$': '<rootDir>/__mocks__/lucide-react-native.js',
+    '^@react-native-async-storage/async-storage$':
+      '<rootDir>/__mocks__/@react-native-async-storage/async-storage.js',
   },
   testPathIgnorePatterns: ['/node_modules/', '/__tests__/helpers/', '/.maestro/'],
   transformIgnorePatterns: [
