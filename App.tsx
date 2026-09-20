@@ -10,6 +10,7 @@ import {
 } from './src/components/shared/modals';
 import { layout } from './src/constants/common/layout';
 import { RootNavigator } from './src/navigation/RootNavigator';
+import { useFcmBootstrap } from './src/hooks/useFcmBootstrap';
 import { useSessionActiveTravelsSync } from './src/hooks/useSessionActiveTravelsSync';
 import { initOAuthSdks } from './src/services/auth/oauthSdkService';
 
@@ -21,6 +22,7 @@ function App() {
   }, []);
 
   useSessionActiveTravelsSync();
+  useFcmBootstrap();
 
   return (
     <View style={layout.screen}>

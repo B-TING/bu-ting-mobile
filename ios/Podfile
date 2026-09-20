@@ -9,6 +9,8 @@ platform :ios, min_ios_version_supported
 prepare_react_native_project!
 
 # Google Sign-In(AppCheckCore) Swift pods require static frameworks.
+# React Native Firebase also expects static frameworks when use_frameworks! is on.
+$RNFirebaseAsStaticFramework = true
 linkage = ENV['USE_FRAMEWORKS']&.to_sym || :static
 use_frameworks! :linkage => linkage
 

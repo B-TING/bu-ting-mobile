@@ -38,6 +38,11 @@ android/gradle.properties
 ios/BUTingMobile/Info.plist
 android/app/src/main/AndroidManifest.xml
 
+# Firebase — 콘솔에서 받은 실파일을 로컬에 두고 example 은 커밋
+android/app/google-services.json
+ios/BUTingMobile/GoogleService-Info.plist
+ios/GoogleService-Info.plist
+
 # Local env — API keys, ngrok token 등 (커밋 금지)
 .env
 .env.*

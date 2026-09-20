@@ -28,11 +28,9 @@ tags:
       id: notificationSettings.master
     timeout: 8000
 - assertVisible:
-    id: notificationSettings.eventMission
+    id: notificationSettings.type.ROUND_OPEN
 - assertVisible:
-    id: notificationSettings.eventReview
-- assertVisible:
-    id: notificationSettings.zoneChat
+    id: notificationSettings.type.OPERATOR
 - tapOn:
     id: notificationSettings.master
 - tapOn:

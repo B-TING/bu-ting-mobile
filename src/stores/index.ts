@@ -65,5 +65,6 @@ export { usePlaceDetailCacheStore } from './usePlaceDetailCacheStore';
 export { useLocationConsentStore } from './useLocationConsentStore';
 export {
   useNotificationSettingsStore,
+  NOTIFICATION_TYPES,
   type NotificationPreferenceKey,
 } from './useNotificationSettingsStore';

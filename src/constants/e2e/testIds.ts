@@ -83,9 +83,7 @@ export const TEST_ID = {
   notificationSettings: {
     screen: 'notificationSettings.screen',
     master: 'notificationSettings.master',
-    eventMission: 'notificationSettings.eventMission',
-    eventReview: 'notificationSettings.eventReview',
-    zoneChat: 'notificationSettings.zoneChat',
+    type: (key: string) => `notificationSettings.type.${key}`,
   },
   planWizard: {
     screen: 'planWizard.screen',

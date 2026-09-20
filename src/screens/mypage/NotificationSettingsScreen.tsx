@@ -15,7 +15,7 @@ import { TEST_ID } from '../../constants/e2e/testIds';
 import { useNotificationSettingsScreen } from '../../hooks/mypage/useNotificationSettingsScreen';
 import { useAppLanguage } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
-import type { NotificationPreferenceKey } from '../../stores/useNotificationSettingsStore';
+import type { NotificationType } from '../../types/notification';
 import { cn } from '../../utils/common/cn';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'NotificationSettings'>;
@@ -78,17 +78,18 @@ export function NotificationSettingsScreen({ navigation }: Props) {
     copy,
     isAuthenticated,
     hydrated,
+    syncing,
+    errorMessage,
     enabled,
-    eventMission,
-    eventReview,
-    zoneChat,
+    settings,
+    preferenceKeys,
     setEnabled,
     setPreference,
     goBack,
     goLogin,
   } = useNotificationSettingsScreen(navigation);
 
-  const categoryDisabled = !isAuthenticated || !enabled;
+  const categoryDisabled = !isAuthenticated || !enabled || syncing;
 
   return (
     <View
@@ -111,14 +112,11 @@ export function NotificationSettingsScreen({ navigation }: Props) {
       ) : (
         <ScrollView
           className="flex-1"
+          contentContainerClassName="gap-4 p-4"
           contentContainerStyle={{
-            padding: 16,
             paddingBottom: insets.bottom + 24,
-            gap: 16,
           }}
           showsVerticalScrollIndicator={false}>
-          <EventCallout title={copy.pushPendingTitle} body={copy.pushPendingBody} tone="info" />
-
           {!isAuthenticated ? (
             <Pressable
               accessibilityRole="button"
@@ -134,12 +132,16 @@ export function NotificationSettingsScreen({ navigation }: Props) {
             </Pressable>
           ) : null}
 
+          {errorMessage ? (
+            <EventCallout title={errorMessage} body=" " tone="warning" />
+          ) : null}
+
           <View className="overflow-hidden rounded-2xl border bg-white" style={{ borderColor: BRAND_BORDER }}>
             <PreferenceRow
               label={copy.masterLabel}
               hint={copy.masterHint}
               value={enabled}
-              disabled={!isAuthenticated}
+              disabled={!isAuthenticated || syncing}
               testID={TEST_ID.notificationSettings.master}
               onValueChange={setEnabled}
             />
@@ -150,42 +152,21 @@ export function NotificationSettingsScreen({ navigation }: Props) {
               {copy.categoriesTitle}
             </Text>
             <View className="overflow-hidden rounded-2xl border bg-white" style={{ borderColor: BRAND_BORDER }}>
-              {(
-                [
-                  {
-                    key: 'eventMission' as NotificationPreferenceKey,
-                    label: copy.eventMissionLabel,
-                    hint: copy.eventMissionHint,
-                    value: eventMission,
-                    testID: TEST_ID.notificationSettings.eventMission,
-                  },
-                  {
-                    key: 'eventReview' as NotificationPreferenceKey,
-                    label: copy.eventReviewLabel,
-                    hint: copy.eventReviewHint,
-                    value: eventReview,
-                    testID: TEST_ID.notificationSettings.eventReview,
-                  },
-                  {
-                    key: 'zoneChat' as NotificationPreferenceKey,
-                    label: copy.zoneChatLabel,
-                    hint: copy.zoneChatHint,
-                    value: zoneChat,
-                    testID: TEST_ID.notificationSettings.zoneChat,
-                  },
-                ] as const
-              ).map((row, index, rows) => (
-                <PreferenceRow
-                  key={row.key}
-                  label={row.label}
-                  hint={row.hint}
-                  value={row.value}
-                  disabled={categoryDisabled}
-                  last={index === rows.length - 1}
-                  testID={row.testID}
-                  onValueChange={next => setPreference(row.key, next)}
-                />
-              ))}
+              {preferenceKeys.map((key: NotificationType, index) => {
+                const labels = copy.typeLabels[key];
+                return (
+                  <PreferenceRow
+                    key={key}
+                    label={labels.label}
+                    hint={labels.hint}
+                    value={settings[key]}
+                    disabled={categoryDisabled}
+                    last={index === preferenceKeys.length - 1}
+                    testID={TEST_ID.notificationSettings.type(key)}
+                    onValueChange={next => setPreference(key, next)}
+                  />
+                );
+              })}
             </View>
           </View>
         </ScrollView>

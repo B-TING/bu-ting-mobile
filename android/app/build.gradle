@@ -126,3 +126,8 @@ dependencies {
         implementation jscFlavor
     }
 }
+
+// google-services.json 이 있을 때만 적용 (로컬 Firebase 설정)
+if (file("google-services.json").exists()) {
+    apply plugin: "com.google.gms.google-services"
+}

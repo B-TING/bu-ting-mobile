@@ -73,8 +73,10 @@ export const USER_ENDPOINTS = {
   rewards: '/api/v1/users/me/rewards',
   pointLedger: '/api/v1/users/me/point-ledger',
   zoneSubscriptions: '/api/v1/users/me/zone-subscriptions',
-  /** FCM 연동 전까지 앱에서 호출하지 않음 */
   notificationSettings: '/api/v1/users/me/notification-settings',
+  deviceTokens: '/api/v1/users/me/device-tokens',
+  deviceTokenByValue: (fcmToken: string) =>
+    \`/api/v1/users/me/device-tokens/\${encodeURIComponent(fcmToken)}\`,
 } as const;
 
 export const PLACES_ENDPOINTS = {

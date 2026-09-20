@@ -352,11 +352,16 @@ async function signOutProviderSdks(provider: OAuthProvider | null): Promise<void
 
 export async function logoutSession(): Promise<void> {
 
-  const { provider } = useAuthStore.getState();
+  const { provider, accessToken } = useAuthStore.getState();
 
 
 
   logAuth('logout.start', 'Logout started', { detail: { provider } });
+
+  const { unregisterFcmTokenFromServer } = await import(
+    '../notification/fcmService'
+  );
+  await unregisterFcmTokenFromServer(accessToken);
 
   await signOutProviderSdks(provider);
 
