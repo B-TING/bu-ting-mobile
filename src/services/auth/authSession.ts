@@ -136,6 +136,10 @@ export function applyAuthSession(
 
     expiresIn: response.expiresIn,
 
+    refreshToken: response.refreshToken ?? null,
+
+    refreshExpiresIn: response.refreshExpiresIn ?? null,
+
     user,
 
     rememberMe: options.rememberMe,

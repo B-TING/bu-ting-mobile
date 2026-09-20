@@ -61,6 +61,7 @@ export { API_BASE_URL } from './apiBaseUrl';
 
 export const AUTH_ENDPOINTS = {
   oauthLogin: '/api/v1/auth/oauth/login',
+  refresh: '/api/v1/auth/refresh',
 } as const;
 
 export const TRAVEL_SURVEY_ENDPOINTS = {
