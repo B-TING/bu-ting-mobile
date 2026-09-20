@@ -8,6 +8,9 @@ type AuthStoreState = {
   accessToken: string | null;
   /** Unix ms. `expiresIn`(초) 기준으로 로그인 시 저장합니다. */
   accessTokenExpiresAt: number | null;
+  /** 액세스 토큰 재발급용. 서버가 회전시키므로 재발급마다 새 값으로 덮어씁니다. */
+  refreshToken: string | null;
+  refreshTokenExpiresAt: number | null;
   user: AuthUser | null;
   rememberMe: boolean;
   provider: OAuthProvider | null;
@@ -17,10 +20,19 @@ type AuthStoreState = {
   setSession: (payload: {
     accessToken: string;
     expiresIn: number;
+    refreshToken?: string | null;
+    refreshExpiresIn?: number | null;
     user: AuthUser;
     rememberMe: boolean;
     provider: OAuthProvider;
     providerToken: string | null;
+  }) => void;
+  /** 재발급 결과만 반영합니다. 사용자·provider 정보는 그대로 둡니다. */
+  setTokens: (payload: {
+    accessToken: string;
+    expiresIn: number;
+    refreshToken: string;
+    refreshExpiresIn: number;
   }) => void;
   setUser: (user: AuthUser) => void;
   clearSession: () => void;
@@ -29,6 +41,8 @@ type AuthStoreState = {
 const initialState = {
   accessToken: null as string | null,
   accessTokenExpiresAt: null as number | null,
+  refreshToken: null as string | null,
+  refreshTokenExpiresAt: null as number | null,
   user: null as AuthUser | null,
   rememberMe: false,
   provider: null as OAuthProvider | null,
@@ -44,6 +58,8 @@ export const useAuthStore = create<AuthStoreState>()(
       setSession: ({
         accessToken,
         expiresIn,
+        refreshToken,
+        refreshExpiresIn,
         user,
         rememberMe,
         provider,
@@ -52,10 +68,22 @@ export const useAuthStore = create<AuthStoreState>()(
         set({
           accessToken,
           accessTokenExpiresAt: Date.now() + expiresIn * 1000,
+          refreshToken: refreshToken ?? null,
+          refreshTokenExpiresAt:
+            refreshToken && refreshExpiresIn
+              ? Date.now() + refreshExpiresIn * 1000
+              : null,
           user,
           rememberMe,
           provider,
           providerToken: rememberMe ? providerToken : null,
+        }),
+      setTokens: ({ accessToken, expiresIn, refreshToken, refreshExpiresIn }) =>
+        set({
+          accessToken,
+          accessTokenExpiresAt: Date.now() + expiresIn * 1000,
+          refreshToken,
+          refreshTokenExpiresAt: Date.now() + refreshExpiresIn * 1000,
         }),
       setUser: user => set({ user }),
       clearSession: () => set({ ...initialState, _hasHydrated: true }),
@@ -68,6 +96,10 @@ export const useAuthStore = create<AuthStoreState>()(
         accessToken: state.rememberMe ? state.accessToken : null,
         accessTokenExpiresAt: state.rememberMe
           ? state.accessTokenExpiresAt
+          : null,
+        refreshToken: state.rememberMe ? state.refreshToken : null,
+        refreshTokenExpiresAt: state.rememberMe
+          ? state.refreshTokenExpiresAt
           : null,
         user: state.rememberMe ? state.user : null,
         provider: state.rememberMe ? state.provider : null,
@@ -101,6 +133,22 @@ export function selectReusableAccessToken(state: AuthStoreState): string | null 
   }
 
   return state.accessToken;
+}
+
+/** 만료 전이면 저장된 리프레시 토큰을 반환합니다. */
+export function selectReusableRefreshToken(state: AuthStoreState): string | null {
+  if (!state.refreshToken) {
+    return null;
+  }
+
+  if (
+    state.refreshTokenExpiresAt !== null &&
+    Date.now() >= state.refreshTokenExpiresAt
+  ) {
+    return null;
+  }
+
+  return state.refreshToken;
 }
 
 export function selectAuthUser(state: AuthStoreState): AuthUser | null {

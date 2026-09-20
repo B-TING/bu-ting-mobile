@@ -1,5 +1,13 @@
 import type { ApiEnvelope, ApiErrorResponse } from '../../types/auth';
 
+// 순환 참조를 피하려고 지연 로딩한다. tokenRefreshService 는 다시 이 모듈의 apiPost 를 쓴다.
+async function refreshAccessToken(): Promise<string | null> {
+  const { refreshAccessToken: refresh } = await import(
+    '../auth/tokenRefreshService'
+  );
+  return refresh();
+}
+
 export class ApiClientError extends Error {
   status?: number;
   url?: string;
@@ -35,6 +43,8 @@ export type ApiRequestLogContext = {
 export type ApiRequestOptions = {
   method?: string;
   accessToken?: string | null;
+  /** 401을 받았을 때 토큰을 다시 받아 한 번 재시도할지. 재발급 요청 자체에는 끈다. */
+  retryOnUnauthorized?: boolean;
   headers?: Record<string, string>;
   body?: unknown;
   /** `{ data: T }` 래퍼 제거 (기본 true) */
@@ -111,6 +121,7 @@ export async function apiRequest<T>(
   const {
     method = 'GET',
     accessToken,
+    retryOnUnauthorized = true,
     headers: extraHeaders = {},
     body,
     unwrap = true,
@@ -179,6 +190,19 @@ export async function apiRequest<T>(
   }
 
   if (!res.ok) {
+    // 액세스 토큰이 만료돼 401이면 한 번만 다시 받아 재시도한다. 재발급도 실패하면 아래에서 그대로 오류가 된다.
+    if (res.status === 401 && accessToken && retryOnUnauthorized) {
+      const refreshedToken = await refreshAccessToken();
+
+      if (refreshedToken) {
+        return apiRequest<T>(url, {
+          ...options,
+          accessToken: refreshedToken,
+          retryOnUnauthorized: false,
+        });
+      }
+    }
+
     const error = new ApiClientError(parseApiErrorMessage(res, parsedBody, errorMessagePrefix), {
       status: res.status,
       url,
