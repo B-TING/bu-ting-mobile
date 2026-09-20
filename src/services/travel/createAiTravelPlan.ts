@@ -54,9 +54,6 @@ export async function createAiTravelPlan(
   if (!accessToken?.trim()) {
     throw new AiTravelPlanError('로그인이 필요합니다.');
   }
-  if (answers.selectedAttractions.length < 1) {
-    throw new AiTravelPlanError('가고 싶은 관광지를 1곳 이상 선택해 주세요.');
-  }
   if (isE2EAccessToken(accessToken)) {
     throw new AiTravelPlanError('AI 일정 생성에 실패했습니다.');
   }

@@ -120,7 +120,7 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
       </View>
 
       <View className="border-b border-brand-border bg-brand-surface px-4 py-2">
-        {pickFor ? null : (
+        {pickFor === 'accommodation' ? null : (
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             {PLACE_MAP_SEARCH_TYPES.map(typeId => {
               const selected = contentTypeId === typeId;
@@ -148,7 +148,7 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
         )}
         <Text
           className={
-            pickFor
+            pickFor === 'accommodation'
               ? 'text-sm font-semibold text-brand-text'
               : 'mt-2 text-sm font-semibold text-brand-text'
           }>

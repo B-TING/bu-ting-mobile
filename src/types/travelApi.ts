@@ -12,6 +12,9 @@ export type CompanionTypeDto = 'SOLO' | 'FRIEND' | 'COUPLE' | 'FAMILY' | 'GROUP'
 
 export type PlaceProviderDto = 'KAKAO' | 'NAVER' | 'GOOGLE';
 
+/** 일정 장소 출처 — 백엔드 PlanPlaceSource */
+export type PlanPlaceSourceDto = 'USER_PICKED' | 'AUTO_FILLED';
+
 export type AiSchedulePaceDto = TravelPaceDto;
 
 /** OpenAPI WizardPickedPlace — 앱 위저드 `WizardPickedPlace`와 필드가 다름 */
@@ -117,6 +120,8 @@ export type PlanPlaceCreateRequest = {
   longitude?: number | null;
   provider: PlaceProviderDto;
   providerPlaceId: string;
+  /** TourAPI contentTypeId (12·14·15·25·28·32·38·39) */
+  contentTypeId?: string | null;
   durationMinutes?: number | null;
   memo?: string | null;
   scheduledTime?: string | null;
@@ -127,6 +132,7 @@ export type PlanPlaceResponse = PlanPlaceCreateRequest & {
   planPlaceId: string;
   planId: string;
   sequence: number;
+  source?: PlanPlaceSourceDto | null;
 };
 
 export type TravelPlansResponse = {
@@ -159,6 +165,8 @@ export type PlanPlaceUpdatePlaceRequest = {
   longitude?: number | null;
   provider: PlaceProviderDto;
   providerPlaceId: string;
+  /** TourAPI contentTypeId */
+  contentTypeId?: string | null;
 };
 
 export type TravelPlanPlaceDto = {
@@ -170,10 +178,13 @@ export type TravelPlanPlaceDto = {
   longitude?: number | null;
   provider: PlaceProviderDto;
   providerPlaceId: string;
+  /** TourAPI contentTypeId */
+  contentTypeId?: string | null;
   durationMinutes?: number | null;
   memo?: string | null;
   scheduledTime?: string | null;
   visited?: boolean | null;
+  source?: PlanPlaceSourceDto | null;
   routeToNext?: {
     transportType?: string;
     durationMinutes?: number | null;

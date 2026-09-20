@@ -4,10 +4,18 @@ import { enrichPlaceInfo } from '../../constants/places/placeCatalog';
 import { fetchPlaceDetail, searchPlacesByKeyword } from '../../services/places/placesApiService';
 import type { PlaceDetailVO } from '../../types/googlePlaces';
 import { busanPlaceToPlaceDetailStub } from './placesApiMapper';
-import { PLACE_CONTENT_TYPE } from '../../types/placesApi';
+import { PLACE_CONTENT_TYPE, ALL_PLACE_CONTENT_TYPE_IDS } from '../../types/placesApi';
 import type { PlaceContentTypeId } from '../../types/placesApi';
 import type { PlaceInfo, RouteItem, RouteItemType } from '../../types/travelPlan';
 import type { AppLanguage } from '../../types/user';
+
+type RoutePlaceDetailOptions = {
+  placeName?: string;
+  address?: string;
+  imageUrl?: string;
+  /** 서버 plan_place.contentTypeId — 있으면 type 추론보다 우선 */
+  contentTypeId?: string;
+};
 
 export function shouldFetchRoutePlaceDetail(type: RouteItemType): boolean {
   return type === 'ATTRACTION' || type === 'RESTAURANT' || type === 'ACCOMMODATION';
@@ -77,7 +85,7 @@ function findKeywordSearchMatch(
 export async function fetchRoutePlaceImageViaKeywordSearch(
   placeId: string,
   type: RouteItemType,
-  options?: { placeName?: string; address?: string; imageUrl?: string },
+  options?: RoutePlaceDetailOptions,
 ): Promise<PlaceDetailVO | null> {
   const mock = getAttractionMockDetail(placeId);
   if (mock?.imageUrl?.trim()) {
@@ -96,7 +104,7 @@ export async function fetchRoutePlaceImageViaKeywordSearch(
   try {
     const result = await searchPlacesByKeyword({
       keyword: placeName,
-      contentTypeId: routeTypeToContentTypeId(type),
+      contentTypeId: resolveContentTypeId(type, options?.contentTypeId),
       page: 1,
       size: 20,
     });
@@ -116,6 +124,17 @@ export function isTourApiContentId(placeId: string): boolean {
   return /^\d+$/.test(placeId);
 }
 
+export function resolveContentTypeId(
+  type: RouteItemType,
+  contentTypeId?: string | null,
+): PlaceContentTypeId {
+  const normalized = contentTypeId?.trim();
+  if (normalized && ALL_PLACE_CONTENT_TYPE_IDS.has(normalized)) {
+    return normalized as PlaceContentTypeId;
+  }
+  return routeTypeToContentTypeId(type);
+}
+
 export function routeTypeToContentTypeId(type: RouteItemType): PlaceContentTypeId {
   switch (type) {
     case 'RESTAURANT':
@@ -129,7 +148,7 @@ export function routeTypeToContentTypeId(type: RouteItemType): PlaceContentTypeI
   }
 }
 
-/** TourAPI contentType → 일정 RouteItem.type (축제는 ATTRACTION으로 보관) */
+/** TourAPI contentType → 일정 RouteItem.type (숙박·음식 외는 ATTRACTION) */
 export function contentTypeIdToRouteType(
   contentTypeId: PlaceContentTypeId | undefined,
 ): RouteItemType {
@@ -138,8 +157,12 @@ export function contentTypeIdToRouteType(
       return 'RESTAURANT';
     case PLACE_CONTENT_TYPE.accommodation:
       return 'ACCOMMODATION';
-    case PLACE_CONTENT_TYPE.festival:
     case PLACE_CONTENT_TYPE.attraction:
+    case PLACE_CONTENT_TYPE.culture:
+    case PLACE_CONTENT_TYPE.festival:
+    case PLACE_CONTENT_TYPE.course:
+    case PLACE_CONTENT_TYPE.leisure:
+    case PLACE_CONTENT_TYPE.shopping:
     default:
       return 'ATTRACTION';
   }
@@ -218,7 +241,7 @@ export function mergeRouteWithPlaceDetail(
 export async function fetchRoutePlaceDetail(
   placeId: string,
   type: RouteItemType,
-  options?: { placeName?: string; address?: string; imageUrl?: string },
+  options?: RoutePlaceDetailOptions,
 ): Promise<PlaceDetailVO | null> {
   const mock = getAttractionMockDetail(placeId);
   if (mock) {
@@ -234,7 +257,7 @@ export async function fetchRoutePlaceDetail(
 
   return fetchPlaceDetail({
     contentId: placeId,
-    contentTypeId: routeTypeToContentTypeId(type),
+    contentTypeId: resolveContentTypeId(type, options?.contentTypeId),
     googleSearchText,
     fallbackName: options?.placeName,
     fallbackAddress: options?.address,

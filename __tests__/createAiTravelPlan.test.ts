@@ -150,17 +150,49 @@ describe('createAiTravelPlan', () => {
     warn.mockRestore();
   });
 
-  it('does not create a travel when no places are selected', async () => {
-    await expect(
-      createAiTravelPlan({
-        accessToken: 'token',
-        answers: { ...answers(), selectedAttractions: [] },
-        members,
-      }),
-    ).rejects.toThrow('가고 싶은 관광지를 1곳 이상 선택해 주세요.');
+  it('creates AI plans when no places are selected (server fills catalog)', async () => {
+    mockGenerateAiTravelPlans.mockResolvedValue({
+      travelId: 'travel-1',
+      title: '해운대 주말',
+      days: [
+        {
+          planId: 'plan-1',
+          dayNumber: 1,
+          visitDate: '2026-08-23',
+          places: [
+            {
+              planPlaceId: 'pp-auto-1',
+              sequence: 1,
+              placeName: '광안리해수욕장',
+              address: '부산 수영구',
+              latitude: 35.1532,
+              longitude: 129.1186,
+              provider: 'GOOGLE',
+              providerPlaceId: 'catalog-1',
+              visited: false,
+              source: 'AUTO_FILLED',
+            },
+          ],
+        },
+      ],
+    });
 
-    expect(mockCreateTravel).not.toHaveBeenCalled();
-    expect(mockGenerateAiTravelPlans).not.toHaveBeenCalled();
+    const plan = await createAiTravelPlan({
+      accessToken: 'token',
+      answers: { ...answers(), selectedAttractions: [], attractionIds: [] },
+      members,
+    });
+
+    expect(mockCreateTravel).toHaveBeenCalledTimes(1);
+    expect(mockGenerateAiTravelPlans).toHaveBeenCalledWith(
+      'token',
+      'travel-1',
+      expect.objectContaining({
+        selectedPlaces: [],
+      }),
+    );
+    expect(plan.itinerary[0]?.routes).toHaveLength(1);
+    expect(plan.itinerary[0]?.routes[0]?.placeSource).toBe('AUTO_FILLED');
     expect(mockLeaveTravelTeam).not.toHaveBeenCalled();
   });
 

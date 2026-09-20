@@ -374,7 +374,8 @@ export function usePlaceMapSearchScreen(routeParams: RouteParams) {
 
   const handleChangeContentType = useCallback(
     (typeId: PlaceContentTypeId) => {
-      if (pickFor || typeId === contentTypeId) {
+      // 숙박 픽만 카테고리 고정. 행선지 픽은 관광지·음식점 등 전체 전환 허용.
+      if (pickFor === 'accommodation' || typeId === contentTypeId) {
         return;
       }
 

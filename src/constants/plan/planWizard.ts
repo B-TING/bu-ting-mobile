@@ -273,7 +273,6 @@ export const PLAN_WIZARD_COPY: Record<
     creatingManual: string;
     createManualError: string;
     createAiError: string;
-    createAiNeedPlaces: string;
     pickPlan: string;
     days: (n: number) => string;
     statusDraft: string;
@@ -311,7 +310,7 @@ export const PLAN_WIZARD_COPY: Record<
     pickSearchEmpty: '검색 결과가 없어요',
     pickDistance: d => `약 ${d}`,
     modeAuto: 'AI가 일정 생성',
-    modeAutoSub: '선택한 장소로 바로 플랜 생성 · 관광지 1곳 이상',
+    modeAutoSub: '고른 장소로 생성. 비워 두면 서버가 장소를 채워 줌',
     modeCandidates: '후보에서 직접 선택',
     modeCandidatesSub: 'AI 후보를 받고 마음에 드는 플랜 선택',
     modeManual: '직접 일정 만들기',
@@ -320,7 +319,6 @@ export const PLAN_WIZARD_COPY: Record<
     creatingManual: '여행 일정 생성 중…',
     createManualError: '여행 생성에 실패했습니다. 로그인 상태와 API 서버를 확인해 주세요.',
     createAiError: 'AI 일정 생성에 실패했습니다. 빈 일정은 삭제했어요.',
-    createAiNeedPlaces: '가고 싶은 관광지를 1곳 이상 선택해 주세요.',
     pickPlan: '이 일정으로 시작',
     days: n => `${n}일`,
     statusDraft: '생성 중',
@@ -357,7 +355,7 @@ export const PLAN_WIZARD_COPY: Record<
     pickSearchEmpty: 'No results',
     pickDistance: d => `~${d}`,
     modeAuto: 'AI builds my plan',
-    modeAutoSub: 'Generate from selected places · at least 1 attraction',
+    modeAutoSub: 'Uses your picks. Leave empty and the server fills places',
     modeCandidates: 'Choose from options',
     modeCandidatesSub: 'Review AI options and pick one',
     modeManual: 'Build itinerary manually',
@@ -366,7 +364,6 @@ export const PLAN_WIZARD_COPY: Record<
     creatingManual: 'Creating your trip…',
     createManualError: 'Could not create the trip. Check login and API server.',
     createAiError: 'AI could not create the plan. The empty trip was removed.',
-    createAiNeedPlaces: 'Pick at least one place you want to visit.',
     pickPlan: 'Start with this plan',
     days: n => `${n} days`,
     statusDraft: 'Draft',
@@ -403,7 +400,7 @@ export const PLAN_WIZARD_COPY: Record<
     pickSearchEmpty: '該当なし',
     pickDistance: d => `約${d}`,
     modeAuto: 'AIが行程作成',
-    modeAutoSub: '選んだ場所からすぐ生成 · 観光地を1件以上',
+    modeAutoSub: '選んだ場所で生成。空ならサーバーが場所を補完',
     modeCandidates: '候補から選択',
     modeCandidatesSub: 'AI候補から選ぶ',
     modeManual: '手動で行程作成',
@@ -412,7 +409,6 @@ export const PLAN_WIZARD_COPY: Record<
     creatingManual: '旅行を作成中…',
     createManualError: '旅行の作成に失敗しました。ログインとAPIを確認してください。',
     createAiError: 'AIの行程作成に失敗しました。空の旅行は削除しました。',
-    createAiNeedPlaces: '行きたい観光地を1件以上選んでください。',
     pickPlan: 'このプランで開始',
     days: n => `${n}日`,
     statusDraft: '作成中',
@@ -449,7 +445,7 @@ export const PLAN_WIZARD_COPY: Record<
     pickSearchEmpty: '无搜索结果',
     pickDistance: d => `约 ${d}`,
     modeAuto: 'AI 生成行程',
-    modeAutoSub: '根据所选地点立即生成 · 至少 1 个景点',
+    modeAutoSub: '按所选地点生成。留空则由服务器补齐地点',
     modeCandidates: '从候选中选择',
     modeCandidatesSub: '查看 AI 候选并挑选',
     modeManual: '手动创建行程',
@@ -458,7 +454,6 @@ export const PLAN_WIZARD_COPY: Record<
     creatingManual: '正在创建旅行…',
     createManualError: '创建旅行失败。请检查登录和 API 服务器。',
     createAiError: 'AI 行程生成失败。已删除空行程。',
-    createAiNeedPlaces: '请至少选择 1 个想去的景点。',
     pickPlan: '使用此行程',
     days: n => `${n}天`,
     statusDraft: '草稿',

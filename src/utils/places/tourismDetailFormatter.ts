@@ -1,64 +1,31 @@
 /** 한국관광공사 detailIntro2 필드 라벨·표시 규칙 */
 
 import {
-  FESTIVAL_DETAIL_FIELD_ORDER,
+  DETAIL_FIELD_ORDER_BY_CONTENT_TYPE,
+  LODGING_AMENITY_FLAG_KEYS,
   isTourismCheckFlagKey,
   tourismAvailabilityValue,
   tourismDetailLabel,
 } from '../../constants/places/tourismDetailLabels';
+import { PLACE_CONTENT_TYPE } from '../../types/placesApi';
 import type { AppLanguage } from '../../types/user';
-
-const LODGING_TEXT_FIELDS: Record<string, string> = {
-  roomcount: '객실 수',
-  roomtype: '객실 유형',
-  scalelodging: '규모',
-  accomcountlodging: '수용 인원',
-  chkcooking: '객실 내 취사',
-  checkintime: '체크인',
-  checkouttime: '체크아웃',
-  parkinglodging: '주차',
-  foodplace: '식음료장',
-  reservationurl: '예약',
-  uselodging: '이용 안내',
-  subfacility: '부대시설',
-};
-
-/** 숙박 부대시설 여부 필드 — 값 1=있음, 0=미제공(숨김) */
-const LODGING_AMENITY_FLAGS: Record<string, string> = {
-  seminar: '세미나실',
-  beverage: '식음료장(시설)',
-  sports: '스포츠시설',
-  sauna: '사우나실',
-  beauty: '뷰티시설',
-  karaoke: '노래방',
-  barbecue: '바비큐장',
-  campfire: '캠프파이어',
-  bicycle: '자전거대여',
-  fitness: '휘트니스센터',
-  publicpc: '공용 PC실',
-  publicbath: '공용 샤워실',
-};
-
-const LODGING_FIELD_ORDER = [
-  'roomcount',
-  'roomtype',
-  'scalelodging',
-  'accomcountlodging',
-  'chkcooking',
-  'checkintime',
-  'checkouttime',
-  'parkinglodging',
-  'foodplace',
-  'reservationurl',
-  'uselodging',
-  'subfacility',
-  ...Object.keys(LODGING_AMENITY_FLAGS),
-] as const;
 
 const FESTIVAL_DATE_KEYS = new Set(['eventstartdate', 'eventenddate']);
 
-/** 전화·문의 필드 — 상단 연락처 행에서 처리 */
-const PHONE_DETAIL_KEYS = new Set(['infocenterlodging', 'infocenter', 'sponsor1tel', 'sponsor2tel']);
+/** 전화·문의 필드 — 상단 연락처 행에서 처리하거나 중복 억제 */
+const PHONE_DETAIL_KEYS = new Set([
+  'infocenter',
+  'infocenterculture',
+  'infocenterlodging',
+  'infocenterleports',
+  'infocentershopping',
+  'infocenterfood',
+  'infocentertourcourse',
+  'sponsor1tel',
+  'sponsor2tel',
+]);
+
+const META_SKIP_KEYS = new Set(['contentid', 'contenttypeid']);
 
 export type TourismInfoRow = { key: string; label: string; value: string };
 
@@ -88,71 +55,75 @@ function formatFieldValue(key: string, value: string): string {
   return value.trim();
 }
 
-function formatLodgingField(key: string, value: string): TourismInfoRow | null {
-  if (PHONE_DETAIL_KEYS.has(key)) {
-    return null;
-  }
-
-  const amenityLabel = LODGING_AMENITY_FLAGS[key];
-  if (amenityLabel) {
-    if (!isTruthyFlag(value)) {
-      return null;
-    }
-    return { key, label: amenityLabel, value: '있음' };
-  }
-
-  const textLabel = LODGING_TEXT_FIELDS[key];
-  if (textLabel) {
-    if (shouldSkipRawValue(value)) {
-      return null;
-    }
-    return { key, label: textLabel, value: value.trim() };
-  }
-
-  return null;
-}
-
-function formatGeneralField(
+function formatDetailField(
   key: string,
   value: string,
   language: AppLanguage,
+  contentTypeId: string,
 ): TourismInfoRow | null {
-  if (PHONE_DETAIL_KEYS.has(key) || shouldSkipRawValue(value)) {
+  const normalized = key.toLowerCase();
+  if (META_SKIP_KEYS.has(normalized) || PHONE_DETAIL_KEYS.has(normalized)) {
     return null;
   }
 
-  const normalized = key.toLowerCase();
+  if (shouldSkipRawValue(value) && !isTourismCheckFlagKey(normalized)) {
+    return null;
+  }
+
   if (isTourismCheckFlagKey(normalized)) {
     if (!isTruthyFlag(value)) {
       return null;
     }
     return {
-      key,
-      label: tourismDetailLabel(key, language),
+      key: normalized,
+      label: tourismDetailLabel(normalized, language),
       value: tourismAvailabilityValue(language),
     };
   }
 
+  // 숙박 부대시설 플래그는 위에서 처리. 그 외 텍스트.
+  if (
+    contentTypeId === PLACE_CONTENT_TYPE.accommodation &&
+    LODGING_AMENITY_FLAG_KEYS.has(normalized)
+  ) {
+    return null;
+  }
+
   return {
-    key,
-    label: tourismDetailLabel(key, language),
-    value: formatFieldValue(key, value),
+    key: normalized,
+    label: tourismDetailLabel(normalized, language),
+    value: formatFieldValue(normalized, value),
   };
 }
 
-function formatFestivalField(
-  key: string,
-  value: string,
-  language: AppLanguage,
-): TourismInfoRow | null {
-  if (PHONE_DETAIL_KEYS.has(key) || shouldSkipRawValue(value)) {
-    return null;
+function orderedKeysForType(
+  contentTypeId: string,
+  details: Record<string, string>,
+): string[] {
+  const preferred = DETAIL_FIELD_ORDER_BY_CONTENT_TYPE[contentTypeId];
+  const detailKeys = Object.keys(details);
+  if (!preferred) {
+    return detailKeys;
   }
-  return {
-    key,
-    label: tourismDetailLabel(key, language),
-    value: formatFieldValue(key, value),
-  };
+
+  const seen = new Set<string>();
+  const ordered: string[] = [];
+  for (const key of preferred) {
+    if (details[key] != null || details[key.toLowerCase()] != null) {
+      const actual =
+        details[key] != null
+          ? key
+          : detailKeys.find(k => k.toLowerCase() === key.toLowerCase()) ?? key;
+      ordered.push(actual);
+      seen.add(actual.toLowerCase());
+    }
+  }
+  for (const key of detailKeys) {
+    if (!seen.has(key.toLowerCase())) {
+      ordered.push(key);
+    }
+  }
+  return ordered;
 }
 
 export function formatTourismInfoRows(
@@ -164,39 +135,14 @@ export function formatTourismInfoRows(
     return [];
   }
 
-  if (contentTypeId === '32') {
-    const rows: TourismInfoRow[] = [];
-    for (const key of LODGING_FIELD_ORDER) {
-      const value = details[key];
-      if (value == null) {
-        continue;
-      }
-      const row = formatLodgingField(key, value);
-      if (row) {
-        rows.push(row);
-      }
-    }
-    return rows;
-  }
-
-  if (contentTypeId === '15') {
-    const rows: TourismInfoRow[] = [];
-    for (const key of FESTIVAL_DETAIL_FIELD_ORDER) {
-      const value = details[key];
-      if (value == null) {
-        continue;
-      }
-      const row = formatFestivalField(key, value, language);
-      if (row) {
-        rows.push(row);
-      }
-    }
-    return rows;
-  }
-
+  const typeId = String(contentTypeId).trim();
   const rows: TourismInfoRow[] = [];
-  for (const [key, value] of Object.entries(details)) {
-    const row = formatGeneralField(key, value, language);
+  for (const key of orderedKeysForType(typeId, details)) {
+    const value = details[key];
+    if (value == null) {
+      continue;
+    }
+    const row = formatDetailField(key, value, language, typeId);
     if (row) {
       rows.push(row);
     }

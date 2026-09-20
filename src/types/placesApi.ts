@@ -1,4 +1,8 @@
-/** 한국관광공사 관광타입 ID (부산 areaBasedList2) */
+/**
+ * 한국관광공사(TourAPI) contentTypeId
+ * 12 관광지 · 14 문화시설 · 15 축제·공연·행사 · 25 여행코스
+ * 28 레포츠 · 32 숙박 · 38 쇼핑 · 39 음식점
+ */
 export const PLACE_CONTENT_TYPE = {
   attraction: '12',
   culture: '14',
@@ -11,17 +15,23 @@ export const PLACE_CONTENT_TYPE = {
 } as const;
 
 export type PlaceContentTypeId =
-  | typeof PLACE_CONTENT_TYPE.attraction
-  | typeof PLACE_CONTENT_TYPE.accommodation
-  | typeof PLACE_CONTENT_TYPE.restaurant
-  | typeof PLACE_CONTENT_TYPE.festival;
+  (typeof PLACE_CONTENT_TYPE)[keyof typeof PLACE_CONTENT_TYPE];
 
+/** 지도·픽 모달 검색 칩 — TourAPI 정의 순서 */
 export const PLACE_MAP_SEARCH_TYPES: PlaceContentTypeId[] = [
-  PLACE_CONTENT_TYPE.accommodation,
   PLACE_CONTENT_TYPE.attraction,
-  PLACE_CONTENT_TYPE.restaurant,
+  PLACE_CONTENT_TYPE.culture,
   PLACE_CONTENT_TYPE.festival,
+  PLACE_CONTENT_TYPE.course,
+  PLACE_CONTENT_TYPE.leisure,
+  PLACE_CONTENT_TYPE.accommodation,
+  PLACE_CONTENT_TYPE.shopping,
+  PLACE_CONTENT_TYPE.restaurant,
 ];
+
+export const ALL_PLACE_CONTENT_TYPE_IDS: ReadonlySet<string> = new Set(
+  PLACE_MAP_SEARCH_TYPES,
+);
 
 export type TourApiDistrictCode =
   | '110'
